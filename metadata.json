@@ -1,0 +1,6 @@
+{
+  "name": "FULGOR S.A.S. - Logística Solar",
+  "description": "Sistema integral de gestión de inventario fotovoltaico, control de almacenes, despachos múltiples y generación de remisiones en PDF para FULGOR S.A.S.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
