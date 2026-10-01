@@ -4,21 +4,26 @@
  */
 
 import React from 'react';
+import { lazy, Suspense } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthScreen } from './components/AuthScreen';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { InventoryProvider, useInventory } from './context/InventoryContext';
 import { ActiveView } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
-import { DashboardView } from './components/DashboardView';
-import { ExplorerView } from './components/ExplorerView';
-import { NewItemView } from './components/NewItemView';
-import { DispatchView } from './components/DispatchView';
-import { HistoryView } from './components/HistoryView';
-import { WarehouseView } from './components/WarehouseView';
-import { RemissionView } from './components/RemissionView';
-import { PdfRemissionModal } from './components/PdfRemissionModal';
-import { ItemDetailModal } from './components/ItemDetailModal';
-import { QuickMovementModal } from './components/QuickMovementModal';
-import { HelpModal } from './components/HelpModal';
+import { isDemo } from './lib/supabase';
+const DashboardView = lazy(() => import('./components/DashboardView').then(m => ({ default: m.DashboardView })));
+const ExplorerView = lazy(() => import('./components/ExplorerView').then(m => ({ default: m.ExplorerView })));
+const NewItemView = lazy(() => import('./components/NewItemView').then(m => ({ default: m.NewItemView })));
+const DispatchView = lazy(() => import('./components/DispatchView').then(m => ({ default: m.DispatchView })));
+const HistoryView = lazy(() => import('./components/HistoryView').then(m => ({ default: m.HistoryView })));
+const WarehouseView = lazy(() => import('./components/WarehouseView').then(m => ({ default: m.WarehouseView })));
+const RemissionView = lazy(() => import('./components/RemissionView').then(m => ({ default: m.RemissionView })));
+const PdfRemissionModal = lazy(() => import('./components/PdfRemissionModal').then(m => ({ default: m.PdfRemissionModal })));
+const ItemDetailModal = lazy(() => import('./components/ItemDetailModal').then(m => ({ default: m.ItemDetailModal })));
+const QuickMovementModal = lazy(() => import('./components/QuickMovementModal').then(m => ({ default: m.QuickMovementModal })));
+const HelpModal = lazy(() => import('./components/HelpModal').then(m => ({ default: m.HelpModal })));
 
 const MainLayout: React.FC = () => {
   const {
@@ -28,10 +33,18 @@ const MainLayout: React.FC = () => {
     selectedRemisionForPdf,
     closePdfRemision,
     selectedItemForDetail,
-    closeItemDetail
+    closeItemDetail,
+    quickMovementItem,
+    quickMovementType,
+    isHelpModalOpen,
+    user
   } = useInventory();
+  const canAdmin = isDemo || user.role === 'admin';
+  const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
 
   const renderActiveView = () => {
+    if (activeView === 'new-item' && !canAdmin) return <p className="p-8" role="alert">Su cuenta no puede registrar componentes.</p>;
+    if (activeView === 'dispatch' && !canOperate) return <p className="p-8" role="alert">Su cuenta no puede realizar despachos.</p>;
     switch (activeView) {
       case 'dashboard':
         return <DashboardView />;
@@ -55,7 +68,7 @@ const MainLayout: React.FC = () => {
   const mobileNavItems: { id: ActiveView; label: string; icon: string; badge?: number }[] = [
     { id: 'dashboard', label: 'Inicio', icon: 'dashboard' },
     { id: 'explorer', label: 'Inventario', icon: 'inventory_2' },
-    { id: 'dispatch', label: 'Despacho', icon: 'shopping_cart_checkout', badge: dispatchCart.length },
+    ...(canOperate ? [{ id: 'dispatch' as ActiveView, label: 'Despacho', icon: 'shopping_cart_checkout', badge: dispatchCart.length }] : []),
     { id: 'history', label: 'Historial', icon: 'history' },
     { id: 'warehouses', label: 'Almacenes', icon: 'warehouse' },
     { id: 'remissions', label: 'Remisiones', icon: 'picture_as_pdf' },
@@ -70,7 +83,7 @@ const MainLayout: React.FC = () => {
       <div className="flex-1 flex flex-col h-full md:pl-64 overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto relative flex flex-col pb-20 md:pb-0">
-          {renderActiveView()}
+          <Suspense fallback={<p className="p-8">Cargando vista…</p>}>{renderActiveView()}</Suspense>
         </main>
       </div>
 
@@ -113,24 +126,36 @@ const MainLayout: React.FC = () => {
       </nav>
 
       {/* Global Modals */}
-      <PdfRemissionModal
+      <Suspense fallback={null}>{selectedRemisionForPdf && <PdfRemissionModal
         remision={selectedRemisionForPdf}
         onClose={closePdfRemision}
-      />
-      <ItemDetailModal
+      />}
+      {selectedItemForDetail && <ItemDetailModal
+        key={selectedItemForDetail.id}
         item={selectedItemForDetail}
         onClose={closeItemDetail}
-      />
-      <QuickMovementModal />
-      <HelpModal />
+      />}
+      {quickMovementItem && <QuickMovementModal key={`${quickMovementItem.id}:${quickMovementType}`} />}
+      {isHelpModalOpen && <HelpModal />}</Suspense>
     </div>
   );
 };
 
-export default function App() {
+function ProtectedApp() {
+  const { user, loading, signOut } = useAuth();
+  if (loading) return <p className="p-8">Cargando sesión…</p>;
+  if (!user) return <AuthScreen />;
+  if (!isDemo && !['admin', 'operador', 'consulta'].includes(user.role)) return (
+    <main className="min-h-screen grid place-content-center gap-4 p-8 text-center">
+      <p role="alert">Esta cuenta aún no tiene un rol de inventario. Solicite acceso a un administrador.</p>
+      <button type="button" className="rounded-lg border px-4 py-2" onClick={() => { void signOut(); }}>Cerrar sesión</button>
+    </main>
+  );
   return (
-    <InventoryProvider>
+    <InventoryProvider key={user.email}>
       <MainLayout />
     </InventoryProvider>
   );
 }
+const queryClient = new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } } });
+export default function App() { return <QueryClientProvider client={queryClient}><AuthProvider><ProtectedApp /></AuthProvider></QueryClientProvider>; }

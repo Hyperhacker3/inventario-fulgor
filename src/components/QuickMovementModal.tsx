@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
+import { errorMessage } from '../shared/errors';
 
 export const QuickMovementModal: React.FC = () => {
   const {
@@ -17,35 +18,27 @@ export const QuickMovementModal: React.FC = () => {
       : 'Ajuste por conteo físico cíclico'
   );
   const [responsable, setResponsable] = useState(user.name);
-
-  // Synchronize state when modal is opened for a new item or movement type
-  useEffect(() => {
-    if (quickMovementItem) {
-      setCantidad(quickMovementType === 'ENTRADA' ? 50 : 0);
-      setMotivo(
-        quickMovementType === 'ENTRADA'
-          ? 'Recepción orden de compra solar'
-          : 'Ajuste por conteo físico cíclico'
-      );
-      setResponsable(user.name);
-    }
-  }, [quickMovementItem, quickMovementType, user.name]);
+  const [error, setError] = useState('');
+  const [pending, setPending] = useState(false);
+  const [requestId] = useState(() => crypto.randomUUID());
 
   if (!quickMovementItem) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cantidad === 0 && quickMovementType === 'ENTRADA') return;
 
-    addStockMovement({
+    setError(''); setPending(true);
+    try { await addStockMovement({
       elementoId: quickMovementItem.id,
       tipo: quickMovementType,
       cantidad: quickMovementType === 'ENTRADA' ? Math.abs(cantidad) : cantidad,
       motivo: motivo.trim() || 'Movimiento rápido de inventario',
-      responsable: responsable.trim() || user.name
-    });
-
-    closeQuickMovement();
+      responsable: responsable.trim() || user.name,
+      requestId
+    }); closeQuickMovement(); }
+    catch (cause) { setError(errorMessage(cause)); }
+    finally { setPending(false); }
   };
 
   return (
@@ -83,23 +76,27 @@ export const QuickMovementModal: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
           <div className="bg-[#f8fafc] p-3 rounded-lg border border-[#e2e8f0] flex justify-between items-center text-xs">
             <span className="text-[#454651]">Stock Actual en Bodega:</span>
             <span className="font-mono-code font-bold text-sm text-[#131b2e]">
-              {quickMovementItem.cantidad} {quickMovementItem.unidad}
+              {quickMovementItem.stockPendiente ? 'Pendiente' : `${quickMovementItem.cantidad} ${quickMovementItem.unidad}`}
             </span>
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase text-[#454651] mb-1">
-              {quickMovementType === 'ENTRADA'
+              {quickMovementItem.stockPendiente
+                ? `Stock verificado (${quickMovementItem.unidad})`
+                : quickMovementType === 'ENTRADA'
                 ? `Cantidad a Ingresar (${quickMovementItem.unidad})`
                 : `Variación de Stock (+ o - ${quickMovementItem.unidad})`}
             </label>
             <input
               type="number"
               value={cantidad}
-              onChange={(e) => setCantidad(parseInt(e.target.value) || 0)}
+              onChange={(e) => setCantidad(Number(e.target.value))}
+              step="0.001"
               className="w-full px-3 py-2 rounded-lg border font-mono-code font-bold text-sm"
               required
             />
@@ -141,6 +138,7 @@ export const QuickMovementModal: React.FC = () => {
             </button>
             <button
               type="submit"
+              disabled={pending}
               className={`px-5 py-2 rounded-lg text-white text-xs font-bold shadow-2xs ${
                 quickMovementType === 'ENTRADA'
                   ? 'bg-[#10b981] hover:bg-[#059669]'

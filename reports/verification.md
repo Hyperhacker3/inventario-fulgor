@@ -1,0 +1,37 @@
+# Verificación de la refactorización local
+
+Fecha: 1 de octubre de 2026. Alcance: código, PostgreSQL embebido y verificación del proyecto Supabase mediante el Editor SQL y el inicio de sesión del usuario.
+
+## Resultado comprobado
+
+| Medida | Antes | Después |
+| --- | ---: | ---: |
+| JavaScript inicial, gzip | 175,87 kB | 59,26 kB |
+| CSS, gzip | 18,06 kB | 8,34 kB |
+| Archivo fuente más largo | 1.095 líneas | 273 líneas |
+
+El JavaScript inicial se redujo aproximadamente 66 %. Las vistas y los modales se cargan bajo demanda. Supabase se descarga como un módulo adicional de aproximadamente 96,68 kB gzip; por ello la cifra de 59,26 kB describe la entrada inicial, no el total descargado durante una sesión. El número de líneas no es una medida directa de velocidad.
+
+Se comprobaron `pnpm install --frozen-lockfile`, `pnpm typecheck`, `pnpm lint`, `pnpm test` y el build de Vite. Pasaron tres pruebas unitarias y cinco pruebas de integración con PGlite. Estas cubren mapeos, validación de stock, CSV, permisos básicos de RLS, rechazo de políticas desconocidas, atomicidad e idempotencia del despacho, movimientos, alta auditada e importación repetible. El test de idempotencia rechaza reutilizar una solicitud con otro contenido.
+
+`python scripts/prepare-import.py` cotejó 677 filas del Excel con 674 registros previamente codificados. Recuperó tres filas omitidas, conservó 25 cantidades decimales y marcó cinco cantidades `#VALUE!` con stock 0 pendiente, según la decisión del usuario. `node scripts/audit-import.mjs --sql` encontró 677 códigos únicos y cero errores. El esquema base ya no carga el artículo de prueba que usaba `EST001`. La importación completa se ensayó en PGlite antes de aplicarla a Supabase.
+
+Tras observar el proyecto remoto con 674 artículos anteriores, se ejecutó el reemplazo transaccional. El Editor SQL devolvió 677 artículos insertados de 677 preparados. Una consulta posterior confirmó 677 productos, cinco con stock pendiente y 25 con cantidad decimal. Se aplicó la migración de fotos privadas, se creó una cuenta Auth con rol `admin` y el usuario inició sesión en la aplicación, donde observó los 677 productos.
+
+Los 677 artículos conservan la ubicación descriptiva original en Supabase. Estanterías y cajas quedan nulas hasta conciliación. El Excel, los JSON completos y el SQL generado se retiraron del árbol de trabajo local. El código de la aplicación no incluye productos de ejemplo y consulta exclusivamente Supabase. Los tests usan datos sintéticos.
+
+## Cambios preparados
+
+La aplicación usa sesión de Supabase Auth, roles aplicados también en SQL, operaciones transaccionales de inventario y un bucket privado para fotos. El cliente conserva los IDs como cadenas, pagina historial y remisiones, usa caché por entidad y actualizaciones dirigidas, y separa las responsabilidades de las vistas grandes en componentes y módulos.
+
+Tras una escritura confirmada, la interfaz conserva el resultado aunque falle la lectura inmediata de actualización; los artículos devueltos por la base se aplican a la caché y la sincronización posterior puede reintentarse. Una falla de refresco ya no se presenta como una escritura fallida.
+
+## Verificaciones aún necesarias
+
+1. Probar escrituras de catálogo, fotos privadas, Realtime y dos despachos simultáneos desde conexiones distintas con usuarios de cada rol. PGlite no sustituye esa prueba de concurrencia real.
+2. Los archivos originales estuvieron versionados en commits anteriores. Se retiraron del árbol de trabajo y se reescribió el historial local de `main` para excluirlos. Falta publicar la nueva historia en GitHub y comprobar allí que los archivos ya no sean accesibles desde la rama principal.
+3. Conciliar las ubicaciones y confirmar los cinco stocks pendientes. Medir peticiones, latencia y renderizado con 677 y 5.000 artículos y 10.000 movimientos. El inventario aún se descarga completo al entrar y `InventoryContext` sigue publicando un valor agregado; para volúmenes mayores hay que pasar inventario y resúmenes a consultas paginadas o agregadas y separar los consumidores de estado visual.
+4. Verificar visualmente formularios, cámara, navegación móvil y remisiones impresas de 1, 20 y 100 renglones en un navegador. No se hizo esta comprobación porque se solicitó no usar control de computadora.
+5. Ejecutar el flujo de GitHub Actions en el repositorio remoto. El archivo CI existe, pero no hay un resultado remoto en esta sesión.
+
+La implementación local es revisable. Los puntos anteriores son límites explícitos de la verificación y pasos de puesta en marcha, no resultados comprobados.

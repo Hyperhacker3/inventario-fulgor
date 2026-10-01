@@ -1,24 +1,45 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useInventory } from '../context/InventoryContext';
-import { TipoMovimiento, HistorialMovimiento } from '../types';
+import { isDemo } from '../lib/supabase';
+import { readHistory, readRemisionById } from '../data/repository';
+import { exportHistory } from './history/exportHistory';
+import { HistoryTable } from './history/HistoryTable';
+import { errorMessage } from '../shared/errors';
 
 export const HistoryView: React.FC = () => {
   const {
     historial,
     remisiones,
+    proyectos,
     openPdfRemision,
-    elementos,
-    openItemDetail,
-    globalSearch
+    globalSearch,
+    user
   } = useInventory();
 
   // Filters State
   const [filterType, setFilterType] = useState<string>('TODOS');
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const [pageState, setPageState] = useState({ key: '', page: 1 });
+  const [remoteSearch, setRemoteSearch] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+  const [documentError, setDocumentError] = useState('');
+  const itemsPerPage = 25;
 
   const effectiveSearch = (globalSearch || searchQuery).toLowerCase().trim();
+  useEffect(() => {
+    const timer = setTimeout(() => setRemoteSearch(effectiveSearch), 250);
+    return () => clearTimeout(timer);
+  }, [effectiveSearch]);
+  const filterKey = `${filterType}|${isDemo ? effectiveSearch : remoteSearch}`;
+  const currentPage = pageState.key === filterKey ? pageState.page : 1;
+  const cloudPage = useQuery({
+    queryKey: ['fulgor', user.email, 'history-page', currentPage, filterType, remoteSearch],
+    queryFn: () => readHistory(currentPage, itemsPerPage, { type: filterType, search: remoteSearch }),
+    enabled: !isDemo,
+    staleTime: 30_000,
+  });
 
   // Filtered History
   const filteredHistory = useMemo(() => {
@@ -41,71 +62,27 @@ export const HistoryView: React.FC = () => {
   }, [historial, filterType, effectiveSearch]);
 
   // Paginated
-  const totalPages = Math.max(1, Math.ceil(filteredHistory.length / itemsPerPage));
-  const paginatedItems = filteredHistory.slice(
+  const totalResults = isDemo ? filteredHistory.length : cloudPage.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalResults / itemsPerPage));
+  const paginatedItems = isDemo ? filteredHistory.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
-  );
+  ) : cloudPage.data?.rows ?? [];
 
-  // Type badge helper
-  const renderTypeBadge = (tipo: TipoMovimiento) => {
-    switch (tipo) {
-      case 'SALIDA':
-        return (
-          <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-[#fce8e6] text-[#c5221f] border border-[#ffdad6] flex items-center gap-1 w-fit">
-            <span className="material-symbols-outlined text-[14px]">output</span>
-            <span>Salida</span>
-          </span>
-        );
-      case 'ENTRADA':
-        return (
-          <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-[#e6f4ea] text-[#137333] border border-[#ceead6] flex items-center gap-1 w-fit">
-            <span className="material-symbols-outlined text-[14px]">input</span>
-            <span>Entrada</span>
-          </span>
-        );
-      case 'AJUSTE':
-        return (
-          <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-[#fef7e0] text-[#755b00] border border-[#ffdf90] flex items-center gap-1 w-fit">
-            <span className="material-symbols-outlined text-[14px]">tune</span>
-            <span>Ajuste</span>
-          </span>
-        );
-      case 'REUBICACION':
-        return (
-          <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-[#eaedff] text-[#253685] border border-[#cbd5e1] flex items-center gap-1 w-fit">
-            <span className="material-symbols-outlined text-[14px]">swap_horiz</span>
-            <span>Reubicación</span>
-          </span>
-        );
-    }
+  const handleExportCSV = async () => {
+    setExportError(''); setExporting(true);
+    try { await exportHistory(filteredHistory, proyectos, filterType, remoteSearch); }
+    catch (error) { setExportError(errorMessage(error)); }
+    finally { setExporting(false); }
   };
-
-  const handleExportCSV = () => {
-    const headers = ['ID', 'Tipo', 'Fecha', 'Hora', 'SKU', 'Componente', 'Proyecto', 'Cantidad', 'Unidad', 'Stock Nuevo', 'Responsable', 'Motivo'];
-    const rows = filteredHistory.map((h) => [
-      h.id,
-      h.tipo,
-      h.fecha,
-      h.hora,
-      h.itemCode,
-      `"${h.itemName.replace(/"/g, '""')}"`,
-      `"${(h.proyectoNombre || '').replace(/"/g, '""')}"`,
-      h.cantidad,
-      h.unidad,
-      h.stockNuevo,
-      `"${h.responsable.replace(/"/g, '""')}"`,
-      `"${h.motivo.replace(/"/g, '""')}"`
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `historial_fulgor_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const openDocument = async (id: string) => {
+    setDocumentError('');
+    try {
+      const cached = remisiones.find(remission => remission.id === id);
+      if (cached) openPdfRemision(cached);
+      else if (!isDemo) openPdfRemision(await readRemisionById(id));
+      else throw new Error('No se encontró la remisión en los datos locales.');
+    } catch (error) { setDocumentError(errorMessage(error)); }
   };
 
   return (
@@ -129,7 +106,7 @@ export const HistoryView: React.FC = () => {
           <div>
             <span className="text-[11px] text-[#767682] block leading-tight">Total Registros</span>
             <span className="font-bold text-xs sm:text-sm text-[#131b2e]">
-              {historial.length} movimientos
+              {totalResults} movimientos
             </span>
           </div>
         </div>
@@ -149,7 +126,6 @@ export const HistoryView: React.FC = () => {
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                setCurrentPage(1);
               }}
               placeholder="Buscar por SKU, Proyecto..."
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-[#e2e8f0] text-xs sm:text-sm focus:ring-2 focus:ring-[#3e4e9e]"
@@ -163,7 +139,6 @@ export const HistoryView: React.FC = () => {
                 value={filterType}
                 onChange={(e) => {
                   setFilterType(e.target.value);
-                  setCurrentPage(1);
                 }}
                 className="w-full appearance-none rounded-lg border border-[#e2e8f0] bg-white text-xs sm:text-sm py-2 pl-2.5 pr-7 focus:ring-2 focus:ring-[#3e4e9e] cursor-pointer truncate"
               >
@@ -181,6 +156,7 @@ export const HistoryView: React.FC = () => {
             {/* Export button on mobile grid / desktop */}
             <button
               onClick={handleExportCSV}
+              disabled={exporting}
               className="flex sm:hidden items-center justify-center gap-1.5 px-3 py-2 bg-white border border-[#e2e8f0] hover:bg-[#f8fafc] text-[#131b2e] rounded-lg text-xs font-semibold transition-colors shadow-2xs"
             >
               <span className="material-symbols-outlined text-[16px] text-[#3e4e9e]">download</span>
@@ -192,6 +168,7 @@ export const HistoryView: React.FC = () => {
         {/* Action Button for larger screens */}
         <button
           onClick={handleExportCSV}
+          disabled={exporting}
           className="hidden sm:flex items-center justify-center gap-2 px-4 py-2 bg-white border border-[#e2e8f0] hover:bg-[#f8fafc] text-[#131b2e] rounded-lg text-sm font-semibold transition-colors shadow-2xs shrink-0"
         >
           <span className="material-symbols-outlined text-[18px] text-[#3e4e9e]">download</span>
@@ -200,128 +177,18 @@ export const HistoryView: React.FC = () => {
       </div>
 
       {/* Data Table */}
-      <div className="bg-white border border-[#e2e8f0] rounded-2xl overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-sm">
-            <thead>
-              <tr className="bg-[#f8fafc] border-b border-[#e2e8f0] text-xs font-bold text-[#454651] uppercase tracking-wider">
-                <th className="p-3.5">Tipo</th>
-                <th className="p-3.5">Fecha & Hora</th>
-                <th className="p-3.5">Código SKU</th>
-                <th className="p-3.5">Componente</th>
-                <th className="p-3.5">Proyecto / Destino</th>
-                <th className="p-3.5 text-right">Cantidad</th>
-                <th className="p-3.5 text-right">Stock Final</th>
-                <th className="p-3.5">Responsable</th>
-                <th className="p-3.5 text-center">Documento</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#e2e8f0]">
-              {paginatedItems.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="p-8 text-center text-sm text-[#767682]">
-                    No se encontraron movimientos registrados con los filtros aplicados.
-                  </td>
-                </tr>
-              ) : (
-                paginatedItems.map((item) => {
-                  const matchingRemision = remisiones.find((r) => r.id === item.remisionId);
-                  const matchingElemento = elementos.find((e) => e.id === item.elementoId);
-
-                  return (
-                    <tr key={item.id} className="hover:bg-[#f8fafc] transition-colors">
-                      <td className="p-3.5 whitespace-nowrap">{renderTypeBadge(item.tipo)}</td>
-                      <td className="p-3.5 whitespace-nowrap text-xs text-[#454651]">
-                        <div className="font-semibold text-[#131b2e]">{item.fecha}</div>
-                        <div className="text-[11px] text-[#767682]">{item.hora}</div>
-                      </td>
-                      <td className="p-3.5 whitespace-nowrap">
-                        <span
-                          onClick={() => matchingElemento && openItemDetail(matchingElemento)}
-                          className="font-mono-code font-bold text-xs text-[#3e4e9e] bg-[#eaedff] px-2 py-0.5 rounded cursor-pointer hover:underline"
-                        >
-                          {item.itemCode}
-                        </span>
-                      </td>
-                      <td className="p-3.5 max-w-xs">
-                        <p className="font-semibold text-xs text-[#131b2e] leading-snug truncate" title={item.itemName}>
-                          {item.itemName}
-                        </p>
-                        <p className="text-[11px] text-[#767682] truncate">{item.motivo}</p>
-                      </td>
-                      <td className="p-3.5 text-xs text-[#454651] max-w-[180px]">
-                        <span className="font-medium text-[#131b2e] truncate block">
-                          {item.proyectoNombre || 'Bodega Central'}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-right font-mono-code font-bold whitespace-nowrap">
-                        <span
-                          className={
-                            item.tipo === 'SALIDA'
-                              ? 'text-[#c5221f]'
-                              : item.tipo === 'ENTRADA'
-                              ? 'text-[#137333]'
-                              : 'text-[#755b00]'
-                          }
-                        >
-                          {item.tipo === 'SALIDA' ? '-' : '+'}
-                          {Math.abs(item.cantidad)} {item.unidad}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-right font-mono-code text-xs text-[#454651] whitespace-nowrap">
-                        {item.stockNuevo} {item.unidad}
-                      </td>
-                      <td className="p-3.5 text-xs text-[#454651] whitespace-nowrap">
-                        {item.responsable}
-                      </td>
-                      <td className="p-3.5 text-center whitespace-nowrap">
-                        {matchingRemision ? (
-                          <button
-                            onClick={() => openPdfRemision(matchingRemision)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#eaedff] text-[#253685] hover:bg-[#3e4e9e] hover:text-white rounded-md text-xs font-semibold transition-all shadow-2xs"
-                            title={`Ver Remisión ${matchingRemision.numeroRemision}`}
-                          >
-                            <span className="material-symbols-outlined text-[14px]">picture_as_pdf</span>
-                            <span>PDF</span>
-                          </button>
-                        ) : (
-                          <span className="text-xs text-[#cbd5e1]">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination Footer */}
-        <div className="p-4 border-t border-[#e2e8f0] bg-[#f8fafc] flex flex-col sm:flex-row justify-between items-center gap-3">
-          <span className="text-xs text-[#454651]">
-            Mostrando {paginatedItems.length} de {filteredHistory.length} movimientos
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 rounded-lg border border-[#e2e8f0] bg-white text-xs font-semibold text-[#454651] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f2f3ff]"
-            >
-              Anterior
-            </button>
-            <span className="text-xs font-mono-code font-bold px-2 text-[#131b2e]">
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1.5 rounded-lg border border-[#e2e8f0] bg-white text-xs font-semibold text-[#454651] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#f2f3ff]"
-            >
-              Siguiente
-            </button>
-          </div>
-        </div>
-      </div>
+      {exportError && <p role="alert" className="text-sm text-red-700 mb-2">{exportError}</p>}
+      {documentError && <p role="alert" className="text-sm text-red-700 mb-2">{documentError}</p>}
+      {cloudPage.isError && <p role="alert" className="text-sm text-red-700 mb-2">No se pudo cargar el historial: {errorMessage(cloudPage.error)}</p>}
+      <HistoryTable
+        rows={paginatedItems}
+        total={totalResults}
+        page={currentPage}
+        pages={totalPages}
+        loading={cloudPage.isPending && !isDemo}
+        onPage={next => setPageState({ key: filterKey, page: next })}
+        onDocument={id => { void openDocument(id); }}
+      />
     </div>
   );
 };

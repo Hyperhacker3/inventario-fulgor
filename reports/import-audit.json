@@ -1,0 +1,36 @@
+{
+  "total": 677,
+  "uniqueCodes": 677,
+  "categories": {
+    "CONTROLADORES": 10,
+    "INVERSORES": 14,
+    "PROTECCIONES": 25,
+    "CONECTORES": 52,
+    "ACCESORIOS": 321,
+    "HERRAMIENTAS": 29,
+    "PANELES": 18,
+    "ESTRUCTURAS": 131,
+    "CABLES": 48,
+    "BATERIAS": 13,
+    "SEGURIDAD_EPP": 16
+  },
+  "units": {
+    "UND": 639,
+    "KL": 26,
+    "KG": 4,
+    "CAJA": 5,
+    "COSTALES": 1,
+    "JUEGO": 1,
+    "PARES": 1
+  },
+  "warehouses": {
+    "ALM-CAL-03": 478,
+    "ALM-BOG-01": 140,
+    "ALM-MED-02": 59
+  },
+  "decimalStockCount": 25,
+  "pendingStockCount": 5,
+  "pendingLocationCount": 677,
+  "seedConflicts": [],
+  "errors": []
+}

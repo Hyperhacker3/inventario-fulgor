@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import confetti from 'canvas-confetti';
+import React, { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
-import { Elemento, CategoriaElemento } from '../types';
+import { errorMessage } from '../shared/errors';
+import { available } from '../domain/inventory';
+import { AvailableInventory } from './dispatch/AvailableInventory';
 
 export const DispatchView: React.FC = () => {
   const {
@@ -9,54 +10,30 @@ export const DispatchView: React.FC = () => {
     proyectos,
     user,
     dispatchCart,
-    addToDispatchCart,
     updateDispatchCartQuantity,
     removeFromDispatchCart,
     clearDispatchCart,
-    processDispatch,
-    getLocationString
+    processDispatch
   } = useInventory();
 
-  // Search & category for left inventory list
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCat, setSelectedCat] = useState<string>('TODOS');
-
   // Dispatch form state
-  const [selectedProyectoId, setSelectedProyectoId] = useState<number>(proyectos[0]?.id || 1);
+  const [selectedProyectoId, setSelectedProyectoId] = useState<string>(proyectos[0]?.id || '');
   const [entregadoPor, setEntregadoPor] = useState(user.name);
   const [cargoEntregado, setCargoEntregado] = useState(user.role);
-  const [recibidoPor, setRecibidoPor] = useState('Ing. Marta López');
-  const [cargoRecibido, setCargoRecibido] = useState('Coordinadora de Obra');
+  const [recibidoPor, setRecibidoPor] = useState('');
+  const [cargoRecibido, setCargoRecibido] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [pending, setPending] = useState(false);
+  const [requestId, setRequestId] = useState(() => crypto.randomUUID());
 
-  const selectedProyecto = proyectos.find((p) => p.id === Number(selectedProyectoId));
-
-  // Available items for selection
-  const filteredAvailable = useMemo(() => {
-    return elementos.filter((item) => {
-      if (item.cantidad <= 0) return false; // only items with stock
-
-      if (searchTerm) {
-        const q = searchTerm.toLowerCase();
-        const matchCode = item.codigo.toLowerCase().includes(q);
-        const matchName = item.nombre.toLowerCase().includes(q);
-        const matchLoc = getLocationString(item).toLowerCase().includes(q);
-        if (!matchCode && !matchName && !matchLoc) return false;
-      }
-
-      if (selectedCat !== 'TODOS' && item.categoria !== selectedCat) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [elementos, searchTerm, selectedCat, getLocationString]);
+  const effectiveProjectId = selectedProyectoId || proyectos[0]?.id || '';
+  const selectedProyecto = proyectos.find((p) => p.id === effectiveProjectId);
 
   // Total units in cart
   const totalUnits = dispatchCart.reduce((sum, item) => sum + item.cantidad, 0);
 
-  const handleDispatch = (e: React.FormEvent) => {
+  const handleDispatch = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -65,7 +42,7 @@ export const DispatchView: React.FC = () => {
       return;
     }
 
-    if (!selectedProyectoId) {
+    if (!effectiveProjectId) {
       setErrorMsg('Debe seleccionar el proyecto de destino.');
       return;
     }
@@ -78,30 +55,24 @@ export const DispatchView: React.FC = () => {
     // Check if any cart item exceeds stock
     for (const item of dispatchCart) {
       const live = elementos.find((el) => el.id === item.elemento.id);
-      if (!live || live.cantidad < item.cantidad) {
-        setErrorMsg(`Stock insuficiente para ${item.elemento.nombre}. Disponible: ${live?.cantidad || 0}`);
+      if (!live || available(live) < item.cantidad) {
+        setErrorMsg(`Stock insuficiente para ${item.elemento.nombre}. Disponible: ${live ? available(live) : 0}`);
         return;
       }
     }
 
-    const createdRemision = processDispatch({
-      proyectoId: Number(selectedProyectoId),
-      entregadoPor,
-      cargoEntregado,
-      recibidoPor,
-      cargoRecibido,
-      observaciones
-    });
-
-    if (createdRemision) {
-      // Trigger confetti celebration
-      try {
-        confetti({
-          particleCount: 80,
-          spread: 60,
-          origin: { y: 0.6 }
-        });
-      } catch {}
+    setPending(true);
+    try {
+      await processDispatch({ proyectoId: effectiveProjectId, entregadoPor, cargoEntregado,
+        recibidoPor, cargoRecibido, observaciones, requestId });
+      setRequestId(crypto.randomUUID());
+      void import('canvas-confetti').then(({ default: confetti }) => {
+        confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+      }).catch(() => {});
+    } catch (error) {
+      setErrorMsg(errorMessage(error));
+    } finally {
+      setPending(false);
     }
   };
 
@@ -117,136 +88,7 @@ export const DispatchView: React.FC = () => {
 
       {/* Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Inventario Disponible (7 cols) */}
-        <section className="lg:col-span-7 flex flex-col gap-4">
-          <div className="bg-white border border-[#e2e8f0] rounded-2xl p-5 shadow-xs flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-lg text-[#131b2e]">Inventario Disponible</h3>
-              <span className="text-xs text-[#767682]">
-                {filteredAvailable.length} artículos en stock
-              </span>
-            </div>
-
-            {/* Search */}
-            <div className="relative w-full">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#767682] text-[18px]">
-                search
-              </span>
-              <input
-                id="dispatch-search-available"
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar componente por código o nombre..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[#e2e8f0] text-sm focus:ring-2 focus:ring-[#3e4e9e]"
-              />
-            </div>
-
-            {/* Category Filter Chips */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              {[
-                { id: 'TODOS', label: 'Todos' },
-                { id: 'PANELES', label: 'Paneles' },
-                { id: 'INVERSORES', label: 'Inversores' },
-                { id: 'ESTRUCTURAS', label: 'Estructuras' },
-                { id: 'CABLES', label: 'Cableado' },
-                { id: 'CONECTORES', label: 'Conectores' },
-                { id: 'PROTECCIONES', label: 'Protecciones' },
-                { id: 'BATERIAS', label: 'Baterías' },
-                { id: 'OTROS', label: 'Otros' }
-              ].map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCat(cat.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                    selectedCat === cat.id
-                      ? 'bg-[#3e4e9e] text-white shadow-2xs'
-                      : 'bg-[#f8fafc] border border-[#e2e8f0] text-[#454651] hover:bg-[#f2f3ff]'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Available Items List */}
-            <div className="flex flex-col gap-3 max-h-[560px] overflow-y-auto pr-1">
-              {filteredAvailable.length === 0 ? (
-                <div className="p-8 text-center text-[#767682] text-sm">
-                  No hay componentes disponibles con los criterios seleccionados.
-                </div>
-              ) : (
-                filteredAvailable.map((item) => {
-                  const inCart = dispatchCart.find((c) => c.elemento.id === item.id);
-                  const isLow = item.cantidad <= item.stockMinimo;
-
-                  return (
-                    <div
-                      key={item.id}
-                      className="bg-white border border-[#e2e8f0] rounded-xl p-3.5 flex items-center justify-between gap-4 hover:border-[#cbd5e1] hover:shadow-2xs transition-all"
-                    >
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        {item.fotoUrl ? (
-                          <img
-                            src={item.fotoUrl}
-                            alt={item.nombre}
-                            className="w-14 h-14 rounded-lg object-cover border border-[#e2e8f0] shrink-0"
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <div className="w-14 h-14 rounded-lg bg-[#f8fafc] border border-[#e2e8f0] flex flex-col items-center justify-center shrink-0 text-[#94a3b8]">
-                            <span className="material-symbols-outlined text-[24px] text-[#cbd5e1]">inventory_2</span>
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <h4 className="font-bold text-sm text-[#131b2e] leading-snug truncate" title={item.nombre}>
-                            {item.nombre}
-                          </h4>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="font-mono-code text-[11px] font-bold text-[#3e4e9e] bg-[#eaedff] px-1.5 py-0.5 rounded">
-                              {item.codigo}
-                            </span>
-                            <span className="text-xs text-[#767682] truncate">
-                              {getLocationString(item)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-right">
-                          <span className="text-[10px] uppercase font-bold text-[#767682] block">Disponible</span>
-                          <span
-                            className={`font-mono-code text-sm font-bold ${
-                              isLow ? 'text-[#b06000]' : 'text-[#10b981]'
-                            }`}
-                          >
-                            {item.cantidad} {item.unidad}
-                          </span>
-                        </div>
-
-                        <button
-                          id={`btn-add-cart-${item.codigo}`}
-                          onClick={() => addToDispatchCart(item, 1)}
-                          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
-                            inCart
-                              ? 'bg-[#eaedff] text-[#253685] ring-1 ring-[#3e4e9e]'
-                              : 'bg-[#3e4e9e] text-white hover:bg-[#323f80] active:scale-95 shadow-2xs'
-                          }`}
-                          title="Agregar al despacho"
-                        >
-                          <span className="material-symbols-outlined text-[20px]">
-                            {inCart ? 'done' : 'add'}
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </section>
+        <AvailableInventory />
 
         {/* Right Column: Formulario de Despacho & Carrito (5 cols) */}
         <section className="lg:col-span-5 flex flex-col gap-4">
@@ -284,8 +126,8 @@ export const DispatchView: React.FC = () => {
               </label>
               <select
                 id="select-dispatch-project"
-                value={selectedProyectoId}
-                onChange={(e) => setSelectedProyectoId(Number(e.target.value))}
+                value={effectiveProjectId}
+                onChange={(e) => setSelectedProyectoId(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-lg border border-[#e2e8f0] text-sm bg-white focus:ring-2 focus:ring-[#3e4e9e] text-[#131b2e] cursor-pointer"
                 required
               >
@@ -331,6 +173,15 @@ export const DispatchView: React.FC = () => {
                   required
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label className="text-xs font-bold text-[#454651]">CARGO DE QUIEN ENTREGA
+                <input value={cargoEntregado} onChange={event => setCargoEntregado(event.target.value)} className="block w-full mt-1 px-3 py-2 border rounded-lg text-xs" />
+              </label>
+              <label className="text-xs font-bold text-[#454651]">CARGO DE QUIEN RECIBE
+                <input value={cargoRecibido} onChange={event => setCargoRecibido(event.target.value)} className="block w-full mt-1 px-3 py-2 border rounded-lg text-xs" />
+              </label>
             </div>
 
             {/* Observaciones */}
@@ -389,11 +240,12 @@ export const DispatchView: React.FC = () => {
                         </button>
                         <input
                           type="number"
-                          min="1"
-                          max={item.elemento.cantidad}
+                          min="0.001"
+                          step="0.001"
+                          max={available(item.elemento)}
                           value={item.cantidad}
                           onChange={(e) =>
-                            updateDispatchCartQuantity(item.elemento.id, parseInt(e.target.value) || 1)
+                            updateDispatchCartQuantity(item.elemento.id, Number(e.target.value) || 0.001)
                           }
                           className="w-10 text-center font-mono-code font-bold text-xs bg-transparent focus:outline-hidden"
                         />
@@ -429,7 +281,7 @@ export const DispatchView: React.FC = () => {
             <button
               type="submit"
               id="btn-process-dispatch"
-              disabled={dispatchCart.length === 0}
+              disabled={dispatchCart.length === 0 || pending}
               className={`w-full py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all shadow-sm ${
                 dispatchCart.length > 0
                   ? 'bg-[#dd4c42] hover:bg-[#b12c26] active:scale-[0.98]'

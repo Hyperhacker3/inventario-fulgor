@@ -1,7 +1,10 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { CategoriaElemento } from '../types';
-import { CameraCaptureModal } from './CameraCaptureModal';
+import { ItemPhotoPicker } from './ItemPhotoPicker';
+import { ItemLocationFields } from './item/ItemLocationFields';
+import { ItemStockFields } from './item/ItemStockFields';
+import { errorMessage } from '../shared/errors';
 
 export const NewItemView: React.FC = () => {
   const {
@@ -18,102 +21,39 @@ export const NewItemView: React.FC = () => {
   const [nombre, setNombre] = useState('');
   const [categoria, setCategoria] = useState<CategoriaElemento>('PANELES');
   const [descripcion, setDescripcion] = useState('');
-  const [almacenId, setAlmacenId] = useState<number>(almacenes[0]?.id || 1);
-  const [estanteriaId, setEstanteriaId] = useState<number>(1);
-  const [cajaId, setCajaId] = useState<number>(1);
-  const [cantidad, setCantidad] = useState<number>(100);
-  const [unidad, setUnidad] = useState<'und' | 'rll' | 'mts' | 'kg' | 'par' | 'jgo'>('und');
-  const [stockMinimo, setStockMinimo] = useState<number>(20);
+  const [almacenId, setAlmacenId] = useState<string>(almacenes[0]?.id || '');
+  const [estanteriaId, setEstanteriaId] = useState<string>('');
+  const [cajaId, setCajaId] = useState<string>('');
+  const [cantidad, setCantidad] = useState<number>(0);
+  const [unidad, setUnidad] = useState<string>('UND');
+  const [stockMinimo, setStockMinimo] = useState<number>(0);
   const [estado, setEstado] = useState<string>('BUENO');
   const [cantidadDanados, setCantidadDanados] = useState<number>(0);
-  const [fotoUrl, setFotoUrl] = useState<string>(
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuDyg0C5mSCaSnpfqADkOQUpqlsZnFLdbYeD_eM9AWUtdXH4KFuslC3MZZo-QfPqemt6fffRhKHT7bR_lRU70wgkxynsJgDRAzWeEmcyEc-k5frMTpGggZ69t-GQbCy5RKfvY1dqnJVEhgk2GgoG3TZZfIk1h8HOU1WaBL8dgyXpGBsVt3OaWmp3Cxv2R_AoBgnwS_iScvivRH_zbK2Fik6iddOWHoAqGNV_l2Sy3b6jyxLCLzoFQQCj'
-  );
-  const [fotoMode, setFotoMode] = useState<'camera' | 'presets' | 'url'>('presets');
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [fotoUrl, setFotoUrl] = useState<string>('');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [pending, setPending] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const selectedAlmacenId = almacenId || almacenes[0]?.id || '';
 
   // Cascading Estanterias
   const availableEstanterias = useMemo(() => {
-    return estanterias.filter((e) => e.almacenId === Number(almacenId));
-  }, [estanterias, almacenId]);
-
-  // Keep valid estanteriaId
-  React.useEffect(() => {
-    if (availableEstanterias.length > 0) {
-      const exists = availableEstanterias.some((e) => e.id === estanteriaId);
-      if (!exists) {
-        setEstanteriaId(availableEstanterias[0].id);
-      }
-    }
-  }, [availableEstanterias, estanteriaId]);
+    return estanterias.filter((e) => e.almacenId === selectedAlmacenId);
+  }, [estanterias, selectedAlmacenId]);
+  const selectedEstanteriaId = availableEstanterias.some(e => e.id === estanteriaId) ? estanteriaId : '';
 
   // Cascading Cajas
   const availableCajas = useMemo(() => {
-    return cajas.filter((c) => c.estanteriaId === Number(estanteriaId));
-  }, [cajas, estanteriaId]);
-
-  // Keep valid cajaId
-  React.useEffect(() => {
-    if (availableCajas.length > 0) {
-      const exists = availableCajas.some((c) => c.id === cajaId);
-      if (!exists) {
-        setCajaId(availableCajas[0].id);
-      }
-    }
-  }, [availableCajas, cajaId]);
+    return cajas.filter((c) => c.estanteriaId === selectedEstanteriaId);
+  }, [cajas, selectedEstanteriaId]);
+  const selectedCajaId = availableCajas.some(c => c.id === cajaId) ? cajaId : '';
 
   // Code validation: Alphanumeric standard e.g. PAN550, MC4100, CAB600
   const isCodeValid = useMemo(() => {
-    const regex = /^[A-Z0-9-]{3,10}$/;
+    const regex = /^[A-Z0-9-]{3,30}$/;
     return regex.test(codigo.trim().toUpperCase());
   }, [codigo]);
 
-  // Preset photos
-  const presetPhotos = [
-    {
-      label: 'Panel Solar Monocristalino',
-      url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDyg0C5mSCaSnpfqADkOQUpqlsZnFLdbYeD_eM9AWUtdXH4KFuslC3MZZo-QfPqemt6fffRhKHT7bR_lRU70wgkxynsJgDRAzWeEmcyEc-k5frMTpGggZ69t-GQbCy5RKfvY1dqnJVEhgk2GgoG3TZZfIk1h8HOU1WaBL8dgyXpGBsVt3OaWmp3Cxv2R_AoBgnwS_iScvivRH_zbK2Fik6iddOWHoAqGNV_l2Sy3b6jyxLCLzoFQQCj'
-    },
-    {
-      label: 'Inversor String Trifásico',
-      url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCHXz4P4hQG_40YI6U3q3wI-6i_V503D1-gE_V0-g-E6i_V503D1-gE_V0-g-E6i_V503D1-gE_V0-g-E6i_V503D1-gE_V0-g'
-    },
-    {
-      label: 'Cable Solar Fotovoltaico Rojo 6mm²',
-      url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB_gVw_i_V503D1-gE_V0-g-E6i_V503D1-gE_V0-g-E6i_V503D1-gE_V0-g-E6i_V503D1-gE_V0-g-E6i_V503D1-g'
-    },
-    {
-      label: 'Conector MC4 Macho / Hembra',
-      url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA0j_k9l8m7n6o5p4q3r2s1t0u9v8w7x6y5z4a3b2c1d0e9f8g7h6i5j4k3l2m1n0o9p8q7r6s5t4u3v2w1x0y9z8'
-    },
-    {
-      label: 'Fusible DC 1000V 15A',
-      url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD8e7f6g5h4i3j2k1l0m9n8o7p6q5r4s3t2u1v0w9x8y7z6a5b4c3d2e1f0g9h8i7j6k5l4m3n2o1p0q9r8s7t6'
-    },
-    {
-      label: 'Batería Litio LiFePO4 48V',
-      url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1'
-    }
-  ];
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      if (dataUrl) {
-        setFotoUrl(dataUrl);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedback(null);
 
@@ -131,20 +71,21 @@ export const NewItemView: React.FC = () => {
     }
 
     try {
-      const created = addElemento({
+      setPending(true);
+      const created = await addElemento({
         codigo: codigo.trim().toUpperCase(),
         nombre: nombre.trim(),
-        descripcion: descripcion.trim() || 'Componente solar fotovoltaico para proyectos FULGOR S.A.S.',
+        descripcion: descripcion.trim(),
         categoria,
-        cantidad: Number(cantidad) || 0,
+        cantidad: Number(cantidad),
         unidad,
         fotoUrl: fotoUrl.trim(),
-        almacenId: Number(almacenId),
-        estanteriaId: Number(estanteriaId),
-        cajaId: Number(cajaId),
-        stockMinimo: Number(stockMinimo) || 10,
+        almacenId: selectedAlmacenId || null,
+        estanteriaId: selectedEstanteriaId || null,
+        cajaId: selectedCajaId || null,
+        stockMinimo: Number(stockMinimo),
         estado,
-        cantidadDanados: Math.max(0, Number(cantidadDanados) || 0)
+        cantidadDanados: Number(cantidadDanados)
       });
 
       setFeedback({
@@ -156,8 +97,10 @@ export const NewItemView: React.FC = () => {
         openItemDetail(created);
         setActiveView('dashboard');
       }, 1200);
-    } catch {
-      setFeedback({ type: 'error', message: 'Error al registrar el componente en el sistema.' });
+    } catch (error) {
+      setFeedback({ type: 'error', message: errorMessage(error) });
+    } finally {
+      setPending(false);
     }
   };
 
@@ -307,255 +250,20 @@ export const NewItemView: React.FC = () => {
               type="number"
               min="0"
               value={cantidadDanados}
-              onChange={(e) => setCantidadDanados(Math.max(0, parseInt(e.target.value, 10) || 0))}
+              onChange={(e) => setCantidadDanados(Number(e.target.value))}
               placeholder="0 unidades dañadas"
               className="w-full px-3.5 py-2 rounded-lg border border-[#e2e8f0] bg-white text-xs font-mono-code font-bold text-[#131b2e]"
             />
           </div>
         </div>
 
-        {/* Row 3: Cascading Location (Almacén -> Estantería -> Caja) */}
-        <div className="p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl">
-          <h3 className="text-xs font-bold tracking-wider text-[#253685] uppercase mb-3 flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-[18px]">warehouse</span>
-            <span>Ubicación en Almacén (Cascada)</span>
-          </h3>
+        <ItemLocationFields warehouseId={selectedAlmacenId} rackId={selectedEstanteriaId} boxId={selectedCajaId}
+          onWarehouse={setAlmacenId} onRack={setEstanteriaId} onBox={setCajaId} />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-[#454651] mb-1.5">Almacén / Centro</label>
-              <select
-                id="select-almacen-form"
-                value={almacenId}
-                onChange={(e) => setAlmacenId(Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] bg-white text-xs text-[#131b2e] cursor-pointer"
-              >
-                {almacenes.map((alm) => (
-                  <option key={alm.id} value={alm.id}>
-                    {alm.nombre} ({alm.codigo})
-                  </option>
-                ))}
-              </select>
-            </div>
+        <ItemPhotoPicker value={fotoUrl} onChange={setFotoUrl} />
 
-            <div>
-              <label className="block text-xs font-semibold text-[#454651] mb-1.5">Estantería / Zona</label>
-              <select
-                id="select-estanteria-form"
-                value={estanteriaId}
-                onChange={(e) => setEstanteriaId(Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] bg-white text-xs text-[#131b2e] cursor-pointer"
-              >
-                {availableEstanterias.length > 0 ? (
-                  availableEstanterias.map((est) => (
-                    <option key={est.id} value={est.id}>
-                      {est.codigo} - {est.nombre}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">Sin estanterías</option>
-                )}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-[#454651] mb-1.5">Nivel / Caja</label>
-              <select
-                id="select-caja-form"
-                value={cajaId}
-                onChange={(e) => setCajaId(Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] bg-white text-xs text-[#131b2e] cursor-pointer"
-              >
-                {availableCajas.length > 0 ? (
-                  availableCajas.map((caj) => (
-                    <option key={caj.id} value={caj.id}>
-                      {caj.codigoCaja} ({caj.estado})
-                    </option>
-                  ))
-                ) : (
-                  <option value="">Sin cajas</option>
-                )}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Row 4: Photo Selection with Camera option */}
-        <div className="p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
-            <label className="text-xs font-bold tracking-wider text-[#454651] uppercase">
-              FOTOGRAFÍA DEL COMPONENTE
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                onClick={() => setIsCameraOpen(true)}
-                className="text-xs px-2.5 py-1 bg-[#3e4e9e] text-white font-bold rounded-md flex items-center gap-1 shadow-2xs hover:bg-[#323f80] transition-colors"
-              >
-                <span className="material-symbols-outlined text-[15px]">photo_camera</span>
-                <span>Tomar con Cámara</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-xs px-2.5 py-1 bg-white border border-[#cbd5e1] text-[#454651] font-semibold rounded-md flex items-center gap-1 hover:bg-[#eaedff] transition-colors"
-              >
-                <span className="material-symbols-outlined text-[15px]">upload_file</span>
-                <span>Subir Archivo</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFotoMode('presets')}
-                className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
-                  fotoMode === 'presets' ? 'bg-[#eaedff] text-[#253685] font-bold border border-[#c7d2fe]' : 'text-[#454651] hover:bg-[#f2f3ff]'
-                }`}
-              >
-                Galería Solar
-              </button>
-              <button
-                type="button"
-                onClick={() => setFotoMode('url')}
-                className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
-                  fotoMode === 'url' ? 'bg-[#eaedff] text-[#253685] font-bold border border-[#c7d2fe]' : 'text-[#454651] hover:bg-[#f2f3ff]'
-                }`}
-              >
-                URL
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
-            {/* Preview Box */}
-            <div className="w-32 h-28 rounded-xl border border-[#e2e8f0] overflow-hidden bg-[#f2f3ff] shrink-0 relative shadow-2xs flex items-center justify-center">
-              {fotoUrl ? (
-                <img src={fotoUrl} alt="Vista previa" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-[#94a3b8] bg-[#f8fafc]">
-                  <span className="material-symbols-outlined text-[28px] text-[#cbd5e1]">image</span>
-                  <span className="text-[10px] text-[#64748b] mt-0.5">Sin imagen</span>
-                </div>
-              )}
-            </div>
-
-            {/* Selector */}
-            {fotoMode === 'presets' ? (
-              <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-2 w-full">
-                {presetPhotos.map((preset) => (
-                  <button
-                    key={preset.label}
-                    type="button"
-                    onClick={() => setFotoUrl(preset.url)}
-                    className={`p-2 rounded-lg border text-left text-xs transition-all flex items-center gap-2 ${
-                      fotoUrl === preset.url
-                        ? 'border-[#3e4e9e] bg-[#eaedff] font-bold text-[#253685]'
-                        : 'border-[#e2e8f0] bg-white text-[#454651] hover:bg-[#f8fafc]'
-                    }`}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-[#3e4e9e] shrink-0"></span>
-                    <span className="truncate">{preset.label}</span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="flex-1 w-full">
-                <input
-                  type="url"
-                  value={fotoUrl}
-                  onChange={(e) => setFotoUrl(e.target.value)}
-                  placeholder="https://ejemplo.com/foto-panel.jpg"
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-[#e2e8f0] text-sm focus:ring-2 focus:ring-[#3e4e9e]"
-                />
-              </div>
-            )}
-          </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileUpload}
-          />
-        </div>
-
-        {/* Row 5: Stock Counter and Minimum */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 border-t border-[#e2e8f0]">
-          <div>
-            <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-2">
-              STOCK INICIAL <span className="text-[#dd4c42]">*</span>
-            </label>
-            <div className="flex items-center border border-[#e2e8f0] rounded-lg overflow-hidden bg-white shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setCantidad((prev) => Math.max(0, prev - 10))}
-                className="px-3 py-2 bg-[#f8fafc] text-[#454651] hover:bg-[#eaedff] font-bold transition-colors"
-              >
-                -10
-              </button>
-              <button
-                type="button"
-                onClick={() => setCantidad((prev) => Math.max(0, prev - 1))}
-                className="px-3 py-2 bg-[#f8fafc] text-[#454651] hover:bg-[#eaedff] font-bold transition-colors border-l border-r border-[#e2e8f0]"
-              >
-                -1
-              </button>
-              <input
-                id="input-stock-inicial"
-                type="number"
-                min="0"
-                value={cantidad}
-                onChange={(e) => setCantidad(Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-full text-center font-mono-code font-bold text-base py-2 focus:outline-hidden"
-              />
-              <button
-                type="button"
-                onClick={() => setCantidad((prev) => prev + 1)}
-                className="px-3 py-2 bg-[#f8fafc] text-[#454651] hover:bg-[#eaedff] font-bold transition-colors border-l border-r border-[#e2e8f0]"
-              >
-                +1
-              </button>
-              <button
-                type="button"
-                onClick={() => setCantidad((prev) => prev + 10)}
-                className="px-3 py-2 bg-[#f8fafc] text-[#454651] hover:bg-[#eaedff] font-bold transition-colors"
-              >
-                +10
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-2">
-              UNIDAD DE MEDIDA <span className="text-[#dd4c42]">*</span>
-            </label>
-            <select
-              id="select-unidad"
-              value={unidad}
-              onChange={(e) => setUnidad(e.target.value as any)}
-              className="w-full px-3.5 py-2.5 rounded-lg border border-[#e2e8f0] bg-white text-sm focus:outline-hidden focus:ring-2 focus:ring-[#3e4e9e] text-[#131b2e] cursor-pointer"
-            >
-              <option value="und">Unidades (und)</option>
-              <option value="mts">Metros lineales (mts)</option>
-              <option value="rll">Rollos (rll)</option>
-              <option value="par">Pares (par)</option>
-              <option value="jgo">Juegos (jgo)</option>
-              <option value="kg">Kilogramos (kg)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-2">
-              STOCK MÍNIMO (ALERTA)
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={stockMinimo}
-              onChange={(e) => setStockMinimo(Math.max(0, parseInt(e.target.value) || 0))}
-              className="w-full px-3.5 py-2.5 rounded-lg border border-[#e2e8f0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#3e4e9e] text-[#131b2e]"
-            />
-          </div>
-        </div>
+        <ItemStockFields quantity={cantidad} unit={unidad} minimum={stockMinimo}
+          onQuantity={setCantidad} onUnit={setUnidad} onMinimum={setStockMinimo} />
 
         {/* Action Buttons */}
         <div className="pt-4 flex items-center justify-end gap-3 border-t border-[#e2e8f0]">
@@ -569,24 +277,15 @@ export const NewItemView: React.FC = () => {
           <button
             type="submit"
             id="btn-submit-component"
+            disabled={pending}
             className="px-6 py-2.5 rounded-lg bg-[#3e4e9e] text-white text-sm font-bold hover:bg-[#323f80] active:scale-[0.98] transition-all shadow-sm flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-[18px]">save</span>
-            <span>Guardar Componente</span>
+            <span>{pending ? 'Guardando…' : 'Guardar Componente'}</span>
           </button>
         </div>
       </form>
 
-      {/* Camera Capture Modal */}
-      <CameraCaptureModal
-        isOpen={isCameraOpen}
-        onClose={() => setIsCameraOpen(false)}
-        onPhotoCaptured={(captured) => {
-          setFotoUrl(captured);
-          setIsCameraOpen(false);
-        }}
-        title="Tomar Foto del Componente Solar"
-      />
     </div>
   );
 };

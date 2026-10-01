@@ -1,20 +1,38 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Inventario Fulgor
 
-# Run and deploy your AI Studio app
+Aplicación de inventario fotovoltaico con React, TypeScript, Vite y Supabase. Incluye almacenes, catálogo, movimientos, despachos, remisiones e historial.
 
-This contains everything you need to run your app locally.
+## Desarrollo local
 
-View your app in AI Studio: https://ai.studio/apps/1b2c1079-8fb4-4be2-b0ce-509e51ead9ce
+Requiere Node.js 22 o superior y pnpm. Instale con `pnpm install --frozen-lockfile`, copie `.env.example` a `.env.local`, configure el proyecto Supabase y ejecute `pnpm dev`. La aplicación consulta el inventario exclusivamente desde Supabase y requiere iniciar sesión.
 
-## Run Locally
+Configure `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY`. La clave publicable es pública; jamás coloque una clave secreta, `service_role` ni contraseñas en variables `VITE_`. El nombre anterior `VITE_SUPABASE_ANON_KEY` sigue aceptándose para instalaciones existentes.
 
-**Prerequisites:**  Node.js
+## Preparación de Supabase
 
+1. Cree un respaldo verificable del esquema y de los datos existentes. Ejecute `supabase/preflight_readonly.sql` para inspeccionar tablas, políticas, permisos, conteos y el código `EST001`. Ensaye primero en un proyecto de pruebas.
+2. En una base nueva, aplique `supabase_schema.sql`, luego `supabase/migrations/20261001_secure_inventory.sql` y finalmente `supabase/migrations/20261002_private_item_images.sql`. El esquema ya no incluye artículos de ejemplo. En una base existente, inspeccione el esquema y aplique las migraciones después del respaldo. La migración se detiene si detecta políticas RLS desconocidas para evitar conservar accesos inesperados.
+3. Cree usuarios en Supabase Auth. Asigne `app_metadata.role` desde un entorno administrativo: `admin` gestiona catálogo/ubicaciones y realiza movimientos; `operador` registra movimientos y despachos; `consulta` solo lee. Un usuario sin rol queda sin permisos de inventario. No use `user_metadata` para roles.
+4. Compruebe las políticas RLS y el bucket privado `item-images` con usuarios de cada rol antes de habilitar la aplicación para el equipo.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+El despacho, el movimiento y el alta de artículos se hacen mediante funciones SQL transaccionales. Cada despacho utiliza un identificador de solicitud para impedir descuentos duplicados. Las fotos nuevas se comprimen antes de subirlas al bucket privado; el catálogo guarda su ruta y genera enlaces de lectura temporales.
+
+## Inventario histórico
+
+El 1 de octubre de 2026 se conciliaron 677 artículos y se cargaron en el proyecto Supabase. Los archivos completos del Excel, JSON y SQL de importación se retiraron del árbol de trabajo después de verificar la carga. No hay productos reales ni ejemplos en el código de la aplicación. Las pruebas de integración usan únicamente datos sintéticos.
+
+El informe resumido `reports/excel-reconciliation.json` conserva únicamente conteos: tres filas recuperadas del Excel, 25 stocks decimales y cinco stocks ilegibles. Estos cinco se cargaron con cantidad 0 y `stock_pendiente=true`, y no se pueden despachar hasta que un administrador confirme su existencia mediante un ajuste de inventario. Los 677 artículos conservan la ubicación descriptiva original en Supabase; estanterías y cajas quedaron nulas para conciliación posterior.
+
+Si se necesita repetir una importación en otro proyecto, `scripts/prepare-import.py` y `scripts/audit-import.mjs` permiten reconstruir el SQL a partir de copias privadas externas. Antes de ejecutarlo, respalde la base, revise `supabase/preflight_readonly.sql` y ensaye la carga.
+
+La carga efectuada reemplazó los 674 artículos y registros de prueba anteriores dentro de una transacción. Se aplicaron las migraciones de inventario seguro y fotos privadas. La cuenta creada en Supabase Auth tiene rol `admin`; su contraseña y las claves privadas no están en el repositorio.
+
+## Verificación y entrega
+
+Ejecute `pnpm typecheck`, `pnpm lint`, `pnpm test` y `pnpm build`. Las pruebas de integración usan PostgreSQL embebido mediante PGlite; además se debe verificar la migración en un proyecto Supabase de pruebas, especialmente Auth, Storage y Realtime. `pnpm clean` elimina únicamente la carpeta `dist`.
+
+El resultado de la refactorización, las medidas antes/después y los límites de verificación están en `reports/verification.md`. El plan completo está en `PLAN_REFACTORIZACION.md`.
+
+Publique los archivos de `dist` en un servidor estático con fallback a `index.html`. Configure las variables de entorno de producción durante la compilación y confirme el acceso con usuarios de cada rol después del despliegue.
+
+Si publica en Vercel, agregue `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` en **Project Settings → Environment Variables** para el entorno **Production**. Vuelva a desplegar después de guardarlas: Vite incorpora esas variables durante la compilación. Use solo la clave publicable, nunca una clave secreta. Luego inicie sesión en la URL publicada y verifique que aparecen los 677 artículos de Supabase.

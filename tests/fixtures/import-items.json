@@ -1,0 +1,5 @@
+[
+  {"id":"ELM-TEST-1","codigo":"TST001","nombre":"Producto sintético A","categoria":"ACCESORIOS","cantidad":12,"stock_minimo":2,"unidad":"UND","almacen_id":"ALM-CAL-03","estanteria_id":null,"caja_id":null,"descripcion":"Dato artificial para pruebas","especificaciones":{"contenedor":"A"},"stock_pendiente":false},
+  {"id":"ELM-TEST-2","codigo":"TST002","nombre":"Producto sintético B","categoria":"CABLES","cantidad":6.3,"stock_minimo":0,"unidad":"KL","almacen_id":"ALM-CAL-03","estanteria_id":null,"caja_id":null,"descripcion":"Dato artificial para pruebas","especificaciones":{"contenedor":"B"},"stock_pendiente":false},
+  {"id":"ELM-TEST-3","codigo":"TST003","nombre":"Producto sintético C","categoria":"ESTRUCTURAS","cantidad":0,"stock_minimo":0,"unidad":"UND","almacen_id":"ALM-CAL-03","estanteria_id":null,"caja_id":null,"descripcion":"Dato artificial para pruebas","especificaciones":{"contenedor":"C"},"stock_pendiente":true}
+]

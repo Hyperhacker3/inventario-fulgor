@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { ActiveView } from '../types';
+import { isDemo } from '../lib/supabase';
 
 export const Header: React.FC = () => {
   const {
@@ -13,8 +14,7 @@ export const Header: React.FC = () => {
     setActiveView,
     setIsHelpModalOpen,
     dispatchCart,
-    isCloudConnected,
-    syncStatus
+    isCloudConnected
   } = useInventory();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -225,8 +225,8 @@ export const Header: React.FC = () => {
             {[
               { id: 'dashboard' as ActiveView, label: 'Dashboard General', icon: 'dashboard' },
               { id: 'explorer' as ActiveView, label: 'Explorador de Inventario', icon: 'inventory_2' },
-              { id: 'new-item' as ActiveView, label: 'Registrar Nuevo Item', icon: 'add_box' },
-              { id: 'dispatch' as ActiveView, label: 'Despacho & Salida', icon: 'shopping_cart_checkout', badge: dispatchCart.length },
+              ...(isDemo || user.role === 'admin' ? [{ id: 'new-item' as ActiveView, label: 'Registrar Nuevo Item', icon: 'add_box' }] : []),
+              ...(isDemo || ['admin', 'operador'].includes(user.role) ? [{ id: 'dispatch' as ActiveView, label: 'Despacho & Salida', icon: 'shopping_cart_checkout', badge: dispatchCart.length }] : []),
               { id: 'history' as ActiveView, label: 'Historial de Movimientos', icon: 'history' },
               { id: 'warehouses' as ActiveView, label: 'Almacenes & Estanterías', icon: 'warehouse' },
               { id: 'remissions' as ActiveView, label: 'Remisiones Oficiales', icon: 'picture_as_pdf' },

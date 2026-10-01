@@ -1,9 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useInventory } from '../context/InventoryContext';
+import { readRemisionesPage } from '../data/repository';
+import { isDemo } from '../lib/supabase';
+import { errorMessage } from '../shared/errors';
 
 export const RemissionView: React.FC = () => {
-  const { remisiones, openPdfRemision, setActiveView } = useInventory();
+  const { remisiones, openPdfRemision, setActiveView, user } = useInventory();
   const [searchQuery, setSearchQuery] = useState('');
+  const [remoteSearch, setRemoteSearch] = useState('');
+  const [pageState, setPageState] = useState({ key: '', page: 1 });
+  useEffect(() => { const timer = setTimeout(() => setRemoteSearch(searchQuery.trim()), 250); return () => clearTimeout(timer); }, [searchQuery]);
+  const filterKey = isDemo ? searchQuery : remoteSearch;
+  const page = pageState.key === filterKey ? pageState.page : 1;
+  const pageSize = 24;
+  const cloudPage = useQuery({ queryKey: ['fulgor', user.email, 'remissions-page', page, remoteSearch],
+    queryFn: () => readRemisionesPage(page, pageSize, remoteSearch), enabled: !isDemo, staleTime: 30_000 });
 
   const filteredRemisiones = remisiones.filter((r) => {
     if (!searchQuery) return true;
@@ -15,6 +27,9 @@ export const RemissionView: React.FC = () => {
       r.recibidoPor.toLowerCase().includes(q)
     );
   });
+  const total = isDemo ? filteredRemisiones.length : cloudPage.data?.total ?? 0;
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const visibleRemisiones = isDemo ? filteredRemisiones.slice((page - 1) * pageSize, page * pageSize) : cloudPage.data?.rows ?? [];
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 md:p-8 max-w-[1400px] mx-auto w-full">
@@ -29,13 +44,13 @@ export const RemissionView: React.FC = () => {
           </p>
         </div>
 
-        <button
+        {(isDemo || ['admin', 'operador'].includes(user.role)) && <button
           onClick={() => setActiveView('dispatch')}
           className="px-4 py-2.5 rounded-lg bg-[#3e4e9e] text-white text-sm font-semibold hover:bg-[#323f80] active:scale-95 transition-all shadow-xs flex items-center gap-2"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>
           <span>Nuevo Despacho</span>
-        </button>
+        </button>}
       </div>
 
       {/* Search Bar */}
@@ -56,8 +71,11 @@ export const RemissionView: React.FC = () => {
       </div>
 
       {/* Remissions Grid */}
+      {cloudPage.isError && <p role="alert" className="text-sm text-red-700 mb-3">No se pudieron cargar las remisiones: {errorMessage(cloudPage.error)}</p>}
+      {cloudPage.isPending && !isDemo && <p className="text-sm text-[#64748b] mb-3">Cargando remisiones…</p>}
+      {total === 0 && (isDemo || !cloudPage.isPending) && <p className="text-sm text-[#64748b] mb-3">No hay remisiones para esta búsqueda.</p>}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredRemisiones.map((rem) => {
+        {visibleRemisiones.map((rem) => {
           const totalItems = rem.items.reduce((sum, i) => sum + i.cantidad, 0);
 
           return (
@@ -118,6 +136,11 @@ export const RemissionView: React.FC = () => {
           );
         })}
       </div>
+      {pages > 1 && <nav aria-label="Páginas de remisiones" className="flex items-center justify-center gap-3 py-5 text-sm">
+        <button disabled={page === 1} onClick={() => setPageState({ key: filterKey, page: page - 1 })} className="px-3 py-2 border rounded-lg disabled:opacity-40">Anterior</button>
+        <span>{page} / {pages}</span>
+        <button disabled={page === pages} onClick={() => setPageState({ key: filterKey, page: page + 1 })} className="px-3 py-2 border rounded-lg disabled:opacity-40">Siguiente</button>
+      </nav>}
     </div>
   );
 };

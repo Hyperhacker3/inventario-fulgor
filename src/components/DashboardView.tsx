@@ -1,25 +1,24 @@
 import React, { useState, useMemo } from 'react';
 import { useInventory } from '../context/InventoryContext';
-import { Elemento } from '../types';
+import { DashboardCard } from './dashboard/DashboardCard';
+import { isDemo } from '../lib/supabase';
 
 export const DashboardView: React.FC = () => {
   const {
     elementos,
     almacenes,
-    proyectos,
     getLocationString,
-    addToDispatchCart,
-    openItemDetail,
-    openQuickMovement,
     setActiveView,
-    globalSearch
+    globalSearch,
+    user
   } = useInventory();
 
   const [localSearch, setLocalSearch] = useState('');
   const [selectedAlmacen, setSelectedAlmacen] = useState<string>('ALL');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<'nombre' | 'codigo' | 'stock-asc' | 'stock-desc'>('codigo');
-  const [showFiltersModal, setShowFiltersModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageKey, setPageKey] = useState('');
 
   const effectiveSearch = (globalSearch || localSearch).toLowerCase().trim();
 
@@ -38,7 +37,7 @@ export const DashboardView: React.FC = () => {
 
         // Warehouse filter
         if (selectedAlmacen !== 'ALL') {
-          if (item.almacenId !== Number(selectedAlmacen)) return false;
+          if (item.almacenId !== selectedAlmacen) return false;
         }
 
         // Category filter
@@ -56,38 +55,10 @@ export const DashboardView: React.FC = () => {
         return 0;
       });
   }, [elementos, effectiveSearch, selectedAlmacen, selectedCategory, sortBy, getLocationString]);
-
-  // Stock status helper
-  const getStockStatus = (item: Elemento) => {
-    if (item.cantidad === 0) {
-      return {
-        type: 'out',
-        bg: 'bg-[#fce8e6]',
-        text: 'text-[#c5221f]',
-        label: 'Agotado',
-        barColor: 'bg-[#dd4c42]',
-        percent: 0
-      };
-    }
-    if (item.cantidad <= item.stockMinimo) {
-      return {
-        type: 'low',
-        bg: 'bg-[#fef7e0]',
-        text: 'text-[#b06000]',
-        label: 'Bajo Stock',
-        barColor: 'bg-[#f2c43a]',
-        percent: Math.min(100, Math.max(15, (item.cantidad / (item.stockMinimo * 2)) * 100))
-      };
-    }
-    return {
-      type: 'normal',
-      bg: 'bg-[#e6f4ea]',
-      text: 'text-[#137333]',
-      label: 'Disponible',
-      barColor: 'bg-[#10b981]',
-      percent: Math.min(100, (item.cantidad / (item.stockMinimo * 3)) * 100)
-    };
-  };
+  const filterKey = `${effectiveSearch}|${selectedAlmacen}|${selectedCategory}|${sortBy}`;
+  const currentPage = pageKey === filterKey ? page : 1;
+  const pageCount = Math.max(1, Math.ceil(filteredElementos.length / 24));
+  const visibleElementos = filteredElementos.slice((currentPage - 1) * 24, currentPage * 24);
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 md:p-8 max-w-[1400px] mx-auto w-full">
@@ -169,14 +140,14 @@ export const DashboardView: React.FC = () => {
             <span>Ordenar</span>
           </button>
 
-          <button
+          {(isDemo || user.role === 'admin') && <button
             id="btn-new-item-cta"
             onClick={() => setActiveView('new-item')}
             className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 bg-[#3e4e9e] text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-[#323f80] transition-colors shadow-2xs whitespace-nowrap"
           >
             <span className="material-symbols-outlined text-[16px]">add</span>
             <span>Nuevo Item</span>
-          </button>
+          </button>}
         </div>
       </div>
 
@@ -213,127 +184,14 @@ export const DashboardView: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredElementos.map((item) => {
-            const status = getStockStatus(item);
-            const locationStr = getLocationString(item);
-
-            return (
-              <article
-                key={item.id}
-                id={`inventory-card-${item.codigo}`}
-                className="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden flex flex-col hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
-              >
-                {/* Photo & SKU Tag */}
-                <div
-                  className="aspect-4/3 bg-[#f2f3ff] relative border-b border-[#e2e8f0] overflow-hidden cursor-pointer"
-                  onClick={() => openItemDetail(item)}
-                >
-                  {item.fotoUrl ? (
-                    <img
-                      src={item.fotoUrl}
-                      alt={item.nombre}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-[#f8fafc] text-[#94a3b8]">
-                      <span className="material-symbols-outlined text-[36px] text-[#cbd5e1] group-hover:scale-110 transition-transform duration-300">solar_power</span>
-                      <span className="text-[10px] font-mono-code font-bold mt-1 text-[#64748b]">{item.categoria}</span>
-                    </div>
-                  )}
-                  <div className="absolute top-3 right-3 px-2 py-0.5 rounded text-xs font-mono-code bg-white/95 backdrop-blur-xs border border-[#e2e8f0] text-[#131b2e] shadow-2xs font-bold tracking-wider">
-                    {item.codigo}
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-5 flex flex-col flex-1 gap-3">
-                  <div>
-                    <h3
-                      onClick={() => openItemDetail(item)}
-                      className="text-base md:text-lg font-bold text-[#131b2e] leading-snug mb-1.5 hover:text-[#3e4e9e] transition-colors cursor-pointer line-clamp-1"
-                      title={item.nombre}
-                    >
-                      {item.nombre}
-                    </h3>
-                    <div className="flex items-center gap-1.5 text-xs text-[#454651]">
-                      <span className="material-symbols-outlined text-[14px] shrink-0 text-[#767682]">
-                        location_on
-                      </span>
-                      <span className="truncate" title={locationStr}>
-                        {locationStr}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Stock details & progress bar */}
-                  <div className="mt-auto flex flex-col gap-2.5 pt-2">
-                    <div className="flex justify-between items-center bg-[#f8fafc] p-2.5 rounded-lg border border-[#e2e8f0]">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-bold tracking-wider text-[#454651] uppercase">
-                          Stock Disponible
-                        </span>
-                      </div>
-                      <span
-                        className={`${status.bg} ${status.text} font-bold px-3 py-1 rounded text-xs text-center flex items-center justify-center gap-1 min-w-[85px]`}
-                      >
-                        {status.type === 'low' && (
-                          <span className="material-symbols-outlined text-[14px]">warning</span>
-                        )}
-                        <span>
-                          {item.cantidad} <span className="text-[10px] font-normal">{item.unidad}</span>
-                        </span>
-                      </span>
-                    </div>
-
-                    <div className="w-full bg-[#eaedff] rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className={`${status.barColor} h-1.5 rounded-full transition-all duration-300`}
-                        style={{ width: `${status.percent}%` }}
-                      ></div>
-                    </div>
-
-                    {/* Action buttons matching mockup */}
-                    <div className="flex gap-2 pt-1">
-                      <button
-                        id={`btn-edit-${item.codigo}`}
-                        onClick={() => openItemDetail(item)}
-                        className="flex-1 bg-[#3e4e9e] text-white text-xs font-medium py-2 px-2 rounded-lg flex items-center justify-center gap-1 hover:bg-[#323f80] active:scale-95 transition-all shadow-2xs"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">edit</span>
-                        <span>Editar</span>
-                      </button>
-                      <button
-                        id={`btn-dispatch-${item.codigo}`}
-                        onClick={() => {
-                          if (item.cantidad > 0) {
-                            addToDispatchCart(item, 1);
-                            setActiveView('dispatch');
-                          } else {
-                            openQuickMovement(item, 'ENTRADA');
-                          }
-                        }}
-                        disabled={item.cantidad === 0}
-                        className={`flex-1 text-white text-xs font-medium py-2 px-2 rounded-lg flex items-center justify-center gap-1 active:scale-95 transition-all shadow-2xs ${
-                          item.cantidad > 0
-                            ? 'bg-[#dd4c42] hover:bg-[#c5433a]'
-                            : 'bg-[#cbd5e1] cursor-not-allowed opacity-60'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-[14px]">
-                          {item.cantidad > 0 ? 'output' : 'block'}
-                        </span>
-                        <span>{item.cantidad > 0 ? 'Salida' : 'Agotado'}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+          {visibleElementos.map(item => <DashboardCard key={item.id} item={item} />)}
         </div>
       )}
+      {pageCount > 1 && <nav aria-label="Páginas del inventario" className="flex items-center justify-center gap-3 py-5 text-sm">
+        <button disabled={currentPage === 1} onClick={() => { setPageKey(filterKey); setPage(currentPage - 1); }} className="px-3 py-2 border rounded-lg disabled:opacity-40">Anterior</button>
+        <span>{currentPage} / {pageCount}</span>
+        <button disabled={currentPage === pageCount} onClick={() => { setPageKey(filterKey); setPage(currentPage + 1); }} className="px-3 py-2 border rounded-lg disabled:opacity-40">Siguiente</button>
+      </nav>}
     </div>
   );
 };

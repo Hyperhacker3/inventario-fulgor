@@ -56,7 +56,10 @@
 }
 
 /* Print Styles for A4 Remission */
+@page { size: A4; margin: 12mm; }
 @media print {
+  body * { visibility: hidden !important; }
+  .a4-print-container, .a4-print-container * { visibility: visible !important; }
   body {
     background: white !important;
     color: black !important;
@@ -66,6 +69,22 @@
   .no-print {
     display: none !important;
   }
+  .print-layer * { overflow: visible !important; max-height: none !important; }
+  .print-layer, .print-layer > div, .print-layer .print-scale-wrapper {
+    position: static !important;
+    display: block !important;
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
   .a4-print-container {
     box-shadow: none !important;
     border: none !important;
@@ -73,5 +92,8 @@
     min-height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
+    transform: none !important;
   }
+  .a4-print-container table { break-inside: auto; }
+  .a4-print-container tr { break-inside: avoid; }
 }

@@ -1,15 +1,20 @@
 import React from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { ActiveView } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { isDemo } from '../lib/supabase';
 
 export const Sidebar: React.FC = () => {
-  const { activeView, setActiveView, dispatchCart, setIsHelpModalOpen } = useInventory();
+  const { signOut } = useAuth();
+  const { activeView, setActiveView, dispatchCart, setIsHelpModalOpen, user } = useInventory();
+  const canAdmin = isDemo || user.role === 'admin';
+  const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
 
   const navItems: { id: ActiveView; label: string; icon: string; badge?: number }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
     { id: 'explorer', label: 'Inventario', icon: 'inventory_2' },
-    { id: 'new-item', label: 'Nuevo Item', icon: 'add_box' },
-    { id: 'dispatch', label: 'Despacho', icon: 'shopping_cart_checkout', badge: dispatchCart.length },
+    ...(canAdmin ? [{ id: 'new-item' as ActiveView, label: 'Nuevo Item', icon: 'add_box' }] : []),
+    ...(canOperate ? [{ id: 'dispatch' as ActiveView, label: 'Despacho', icon: 'shopping_cart_checkout', badge: dispatchCart.length }] : []),
     { id: 'history', label: 'Historial', icon: 'history' },
     { id: 'warehouses', label: 'Almacenes', icon: 'warehouse' },
     { id: 'remissions', label: 'Remisiones', icon: 'picture_as_pdf' },
@@ -31,14 +36,14 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Primary CTA Button */}
-      <button
+      {canOperate && <button
         id="btn-nueva-remision"
         onClick={() => setActiveView('dispatch')}
         className="w-full bg-[#3e4e9e] text-white hover:bg-[#323f80] active:scale-[0.98] transition-all rounded-lg py-2.5 px-4 mb-6 font-semibold text-sm flex items-center justify-center gap-2 shadow-sm"
       >
         <span className="material-symbols-outlined text-[18px]">add</span>
         <span>Nueva Remisión</span>
-      </button>
+      </button>}
 
       {/* Navigation Links */}
       <nav className="flex-1 flex flex-col gap-1 overflow-y-auto pr-1">
@@ -86,9 +91,7 @@ export const Sidebar: React.FC = () => {
         </button>
         <button
           id="btn-sidebar-logout"
-          onClick={() => {
-            alert('Sesión activa de Carlos Ramírez (Jefe de Bodega Central). FULGOR S.A.S.');
-          }}
+          onClick={() => { void signOut(); }}
           className="w-full flex items-center gap-3 px-3 py-2 text-[#454651] hover:bg-[#ffdad6]/40 hover:text-[#ba1a1a] rounded-xl transition-colors text-left"
         >
           <span className="material-symbols-outlined text-[20px]">logout</span>

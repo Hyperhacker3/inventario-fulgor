@@ -1,15 +1,8 @@
-export type CategoriaElemento = 
-  | 'PANELES' 
-  | 'INVERSORES' 
-  | 'ESTRUCTURAS' 
-  | 'CABLES' 
-  | 'CONECTORES' 
-  | 'PROTECCIONES'
-  | 'BATERIAS'
-  | 'OTROS';
+import type { CategoriaElemento } from './domain/catalogs';
+export type { CategoriaElemento } from './domain/catalogs';
 
 export interface Proyecto {
-  id: number;
+  id: string;
   nombre: string;
   cliente: string;
   ubicacion: string;
@@ -18,33 +11,33 @@ export interface Proyecto {
 }
 
 export interface Almacen {
-  id: number;
+  id: string;
   codigo: string; // e.g. 'BOG-01', 'MED-02'
   nombre: string;
   descripcion?: string;
   ciudad: string;
   capacidadPorcentaje: number;
-  estado: 'Operativo' | 'Mantenimiento';
+  estado: 'Operativo' | 'Mantenimiento' | 'Inactivo';
 }
 
 export interface Estanteria {
-  id: number;
-  almacenId: number;
+  id: string;
+  almacenId: string | null;
   codigo: string; // e.g. 'EST-A01'
   nombre: string; // e.g. 'Zona Paneles'
   descripcion?: string;
 }
 
 export interface Caja {
-  id: number;
-  estanteriaId: number;
+  id: string;
+  estanteriaId: string | null;
   codigoCaja: string; // e.g. 'CAJ-1045'
   estado: 'Completa' | 'Parcial' | 'Vacia';
   descripcion?: string;
 }
 
 export interface Elemento {
-  id: number;
+  id: string;
   codigo: string; // Strict AAA000 e.g. PAN001
   nombre: string;
   descripcion: string;
@@ -52,20 +45,22 @@ export interface Elemento {
   cantidad: number;
   unidad: 'und' | 'rll' | 'mts' | 'kg' | 'par' | 'jgo' | string;
   fotoUrl: string;
-  almacenId: number;
-  estanteriaId: number;
-  cajaId: number;
+  almacenId: string | null;
+  estanteriaId: string | null;
+  cajaId: string | null;
   stockMinimo: number;
   valorUnitario?: number;
   estado?: 'BUENO' | 'MEDIO' | 'MAL ESTADO' | 'EN REPARACIÓN' | 'RETAZOS / BUENO' | string;
   cantidadDanados?: number;
-  especificaciones?: Record<string, any>;
+  stockPendiente?: boolean;
+  archived?: boolean;
+  especificaciones?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface DetalleRemision {
-  elementoId: number;
+  elementoId: string;
   codigo: string;
   nombre: string;
   cantidad: number;
@@ -73,9 +68,9 @@ export interface DetalleRemision {
 }
 
 export interface Remision {
-  id: number;
+  id: string;
   numeroRemision: string; // e.g. 'REM-2026-0042'
-  proyectoId: number;
+  proyectoId: string;
   proyectoNombre: string;
   cliente: string;
   ubicacion: string;
@@ -91,19 +86,19 @@ export interface Remision {
 export type TipoMovimiento = 'ENTRADA' | 'SALIDA' | 'AJUSTE' | 'REUBICACION';
 
 export interface HistorialMovimiento {
-  id: number;
+  id: string;
   tipo: TipoMovimiento;
-  elementoId: number;
+  elementoId: string;
   itemCode: string;
   itemName: string;
-  proyectoId?: number;
+  proyectoId?: string;
   proyectoNombre?: string;
-  remisionId?: number;
+  remisionId?: string;
   remisionNumero?: string;
   cantidad: number;
   unidad: string;
-  stockAnterior: number;
-  stockNuevo: number;
+  stockAnterior: number | null;
+  stockNuevo: number | null;
   motivo: string;
   responsable: string;
   fecha: string; // e.g. '15 Oct 2026'
@@ -115,6 +110,8 @@ export interface DispatchCartItem {
   elemento: Elemento;
   cantidad: number;
 }
+
+export interface Page<T> { rows: T[]; total: number }
 
 export type ActiveView = 
   | 'dashboard' 
