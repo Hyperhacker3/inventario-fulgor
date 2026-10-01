@@ -29,7 +29,7 @@ Tras una escritura confirmada, la interfaz conserva el resultado aunque falle la
 ## Verificaciones aún necesarias
 
 1. Probar escrituras de catálogo, fotos privadas, Realtime y dos despachos simultáneos desde conexiones distintas con usuarios de cada rol. PGlite no sustituye esa prueba de concurrencia real.
-2. Los archivos originales estuvieron versionados en commits anteriores. Se retiraron del árbol de trabajo y se reescribió el historial local de `main` para excluirlos. Falta publicar la nueva historia en GitHub y comprobar allí que los archivos ya no sean accesibles desde la rama principal.
+2. Los archivos originales estuvieron versionados en commits anteriores. Se retiraron del árbol de trabajo y se reescribió el historial de `main` para excluirlos. La rama de GitHub ya apunta a la historia depurada; otras copias, referencias o cachés externas de los commits antiguos requieren revisión aparte.
 3. Conciliar las ubicaciones y confirmar los cinco stocks pendientes. Medir peticiones, latencia y renderizado con 677 y 5.000 artículos y 10.000 movimientos. El inventario aún se descarga completo al entrar y `InventoryContext` sigue publicando un valor agregado; para volúmenes mayores hay que pasar inventario y resúmenes a consultas paginadas o agregadas y separar los consumidores de estado visual.
 4. Verificar visualmente formularios, cámara, navegación móvil y remisiones impresas de 1, 20 y 100 renglones en un navegador. No se hizo esta comprobación porque se solicitó no usar control de computadora.
 5. Ejecutar el flujo de GitHub Actions en el repositorio remoto. El archivo CI existe, pero no hay un resultado remoto en esta sesión.
