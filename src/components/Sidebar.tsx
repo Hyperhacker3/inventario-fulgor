@@ -23,17 +23,9 @@ export const Sidebar: React.FC = () => {
   return (
     <aside className="bg-white border-r border-[#e2e8f0] h-full w-64 fixed left-0 top-0 z-40 flex flex-col py-6 px-4 hidden md:flex select-none">
       {/* Brand Header */}
-      <div className="flex items-center gap-3 mb-6 px-2 cursor-pointer" onClick={() => setActiveView('dashboard')}>
-        <div className="w-10 h-10 rounded-full bg-[#3e4e9e] flex items-center justify-center text-white shrink-0 shadow-sm">
-          <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-            solar_power
-          </span>
-        </div>
-        <div>
-          <h1 className="text-[20px] font-bold text-[#253685] leading-tight tracking-tight">FULGOR S.A.S.</h1>
-          <p className="text-[11px] font-bold tracking-wider text-[#454651] uppercase">Logística Solar</p>
-        </div>
-      </div>
+      <button type="button" aria-label="FULGOR — Ir al inicio" className="mb-6 px-2" onClick={() => setActiveView('dashboard')}>
+        <img src="/logo-completo.png" alt="FULGOR" width="303" height="131" className="w-full h-auto object-contain" />
+      </button>
 
       {/* Primary CTA Button */}
       {canOperate && <button

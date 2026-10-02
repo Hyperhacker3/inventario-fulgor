@@ -42,15 +42,14 @@ export const Header: React.FC = () => {
             </span>
           </button>
           
-          <div 
-            className="md:hidden flex items-center gap-2 cursor-pointer shrink-0"
+          <button
+            type="button"
+            aria-label="FULGOR — Ir al inicio"
+            className="md:hidden flex items-center shrink-0"
             onClick={() => setActiveView('dashboard')}
           >
-            <div className="w-7 h-7 rounded-lg bg-[#3e4e9e] flex items-center justify-center text-white text-xs font-bold shadow-2xs">
-              <span className="material-symbols-outlined text-[16px]">solar_power</span>
-            </div>
-            <span className="font-bold text-[#253685] text-sm sm:text-base tracking-tight">FULGOR</span>
-          </div>
+            <img src="/logo-completo.png" alt="FULGOR" width="303" height="131" className="w-28 sm:w-36 h-auto object-contain" />
+          </button>
 
           {/* Quick Search bar (Desktop & Tablet) */}
           <div className="hidden sm:flex items-center bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-3.5 py-1.5 w-48 md:w-80 focus-within:border-[#3e4e9e] focus-within:ring-1 focus-within:ring-[#3e4e9e] focus-within:bg-white transition-all shadow-2xs">
