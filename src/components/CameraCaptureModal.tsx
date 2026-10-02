@@ -12,7 +12,7 @@ export function CameraCaptureModal({ isOpen, onClose, onPhotoCaptured, title = '
   const snap = () => {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
-    const canvas = squareCanvas(video, video.videoWidth, video.videoHeight, 1024, facingMode === 'user');
+    const canvas = squareCanvas(video, video.videoWidth, video.videoHeight, 600, facingMode === 'user');
     setPhoto(canvas.toDataURL('image/jpeg', 0.78));
   };
   const selectFile = (file?: File) => {
