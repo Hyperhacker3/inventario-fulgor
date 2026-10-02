@@ -12,5 +12,5 @@ export function ItemImage({ source, alt, ...props }: Props) {
   }, [source]);
   const url = isStoredImage(source) ? (resolved?.source === source ? resolved.url : '') : source;
   if (!url) return <span aria-label={alt} className={`${props.className || ''} inline-flex items-center justify-center bg-[#f8fafc] text-[#94a3b8]`}>Sin foto</span>;
-  return <img {...props} src={url} alt={alt} loading={props.loading || 'lazy'} />;
+  return <img {...props} style={{ ...props.style, objectFit: 'cover', objectPosition: 'center', aspectRatio: '1 / 1' }} src={url} alt={alt} loading={props.loading || 'lazy'} />;
 }

@@ -63,7 +63,8 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     if (updates.cantidad !== undefined && !isDemo) throw new Error('Use una entrada o ajuste para cambiar existencias.');
     const next = { ...before, ...updates };
     validateItem(next, data.almacenes, data.estanterias, data.cajas);
-    const photo = next.fotoUrl === before.fotoUrl ? before.fotoUrl : await saveImage(next.fotoUrl);
+    const photo = next.fotoUrl === before.fotoUrl && (!next.fotoUrl || isStoredImage(next.fotoUrl))
+      ? before.fotoUrl : await saveImage(next.fotoUrl);
     if (isDemo) {
       setDemoData(prev => ({ ...prev, elementos: prev.elementos.map(el => el.id === id ? { ...el, ...updates, fotoUrl: photo, updatedAt: isoNow() } : el) }));
       return;

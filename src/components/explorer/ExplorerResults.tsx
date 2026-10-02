@@ -54,14 +54,14 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                   >
                     {/* Image Area */}
                     <div
-                      className="aspect-4/3 bg-[#f8fafc] relative border-b border-[#e2e8f0] cursor-pointer"
+                      className="aspect-square w-full shrink-0 overflow-hidden bg-[#f8fafc] relative border-b border-[#e2e8f0] cursor-pointer"
                       onClick={() => openItemDetail(item)}
                     >
                       {item.fotoUrl ? (
                         <ItemImage
                           source={item.fotoUrl}
                           alt={item.nombre}
-                          className="w-full h-full object-cover"
+                          className="absolute inset-0 w-full h-full object-cover object-center"
                           loading="lazy"
                           referrerPolicy="no-referrer"
                         />

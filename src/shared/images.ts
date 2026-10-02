@@ -1,4 +1,6 @@
-import { isDemo, requireSupabase } from '../lib/supabase';
+import { requireSupabase } from '../lib/supabase';
+import { squareCanvas } from './squareImage';
+import { uploadItemImage } from './itemImageUpload';
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const cache = new Map<string, { url: string; expires: number }>();
@@ -22,25 +24,19 @@ export async function resolveImage(value: string): Promise<string> {
 }
 
 export async function saveImage(value: string): Promise<string> {
-  if (!value || !value.startsWith('data:')) return value;
-  const source = await (await fetch(value)).blob();
+  if (!value || isStoredImage(value)) return value;
+  if (!/^(data:image\/|blob:|https?:\/\/)/i.test(value)) throw new Error('Suba un archivo de imagen o use una URL válida.');
+  const db = requireSupabase();
+  let response: Response;
+  try { response = await fetch(value); }
+  catch { throw new Error('No se pudo leer la foto. Si es una URL externa, descargue la imagen y use Subir archivo.'); }
+  if (!response.ok) throw new Error('No se pudo descargar la foto. Use Subir archivo.');
+  const source = await response.blob();
   if (!source.type.startsWith('image/') || source.size > MAX_BYTES) throw new Error('La imagen debe pesar menos de 8 MB.');
   const bitmap = await createImageBitmap(source);
   try {
-    const canvas = document.createElement('canvas');
-    const scale = Math.min(1, 1200 / Math.max(bitmap.width, bitmap.height));
-    canvas.width = Math.round(bitmap.width * scale); canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const canvas = squareCanvas(bitmap, bitmap.width, bitmap.height);
     const jpeg = await new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('No se pudo procesar la imagen.')), 'image/jpeg', 0.78));
-    if (isDemo) return await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error); reader.readAsDataURL(jpeg);
-    });
-    const db = requireSupabase();
-    const { data: session, error: sessionError } = await db.auth.getUser();
-    if (sessionError || !session.user) throw new Error('Debe iniciar sesión para subir fotografías.');
-    const path = `${session.user.id}/${crypto.randomUUID()}.jpg`;
-    const { error } = await db.storage.from('item-images').upload(path, jpeg, { contentType: 'image/jpeg', upsert: false });
-    if (error) throw error;
-    return `storage://${path}`;
+    return await uploadItemImage(db, jpeg);
   } finally { bitmap.close(); }
 }

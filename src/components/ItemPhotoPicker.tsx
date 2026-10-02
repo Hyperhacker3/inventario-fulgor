@@ -30,7 +30,7 @@ export function ItemPhotoPicker({ value, onChange }: { value: string; onChange: 
         <input ref={input} type="file" accept="image/*" className="hidden" onChange={upload} />
       </div>
       <div className="flex flex-col sm:flex-row gap-4 mt-3 items-center">
-        <div className="w-32 h-28 rounded-xl border overflow-hidden bg-white flex items-center justify-center shrink-0">
+        <div className="w-32 h-32 aspect-square rounded-xl border overflow-hidden bg-white flex items-center justify-center shrink-0">
           {value ? <ItemImage source={value} alt="Vista previa" className="w-full h-full object-cover" /> :
             <span className="text-xs text-[#64748b]">Sin imagen</span>}
         </div>
@@ -38,6 +38,8 @@ export function ItemPhotoPicker({ value, onChange }: { value: string; onChange: 
           onChange={event => onChange(event.target.value)} placeholder="https://ejemplo.com/foto.jpg"
           aria-label="URL de la foto" className="w-full px-3.5 py-2.5 rounded-lg border text-sm" />
       </div>
+      <p className="text-xs text-slate-500 mt-3">Formato cuadrado 1:1 con recorte centrado. La foto se subirá a Supabase al guardar el producto.</p>
+      {value && <p role="status" className="text-xs mt-2 text-[#3e4e9e]">{value.startsWith('storage://') ? 'Foto guardada en Supabase.' : 'Foto seleccionada. Guarda el producto para confirmar la subida.'}</p>}
       {error && <p role="alert" className="text-red-700 text-xs mt-2">{error}</p>}
       <CameraCaptureModal isOpen={cameraOpen} onClose={() => setCameraOpen(false)}
         onPhotoCaptured={photo => { onChange(photo); setCameraOpen(false); }} title="Tomar foto del componente" />

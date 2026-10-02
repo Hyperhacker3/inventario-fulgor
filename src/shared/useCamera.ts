@@ -12,7 +12,7 @@ export function useCamera(enabled: boolean, facingMode: 'environment' | 'user') 
     let activeVideo: HTMLVideoElement | null = null;
     const start = async () => {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('La cámara requiere un navegador compatible y una conexión segura.');
-      const acquired = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 } }, audio: false });
+      const acquired = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, aspectRatio: { ideal: 1 } }, audio: false });
       if (cancelled) { acquired.getTracks().forEach(track => track.stop()); return; }
       stream = acquired;
       activeVideo = videoRef.current;
