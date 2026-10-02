@@ -44,11 +44,11 @@ export const Header: React.FC = () => {
           
           <button
             type="button"
-            aria-label="FULGOR — Ir al inicio"
+            aria-label="EL TURPIAL — Ir al inicio"
             className="md:hidden flex items-center shrink-0"
             onClick={() => setActiveView('dashboard')}
           >
-            <img src="/logo-completo.png" alt="FULGOR" width="303" height="131" className="w-28 sm:w-36 h-auto object-contain" />
+            <img src="/logo-completo.png" alt="EL TURPIAL" width="303" height="131" className="w-28 sm:w-36 h-auto object-contain" />
           </button>
 
           {/* Quick Search bar (Desktop & Tablet) */}

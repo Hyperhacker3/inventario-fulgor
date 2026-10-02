@@ -1,4 +1,4 @@
-# Inventario Fulgor
+# Inventario turpial
 
 Aplicación de inventario fotovoltaico con React, TypeScript, Vite y Supabase. Incluye almacenes, catálogo, movimientos, despachos, remisiones e historial.
 

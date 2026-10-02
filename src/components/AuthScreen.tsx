@@ -15,7 +15,7 @@ export function AuthScreen() {
   };
   return <main className="min-h-screen flex items-center justify-center bg-[#faf8ff] p-4">
     <section className="bg-white border rounded-2xl shadow-md p-7 w-full max-w-sm space-y-5">
-      <h1 className="font-bold text-2xl text-[#253685]">FULGOR · Inventario</h1>
+      <h1 className="font-bold text-2xl text-[#253685]">Inventario turpial</h1>
       {!isSupabaseConfigured ? <p role="alert">Configure la URL y la clave publicable de Supabase en .env.local.</p> :
       <form onSubmit={submit} className="space-y-4">
         <h2 className="font-semibold">Iniciar sesión</h2>

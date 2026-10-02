@@ -13,7 +13,7 @@ export async function exportHistory(demoRows: HistorialMovimiento[], projects: P
   }
   const projectNames = new Map(projects.map(project => [project.id, project.nombre]));
   const headers = ['ID', 'Tipo', 'Fecha', 'Hora', 'SKU', 'Componente', 'Proyecto', 'Cantidad', 'Unidad', 'Stock Nuevo', 'Responsable', 'Motivo'];
-  downloadCsv(`historial_fulgor_${new Date().toISOString().slice(0, 10)}.csv`, [headers, ...rows.map(row => [
+  downloadCsv(`historial_turpial_${new Date().toISOString().slice(0, 10)}.csv`, [headers, ...rows.map(row => [
     row.id, row.tipo, row.fecha, row.hora, row.itemCode, row.itemName,
     row.proyectoNombre || projectNames.get(row.proyectoId || '') || '', row.cantidad,
     row.unidad, row.stockNuevo, row.responsable, row.motivo,

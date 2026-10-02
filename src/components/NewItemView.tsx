@@ -111,7 +111,7 @@ export const NewItemView: React.FC = () => {
       <div className="mb-6">
         <h2 className="text-2xl md:text-3xl font-bold text-[#131b2e] tracking-tight">Registrar Componente</h2>
         <p className="text-sm md:text-base text-[#454651]">
-          Alta de nuevo elemento en el inventario fotovoltaico de FULGOR S.A.S.
+          Alta de nuevo elemento en el inventario fotovoltaico de EL TURPIAL
         </p>
       </div>
 

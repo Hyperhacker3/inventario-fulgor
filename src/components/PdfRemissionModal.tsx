@@ -57,7 +57,7 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
             </div>
             <div className="min-w-0">
               <h3 className="font-bold text-xs sm:text-base text-white leading-tight truncate">
-                Vista de Remisión Oficial FULGOR
+                Vista de Remisión Oficial EL TURPIAL
               </h3>
               <p className="text-[11px] sm:text-xs font-mono-code text-[#93c5fd] font-bold truncate">
                 {remision.numeroRemision} • {remision.proyectoNombre}
@@ -125,7 +125,7 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
         <div className="no-print bg-slate-950/80 px-3 py-1.5 border-b border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
           <span className="flex items-center gap-1.5 truncate">
             <span className="material-symbols-outlined text-[14px] text-emerald-400">verified</span>
-            <span>Formato A4 Estándar FULGOR (Preserva Proporciones de Impresión)</span>
+            <span>Formato A4 Estándar EL TURPIAL (Preserva Proporciones de Impresión)</span>
           </span>
           <span className="text-[10px] font-mono-code text-slate-400 shrink-0 ml-2">
             Escala: {Math.round(computedScale * 100)}%

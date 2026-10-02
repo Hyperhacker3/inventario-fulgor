@@ -24,7 +24,7 @@ export function RemissionDocument({ remision, scale }: { remision: Remision; sca
                       </span>
                     </div>
                     <div>
-                      <h1 className="text-2xl font-black text-[#253685] tracking-tight">FULGOR S.A.S.</h1>
+                      <h1 className="text-2xl font-black text-[#253685] tracking-tight">EL TURPIAL</h1>
                       <p className="text-[11px] text-[#767682]">Logística Fotovoltaica & Suministros Solares</p>
                     </div>
                   </div>
@@ -137,7 +137,7 @@ export function RemissionDocument({ remision, scale }: { remision: Remision; sca
                     </div>
                     <span className="font-bold text-[#131b2e]">{remision.entregadoPor}</span>
                     <span className="text-[11px] text-[#767682]">{remision.cargoEntregado}</span>
-                    <span className="text-[10px] text-[#767682] mt-0.5">FULGOR S.A.S. - Bodega Central</span>
+                    <span className="text-[10px] text-[#767682] mt-0.5">EL TURPIAL - Bodega Central</span>
                   </div>
 
                   <div className="flex flex-col items-center text-center">
@@ -152,7 +152,7 @@ export function RemissionDocument({ remision, scale }: { remision: Remision; sca
 
                 {/* Footer */}
                 <div className="pt-4 mt-6 border-t border-[#e2e8f0] flex justify-between items-center text-[10px] text-[#767682]">
-                  <span>Documento generado por Inventario Fulgor</span>
+                  <span>Documento generado por Inventario turpial</span>
                 </div>
               </div>
             </div>

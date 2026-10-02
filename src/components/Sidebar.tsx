@@ -23,8 +23,8 @@ export const Sidebar: React.FC = () => {
   return (
     <aside className="bg-white border-r border-[#e2e8f0] h-full w-64 fixed left-0 top-0 z-40 flex flex-col py-6 px-4 hidden md:flex select-none">
       {/* Brand Header */}
-      <button type="button" aria-label="FULGOR — Ir al inicio" className="mb-6 px-2" onClick={() => setActiveView('dashboard')}>
-        <img src="/logo-completo.png" alt="FULGOR" width="303" height="131" className="w-full h-auto object-contain" />
+      <button type="button" aria-label="EL TURPIAL — Ir al inicio" className="mb-6 px-2" onClick={() => setActiveView('dashboard')}>
+        <img src="/logo-completo.png" alt="EL TURPIAL" width="303" height="131" className="w-full h-auto object-contain" />
       </button>
 
       {/* Primary CTA Button */}
