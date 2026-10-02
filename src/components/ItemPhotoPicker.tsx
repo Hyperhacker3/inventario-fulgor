@@ -1,8 +1,9 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { ItemImage } from './ItemImage';
 import { CameraCaptureModal } from './CameraCaptureModal';
+import type { CategoriaElemento } from '../types';
 
-export function ItemPhotoPicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+export function ItemPhotoPicker({ value, onChange, category }: { value: string; onChange: (value: string) => void; category?: CategoriaElemento }) {
   const input = useRef<HTMLInputElement>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [error, setError] = useState('');
@@ -31,8 +32,7 @@ export function ItemPhotoPicker({ value, onChange }: { value: string; onChange: 
       </div>
       <div className="flex flex-col sm:flex-row gap-4 mt-3 items-center">
         <div className="w-32 h-32 aspect-square rounded-xl border overflow-hidden bg-white flex items-center justify-center shrink-0">
-          {value ? <ItemImage source={value} alt="Vista previa" className="w-full h-full object-cover" /> :
-            <span className="text-xs text-[#64748b]">Sin imagen</span>}
+          <ItemImage source={value} category={category} compact alt="Vista previa" className="w-full h-full object-cover" />
         </div>
         <input type="url" value={value.startsWith('data:') || value.startsWith('storage://') ? '' : value}
           onChange={event => onChange(event.target.value)} placeholder="https://ejemplo.com/foto.jpg"

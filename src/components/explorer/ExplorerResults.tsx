@@ -57,20 +57,14 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                       className="aspect-square w-full shrink-0 overflow-hidden bg-[#f8fafc] relative border-b border-[#e2e8f0] cursor-pointer"
                       onClick={() => openItemDetail(item)}
                     >
-                      {item.fotoUrl ? (
                         <ItemImage
                           source={item.fotoUrl}
+                          category={item.categoria}
                           alt={item.nombre}
                           className="absolute inset-0 w-full h-full object-cover object-center"
                           loading="lazy"
                           referrerPolicy="no-referrer"
                         />
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-[#f8fafc] text-[#94a3b8]">
-                          <span className="material-symbols-outlined text-[32px] text-[#cbd5e1]">solar_power</span>
-                          <span className="text-[10px] font-mono-code font-bold mt-0.5 text-[#64748b]">{item.categoria}</span>
-                        </div>
-                      )}
                       {renderStockBadge(item)}
                     </div>
 
@@ -163,18 +157,14 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                         <td className="p-2.5 sm:p-3">
                           <div className="flex items-center gap-2 sm:gap-3">
                             <button type="button" onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${item.nombre}`} className="shrink-0 rounded-md hover:opacity-80">
-                            {item.fotoUrl ? (
                               <ItemImage
                                 source={item.fotoUrl}
+                                category={item.categoria}
+                                compact
                                 alt={item.nombre}
                                 className="w-8 h-8 sm:w-10 sm:h-10 rounded-md object-cover border border-[#e2e8f0] shrink-0"
                                 referrerPolicy="no-referrer"
                               />
-                            ) : (
-                              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-md bg-[#f1f5f9] border border-[#e2e8f0] flex items-center justify-center shrink-0 text-[#94a3b8]">
-                                <span className="material-symbols-outlined text-[18px]">inventory_2</span>
-                              </div>
-                            )}
                             </button>
                             <div className="min-w-0">
                               <button type="button" onClick={() => openItemDetail(item)} title={item.nombre} className="block max-w-full text-left font-semibold text-[#131b2e] leading-snug truncate hover:text-[#3e4e9e] hover:underline">{item.nombre}</button>

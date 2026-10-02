@@ -36,8 +36,7 @@ export function AvailableInventory() {
       {visible.map(item => <div key={item.id} className="border rounded-xl p-3 flex justify-between items-center gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <button type="button" onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${item.nombre}`} className="shrink-0 rounded-lg hover:opacity-80">
-            {item.fotoUrl ? <ItemImage source={item.fotoUrl} alt={item.nombre} className="w-12 h-12 rounded-lg object-cover" /> :
-              <span className="w-12 h-12 rounded-lg bg-[#f8fafc] flex items-center justify-center text-[#94a3b8]">▣</span>}
+            <ItemImage source={item.fotoUrl} category={item.categoria} compact alt={item.nombre} className="w-12 h-12 rounded-lg object-cover" />
           </button>
           <div className="min-w-0"><button type="button" onClick={() => openItemDetail(item)} title={item.nombre} className="block max-w-full text-left font-bold text-sm truncate hover:text-[#3e4e9e] hover:underline">{item.nombre}</button>
             <span className="block text-xs text-[#64748b] truncate">{item.codigo} · {getLocationString(item)}</span></div>

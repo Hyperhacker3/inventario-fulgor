@@ -93,12 +93,11 @@ export function ItemDetailModal({ item, onClose }: Props) {
               {['BUENO', 'REGULAR', 'MALO', 'REPARACION', 'RETAL'].map(value => <option key={value}>{value}</option>)}
             </select>
           </label>
-          <ItemPhotoPicker value={photo} onChange={setPhoto} />
+          <ItemPhotoPicker value={photo} category={item.categoria} onChange={setPhoto} />
         </form> : <>
           <div className="flex flex-col gap-5">
             <div className="relative w-full aspect-square rounded-xl border bg-[#f8fafc] overflow-hidden shrink-0 flex items-center justify-center">
-              {item.fotoUrl ? <ItemImage source={item.fotoUrl} alt={item.nombre} className="absolute inset-0 w-full h-full object-cover" /> :
-                <span className="text-xs text-[#64748b]">Sin foto</span>}
+              <ItemImage source={item.fotoUrl} category={item.categoria} alt={item.nombre} className="absolute inset-0 w-full h-full object-cover" />
             </div>
             <div className="min-w-0">
               <h2 id="item-detail-heading" className="text-xl font-bold text-[#131b2e]">{item.nombre}</h2>

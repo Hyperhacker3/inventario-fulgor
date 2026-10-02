@@ -51,3 +51,7 @@ Las fotos del catálogo, detalle y selector usan marcos 1:1 con recorte centrado
 ## Fotografías sin miniaturas
 
 Por petición del usuario se retiró la generación y lectura de miniaturas de 120 píxeles. Ahora se sube una sola imagen cuadrada de hasta 600 × 600 y se utiliza tanto en listados como en el detalle. El detalle muestra la foto al ancho completo de su contenido, respetando sus márgenes, y coloca los textos debajo. Las fotos principales previamente guardadas siguen funcionando; los archivos de miniaturas anteriores se incluyen en la limpieza al reemplazar la foto. La prueba de subida verifica que se envía un solo archivo.
+
+## Productos sin fotografía
+
+Se agregó un marcador compartido con iconos de las 12 categorías y fondo suave. Se usa en cuadrícula, listas, despacho, detalle y selección de foto, incluso como respaldo cuando la imagen no carga. Los marcadores son elementos de interfaz; no generan archivos ni datos en Supabase. Se verificaron tipos, lint y compilación.

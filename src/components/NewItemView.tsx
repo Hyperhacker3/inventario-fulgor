@@ -262,7 +262,7 @@ export const NewItemView: React.FC = () => {
         <ItemLocationFields warehouseId={selectedAlmacenId} rackId={selectedEstanteriaId} boxId={selectedCajaId}
           onWarehouse={setAlmacenId} onRack={setEstanteriaId} onBox={setCajaId} />
 
-        <ItemPhotoPicker value={fotoUrl} onChange={setFotoUrl} />
+        <ItemPhotoPicker value={fotoUrl} category={categoria} onChange={setFotoUrl} />
 
         <ItemStockFields quantity={cantidad} unit={unidad} minimum={stockMinimo}
           onQuantity={setCantidad} onUnit={setUnidad} onMinimum={setStockMinimo} />
