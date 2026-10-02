@@ -6,6 +6,7 @@ import { NumberInput } from '../../src/components/NumberInput';
 import { useViewNavigation } from '../../src/state/useViewNavigation';
 import { useInventoryViewMode } from '../../src/state/useInventoryViewMode';
 import { sessionIdentity, shouldClearSessionCache } from '../../src/domain/session';
+import { useCamera } from '../../src/shared/useCamera';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://app.test/' });
 Object.assign(globalThis, {
@@ -110,4 +111,46 @@ test('inventory list preference survives leaving and reopening the screen', asyn
     await act(() => root.render(createElement(View)));
     assert.equal(host.textContent, 'list');
   } finally { await act(() => root.unmount()); host.remove(); }
+});
+
+test('camera changes request the selected lens and stop the previous stream', async () => {
+  const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  const originalPlay = dom.window.HTMLMediaElement.prototype.play;
+  const requested: MediaStreamConstraints[] = [];
+  const stopped: string[] = [];
+  const mediaDevices = {
+    getUserMedia: async (constraints: MediaStreamConstraints) => {
+      requested.push(constraints);
+      const video = constraints.video as MediaTrackConstraints;
+      const id = (video.deviceId as ConstrainDOMStringParameters)?.exact as string || 'wide';
+      const track = { stop: () => stopped.push(id), getSettings: () => ({ deviceId: id, facingMode: id === 'front' ? 'user' : 'environment' }) };
+      return { getTracks: () => [track], getVideoTracks: () => [track] } as unknown as MediaStream;
+    },
+    enumerateDevices: async () => ['wide', 'tele', 'front'].map(id => ({ kind: 'videoinput', deviceId: id, label: id })),
+    addEventListener: () => {}, removeEventListener: () => {},
+  };
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { mediaDevices } });
+  dom.window.HTMLMediaElement.prototype.play = async () => {};
+  let camera!: ReturnType<typeof useCamera>;
+  function Camera({ id }: { id: string }) { camera = useCamera(true, 'environment', id); return createElement('video', { ref: camera.videoRef }); }
+  const host = document.body.appendChild(document.createElement('div'));
+  const root = createRoot(host);
+  try {
+    await act(async () => root.render(createElement(Camera, { id: '' })));
+    assert.equal(camera.cameras.length, 3);
+    assert.equal(camera.currentDeviceId, 'wide');
+    await act(async () => root.render(createElement(Camera, { id: 'tele' })));
+    assert.deepEqual((requested[1].video as MediaTrackConstraints).deviceId, { exact: 'tele' });
+    assert.deepEqual(stopped, ['wide']);
+    await act(async () => root.render(createElement(Camera, { id: 'front' })));
+    assert.equal(camera.mirrored, true);
+    assert.equal(camera.currentDeviceId, 'front');
+    assert.deepEqual(stopped, ['wide', 'tele']);
+  } finally {
+    await act(() => root.unmount()); host.remove();
+    dom.window.HTMLMediaElement.prototype.play = originalPlay;
+    if (originalNavigator) Object.defineProperty(globalThis, 'navigator', originalNavigator);
+    else Reflect.deleteProperty(globalThis, 'navigator');
+  }
+  assert.deepEqual(stopped, ['wide', 'tele', 'front']);
 });

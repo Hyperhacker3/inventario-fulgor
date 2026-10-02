@@ -31,8 +31,10 @@ export const NewItemView: React.FC = () => {
   const [estado, setEstado] = useState<string>('BUENO');
   const [cantidadDanados, setCantidadDanados] = useState<number>(0);
   const [fotoUrl, setFotoUrl] = useState<string>('');
+  const [fotosAdicionales, setFotosAdicionales] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [pending, setPending] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   const selectedAlmacenId = almacenId || almacenes[0]?.id || '';
 
@@ -56,6 +58,7 @@ export const NewItemView: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (pending || photoBusy) return;
     setFeedback(null);
 
     if (!isCodeValid) {
@@ -81,6 +84,7 @@ export const NewItemView: React.FC = () => {
         cantidad: Number(cantidad),
         unidad,
         fotoUrl: fotoUrl.trim(),
+        fotosAdicionales,
         almacenId: selectedAlmacenId || null,
         estanteriaId: selectedEstanteriaId || null,
         cajaId: selectedCajaId || null,
@@ -262,7 +266,7 @@ export const NewItemView: React.FC = () => {
         <ItemLocationFields warehouseId={selectedAlmacenId} rackId={selectedEstanteriaId} boxId={selectedCajaId}
           onWarehouse={setAlmacenId} onRack={setEstanteriaId} onBox={setCajaId} />
 
-        <ItemPhotoPicker value={fotoUrl} category={categoria} onChange={setFotoUrl} />
+        <ItemPhotoPicker value={fotoUrl} additional={fotosAdicionales} category={categoria} onChange={setFotoUrl} onAdditionalChange={setFotosAdicionales} onBusyChange={setPhotoBusy} disabled={pending} />
 
         <ItemStockFields quantity={cantidad} unit={unidad} minimum={stockMinimo}
           onQuantity={setCantidad} onUnit={setUnidad} onMinimum={setStockMinimo} />
@@ -279,7 +283,7 @@ export const NewItemView: React.FC = () => {
           <button
             type="submit"
             id="btn-submit-component"
-            disabled={pending}
+            disabled={pending || photoBusy}
             className="px-6 py-2.5 rounded-lg bg-[#3e4e9e] text-white text-sm font-bold hover:bg-[#323f80] active:scale-[0.98] transition-all shadow-sm flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-[18px]">save</span>

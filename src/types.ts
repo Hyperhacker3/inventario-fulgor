@@ -45,6 +45,7 @@ export interface Elemento {
   cantidad: number;
   unidad: 'und' | 'rll' | 'mts' | 'kg' | 'par' | 'jgo' | string;
   fotoUrl: string;
+  fotosAdicionales?: string[];
   almacenId: string | null;
   estanteriaId: string | null;
   cajaId: string | null;

@@ -3,6 +3,7 @@ import { useInventory } from '../../context/InventoryContext';
 import { ItemImage } from '../ItemImage';
 import { isDemo } from '../../lib/supabase';
 import { available } from '../../domain/inventory';
+import { itemPhotos } from '../../domain/photos';
 
 export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'grid' | 'list' }) {
   const { getAlmacenById, getEstanteriaById, getLocationString, openItemDetail, addToDispatchCart, user } = useInventory();
@@ -46,6 +47,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
               {items.map((item) => {
                 const alm = getAlmacenById(item.almacenId);
                 const est = getEstanteriaById(item.estanteriaId);
+                const photoCount = itemPhotos(item).length;
 
                 return (
                   <article
@@ -66,6 +68,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                           referrerPolicy="no-referrer"
                         />
                       {renderStockBadge(item)}
+                      {photoCount > 1 && <span className="absolute bottom-2.5 left-2.5 px-2 py-1 rounded-md bg-white/90 text-[#253685] text-xs font-semibold">{photoCount} fotos</span>}
                     </div>
 
                     {/* Card Content */}

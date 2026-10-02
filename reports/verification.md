@@ -12,7 +12,7 @@ Fecha: 2 de octubre de 2026. Alcance: código, PostgreSQL embebido y verificaci�
 
 El JavaScript inicial se redujo aproximadamente 66 %. Las vistas y los modales se cargan bajo demanda. Supabase se descarga como un módulo adicional de aproximadamente 96,68 kB gzip; por ello la cifra de 59,26 kB describe la entrada inicial, no el total descargado durante una sesión. El número de líneas no es una medida directa de velocidad.
 
-Se comprobaron `pnpm install --frozen-lockfile`, `pnpm typecheck`, `pnpm lint`, `pnpm test` y el build de Vite. Pasaron trece pruebas unitarias y seis pruebas de integración con PGlite. Estas cubren mapeos, validación de stock, CSV, permisos básicos de RLS, rechazo de políticas desconocidas, atomicidad e idempotencia del despacho, movimientos, alta auditada, importación repetible y la consulta de auditoría de solo lectura. El test de idempotencia rechaza reutilizar una solicitud con otro contenido.
+Se comprobaron `pnpm install --frozen-lockfile`, `pnpm typecheck`, `pnpm lint`, `pnpm test` y el build de Vite. Pasaron diecinueve pruebas unitarias y seis pruebas de integración con PGlite. Estas cubren mapeos, validación de stock, CSV, permisos básicos de RLS, rechazo de políticas desconocidas, atomicidad e idempotencia del despacho, movimientos, alta auditada, importación repetible y la consulta de auditoría de solo lectura. El test de idempotencia rechaza reutilizar una solicitud con otro contenido.
 
 `python scripts/prepare-import.py` cotejó 677 filas del Excel con 674 registros previamente codificados. Recuperó tres filas omitidas, conservó 25 cantidades decimales y marcó cinco cantidades `#VALUE!` con stock 0 pendiente, según la decisión del usuario. `node scripts/audit-import.mjs --sql` encontró 677 códigos únicos y cero errores. El esquema base ya no carga el artículo de prueba que usaba `EST001`. La importación completa se ensayó en PGlite antes de aplicarla a Supabase.
 
@@ -55,3 +55,9 @@ Por petición del usuario se retiró la generación y lectura de miniaturas de 1
 ## Productos sin fotografía
 
 Se agregó un marcador compartido con iconos de las 12 categorías y fondo suave. Se usa en cuadrícula, listas, despacho, detalle y selección de foto, incluso como respaldo cuando la imagen no carga. Los marcadores son elementos de interfaz; no generan archivos ni datos en Supabase. Se verificaron tipos, lint y compilación.
+
+## Galería de productos y selección de lentes
+
+El alta y la edición permiten una imagen principal y fotos adicionales, con selección múltiple de archivos, captura, eliminación y cambio de principal. Las fotos se guardan en el bucket privado y sus referencias adicionales se almacenan en especificaciones.fotos_adicionales; no requiere migración del esquema existente. La galería del detalle usa desplazamiento horizontal con ajuste a cada foto, flechas, teclado y puntos que indican la posición activa. Solo se resuelven las fotos visibles y vecinas. Las subidas se procesan secuencialmente; se limpian subidas incompletas y las fotos retiradas se eliminan después de confirmar el guardado. Si se pierde la respuesta de la base, se conservan los archivos subidos porque la escritura puede haber sido aceptada; pueden quedar objetos sin referencia que requieran limpieza posterior.
+
+La cámara enumera dispositivos tras obtener permiso, permite selección por nombre y recorre cada deviceId detectado; se detiene el flujo anterior antes de abrir otro. Solo se exponen los lentes que permita el navegador. Se verificaron 19 pruebas unitarias y 6 de integración, incluido el almacenamiento de fotos adicionales en PostgreSQL y el cambio entre tres cámaras simuladas. Las cámaras físicas y el gesto táctil requieren comprobación manual en el teléfono.

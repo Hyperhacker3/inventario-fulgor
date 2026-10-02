@@ -1,6 +1,7 @@
 import type { Almacen, Caja, Elemento, Estanteria, HistorialMovimiento, Proyecto, Remision, DetalleRemision, TipoMovimiento } from '../types';
 import { categories, normalizeUnit } from '../domain/catalogs';
 import { displayDate, displayTime } from '../shared/dates';
+import { uniquePhotos } from '../domain/photos';
 
 export type DbRow = Record<string, unknown>;
 const str = (value: unknown, fallback = ''): string => value == null ? fallback : String(value);
@@ -34,6 +35,7 @@ export const mapElemento = (row: DbRow): Elemento => {
     categoria: categories.find(category => category === row.categoria) || 'OTROS',
     cantidad: numeric(row.cantidad), unidad: normalizeUnit(str(row.unidad, 'und')),
     fotoUrl: str(row.foto_url), almacenId: id(row.almacen_id), estanteriaId: id(row.estanteria_id), cajaId: id(row.caja_id),
+    fotosAdicionales: uniquePhotos(specs.fotos_adicionales).filter(photo => photo !== str(row.foto_url)),
     stockMinimo: numeric(row.stock_minimo, 10), estado: str(row.estado || specs.estado_material, 'BUENO'),
     cantidadDanados: numeric(row.cantidad_danados ?? specs.cantidad_danados),
     stockPendiente: Boolean(row.stock_pendiente), especificaciones: specs,

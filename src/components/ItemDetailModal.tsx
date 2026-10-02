@@ -4,7 +4,7 @@ import type { Elemento } from '../types';
 import { isDemo } from '../lib/supabase';
 import { available } from '../domain/inventory';
 import { errorMessage } from '../shared/errors';
-import { ItemImage } from './ItemImage';
+import { ItemPhotoGallery } from './item/ItemPhotoGallery';
 import { ItemPhotoPicker } from './ItemPhotoPicker';
 import { ItemHistory } from './item/ItemHistory';
 import { NumberInput } from './NumberInput';
@@ -19,10 +19,12 @@ export function ItemDetailModal({ item, onClose }: Props) {
   const [description, setDescription] = useState(item?.descripcion || '');
   const [minimum, setMinimum] = useState(item?.stockMinimo ?? 0);
   const [photo, setPhoto] = useState(item?.fotoUrl || '');
+  const [additionalPhotos, setAdditionalPhotos] = useState<string[]>(item?.fotosAdicionales || []);
   const [condition, setCondition] = useState(item?.estado || 'BUENO');
   const [damaged, setDamaged] = useState(item?.cantidadDanados ?? 0);
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const closeButton = useRef<HTMLButtonElement>(null);
   const canAdmin = isDemo || user.role === 'admin';
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
@@ -40,13 +42,16 @@ export function ItemDetailModal({ item, onClose }: Props) {
   const startEdit = () => {
     setName(item.nombre); setDescription(item.descripcion); setMinimum(item.stockMinimo);
     setPhoto(item.fotoUrl || ''); setCondition(item.estado || 'BUENO'); setDamaged(item.cantidadDanados ?? 0);
+    setAdditionalPhotos(item.fotosAdicionales || []);
     setError(''); setEditing(true);
   };
   const save = async (event: FormEvent) => {
-    event.preventDefault(); setError(''); setPending(true);
+    event.preventDefault();
+    if (pending || photoBusy) return;
+    setError(''); setPending(true);
     try {
       await updateElemento(item.id, { nombre: name.trim(), descripcion: description.trim(), stockMinimo: minimum,
-        fotoUrl: photo.trim(), estado: condition, cantidadDanados: damaged });
+        fotoUrl: photo.trim(), fotosAdicionales: additionalPhotos, estado: condition, cantidadDanados: damaged });
       setEditing(false);
     } catch (cause) { setError(errorMessage(cause)); }
     finally { setPending(false); }
@@ -93,12 +98,10 @@ export function ItemDetailModal({ item, onClose }: Props) {
               {['BUENO', 'REGULAR', 'MALO', 'REPARACION', 'RETAL'].map(value => <option key={value}>{value}</option>)}
             </select>
           </label>
-          <ItemPhotoPicker value={photo} category={item.categoria} onChange={setPhoto} />
+          <ItemPhotoPicker value={photo} additional={additionalPhotos} category={item.categoria} onChange={setPhoto} onAdditionalChange={setAdditionalPhotos} onBusyChange={setPhotoBusy} disabled={pending} />
         </form> : <>
           <div className="flex flex-col gap-5">
-            <div className="relative w-full aspect-square rounded-xl border bg-[#f8fafc] overflow-hidden shrink-0 flex items-center justify-center">
-              <ItemImage source={item.fotoUrl} category={item.categoria} alt={item.nombre} className="absolute inset-0 w-full h-full object-cover" />
-            </div>
+            <ItemPhotoGallery key={JSON.stringify([item.fotoUrl, item.fotosAdicionales])} item={item} />
             <div className="min-w-0">
               <h2 id="item-detail-heading" className="text-xl font-bold text-[#131b2e]">{item.nombre}</h2>
               <p className="text-sm text-[#454651] mt-2">{item.descripcion}</p>
@@ -123,8 +126,8 @@ export function ItemDetailModal({ item, onClose }: Props) {
         <ItemHistory itemId={item.id} />
       </div>
       <footer className="p-4 border-t bg-[#f8fafc] flex justify-end gap-2">
-        {editing && <><button type="button" onClick={() => setEditing(false)} disabled={pending} className="px-4 py-2 border rounded-lg text-sm">Cancelar</button>
-          <button type="submit" form="item-edit-form" disabled={pending} className="px-4 py-2 bg-[#3e4e9e] text-white rounded-lg text-sm font-semibold">{pending ? 'Guardando…' : 'Guardar'}</button></>}
+        {editing && <><button type="button" onClick={() => setEditing(false)} disabled={pending || photoBusy} className="px-4 py-2 border rounded-lg text-sm">Cancelar</button>
+          <button type="submit" form="item-edit-form" disabled={pending || photoBusy} className="px-4 py-2 bg-[#3e4e9e] text-white rounded-lg text-sm font-semibold">{pending ? 'Guardando…' : 'Guardar'}</button></>}
         {!editing && <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-sm">Cerrar</button>}
       </footer>
     </section>

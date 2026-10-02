@@ -9,7 +9,8 @@ import { validateDispatch } from '../domain/dispatch';
 import { validQuantity } from '../domain/quantity';
 import { useAuth } from '../context/AuthContext';
 import { displayDate, displayTime } from '../shared/dates';
-import { saveImage, removeImage, isStoredImage, isOptimizedImage } from '../shared/images';
+import { saveImage, removeImage } from '../shared/images';
+import { saveGallery } from '../domain/photos';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
 const newId = (prefix: string) => `${prefix}-DEMO-${crypto.randomUUID()}`;
@@ -38,22 +39,24 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     const item = { ...input, codigo: input.codigo.trim().toUpperCase() };
     validateItem(item, data.almacenes, data.estanterias, data.cajas);
     if (data.elementos.some(el => el.codigo === item.codigo)) throw new Error('Este código ya existe.');
-    const photo = await saveImage(item.fotoUrl);
-    if (isDemo) {
-      const created = { ...item, fotoUrl: photo, id: newId('ELM'), createdAt: isoNow(), updatedAt: isoNow() };
-      setDemoData(prev => ({ ...prev, elementos: [created, ...prev.elementos] }));
+    return saveGallery(item, { fotoUrl: '' }, { save: saveImage, remove: removeImage }, async gallery => {
+      const photo = gallery.main;
+      if (isDemo) {
+        const created = { ...item, fotoUrl: photo, fotosAdicionales: gallery.additional, id: newId('ELM'), createdAt: isoNow(), updatedAt: isoNow() };
+        setDemoData(prev => ({ ...prev, elementos: [created, ...prev.elementos] }));
+        return created;
+      }
+      const created = mapElemento(await rpc<Record<string, unknown>>('create_inventory_item', { p_item: {
+        codigo: item.codigo, nombre: item.nombre, descripcion: item.descripcion, categoria: item.categoria,
+        cantidad: item.cantidad, stock_minimo: item.stockMinimo, unidad: item.unidad,
+        almacen_id: item.almacenId, estanteria_id: item.estanteriaId, caja_id: item.cajaId,
+        foto_url: photo, estado: item.estado || 'BUENO', cantidad_danados: item.cantidadDanados || 0,
+        especificaciones: { ...item.especificaciones, fotos_adicionales: gallery.additional },
+      } }));
+      applyItemChange(created.id, created);
+      await syncAfterWrite(refreshItemIds([created.id]), refresh('historial'));
       return created;
-    }
-    const created = mapElemento(await rpc<Record<string, unknown>>('create_inventory_item', { p_item: {
-      codigo: item.codigo, nombre: item.nombre, descripcion: item.descripcion, categoria: item.categoria,
-      cantidad: item.cantidad, stock_minimo: item.stockMinimo, unidad: item.unidad,
-      almacen_id: item.almacenId, estanteria_id: item.estanteriaId, caja_id: item.cajaId,
-      foto_url: photo, estado: item.estado || 'BUENO', cantidad_danados: item.cantidadDanados || 0,
-      especificaciones: item.especificaciones || {},
-    } }));
-    applyItemChange(created.id, created);
-    await syncAfterWrite(refreshItemIds([created.id]), refresh('historial'));
-    return created;
+    });
   };
 
   const updateElemento = async (id: string, updates: Partial<Elemento>) => {
@@ -63,20 +66,20 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     if (updates.cantidad !== undefined && !isDemo) throw new Error('Use una entrada o ajuste para cambiar existencias.');
     const next = { ...before, ...updates };
     validateItem(next, data.almacenes, data.estanterias, data.cajas);
-    const photo = next.fotoUrl === before.fotoUrl && (!next.fotoUrl || isOptimizedImage(next.fotoUrl))
-      ? before.fotoUrl : await saveImage(next.fotoUrl);
-    if (isDemo) {
-      setDemoData(prev => ({ ...prev, elementos: prev.elementos.map(el => el.id === id ? { ...el, ...updates, fotoUrl: photo, updatedAt: isoNow() } : el) }));
-      return;
-    }
-    const saved = await updateRow('elementos', id, {
-      nombre: next.nombre, descripcion: next.descripcion, stock_minimo: next.stockMinimo,
-      foto_url: photo, estado: next.estado, cantidad_danados: next.cantidadDanados ?? 0,
-      especificaciones: next.especificaciones || {}, updated_at: isoNow(),
-    }, mapElemento);
-    applyItemChange(id, saved);
-    if (isStoredImage(before.fotoUrl) && before.fotoUrl !== photo) await removeImage(before.fotoUrl).catch(() => {});
-    await syncAfterWrite(refreshItemIds([id]));
+    return saveGallery(next, before, { save: saveImage, remove: removeImage }, async gallery => {
+      const photo = gallery.main;
+      if (isDemo) {
+        setDemoData(prev => ({ ...prev, elementos: prev.elementos.map(el => el.id === id ? { ...el, ...updates, fotoUrl: photo, fotosAdicionales: gallery.additional, updatedAt: isoNow() } : el) }));
+        return;
+      }
+      const saved = await updateRow('elementos', id, {
+        nombre: next.nombre, descripcion: next.descripcion, stock_minimo: next.stockMinimo,
+        foto_url: photo, estado: next.estado, cantidad_danados: next.cantidadDanados ?? 0,
+        especificaciones: { ...next.especificaciones, fotos_adicionales: gallery.additional }, updated_at: isoNow(),
+      }, mapElemento);
+      applyItemChange(id, saved);
+      await syncAfterWrite(refreshItemIds([id]));
+    });
   };
   const deleteElemento = async (id: string) => {
     requireAdmin();

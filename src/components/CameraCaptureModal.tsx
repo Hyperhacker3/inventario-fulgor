@@ -1,18 +1,20 @@
 import { useRef, useState } from 'react';
 import { useCamera } from '../shared/useCamera';
 import { squareCanvas } from '../shared/squareImage';
+import { nextCameraId } from '../shared/cameraDevices';
 
 interface Props { isOpen: boolean; onClose: () => void; onPhotoCaptured: (photoDataUrl: string) => void; title?: string }
 export function CameraCaptureModal({ isOpen, onClose, onPhotoCaptured, title = 'Tomar foto' }: Props) {
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [photo, setPhoto] = useState<string | null>(null);
-  const { videoRef, loading, error, ready } = useCamera(isOpen && !photo, facingMode);
+  const [selectedDeviceId, setSelectedDeviceId] = useState('');
+  const { videoRef, loading, error, ready, cameras, currentDeviceId, mirrored } = useCamera(isOpen && !photo, facingMode, selectedDeviceId);
   const fileRef = useRef<HTMLInputElement>(null);
   const close = () => { setPhoto(null); onClose(); };
   const snap = () => {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
-    const canvas = squareCanvas(video, video.videoWidth, video.videoHeight, 600, facingMode === 'user');
+    const canvas = squareCanvas(video, video.videoWidth, video.videoHeight, 600, mirrored);
     setPhoto(canvas.toDataURL('image/jpeg', 0.78));
   };
   const selectFile = (file?: File) => {
@@ -28,15 +30,25 @@ export function CameraCaptureModal({ isOpen, onClose, onPhotoCaptured, title = '
       <div className="flex justify-between"><h2 className="font-bold">{title}</h2><button aria-label="Cerrar cámara" onClick={close}>×</button></div>
       <div className="relative w-full max-w-[min(100%,45vh)] mx-auto aspect-square overflow-hidden rounded-lg bg-black">
         {photo ? <img src={photo} alt="Vista previa" className="absolute inset-0 w-full h-full object-cover object-center" />
-          : <video ref={videoRef} muted playsInline autoPlay className="absolute inset-0 w-full h-full object-cover object-center" style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : undefined }} />}
+          : <video ref={videoRef} muted playsInline autoPlay className="absolute inset-0 w-full h-full object-cover object-center" style={{ transform: mirrored ? 'scaleX(-1)' : undefined }} />}
       </div>
       <p className="text-xs text-slate-500">Encuadre el producto dentro del cuadrado. La captura conserva este recorte centrado.</p>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       {loading && <p className="text-sm">Abriendo cámara…</p>}
+      {!photo && cameras.length > 1 && <label className="block text-xs font-semibold">Cámara o lente
+        <select aria-label="Seleccionar cámara o lente" disabled={loading} value={selectedDeviceId || currentDeviceId} onChange={event => setSelectedDeviceId(event.target.value)} className="block w-full mt-1 border rounded-lg p-2 text-sm">
+          {!cameras.some(camera => camera.id === (selectedDeviceId || currentDeviceId)) && <option value="">Cámara actual</option>}
+          {cameras.map(camera => <option key={camera.id} value={camera.id}>{camera.label}</option>)}
+        </select>
+      </label>}
+      {!photo && <p className="text-xs text-slate-500">{cameras.length} cámaras detectadas. Solo se pueden seleccionar los lentes que el navegador permita usar.</p>}
       <div className="flex flex-wrap gap-2 justify-end">
         <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => selectFile(e.target.files?.[0])} />
         <button type="button" onClick={() => fileRef.current?.click()} className="border rounded-lg px-3 py-2 text-sm">Elegir archivo</button>
-        {!photo && <button type="button" onClick={() => setFacingMode(current => current === 'environment' ? 'user' : 'environment')} className="border rounded-lg px-3 py-2 text-sm">Cambiar cámara</button>}
+        {!photo && <button type="button" disabled={loading} onClick={() => {
+          if (cameras.length > 1) setSelectedDeviceId(nextCameraId(cameras, currentDeviceId || selectedDeviceId));
+          else { setSelectedDeviceId(''); setFacingMode(current => current === 'environment' ? 'user' : 'environment'); }
+        }} className="border rounded-lg px-3 py-2 text-sm">Cambiar cámara</button>}
         {!photo && <button type="button" disabled={!ready} onClick={snap} className="bg-[#3e4e9e] text-white rounded-lg px-3 py-2 text-sm">Capturar</button>}
         {photo && <><button type="button" onClick={() => setPhoto(null)} className="border rounded-lg px-3 py-2 text-sm">Repetir</button>
           <button type="button" onClick={() => { onPhotoCaptured(photo); close(); }} className="bg-[#3e4e9e] text-white rounded-lg px-3 py-2 text-sm">Usar foto</button></>}
