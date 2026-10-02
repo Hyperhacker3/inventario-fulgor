@@ -9,11 +9,13 @@ export function unwrap<T>(result: { data: T | null; error: { message: string } |
   return result.data;
 }
 
-async function all(table: Table, order = 'created_at') {
+async function all(table: Table, order = 'created_at', activeOnly = false) {
   const db = requireSupabase();
   const rows: DbRow[] = [];
   for (let from = 0; ; from += 500) {
-    const batch = unwrap(await db.from(table).select('*').order(order, { ascending: false }).range(from, from + 499));
+    let query = db.from(table).select('*');
+    if (activeOnly) query = query.eq('archived', false);
+    const batch = unwrap(await query.order(order, { ascending: false }).range(from, from + 499));
     rows.push(...batch);
     if (batch.length < 500) break;
   }
@@ -23,7 +25,7 @@ export const readAlmacenes = async (): Promise<Almacen[]> => (await all('almacen
 export const readEstanterias = async (): Promise<Estanteria[]> => (await all('estanterias')).map(mapEstanteria);
 export const readCajas = async (): Promise<Caja[]> => (await all('cajas')).map(mapCaja);
 export const readProyectos = async (): Promise<Proyecto[]> => (await all('proyectos')).map(mapProyecto);
-export const readElementos = async (): Promise<Elemento[]> => (await all('elementos')).filter(row => !row.archived).map(mapElemento);
+export const readElementos = async (): Promise<Elemento[]> => (await all('elementos', 'created_at', true)).map(mapElemento);
 export const readElementosByIds = async (ids: string[]): Promise<Elemento[]> => {
   if (!ids.length) return [];
   const result = await requireSupabase().from('elementos').select('*').in('id', ids).eq('archived', false);

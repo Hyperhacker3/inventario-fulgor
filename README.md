@@ -23,6 +23,8 @@ El 1 de octubre de 2026 se conciliaron 677 artículos y se cargaron en el proyec
 
 El informe resumido `reports/excel-reconciliation.json` conserva únicamente conteos: tres filas recuperadas del Excel, 25 stocks decimales y cinco stocks ilegibles. Estos cinco se cargaron con cantidad 0 y `stock_pendiente=true`, y no se pueden despachar hasta que un administrador confirme su existencia mediante un ajuste de inventario. Los 677 artículos conservan la ubicación descriptiva original en Supabase; estanterías y cajas quedaron nulas para conciliación posterior.
 
+Para revisar la carga sin modificarla, ejecute por separado los bloques de `supabase/postdeploy_readonly.sql` en el Editor SQL de Supabase. El primer bloque resume artículos activos, stocks pendientes y ubicaciones faltantes; el segundo muestra solo los cinco artículos que requieren conteo físico. No guarde esa salida con nombres de productos dentro del repositorio.
+
 Si se necesita repetir una importación en otro proyecto, `scripts/prepare-import.py` y `scripts/audit-import.mjs` permiten reconstruir el SQL a partir de copias privadas externas. Antes de ejecutarlo, respalde la base, revise `supabase/preflight_readonly.sql` y ensaye la carga.
 
 La carga efectuada reemplazó los 674 artículos y registros de prueba anteriores dentro de una transacción. Se aplicaron las migraciones de inventario seguro y fotos privadas. La cuenta creada en Supabase Auth tiene rol `admin`; su contraseña y las claves privadas no están en el repositorio.

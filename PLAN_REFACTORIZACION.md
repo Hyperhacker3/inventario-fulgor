@@ -1,6 +1,6 @@
 # Plan de refactorización, optimización y estabilización de FULGOR
 
-Fecha: 30 de septiembre de 2026. Estado al 1 de octubre de 2026: implementación local avanzada; las migraciones y la importación no se han aplicado a Supabase. Véase `reports/verification.md` para cambios verificados y trabajo pendiente.
+Fecha: 30 de septiembre de 2026. Estado al 1 de octubre de 2026: migraciones, importación de 677 productos y despliegue completados. Véase `reports/verification.md` para cambios verificados y trabajo pendiente.
 
 El objetivo es conservar las funciones del producto, reducir el acoplamiento, mejorar el rendimiento y conseguir que inventario, despachos y trazabilidad sean fiables con varios usuarios. El orden de trabajo debe atender primero la seguridad y la integridad; después la optimización medida.
 
@@ -52,7 +52,7 @@ Separación del estado:
 - **Carrito:** contexto y reducer propios. Cada fila guarda `elementoId` y cantidad; los datos vigentes se consultan por ID.
 - **Interfaz:** contextos pequeños para navegación, búsqueda y selección de modales. Los formularios conservan estado local.
 - **Sesión:** proveedor de autenticación separado. Al cambiar de usuario se limpian o segmentan consultas, borradores y cachés.
-- **Demostración:** repositorio local explícito con datos de ejemplo. No se usa como sustituto silencioso ante fallos del servicio real.
+- **Demostración:** deshabilitada. El inventario se consulta exclusivamente desde Supabase; las pruebas usan datos sintéticos.
 
 TanStack Query se propone para eliminar la implementación manual de caché, estados de consulta e invalidación. No se añade otro gestor global inicialmente. React sigue gestionando el estado visual y del carrito.
 
@@ -307,12 +307,12 @@ Criterio de cierre: subir fotos no serializa todo el inventario en base64; abrir
 
 Trabajo:
 
-1. Crear importador con modo de validación sin escritura para Excel/JSON. Conservar los archivos originales como respaldo.
+1. Crear importador con modo de validación sin escritura para Excel/JSON. Después de verificar la carga, retirar los archivos completos del proyecto y de la rama Git; el inventario operativo queda en Supabase.
 2. Generar informe de códigos, categorías, unidades, cantidades, stock mínimo, material dañado y ubicaciones pendientes de resolver.
 3. Revisar las diferencias entre ubicaciones descriptivas del JSON y el árbol real; mantener `null` hasta asignar una ubicación válida.
 4. Reconciliar registros ya presentes por código sin sobrescribir stock operativo silenciosamente. Tratar diferencias como conciliaciones autorizadas con trazabilidad.
 5. Importar primero en pruebas, verificar 677 registros, cinco stocks pendientes y 25 decimales. Evitar repetir la importación como nuevas entradas.
-6. Mantener datos de ejemplo separados, quitar el carrito precargado de producción y restringir el restablecimiento a demostración.
+6. No incluir datos de ejemplo en producción, quitar el carrito precargado y usar únicamente datos sintéticos en las pruebas.
 7. Retirar dependencias sin uso comprobado; revisar Gemini, Express, html2canvas, jsPDF, motion y lucide-react. Eliminar también tipos/configuración asociados cuando corresponda.
 8. Unificar la declaración duplicada de Vite, corregir el nombre del paquete y sustituir el script de limpieza por una opción compatible con Windows.
 9. Actualizar README, `.env.example`, comandos, instalación del esquema, roles, respaldo, importación y despliegue.
@@ -364,7 +364,7 @@ Las fases describen áreas de trabajo; algunas tareas se adelantan para permitir
 - Verificar políticas, datos e importación contra la base real antes de migrar producción.
 - Confirmar significado de KL, reglas de cantidades/unidades y asignación de ubicaciones cuando no pueda resolverse con el Excel y los datos existentes. Esto no bloquea la separación de módulos.
 
-El plan cubre el código local y la preparación de cambios de base de datos. La instalación, las pruebas y el build locales se han verificado; el rendimiento en ejecución y la configuración remota siguen pendientes. No se han efectuado cambios en Supabase ni publicado una nueva versión.
+El plan cubre código, base de datos y despliegue. Se aplicaron las migraciones y la importación real a Supabase; la aplicación está publicada y el usuario confirmó el acceso al inventario. Siguen pendientes la validación manual de los cinco stocks, la conciliación de ubicaciones, las pruebas con varios roles y sesiones, la revisión visual de cámara e impresión y las métricas de rendimiento en uso real.
 
 ## 6. Referencias técnicas
 

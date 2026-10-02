@@ -8,6 +8,7 @@ const baseSql = fs.readFileSync(new URL('../../supabase_schema.sql', import.meta
   .replace(/^ALTER PUBLICATION.*$/gm, '');
 const migration = fs.readFileSync(new URL('../../supabase/migrations/20261001_secure_inventory.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
+const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 
 async function database() {
   const db = new PGlite();
@@ -27,6 +28,18 @@ async function database() {
 const role = (db, value) => db.exec(`SELECT set_config('app.test_role','${value}',false); SET ROLE authenticated;`);
 const asOwner = db => db.exec('RESET ROLE;');
 const itemStock = async db => Number((await db.query("SELECT cantidad FROM public.elementos WHERE id = 'ELM-001'")).rows[0].cantidad);
+
+test('postdeploy audit runs against the migrated schema without changing inventory', async () => {
+  const db = await database();
+  try {
+    await db.exec('CREATE SCHEMA storage; CREATE TABLE storage.buckets(id text, public boolean);');
+    const before = Number((await db.query('SELECT count(*) AS n FROM public.elementos')).rows[0].n);
+    const results = await db.exec(postdeployAudit);
+    assert.equal(Number(results[0].rows[0].productos_activos), before);
+    assert.equal(Number(results[0].rows[0].cantidades_invalidas), 0);
+    assert.equal(Number((await db.query('SELECT count(*) AS n FROM public.elementos')).rows[0].n), before);
+  } finally { await db.close(); }
+});
 
 test('security migration refuses unknown RLS policies', async () => {
   const db = new PGlite();
