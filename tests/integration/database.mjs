@@ -29,6 +29,32 @@ const role = (db, value) => db.exec(`SELECT set_config('app.test_role','${value}
 const asOwner = db => db.exec('RESET ROLE;');
 const itemStock = async db => Number((await db.query("SELECT cantidad FROM public.elementos WHERE id = 'ELM-001'")).rows[0].cantidad);
 
+test('projects support admin management, safe example retries and reject finalized destinations', async () => {
+  const db = await database();
+  try {
+    await role(db, 'operador');
+    await assert.rejects(() => db.query("INSERT INTO public.proyectos(id,nombre,cliente,estado) VALUES ('PROY-TEST','Proyecto','EL TURPIAL','ACTIVO')"), /row-level security/);
+    await asOwner(db); await role(db, 'admin');
+    const seed = "INSERT INTO public.proyectos(id,nombre,cliente,estado) VALUES ('PROY-TEST','Ejemplo','EL TURPIAL','ACTIVO') ON CONFLICT(id) DO NOTHING";
+    await db.query(seed);
+    const dispatchSql = 'SELECT public.dispatch_inventory($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb) AS rem';
+    const payload = ['bd8e7d90-a2c7-401b-a926-59047b6a8948', 'PROY-TEST', 'Bodega', 'Admin', 'Obra', 'Residente', '', JSON.stringify([{ elementoId: 'ELM-001', cantidad: 1 }])];
+    await db.query(dispatchSql, payload);
+    await db.query("UPDATE public.proyectos SET nombre='Nombre editado',estado='FINALIZADO' WHERE id='PROY-TEST'");
+    await db.query(seed);
+    const project = (await db.query("SELECT nombre,estado FROM public.proyectos WHERE id='PROY-TEST'")).rows[0];
+    assert.equal(project.nombre, 'Nombre editado');
+    assert.equal(project.estado, 'FINALIZADO');
+    assert.equal((await db.query("SELECT proyecto_nombre FROM public.remisiones WHERE proyecto_id='PROY-TEST'")).rows[0].proyecto_nombre, 'Ejemplo');
+    payload[0] = 'd70932d4-dd07-4674-8f97-16972f4d2c59';
+    await assert.rejects(() => db.query(dispatchSql, payload), /Proyecto no disponible/);
+    assert.equal(await itemStock(db), 183);
+    await db.query("UPDATE public.proyectos SET estado='ACTIVO' WHERE id='PROY-TEST'");
+    await db.query(dispatchSql, payload);
+    assert.equal(await itemStock(db), 182);
+  } finally { await db.close(); }
+});
+
 test('postdeploy audit runs against the migrated schema without changing inventory', async () => {
   const db = await database();
   try {

@@ -228,6 +228,7 @@ export const Header: React.FC = () => {
               ...(isDemo || user.role === 'admin' ? [{ id: 'new-item' as ActiveView, label: 'Registrar Nuevo Item', icon: 'add_box' }] : []),
               ...(isDemo || ['admin', 'operador'].includes(user.role) ? [{ id: 'dispatch' as ActiveView, label: 'Despacho & Salida', icon: 'shopping_cart_checkout', badge: dispatchCart.length }] : []),
               { id: 'history' as ActiveView, label: 'Historial de Movimientos', icon: 'history' },
+              { id: 'projects' as ActiveView, label: 'Proyectos', icon: 'folder_open' },
               { id: 'warehouses' as ActiveView, label: 'Almacenes & Estanterías', icon: 'warehouse' },
               { id: 'remissions' as ActiveView, label: 'Remisiones Oficiales', icon: 'picture_as_pdf' },
             ].map((item) => {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ActiveView } from '../types';
 
-const views: ActiveView[] = ['dashboard', 'explorer', 'new-item', 'dispatch', 'history', 'warehouses', 'remissions'];
+const views: ActiveView[] = ['dashboard', 'explorer', 'new-item', 'dispatch', 'history', 'warehouses', 'remissions', 'projects'];
 export function viewFromHash(hash: string): ActiveView {
   const view = hash.replace(/^#\/?/, '');
   return views.includes(view as ActiveView) ? view as ActiveView : 'dashboard';

@@ -1,3 +1,4 @@
+import { useProjectActions } from '../state/useProjectActions';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useInventoryData } from '../state/useInventoryData';
@@ -75,6 +76,7 @@ function useInventoryValue() {
   const openQuickMovement = (item: Elemento, type: 'ENTRADA' | 'AJUSTE') => { setQuickMovementId(item.id); setQuickMovementType(type); };
   const closeQuickMovement = () => setQuickMovementId(null);
 
+  const projectActions = useProjectActions();
   const actions = useInventoryActions(data, data.setDemoData, data.refresh, data.refreshItemIds, data.applyItemChange,
     data.rememberRemission, dispatchCart, clearDispatchCart, openPdfRemision);
   const getAlmacenById = useCallback((id: string | null) => id ? warehouseIndex.get(id) : undefined, [warehouseIndex]);
@@ -98,7 +100,7 @@ function useInventoryValue() {
     openPdfRemision, closePdfRemision, openQuickMovement, closeQuickMovement, setIsHelpModalOpen,
     addToDispatchCart, updateDispatchCartQuantity, removeFromDispatchCart, clearDispatchCart,
     getAlmacenById, getEstanteriaById, getCajaById, getProyectoById, getLocationString,
-    resetToDefaultData, ...actions,
+    resetToDefaultData, ...actions, ...projectActions,
   };
 }
 

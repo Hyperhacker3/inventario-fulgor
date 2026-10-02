@@ -16,6 +16,7 @@ export const Sidebar: React.FC = () => {
     ...(canAdmin ? [{ id: 'new-item' as ActiveView, label: 'Nuevo Item', icon: 'add_box' }] : []),
     ...(canOperate ? [{ id: 'dispatch' as ActiveView, label: 'Despacho', icon: 'shopping_cart_checkout', badge: dispatchCart.length }] : []),
     { id: 'history', label: 'Historial', icon: 'history' },
+    { id: 'projects', label: 'Proyectos', icon: 'folder_open' },
     { id: 'warehouses', label: 'Almacenes', icon: 'warehouse' },
     { id: 'remissions', label: 'Remisiones', icon: 'picture_as_pdf' },
   ];

@@ -1,3 +1,4 @@
+import { ProjectSelector } from './dispatch/ProjectSelector';
 import React, { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { errorMessage } from '../shared/errors';
@@ -19,7 +20,7 @@ export const DispatchView: React.FC = () => {
   } = useInventory();
 
   // Dispatch form state
-  const [selectedProyectoId, setSelectedProyectoId] = useState<string>(proyectos[0]?.id || '');
+  const [selectedProyectoId, setSelectedProyectoId] = useState<string>('');
   const [entregadoPor, setEntregadoPor] = useState(user.name);
   const [cargoEntregado, setCargoEntregado] = useState(user.role);
   const [recibidoPor, setRecibidoPor] = useState('');
@@ -29,8 +30,7 @@ export const DispatchView: React.FC = () => {
   const [pending, setPending] = useState(false);
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
 
-  const effectiveProjectId = selectedProyectoId || proyectos[0]?.id || '';
-  const selectedProyecto = proyectos.find((p) => p.id === effectiveProjectId);
+  const effectiveProjectId = proyectos.some(p => p.id === selectedProyectoId && p.estado === 'ACTIVO') ? selectedProyectoId : '';
 
   // Total units in cart
   const totalUnits = dispatchCart.reduce((sum, item) => sum + item.cantidad, 0);
@@ -121,31 +121,7 @@ export const DispatchView: React.FC = () => {
               </div>
             )}
 
-            {/* Project Select */}
-            <div>
-              <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-1.5">
-                PROYECTO / DESTINO <span className="text-[#dd4c42]">*</span>
-              </label>
-              <select
-                id="select-dispatch-project"
-                value={effectiveProjectId}
-                onChange={(e) => setSelectedProyectoId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg border border-[#e2e8f0] text-sm bg-white focus:ring-2 focus:ring-[#3e4e9e] text-[#131b2e] cursor-pointer"
-                required
-              >
-                {proyectos.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nombre} ({p.cliente})
-                  </option>
-                ))}
-              </select>
-              {selectedProyecto && (
-                <p className="text-[11px] text-[#767682] mt-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">pin_drop</span>
-                  <span className="truncate">{selectedProyecto.ubicacion}</span>
-                </p>
-              )}
-            </div>
+            <ProjectSelector value={effectiveProjectId} onChange={setSelectedProyectoId} disabled={pending} />
 
             {/* Delivery & Receiver */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

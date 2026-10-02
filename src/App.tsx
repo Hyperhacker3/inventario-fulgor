@@ -13,6 +13,7 @@ import { ActiveView } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { isDemo } from './lib/supabase';
+const ProjectsView = lazy(() => import('./components/ProjectsView').then(m => ({ default: m.ProjectsView })));
 const DashboardView = lazy(() => import('./components/DashboardView').then(m => ({ default: m.DashboardView })));
 const ExplorerView = lazy(() => import('./components/ExplorerView').then(m => ({ default: m.ExplorerView })));
 const NewItemView = lazy(() => import('./components/NewItemView').then(m => ({ default: m.NewItemView })));
@@ -58,6 +59,8 @@ const MainLayout: React.FC = () => {
         return <HistoryView />;
       case 'warehouses':
         return <WarehouseView />;
+      case 'projects':
+        return <ProjectsView />;
       case 'remissions':
         return <RemissionView />;
       default:

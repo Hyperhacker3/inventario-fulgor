@@ -1,8 +1,8 @@
-import type { DispatchCartItem, Elemento, Almacen, Estanteria, Caja, Proyecto, HistorialMovimiento, Remision, TipoMovimiento } from '../types';
+import type { DispatchCartItem, Elemento, Almacen, Estanteria, Caja, HistorialMovimiento, Remision, TipoMovimiento } from '../types';
 import type { Dispatch, SetStateAction } from 'react';
 import type { DemoData } from './useInventoryData';
 import { insertRow, updateRow, rpc } from '../data/repository';
-import { mapAlmacen, mapCaja, mapElemento, mapEstanteria, mapProyecto, mapRemision } from '../data/mappers';
+import { mapAlmacen, mapCaja, mapElemento, mapEstanteria, mapRemision } from '../data/mappers';
 import { isDemo } from '../lib/supabase';
 import { validateItem } from '../domain/inventory';
 import { validateDispatch } from '../domain/dispatch';
@@ -92,7 +92,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     requireOperator();
     validateDispatch(cart, data.elementos);
     const project = data.proyectos.find(p => p.id === payload.proyectoId);
-    if (!project) throw new Error('Seleccione un proyecto válido.');
+    if (!project || project.estado !== 'ACTIVO') throw new Error('Seleccione un proyecto válido.');
     if (!payload.recibidoPor.trim()) throw new Error('Indique quién recibe.');
     if (!isDemo) {
       const response = await rpc<Record<string, unknown>>('dispatch_inventory', {
@@ -211,13 +211,6 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       ...(updates.descripcion !== undefined && { descripcion: updates.descripcion }) }, mapCaja);
     await refresh('cajas');
   };
-  const addProyecto = async (input: Omit<Proyecto, 'id' | 'createdAt'>) => {
-    requireAdmin();
-    if (isDemo) { const value = { ...input, id: newId('PROY'), createdAt: isoNow() }; setDemoData(prev => ({ ...prev, proyectos: [...prev.proyectos, value] })); return value; }
-    const value = await insertRow('proyectos', { id: `PROY-${crypto.randomUUID()}`, nombre: input.nombre,
-      cliente: input.cliente, ubicacion: input.ubicacion, estado: input.estado }, mapProyecto);
-    await refresh('proyectos'); return value;
-  };
   return { addElemento, updateElemento, deleteElemento, processDispatch, addStockMovement,
-    addAlmacen, updateAlmacen, addEstanteria, updateEstanteria, addCaja, updateCaja, addProyecto };
+    addAlmacen, updateAlmacen, addEstanteria, updateEstanteria, addCaja, updateCaja };
 }

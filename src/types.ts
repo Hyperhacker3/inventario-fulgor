@@ -121,7 +121,8 @@ export type ActiveView =
   | 'dispatch' 
   | 'history' 
   | 'warehouses' 
-  | 'remissions';
+  | 'remissions'
+  | 'projects';
 
 export interface UserProfile {
   name: string;
