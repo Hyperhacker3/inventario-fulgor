@@ -162,6 +162,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                         </td>
                         <td className="p-2.5 sm:p-3">
                           <div className="flex items-center gap-2 sm:gap-3">
+                            <button type="button" onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${item.nombre}`} className="shrink-0 rounded-md hover:opacity-80">
                             {item.fotoUrl ? (
                               <ItemImage
                                 source={item.fotoUrl}
@@ -174,8 +175,9 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                                 <span className="material-symbols-outlined text-[18px]">inventory_2</span>
                               </div>
                             )}
+                            </button>
                             <div className="min-w-0">
-                              <p className="font-semibold text-[#131b2e] leading-snug truncate">{item.nombre}</p>
+                              <button type="button" onClick={() => openItemDetail(item)} title={item.nombre} className="block max-w-full text-left font-semibold text-[#131b2e] leading-snug truncate hover:text-[#3e4e9e] hover:underline">{item.nombre}</button>
                               <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-[#767682]">
                                 <span>{item.categoria}</span>
                                 {(item.cantidadDanados || 0) > 0 && (

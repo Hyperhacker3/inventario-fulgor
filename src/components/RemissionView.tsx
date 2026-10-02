@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useInventory } from '../context/InventoryContext';
 import { readRemisionesPage } from '../data/repository';
@@ -6,7 +6,8 @@ import { isDemo } from '../lib/supabase';
 import { errorMessage } from '../shared/errors';
 
 export const RemissionView: React.FC = () => {
-  const { remisiones, openPdfRemision, setActiveView, user } = useInventory();
+  const { remisiones, elementos, openItemDetail, openPdfRemision, setActiveView, user } = useInventory();
+  const productsById = useMemo(() => new Map(elementos.map(item => [item.id, item])), [elementos]);
   const [searchQuery, setSearchQuery] = useState('');
   const [remoteSearch, setRemoteSearch] = useState('');
   const [pageState, setPageState] = useState({ key: '', page: 1 });
@@ -101,16 +102,21 @@ export const RemissionView: React.FC = () => {
                   <span className="text-[10px] font-bold uppercase text-[#767682] tracking-wider">
                     Componentes Despachados ({rem.items.length})
                   </span>
-                  {rem.items.slice(0, 3).map((item, idx) => (
+                  {rem.items.slice(0, 3).map((item, idx) => {
+                    const product = productsById.get(item.elementoId);
+                    return (
                     <div key={idx} className="flex justify-between items-center text-[#454651]">
                       <span className="truncate pr-2">
-                        {item.cantidad} {item.unidad} • {item.nombre}
+                        {item.cantidad} {item.unidad} • {' '}
+                        {product
+                          ? <button type="button" onClick={() => openItemDetail(product)} className="text-left hover:text-[#3e4e9e] hover:underline" title={item.nombre}>{item.nombre}</button>
+                          : item.nombre}
                       </span>
                       <span className="font-mono-code text-[11px] font-bold text-[#3e4e9e] shrink-0">
                         {item.codigo}
                       </span>
                     </div>
-                  ))}
+                  ); })}
                   {rem.items.length > 3 && (
                     <span className="text-[10px] text-[#767682] italic">
                       + {rem.items.length - 3} componente(s) más...

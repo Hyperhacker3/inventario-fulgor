@@ -14,6 +14,7 @@ export const DispatchView: React.FC = () => {
     updateDispatchCartQuantity,
     removeFromDispatchCart,
     clearDispatchCart,
+    openItemDetail,
     processDispatch
   } = useInventory();
 
@@ -222,9 +223,9 @@ export const DispatchView: React.FC = () => {
                       className="bg-white border border-[#e2e8f0] rounded-lg p-2.5 flex items-center justify-between gap-3 shadow-2xs"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-xs text-[#131b2e] truncate" title={item.elemento.nombre}>
+                        <button type="button" onClick={() => openItemDetail(item.elemento)} className="block max-w-full text-left font-semibold text-xs text-[#131b2e] truncate hover:text-[#3e4e9e] hover:underline" title={item.elemento.nombre}>
                           {item.elemento.nombre}
-                        </p>
+                        </button>
                         <span className="font-mono-code text-[10px] text-[#3e4e9e] font-bold">
                           {item.elemento.codigo}
                         </span>

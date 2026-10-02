@@ -5,7 +5,7 @@ import { available } from '../../domain/inventory';
 import { ItemImage } from '../ItemImage';
 
 export function AvailableInventory() {
-  const { elementos, dispatchCart, addToDispatchCart, getLocationString } = useInventory();
+  const { elementos, dispatchCart, addToDispatchCart, getLocationString, openItemDetail } = useInventory();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('TODOS');
   const [page, setPage] = useState(1);
@@ -35,9 +35,11 @@ export function AvailableInventory() {
       {visible.length === 0 && <p className="p-8 text-center text-sm text-[#64748b]">Sin componentes disponibles para esta búsqueda.</p>}
       {visible.map(item => <div key={item.id} className="border rounded-xl p-3 flex justify-between items-center gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          {item.fotoUrl ? <ItemImage source={item.fotoUrl} alt={item.nombre} className="w-12 h-12 rounded-lg object-cover" /> :
-            <span className="w-12 h-12 rounded-lg bg-[#f8fafc] flex items-center justify-center text-[#94a3b8]">▣</span>}
-          <div className="min-w-0"><strong className="block text-sm truncate">{item.nombre}</strong>
+          <button type="button" onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${item.nombre}`} className="shrink-0 rounded-lg hover:opacity-80">
+            {item.fotoUrl ? <ItemImage source={item.fotoUrl} alt={item.nombre} className="w-12 h-12 rounded-lg object-cover" /> :
+              <span className="w-12 h-12 rounded-lg bg-[#f8fafc] flex items-center justify-center text-[#94a3b8]">▣</span>}
+          </button>
+          <div className="min-w-0"><button type="button" onClick={() => openItemDetail(item)} title={item.nombre} className="block max-w-full text-left font-bold text-sm truncate hover:text-[#3e4e9e] hover:underline">{item.nombre}</button>
             <span className="block text-xs text-[#64748b] truncate">{item.codigo} · {getLocationString(item)}</span></div>
         </div>
         <div className="text-right shrink-0"><span className="block text-xs">{available(item)} {item.unidad}</span>

@@ -28,7 +28,9 @@ export function HistoryTable({ rows, total, page, pages, loading, onPage, onDocu
             <td className="p-3.5 font-mono-code font-bold text-[#3e4e9e]">
               {item ? <button type="button" onClick={() => openItemDetail(item)} className="hover:underline">{row.itemCode}</button> : row.itemCode}
             </td>
-            <td className="p-3.5 max-w-xs"><strong className="block truncate" title={row.itemName}>{row.itemName}</strong>
+            <td className="p-3.5 max-w-xs">{item
+              ? <button type="button" onClick={() => openItemDetail(item)} className="block max-w-full text-left font-bold truncate hover:text-[#3e4e9e] hover:underline" title={row.itemName}>{row.itemName}</button>
+              : <strong className="block truncate" title={row.itemName}>{row.itemName}</strong>}
               <span className="block truncate text-[#767682]" title={row.motivo}>{row.motivo}</span></td>
             <td className="p-3.5">{row.proyectoNombre || projectNames.get(row.proyectoId || '') || 'Bodega Central'}</td>
             <td className="p-3.5 text-right font-mono-code whitespace-nowrap">{row.tipo === 'SALIDA' ? '-' : '+'}{Math.abs(row.cantidad)} {row.unidad}</td>
