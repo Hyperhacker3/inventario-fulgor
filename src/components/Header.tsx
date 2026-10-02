@@ -59,6 +59,7 @@ export const Header: React.FC = () => {
               type="text"
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
+              onKeyDown={event => { if (event.key === 'Enter' && globalSearch.trim()) setActiveView('explorer'); }}
               placeholder="Buscar SKU, elemento..."
               className="bg-transparent border-none focus:outline-hidden text-xs sm:text-sm w-full p-0 text-[#131b2e] placeholder-[#767682]"
             />

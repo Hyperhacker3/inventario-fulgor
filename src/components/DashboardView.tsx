@@ -1,197 +1,77 @@
-import React, { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
-import { DashboardCard } from './dashboard/DashboardCard';
-import { isDemo } from '../lib/supabase';
+import { summarizeInventory, stockStatus } from '../domain/dashboard';
+import { available } from '../domain/inventory';
+import { InventoryBars, StockChart } from './dashboard/InventoryCharts';
 
-export const DashboardView: React.FC = () => {
-  const {
-    elementos,
-    almacenes,
-    getLocationString,
-    setActiveView,
-    globalSearch,
-    user
-  } = useInventory();
-
-  const [localSearch, setLocalSearch] = useState('');
-  const [selectedAlmacen, setSelectedAlmacen] = useState<string>('ALL');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [sortBy, setSortBy] = useState<'nombre' | 'codigo' | 'stock-asc' | 'stock-desc'>('codigo');
-  const [page, setPage] = useState(1);
-  const [pageKey, setPageKey] = useState('');
-
-  const effectiveSearch = (globalSearch || localSearch).toLowerCase().trim();
-
-  // Filtered elements
-  const filteredElementos = useMemo(() => {
-    return elementos
-      .filter((item) => {
-        // Search filter
-        if (effectiveSearch) {
-          const matchCode = item.codigo.toLowerCase().includes(effectiveSearch);
-          const matchName = item.nombre.toLowerCase().includes(effectiveSearch);
-          const matchDesc = item.descripcion.toLowerCase().includes(effectiveSearch);
-          const matchLoc = getLocationString(item).toLowerCase().includes(effectiveSearch);
-          if (!matchCode && !matchName && !matchDesc && !matchLoc) return false;
-        }
-
-        // Warehouse filter
-        if (selectedAlmacen !== 'ALL') {
-          if (item.almacenId !== selectedAlmacen) return false;
-        }
-
-        // Category filter
-        if (selectedCategory !== 'ALL') {
-          if (item.categoria !== selectedCategory) return false;
-        }
-
-        return true;
-      })
-      .sort((a, b) => {
-        if (sortBy === 'codigo') return a.codigo.localeCompare(b.codigo);
-        if (sortBy === 'nombre') return a.nombre.localeCompare(b.nombre);
-        if (sortBy === 'stock-asc') return a.cantidad - b.cantidad;
-        if (sortBy === 'stock-desc') return b.cantidad - a.cantidad;
-        return 0;
-      });
-  }, [elementos, effectiveSearch, selectedAlmacen, selectedCategory, sortBy, getLocationString]);
-  const filterKey = `${effectiveSearch}|${selectedAlmacen}|${selectedCategory}|${sortBy}`;
-  const currentPage = pageKey === filterKey ? page : 1;
-  const pageCount = Math.max(1, Math.ceil(filteredElementos.length / 24));
-  const visibleElementos = filteredElementos.slice((currentPage - 1) * 24, currentPage * 24);
-
-  return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 md:p-8 max-w-[1400px] mx-auto w-full">
-      {/* Top Filter Bar from Mockup Image 13 */}
-      <div className="mb-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 sm:gap-4 bg-white p-3 sm:p-4 rounded-xl border border-[#e2e8f0] shadow-2xs">
-        {/* Search & Selectors */}
-        <div className="flex-1 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-3">
-          <div className="relative flex-1 min-w-0 w-full sm:min-w-[200px]">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#767682] text-[18px]">
-              search
-            </span>
-            <input
-              id="dashboard-search"
-              type="text"
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              placeholder="Buscar por código, nombre o ubicación..."
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-[#e2e8f0] bg-white text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-[#3e4e9e] focus:border-[#3e4e9e] transition-all"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 sm:flex items-center gap-2">
-            <div className="relative flex-1 sm:min-w-[140px]">
-              <select
-                id="select-almacen"
-                value={selectedAlmacen}
-                onChange={(e) => setSelectedAlmacen(e.target.value)}
-                className="w-full appearance-none rounded-lg border border-[#e2e8f0] bg-white text-xs sm:text-sm py-2 pl-2.5 pr-7 focus:outline-hidden focus:ring-2 focus:ring-[#3e4e9e] cursor-pointer text-[#131b2e] truncate"
-              >
-                <option value="ALL">Almacenes (Todos)</option>
-                {almacenes.map((alm) => (
-                  <option key={alm.id} value={alm.id}>
-                    {alm.nombre}
-                  </option>
-                ))}
-              </select>
-              <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[#767682] text-[16px] pointer-events-none">
-                expand_more
-              </span>
-            </div>
-
-            <div className="relative flex-1 sm:min-w-[140px]">
-              <select
-                id="select-categoria"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full appearance-none rounded-lg border border-[#e2e8f0] bg-white text-xs sm:text-sm py-2 pl-2.5 pr-7 focus:outline-hidden focus:ring-2 focus:ring-[#3e4e9e] cursor-pointer text-[#131b2e] truncate"
-              >
-                <option value="ALL">Categorías (Todas)</option>
-                <option value="PANELES">Paneles Solares</option>
-                <option value="INVERSORES">Inversores</option>
-                <option value="ESTRUCTURAS">Estructuras</option>
-                <option value="CABLES">Cableado Solar</option>
-                <option value="CONECTORES">Conectores MC4</option>
-                <option value="PROTECCIONES">Protecciones y Fusibles</option>
-                <option value="BATERIAS">Baterías</option>
-                <option value="OTROS">Otros Accesorios</option>
-              </select>
-              <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[#767682] text-[16px] pointer-events-none">
-                expand_more
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 justify-end pt-1 sm:pt-0 border-t sm:border-t-0 border-[#f1f5f9]">
-          <button
-            id="btn-sort-toggle"
-            onClick={() => {
-              const options: ('codigo' | 'nombre' | 'stock-asc' | 'stock-desc')[] = ['codigo', 'nombre', 'stock-asc', 'stock-desc'];
-              const next = options[(options.indexOf(sortBy) + 1) % options.length];
-              setSortBy(next);
-            }}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-[#e2e8f0] rounded-lg text-xs sm:text-sm font-medium hover:bg-[#f8fafc] transition-colors shadow-2xs text-[#454651]"
-            title={`Orden actual: ${sortBy}`}
-          >
-            <span className="material-symbols-outlined text-[16px]">swap_vert</span>
-            <span>Ordenar</span>
-          </button>
-
-          {(isDemo || user.role === 'admin') && <button
-            id="btn-new-item-cta"
-            onClick={() => setActiveView('new-item')}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 bg-[#3e4e9e] text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-[#323f80] transition-colors shadow-2xs whitespace-nowrap"
-          >
-            <span className="material-symbols-outlined text-[16px]">add</span>
-            <span>Nuevo Item</span>
-          </button>}
-        </div>
+const number = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 3 });
+export function DashboardView() {
+  const { elementos, almacenes, historial, setActiveView, openItemDetail, getLocationString, syncStatus } = useInventory();
+  const [warehouse, setWarehouse] = useState('ALL');
+  const items = useMemo(() => elementos.filter(item => warehouse === 'ALL' || (warehouse === 'NONE' ? !item.almacenId : item.almacenId === warehouse)), [elementos, warehouse]);
+  const summary = useMemo(() => summarizeInventory(items, almacenes), [items, almacenes]);
+  const itemIndex = useMemo(() => new Map(items.map(item => [item.id, item])), [items]);
+  const recent = historial.filter(row => warehouse === 'ALL' || itemIndex.has(row.elementoId)).slice(0, 6);
+  const metrics = [
+    { label: 'Productos activos', value: summary.total, hint: 'Referencias distintas del catálogo', color: 'text-[#253685]' },
+    { label: 'Sin disponibilidad', value: summary.statuses['Sin disponibilidad'], hint: 'Sin stock utilizable para despachar', color: 'text-red-600' },
+    { label: 'Stock bajo', value: summary.statuses['Stock bajo'], hint: 'Disponibilidad igual o inferior al mínimo', color: 'text-amber-600' },
+    { label: 'Conteos pendientes', value: summary.statuses['Pendiente de conteo'], hint: 'Requieren confirmar existencias', color: 'text-indigo-600' },
+    { label: 'Productos con daños', value: summary.damagedProducts, hint: 'Tienen material marcado como dañado', color: 'text-rose-600' },
+  ];
+  return <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6">
+    <div className="flex flex-wrap justify-between items-end gap-4">
+      <div><p className="text-xs font-bold tracking-widest text-[#3e4e9e] uppercase mb-1">EL TURPIAL · Control de inventario</p>
+        <h2 className="text-2xl md:text-3xl font-bold">Panel de inventario</h2><p className="text-sm text-slate-500 mt-1">Disponibilidad, distribución y prioridades del inventario actual.</p></div>
+      <div className="flex flex-wrap gap-3 items-end">
+        <label className="text-xs text-slate-500">Alcance<select value={warehouse} onChange={event => setWarehouse(event.target.value)} className="block mt-1 border rounded-lg p-2 text-sm bg-white text-slate-800">
+          <option value="ALL">Todos los almacenes</option>{almacenes.map(row => <option key={row.id} value={row.id}>{row.nombre}</option>)}<option value="NONE">Sin almacén</option>
+        </select></label>
+        <button type="button" onClick={() => setActiveView('explorer')} className="px-4 py-2.5 text-sm font-bold rounded-lg bg-[#3e4e9e] text-white">Ver inventario</button>
       </div>
-
-      {/* Page Heading */}
-      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-[#131b2e] tracking-tight">Inventario General</h2>
-          <p className="text-sm text-[#454651]">
-            Resumen de componentes solares en stock ({filteredElementos.length} items registrados).
-          </p>
-        </div>
-      </div>
-
-      {/* Inventory Grid */}
-      {filteredElementos.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-[#e2e8f0] p-12 text-center flex flex-col items-center justify-center my-8">
-          <div className="w-16 h-16 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#3e4e9e] mb-4">
-            <span className="material-symbols-outlined text-[32px]">inventory_2</span>
-          </div>
-          <h3 className="text-lg font-bold text-[#131b2e] mb-1">No se encontraron componentes</h3>
-          <p className="text-sm text-[#454651] max-w-md mb-6">
-            No hay elementos que coincidan con los filtros o el término de búsqueda actual.
-          </p>
-          <button
-            onClick={() => {
-              setLocalSearch('');
-              setSelectedAlmacen('ALL');
-              setSelectedCategory('ALL');
-            }}
-            className="px-4 py-2 bg-[#3e4e9e] text-white rounded-lg text-sm font-semibold hover:bg-[#323f80] transition-colors"
-          >
-            Limpiar Filtros
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {visibleElementos.map(item => <DashboardCard key={item.id} item={item} />)}
-        </div>
-      )}
-      {pageCount > 1 && <nav aria-label="Páginas del inventario" className="flex items-center justify-center gap-3 py-5 text-sm">
-        <button disabled={currentPage === 1} onClick={() => { setPageKey(filterKey); setPage(currentPage - 1); }} className="px-3 py-2 border rounded-lg disabled:opacity-40">Anterior</button>
-        <span>{currentPage} / {pageCount}</span>
-        <button disabled={currentPage === pageCount} onClick={() => { setPageKey(filterKey); setPage(currentPage + 1); }} className="px-3 py-2 border rounded-lg disabled:opacity-40">Siguiente</button>
-      </nav>}
     </div>
-  );
-};
+    {syncStatus === 'offline' && <p role="alert" className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">No se pudo confirmar la sincronización. Los datos mostrados corresponden a la última lectura disponible.</p>}
+    {elementos.length === 0 && syncStatus === 'syncing' ? <p role="status" className="p-8 bg-white rounded-xl">Cargando indicadores…</p> : <>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{metrics.map(metric => <section key={metric.label} className="bg-white border border-[#e2e8f0] rounded-xl p-4">
+        <h3 className="text-xs font-semibold text-slate-600">{metric.label}</h3><p className={`text-3xl font-bold mt-2 ${metric.color}`}>{number.format(metric.value)}</p><p className="text-[11px] text-slate-500 mt-2">{metric.hint}</p>
+      </section>)}</div>
+      <div className="grid lg:grid-cols-2 gap-5"><StockChart statuses={summary.statuses} total={summary.total} /><InventoryBars title="Productos por categoría" description="Cantidad de referencias distintas, independientemente de sus unidades." rows={summary.categories} /></div>
+      <div className="grid lg:grid-cols-2 gap-5">
+        <InventoryBars title="Distribución por almacén" description="Productos asignados a cada almacén dentro del alcance seleccionado." rows={summary.warehouses} />
+        <section className="bg-white border border-[#e2e8f0] rounded-2xl p-5">
+          <h3 className="font-bold">Existencias por unidad de medida</h3><p className="text-xs text-slate-500 mt-1">Cantidades confirmadas. Se excluyen los conteos pendientes.</p>
+          <div className="overflow-x-auto mt-4"><table className="w-full text-sm text-left"><thead className="text-xs text-slate-500"><tr><th className="py-2">Unidad</th><th className="text-right">Registrado</th><th className="text-right">Disponible</th><th className="text-right">Dañado</th></tr></thead><tbody>
+            {summary.units.map(row => <tr key={row.unit} className="border-t border-slate-100"><th className="py-3 uppercase">{row.unit}</th><td className="text-right">{number.format(row.recorded)}</td><td className="text-right font-semibold text-emerald-700">{number.format(row.available)}</td><td className="text-right">{number.format(row.damaged)}</td></tr>)}
+          </tbody></table></div>
+          {summary.units.length === 0 && <p className="py-6 text-sm text-slate-500">No hay existencias confirmadas en este alcance.</p>}
+          <p className="text-xs text-slate-500 mt-4">Cada unidad se calcula por separado: metros, kilos y unidades no se suman entre sí.</p>
+        </section>
+      </div>
+      <section className="bg-white border border-[#e2e8f0] rounded-2xl p-5">
+        <div className="flex justify-between gap-3 items-center"><h3 className="font-bold">Prioridades de stock <span className="text-slate-500 text-sm">({summary.alerts.length})</span></h3><button type="button" onClick={() => setActiveView('explorer')} className="text-xs text-[#3e4e9e] font-bold hover:underline">Consultar catálogo</button></div>
+        <p className="text-xs text-slate-500 mt-1">Conteos pendientes, productos sin disponibilidad y stock bajo. Se muestran hasta 8 referencias.</p>
+        <div className="overflow-x-auto mt-4"><table className="w-full text-sm text-left"><thead className="text-xs text-slate-500"><tr><th className="py-2">Producto</th><th>Situación</th><th className="text-right">Disponible</th><th className="text-right">Mínimo</th></tr></thead><tbody>
+          {summary.alerts.slice(0, 8).map(item => <tr key={item.id} className="border-t border-slate-100">
+            <td className="py-3 pr-4"><button type="button" onClick={() => openItemDetail(item)} className="text-left font-semibold hover:text-[#3e4e9e] hover:underline">{item.codigo} · {item.nombre}</button><p className="text-xs text-slate-500">{getLocationString(item)}</p></td>
+            <td className="text-xs whitespace-nowrap">{stockStatus(item)}</td><td className="text-right whitespace-nowrap">{item.stockPendiente ? 'Sin confirmar' : `${number.format(available(item))} ${item.unidad}`}</td><td className="text-right whitespace-nowrap">{number.format(item.stockMinimo)} {item.unidad}</td>
+          </tr>)}
+        </tbody></table></div>
+        {summary.alerts.length === 0 && <p className="py-6 text-sm text-emerald-700">No hay alertas de stock en este alcance.</p>}
+        <p className="text-xs text-slate-500 mt-3">{summary.withoutMinimum} productos sin mínimo definido. Configurar mínimos permite detectar necesidades de reposición.</p>
+      </section>
+      <div className="grid lg:grid-cols-2 gap-5">
+        <section className="bg-white border border-[#e2e8f0] rounded-2xl p-5"><h3 className="font-bold">Organización de ubicaciones</h3><p className="text-xs text-slate-500 mt-1">Información de avance mientras se organizan los almacenes.</p>
+          <dl className="space-y-3 mt-5 text-sm">{[['Sin almacén', items.filter(item => !item.almacenId).length], ['Sin estantería', summary.withoutRack], ['Sin caja', summary.withoutBox]].map(([label, value]) => <div key={label} className="flex justify-between border-b border-slate-100 pb-2"><dt>{label}</dt><dd className="font-bold">{value}</dd></div>)}</dl>
+          <button type="button" onClick={() => setActiveView('warehouses')} className="mt-4 text-xs font-bold text-[#3e4e9e] hover:underline">Ver almacenes</button>
+        </section>
+        <section className="bg-white border border-[#e2e8f0] rounded-2xl p-5"><div className="flex justify-between"><h3 className="font-bold">Actividad reciente</h3><button type="button" onClick={() => setActiveView('history')} className="text-xs font-bold text-[#3e4e9e] hover:underline">Ver historial</button></div>
+          <p className="text-xs text-slate-500 mt-1">Hasta 6 movimientos de los últimos 100 cargados, según el alcance.</p>
+          <ul className="mt-4 divide-y divide-slate-100">{recent.map(row => <li key={row.id} className="py-3 text-xs"><div className="flex justify-between gap-3">
+            {itemIndex.has(row.elementoId) ? <button type="button" onClick={() => openItemDetail(itemIndex.get(row.elementoId)!)} className="text-left font-semibold hover:underline">{row.itemCode} · {row.itemName}</button> : <strong>{row.itemCode} · {row.itemName}</strong>}<span className="shrink-0">{row.tipo}</span>
+          </div><p className="text-slate-500 mt-1">{row.fecha} · {row.hora} · {row.responsable}</p><p className="mt-1">{number.format(row.cantidad)} {row.unidad} · {row.motivo}</p></li>)}</ul>
+          {recent.length === 0 && <p className="py-6 text-sm text-slate-500">Sin movimientos recientes en este alcance.</p>}
+        </section>
+      </div>
+    </>}
+  </div>;
+}
