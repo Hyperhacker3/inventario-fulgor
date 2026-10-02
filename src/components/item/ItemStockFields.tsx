@@ -1,3 +1,5 @@
+import { NumberInput } from '../NumberInput';
+
 interface Props {
   quantity: number; unit: string; minimum: number;
   onQuantity: (value: number) => void; onUnit: (value: string) => void; onMinimum: (value: number) => void;
@@ -8,8 +10,8 @@ export function ItemStockFields({ quantity, unit, minimum, onQuantity, onUnit, o
     <label className="text-xs font-bold text-[#454651] uppercase">Stock inicial
       <div className="flex mt-2 border rounded-lg overflow-hidden bg-white">
         <button type="button" onClick={() => onQuantity(Math.max(0, quantity - 1))} className="px-3 bg-[#f8fafc]">−</button>
-        <input id="input-stock-inicial" type="number" min="0" step="0.001" required value={quantity}
-          onChange={event => onQuantity(Number(event.target.value))} className="w-full text-center py-2" />
+        <NumberInput id="input-stock-inicial" min="0" step="0.001" required value={quantity}
+          onValueChange={onQuantity} className="w-full text-center py-2" />
         <button type="button" onClick={() => onQuantity(quantity + 1)} className="px-3 bg-[#f8fafc]">+</button>
       </div>
     </label>
@@ -19,7 +21,7 @@ export function ItemStockFields({ quantity, unit, minimum, onQuantity, onUnit, o
       </select>
     </label>
     <label className="text-xs font-bold text-[#454651] uppercase">Stock mínimo
-      <input type="number" min="0" step="0.001" required value={minimum} onChange={event => onMinimum(Number(event.target.value))}
+      <NumberInput min="0" step="0.001" required value={minimum} onValueChange={onMinimum}
         className="block w-full mt-2 px-3 py-2 border rounded-lg" />
     </label>
   </section>;

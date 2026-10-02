@@ -2,10 +2,11 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useAuth } from './AuthContext';
 import { useInventoryData } from '../state/useInventoryData';
 import { useInventoryActions } from '../state/useInventoryActions';
+import { useViewNavigation } from '../state/useViewNavigation';
 import { locationLabel, available, byId } from '../domain/inventory';
 import { MIN_QUANTITY, roundQuantity } from '../domain/quantity';
 import { isDemo } from '../lib/supabase';
-import type { ActiveView, DispatchCartItem, Elemento, Remision } from '../types';
+import type { DispatchCartItem, Elemento, Remision } from '../types';
 import { INITIAL_ALMACENES, INITIAL_CAJAS, INITIAL_ELEMENTOS, INITIAL_ESTANTERIAS, INITIAL_HISTORIAL, INITIAL_PROYECTOS, INITIAL_REMISIONES } from '../data/initialData';
 
 type CartLine = { elementoId: string; cantidad: number };
@@ -20,13 +21,19 @@ function loadCart(key: string): CartLine[] {
 function useInventoryValue() {
   const { user } = useAuth();
   const data = useInventoryData();
-  const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [globalSearch, setGlobalSearch] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [selectedRemisionForPdf, setSelectedRemisionForPdf] = useState<Remision | null>(null);
   const [quickMovementId, setQuickMovementId] = useState<string | null>(null);
   const [quickMovementType, setQuickMovementType] = useState<'ENTRADA' | 'AJUSTE'>('ENTRADA');
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const closeNavigationOverlays = useCallback(() => {
+    setSelectedItemId(null);
+    setSelectedRemisionForPdf(null);
+    setQuickMovementId(null);
+    setIsHelpModalOpen(false);
+  }, []);
+  const { activeView, setActiveView } = useViewNavigation(closeNavigationOverlays);
   const cartKey = `fulgor_cart_v4_${user?.email || 'anonymous'}`;
   const [cartLines, setCartLines] = useState<CartLine[]>(() => loadCart(cartKey));
   useEffect(() => { localStorage.setItem(cartKey, JSON.stringify(cartLines)); }, [cartKey, cartLines]);

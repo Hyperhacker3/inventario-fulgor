@@ -3,6 +3,7 @@ import { useInventory } from '../context/InventoryContext';
 import { errorMessage } from '../shared/errors';
 import { available } from '../domain/inventory';
 import { AvailableInventory } from './dispatch/AvailableInventory';
+import { NumberInput } from './NumberInput';
 
 export const DispatchView: React.FC = () => {
   const {
@@ -238,15 +239,13 @@ export const DispatchView: React.FC = () => {
                         >
                           -
                         </button>
-                        <input
-                          type="number"
+                        <NumberInput
+                          required
                           min="0.001"
                           step="0.001"
                           max={available(item.elemento)}
                           value={item.cantidad}
-                          onChange={(e) =>
-                            updateDispatchCartQuantity(item.elemento.id, Number(e.target.value) || 0.001)
-                          }
+                          onValueChange={quantity => updateDispatchCartQuantity(item.elemento.id, quantity)}
                           className="w-10 text-center font-mono-code font-bold text-xs bg-transparent focus:outline-hidden"
                         />
                         <button

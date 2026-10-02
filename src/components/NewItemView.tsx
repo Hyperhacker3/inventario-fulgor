@@ -5,6 +5,7 @@ import { ItemPhotoPicker } from './ItemPhotoPicker';
 import { ItemLocationFields } from './item/ItemLocationFields';
 import { ItemStockFields } from './item/ItemStockFields';
 import { errorMessage } from '../shared/errors';
+import { NumberInput } from './NumberInput';
 
 export const NewItemView: React.FC = () => {
   const {
@@ -246,11 +247,12 @@ export const NewItemView: React.FC = () => {
             <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-1.5">
               CANTIDAD DE UNIDADES DAÑADAS / MERMA
             </label>
-            <input
-              type="number"
+            <NumberInput
+              required
               min="0"
+              step="0.001"
               value={cantidadDanados}
-              onChange={(e) => setCantidadDanados(Number(e.target.value))}
+              onValueChange={setCantidadDanados}
               placeholder="0 unidades dañadas"
               className="w-full px-3.5 py-2 rounded-lg border border-[#e2e8f0] bg-white text-xs font-mono-code font-bold text-[#131b2e]"
             />

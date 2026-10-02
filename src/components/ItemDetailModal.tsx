@@ -7,6 +7,7 @@ import { errorMessage } from '../shared/errors';
 import { ItemImage } from './ItemImage';
 import { ItemPhotoPicker } from './ItemPhotoPicker';
 import { ItemHistory } from './item/ItemHistory';
+import { NumberInput } from './NumberInput';
 
 interface Props { item: Elemento | null; onClose: () => void }
 
@@ -81,10 +82,10 @@ export function ItemDetailModal({ item, onClose }: Props) {
           </label>
           <div className="grid grid-cols-2 gap-4">
             <label className="text-sm font-semibold">Stock mínimo
-              <input type="number" min="0" step="0.001" required value={minimum} onChange={event => setMinimum(Number(event.target.value))} className="block w-full mt-1 p-2.5 border rounded-lg" />
+              <NumberInput min="0" step="0.001" required value={minimum} onValueChange={setMinimum} className="block w-full mt-1 p-2.5 border rounded-lg" />
             </label>
             <label className="text-sm font-semibold">Unidades dañadas
-              <input type="number" min="0" max={item.cantidad} step="0.001" required value={damaged} onChange={event => setDamaged(Number(event.target.value))} className="block w-full mt-1 p-2.5 border rounded-lg" />
+              <NumberInput min="0" max={item.cantidad} step="0.001" required value={damaged} onValueChange={setDamaged} className="block w-full mt-1 p-2.5 border rounded-lg" />
             </label>
           </div>
           <label className="block text-sm font-semibold">Estado

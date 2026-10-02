@@ -3,6 +3,7 @@ import { useInventory } from '../context/InventoryContext';
 import { CategoriaElemento } from '../types';
 import { ExplorerResults } from './explorer/ExplorerResults';
 import { ExplorerFilters } from './explorer/ExplorerFilters';
+import { useInventoryViewMode } from '../state/useInventoryViewMode';
 
 export const ExplorerView: React.FC = () => {
   const {
@@ -12,7 +13,7 @@ export const ExplorerView: React.FC = () => {
   } = useInventory();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useInventoryViewMode();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
 

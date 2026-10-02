@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { errorMessage } from '../shared/errors';
+import { NumberInput } from './NumberInput';
 
 export const QuickMovementModal: React.FC = () => {
   const {
@@ -92,10 +93,9 @@ export const QuickMovementModal: React.FC = () => {
                 ? `Cantidad a Ingresar (${quickMovementItem.unidad})`
                 : `Variación de Stock (+ o - ${quickMovementItem.unidad})`}
             </label>
-            <input
-              type="number"
+            <NumberInput
               value={cantidad}
-              onChange={(e) => setCantidad(Number(e.target.value))}
+              onValueChange={setCantidad}
               step="0.001"
               className="w-full px-3 py-2 rounded-lg border font-mono-code font-bold text-sm"
               required

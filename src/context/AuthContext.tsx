@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import type { UserProfile } from '../types';
 import { useQueryClient } from '@tanstack/react-query';
 import { clearImageCache } from '../shared/images';
+import { sessionIdentity, shouldClearSessionCache } from '../domain/session';
 
 interface AuthValue {
   user: UserProfile | null;
@@ -12,6 +13,11 @@ interface AuthValue {
   signOut: () => Promise<void>;
 }
 const AuthContext = createContext<AuthValue | null>(null);
+function clearUserDrafts() {
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith('fulgor_') && !key.startsWith('fulgor_pref_')) localStorage.removeItem(key);
+  }
+}
 
 function profile(session: Session | null): UserProfile | null {
   if (!session) return null;
@@ -37,21 +43,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!supabase) return;
     let mounted = true;
-    supabase.auth.getSession().then(({ data, error }) => {
+    let authEventReceived = false;
+    let identity: string | null | undefined;
+    const applySession = (session: Session | null) => {
       if (!mounted) return;
-      if (error) console.warn('No se pudo restaurar la sesión:', error);
-      setUser(profile(data.session));
-      setLoading(false);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+      const nextIdentity = sessionIdentity(session);
+      if (shouldClearSessionCache(identity, nextIdentity)) {
         queryClient.clear();
         clearImageCache();
       }
-      if (event === 'SIGNED_OUT') {
-        for (const key of Object.keys(localStorage)) if (key.startsWith('fulgor_')) localStorage.removeItem(key);
-      }
-      if (mounted) setUser(profile(session));
+      identity = nextIdentity;
+      setUser(profile(session));
+      setLoading(false);
+    };
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!mounted || authEventReceived) return;
+      if (error) console.warn('No se pudo restaurar la sesión:', error);
+      applySession(data.session);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      authEventReceived = true;
+      if (event === 'SIGNED_OUT') clearUserDrafts();
+      applySession(session);
     });
     return () => { mounted = false; subscription.unsubscribe(); };
   }, [queryClient]);
@@ -66,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
     queryClient.clear();
     clearImageCache();
-    for (const key of Object.keys(localStorage)) if (key.startsWith('fulgor_')) localStorage.removeItem(key);
+    clearUserDrafts();
   };
   return <AuthContext.Provider value={{ user, loading, signIn, signOut }}>{children}</AuthContext.Provider>;
 }
