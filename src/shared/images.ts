@@ -1,13 +1,13 @@
 import { requireSupabase } from '../lib/supabase';
 import { squareCanvas } from './squareImage';
 import { uploadItemImage } from './itemImageUpload';
-import { imagePath, imagePaths, type ImageVariant } from './imagePaths';
+import { imagePaths } from './imagePaths';
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const cache = new Map<string, { url: string; expires: number }>();
 export function clearImageCache() { cache.clear(); }
 export function isStoredImage(value: string) { return value.startsWith('storage://'); }
-export function hasImageThumbnail(value: string) { return isStoredImage(value) && value.endsWith('/full.jpg'); }
+export function isOptimizedImage(value: string) { return isStoredImage(value) && value.endsWith('/full.jpg'); }
 export async function removeImage(value: string): Promise<void> {
   if (!isStoredImage(value)) return;
   const paths = imagePaths(value.slice('storage://'.length));
@@ -16,14 +16,13 @@ export async function removeImage(value: string): Promise<void> {
   paths.forEach(path => cache.delete(path));
 }
 
-export async function resolveImage(value: string, variant: ImageVariant = 'full'): Promise<string> {
+export async function resolveImage(value: string): Promise<string> {
   if (!isStoredImage(value)) return value;
-  const path = imagePath(value.slice('storage://'.length), variant);
+  const path = value.slice('storage://'.length);
   const cached = cache.get(path);
   if (cached && cached.expires > Date.now()) return cached.url;
   const { data, error } = await requireSupabase().storage.from('item-images').createSignedUrl(path, 3600);
   if (error || !data?.signedUrl) {
-    if (variant === 'thumbnail') return resolveImage(value, 'full');
     throw error || new Error('No se pudo abrir la foto.');
   }
   cache.set(path, { url: data.signedUrl, expires: Date.now() + 50 * 60 * 1000 });
@@ -31,7 +30,7 @@ export async function resolveImage(value: string, variant: ImageVariant = 'full'
 }
 
 export async function saveImage(value: string): Promise<string> {
-  if (!value || hasImageThumbnail(value)) return value;
+  if (!value || isOptimizedImage(value)) return value;
   if (isStoredImage(value)) value = await resolveImage(value);
   if (!/^(data:image\/|blob:|https?:\/\/)/i.test(value)) throw new Error('Suba un archivo de imagen o use una URL válida.');
   const db = requireSupabase();
@@ -44,9 +43,8 @@ export async function saveImage(value: string): Promise<string> {
   const bitmap = await createImageBitmap(source);
   try {
     const canvas = squareCanvas(bitmap, bitmap.width, bitmap.height);
-    const preview = squareCanvas(canvas, canvas.width, canvas.height, 120);
     const encode = (image: HTMLCanvasElement, quality: number) => new Promise<Blob>((resolve, reject) => image.toBlob(blob => blob ? resolve(blob) : reject(new Error('No se pudo procesar la imagen.')), 'image/jpeg', quality));
-    const [jpeg, thumbnail] = await Promise.all([encode(canvas, 0.78), encode(preview, 0.65)]);
-    return await uploadItemImage(db, jpeg, thumbnail);
+    const jpeg = await encode(canvas, 0.78);
+    return await uploadItemImage(db, jpeg);
   } finally { bitmap.close(); }
 }

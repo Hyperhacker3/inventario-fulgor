@@ -59,7 +59,6 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                     >
                       {item.fotoUrl ? (
                         <ItemImage
-                          variant="thumbnail"
                           source={item.fotoUrl}
                           alt={item.nombre}
                           className="absolute inset-0 w-full h-full object-cover object-center"
@@ -166,7 +165,6 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                             <button type="button" onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${item.nombre}`} className="shrink-0 rounded-md hover:opacity-80">
                             {item.fotoUrl ? (
                               <ItemImage
-                                variant="thumbnail"
                                 source={item.fotoUrl}
                                 alt={item.nombre}
                                 className="w-8 h-8 sm:w-10 sm:h-10 rounded-md object-cover border border-[#e2e8f0] shrink-0"

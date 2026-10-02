@@ -95,9 +95,9 @@ export function ItemDetailModal({ item, onClose }: Props) {
           </label>
           <ItemPhotoPicker value={photo} onChange={setPhoto} />
         </form> : <>
-          <div className="flex flex-col sm:flex-row gap-5">
-            <div className="w-48 h-48 aspect-square rounded-xl border bg-[#f8fafc] overflow-hidden shrink-0 flex items-center justify-center">
-              {item.fotoUrl ? <ItemImage source={item.fotoUrl} alt={item.nombre} className="w-full h-full object-cover" /> :
+          <div className="flex flex-col gap-5">
+            <div className="relative w-full aspect-square rounded-xl border bg-[#f8fafc] overflow-hidden shrink-0 flex items-center justify-center">
+              {item.fotoUrl ? <ItemImage source={item.fotoUrl} alt={item.nombre} className="absolute inset-0 w-full h-full object-cover" /> :
                 <span className="text-xs text-[#64748b]">Sin foto</span>}
             </div>
             <div className="min-w-0">

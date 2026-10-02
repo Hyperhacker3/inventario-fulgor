@@ -1,7 +1,4 @@
-export type ImageVariant = 'full' | 'thumbnail';
-export function imagePath(path: string, variant: ImageVariant) {
-  return variant === 'thumbnail' && path.endsWith('/full.jpg') ? path.replace(/\/full\.jpg$/, '/thumb.jpg') : path;
-}
+// Include old thumbnails only when deleting a replaced photo.
 export function imagePaths(path: string) {
-  return [...new Set([path, imagePath(path, 'thumbnail')])];
+  return path.endsWith('/full.jpg') ? [path, path.replace(/\/full\.jpg$/, '/thumb.jpg')] : [path];
 }

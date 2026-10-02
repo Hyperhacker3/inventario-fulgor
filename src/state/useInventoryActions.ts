@@ -9,7 +9,7 @@ import { validateDispatch } from '../domain/dispatch';
 import { validQuantity } from '../domain/quantity';
 import { useAuth } from '../context/AuthContext';
 import { displayDate, displayTime } from '../shared/dates';
-import { saveImage, removeImage, isStoredImage, hasImageThumbnail } from '../shared/images';
+import { saveImage, removeImage, isStoredImage, isOptimizedImage } from '../shared/images';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
 const newId = (prefix: string) => `${prefix}-DEMO-${crypto.randomUUID()}`;
@@ -63,7 +63,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     if (updates.cantidad !== undefined && !isDemo) throw new Error('Use una entrada o ajuste para cambiar existencias.');
     const next = { ...before, ...updates };
     validateItem(next, data.almacenes, data.estanterias, data.cajas);
-    const photo = next.fotoUrl === before.fotoUrl && (!next.fotoUrl || hasImageThumbnail(next.fotoUrl))
+    const photo = next.fotoUrl === before.fotoUrl && (!next.fotoUrl || isOptimizedImage(next.fotoUrl))
       ? before.fotoUrl : await saveImage(next.fotoUrl);
     if (isDemo) {
       setDemoData(prev => ({ ...prev, elementos: prev.elementos.map(el => el.id === id ? { ...el, ...updates, fotoUrl: photo, updatedAt: isoNow() } : el) }));
