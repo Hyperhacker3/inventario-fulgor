@@ -7,6 +7,7 @@ const baseSql = fs.readFileSync(new URL('../../supabase_schema.sql', import.meta
   .replace(/CREATE EXTENSION IF NOT EXISTS "uuid-ossp";/, '')
   .replace(/^ALTER PUBLICATION.*$/gm, '');
 const migration = fs.readFileSync(new URL('../../supabase/migrations/20261001_secure_inventory.sql', import.meta.url), 'utf8');
+const transportMigration = fs.readFileSync(new URL('../../supabase/migrations/20261005_remission_transport.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 
@@ -21,6 +22,7 @@ async function database() {
     GRANT EXECUTE ON FUNCTION auth.uid(), auth.jwt() TO authenticated;`);
   await db.exec(baseSql);
   await db.exec(migration);
+  await db.exec(transportMigration);
   await db.exec(demoSeed);
   return db;
 }
@@ -28,6 +30,35 @@ async function database() {
 const role = (db, value) => db.exec(`SELECT set_config('app.test_role','${value}',false); SET ROLE authenticated;`);
 const asOwner = db => db.exec('RESET ROLE;');
 const itemStock = async db => Number((await db.query("SELECT cantidad FROM public.elementos WHERE id = 'ELM-001'")).rows[0].cantidad);
+
+test('transport and weights are saved atomically, validated and included in request identity', async () => {
+  const db = await database();
+  try {
+    await db.exec(transportMigration); // Safe to apply again.
+    await role(db, 'consulta');
+    const sql = 'SELECT public.dispatch_inventory_with_transport($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb) AS rem';
+    const data = { transportador: 'Conductor', cedulaTransportador: '00123', placaVehiculo: 'ABC123', telefonoRecibe: '+57 300', fechaDespacho: '2026-10-05', fechaDevolucion: '2026-10-10' };
+    const args = ['dfc6c2e6-98e1-4bd1-837b-9d0d788d8b03','PROY-001','Bodega','Operador','Obra','Residente','',JSON.stringify([{ elementoId: 'ELM-001', cantidad: 2, pesoTotalKg: 4.125 }]),JSON.stringify(data)];
+    await assert.rejects(() => db.query(sql, args), /No autorizado/);
+    await asOwner(db); await role(db, 'operador');
+    const invalid = [...args]; invalid[8] = JSON.stringify({ ...data, fechaDevolucion: '2026-10-04' });
+    await assert.rejects(() => db.query(sql, invalid), /anterior al despacho/);
+    invalid[8] = args[8]; invalid[7] = JSON.stringify([{ elementoId: 'ELM-001', cantidad: 2, pesoTotalKg: -1 }]);
+    await assert.rejects(() => db.query(sql, invalid), /Peso inválido/);
+    assert.equal(await itemStock(db), 184);
+    const first = (await db.query(sql, args)).rows[0].rem;
+    assert.equal(first.datos_transporte.cedulaTransportador, '00123');
+    assert.equal(first.items[0].pesoTotalKg, 4.125);
+    assert.equal(first.items[0].codigo, 'PAN550');
+    assert.equal((await db.query(sql, args)).rows[0].rem.id, first.id);
+    assert.equal(await itemStock(db), 182);
+    const changed = [...args]; changed[8] = JSON.stringify({ ...data, placaVehiculo: 'OTR123' });
+    await assert.rejects(() => db.query(sql, changed), /otro contenido o usuario/);
+    changed[8] = args[8]; changed[7] = JSON.stringify([{ elementoId: 'ELM-001', cantidad: 2, pesoTotalKg: 5 }]);
+    await assert.rejects(() => db.query(sql, changed), /otro contenido o usuario/);
+    assert.equal((await db.query('SELECT count(*) AS n FROM public.remisiones')).rows[0].n, 1);
+  } finally { await db.close(); }
+});
 
 test('projects support admin management, safe example retries and reject finalized destinations', async () => {
   const db = await database();

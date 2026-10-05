@@ -1,3 +1,4 @@
+import { mapTransport } from '../domain/remissionTransport';
 import type { Almacen, Caja, Elemento, Estanteria, HistorialMovimiento, Proyecto, Remision, DetalleRemision, TipoMovimiento } from '../types';
 import { categories, normalizeUnit } from '../domain/catalogs';
 import { displayDate, displayTime } from '../shared/dates';
@@ -48,11 +49,13 @@ export const mapRemision = (row: DbRow, itemsByCode?: Map<string, Elemento>): Re
   entregadoPor: str(row.entregado_por), cargoEntregado: str(row.cargo_entregado),
   recibidoPor: str(row.recibido_por), cargoRecibido: str(row.cargo_recibido),
   observaciones: str(row.observaciones), fecha: str(row.fecha) || displayDate(str(row.created_at)),
+  datosTransporte: mapTransport(row.datos_transporte),
   items: (Array.isArray(row.items) ? row.items : []).map((raw: unknown): DetalleRemision => {
     const item = object(raw);
     return { elementoId: str(item.elementoId ?? item.elemento_id ?? itemsByCode?.get(str(item.codigo))?.id),
       codigo: str(item.codigo), nombre: str(item.nombre), cantidad: numeric(item.cantidad),
-      unidad: normalizeUnit(str(item.unidad, 'und')) };
+      unidad: normalizeUnit(str(item.unidad, 'und')),
+      ...(item.pesoTotalKg != null && { pesoTotalKg: numeric(item.pesoTotalKg) }) };
   }),
 });
 export const mapHistory = (row: DbRow, itemsByCode?: Map<string, Elemento>): HistorialMovimiento => {

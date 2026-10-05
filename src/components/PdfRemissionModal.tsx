@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Remision } from '../types';
 import { RemissionDocument } from './remission/RemissionDocument';
 
@@ -11,6 +12,12 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
   const containerRef = useRef<HTMLDivElement>(null);
   const [scaleMode, setScaleMode] = useState<'fit' | '100' | '75' | '50'>('fit');
   const [computedScale, setComputedScale] = useState<number>(1);
+  const [printReady, setPrintReady] = useState(false);
+  useEffect(() => {
+    const original = document.title;
+    if (remision) document.title = remision.numeroRemision;
+    return () => { document.title = original; };
+  }, [remision]);
 
   // Compute fit scale dynamically based on available container width
   useEffect(() => {
@@ -20,7 +27,7 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
         const a4Width = 794; // Standard A4 width in pixels at 96 DPI
         if (scaleMode === 'fit') {
           const fitRatio = Math.min(1, containerWidth / a4Width);
-          setComputedScale(Math.max(0.38, fitRatio));
+          setComputedScale(Math.max(0.15, fitRatio));
         } else if (scaleMode === '100') {
           setComputedScale(1);
         } else if (scaleMode === '75') {
@@ -45,7 +52,7 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
   const a4Width = 794;
   const a4MinHeight = 1123; // Standard A4 height proportion
 
-  return (
+  return createPortal(
     <div className="print-layer fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-1 sm:p-4 overflow-hidden">
       {/* Container Dialog */}
       <div className="bg-[#1e293b] text-white rounded-2xl max-w-5xl w-full flex flex-col h-[98vh] shadow-2xl border border-slate-700 overflow-hidden">
@@ -103,11 +110,12 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
             {/* Print Button */}
             <button
               onClick={handlePrint}
+              disabled={!printReady}
               id="btn-print-remision"
               className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#3e4e9e] hover:bg-[#323f80] text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
             >
               <span className="material-symbols-outlined text-[16px] sm:text-[18px]">print</span>
-              <span className="hidden xs:inline">Imprimir / PDF</span>
+              <span>{printReady ? 'Imprimir / PDF' : 'Preparando…'}</span>
             </button>
 
             {/* Close Button */}
@@ -135,7 +143,7 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
         {/* Scrollable Printable A4 Area */}
         <div
           ref={containerRef}
-          className="flex-1 overflow-auto p-2 sm:p-6 flex justify-center items-start bg-[#475569]/30"
+          className="print-preview-scroll flex-1 overflow-auto p-2 sm:p-6 flex justify-center items-start bg-[#475569]/30"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {/* Scaled Wrapper: keeps the A4 sheet rigidly at 794px width without wrapping or breaking */}
@@ -147,11 +155,11 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
             }}
             className="print-scale-wrapper shrink-0 flex justify-center"
           >
-            <RemissionDocument remision={remision} scale={computedScale} />
+            <RemissionDocument remision={remision} scale={computedScale} onReady={setPrintReady} />
           </div>
         </div>
       </div>
-    </div>
+    </div>, document.body
   );
 };
 

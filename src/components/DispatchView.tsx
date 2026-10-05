@@ -1,4 +1,7 @@
 import { ProjectSelector } from './dispatch/ProjectSelector';
+import { TransportFields } from './dispatch/TransportFields';
+import { emptyTransport } from '../domain/remissionTransport';
+import { useRemissionTransport } from '../state/useRemissionTransport';
 import React, { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { errorMessage } from '../shared/errors';
@@ -29,6 +32,10 @@ export const DispatchView: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [pending, setPending] = useState(false);
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
+  const [transport, setTransport] = useState(emptyTransport);
+  const [weights, setWeights] = useState<Record<string, string>>({});
+  const transportQuery = useRemissionTransport();
+  const transportReady = transportQuery.data === true && !transportQuery.isError;
 
   const effectiveProjectId = proyectos.some(p => p.id === selectedProyectoId && p.estado === 'ACTIVO') ? selectedProyectoId : '';
 
@@ -66,7 +73,9 @@ export const DispatchView: React.FC = () => {
     setPending(true);
     try {
       await processDispatch({ proyectoId: effectiveProjectId, entregadoPor, cargoEntregado,
-        recibidoPor, cargoRecibido, observaciones, requestId });
+        recibidoPor, cargoRecibido, observaciones, requestId,
+        ...(transportReady && { datosTransporte: transport, pesos: Object.fromEntries(dispatchCart
+          .filter(line => weights[line.elemento.id]?.trim()).map(line => [line.elemento.id, Number(weights[line.elemento.id])])) }) });
       setRequestId(crypto.randomUUID());
       void import('canvas-confetti').then(({ default: confetti }) => {
         confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
@@ -162,6 +171,8 @@ export const DispatchView: React.FC = () => {
               </label>
             </div>
 
+            <TransportFields value={transport} onChange={setTransport} disabled={pending || !transportReady} />
+            {!transportReady && <p className="text-xs text-slate-600">Los campos de transporte requieren activar la actualización de remisiones. El despacho habitual sigue disponible. <button type="button" className="underline" onClick={() => { void transportQuery.refetch(); }}>Comprobar de nuevo</button></p>}
             {/* Observaciones */}
             <div>
               <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-1">
@@ -171,7 +182,7 @@ export const DispatchView: React.FC = () => {
                 rows={2}
                 value={observaciones}
                 onChange={(e) => setObservaciones(e.target.value)}
-                placeholder="Placas de vehículo, conductor, recomendaciones de manejo..."
+                placeholder="Novedades de entrega, condiciones, recomendaciones de manejo..."
                 className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-xs text-[#131b2e]"
               />
             </div>
@@ -252,6 +263,14 @@ export const DispatchView: React.FC = () => {
                 )}
               </div>
             </div>
+
+            {transportReady && dispatchCart.length > 0 && <fieldset disabled={pending} className="space-y-2">
+              <legend className="text-xs font-bold text-[#253685]">PESO TOTAL POR MATERIAL (kg, opcional)</legend>
+              <p className="text-xs text-slate-500">Peso del total despachado de cada material, no de una unidad. Deje vacío si no se conoce.</p>
+              {dispatchCart.map(line => <label key={line.elemento.id} className="flex justify-between items-center gap-3 text-xs">
+                <span>{line.elemento.codigo} · {line.elemento.nombre}</span><input type="number" min="0" step="0.001" max="99999999999.999" value={weights[line.elemento.id] || ''} onChange={event => setWeights({ ...weights, [line.elemento.id]: event.target.value })} aria-label={`Peso total en kg de ${line.elemento.codigo}`} className="w-24 shrink-0 border rounded-lg p-2" />
+              </label>)}
+            </fieldset>}
 
             {/* Primary Action Dispatch Button (Red Coral from Mockup Image 1) */}
             <button

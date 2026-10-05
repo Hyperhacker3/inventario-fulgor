@@ -1,4 +1,4 @@
-import type { DispatchCartItem, Elemento, Almacen, Estanteria, Caja, HistorialMovimiento, Remision, TipoMovimiento } from '../types';
+import type { DatosTransporte, DispatchCartItem, Elemento, Almacen, Estanteria, Caja, HistorialMovimiento, Remision, TipoMovimiento } from '../types';
 import type { Dispatch, SetStateAction } from 'react';
 import type { DemoData } from './useInventoryData';
 import { insertRow, updateRow, rpc } from '../data/repository';
@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { displayDate, displayTime } from '../shared/dates';
 import { saveImage, removeImage } from '../shared/images';
 import { saveGallery } from '../domain/photos';
+import { validateTransport } from '../domain/remissionTransport';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
 const newId = (prefix: string) => `${prefix}-DEMO-${crypto.randomUUID()}`;
@@ -88,19 +89,22 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       applyItemChange(id, null); await syncAfterWrite(refreshItemIds([id])); }
   };
 
-  const processDispatch = async (payload: { proyectoId: string; entregadoPor: string; cargoEntregado?: string; recibidoPor: string; cargoRecibido?: string; observaciones?: string; requestId?: string }): Promise<Remision> => {
+  const processDispatch = async (payload: { proyectoId: string; entregadoPor: string; cargoEntregado?: string; recibidoPor: string; cargoRecibido?: string; observaciones?: string; requestId?: string; datosTransporte?: DatosTransporte; pesos?: Record<string, number> }): Promise<Remision> => {
     requireOperator();
     validateDispatch(cart, data.elementos);
     const project = data.proyectos.find(p => p.id === payload.proyectoId);
     if (!project || project.estado !== 'ACTIVO') throw new Error('Seleccione un proyecto válido.');
     if (!payload.recibidoPor.trim()) throw new Error('Indique quién recibe.');
+    if (payload.datosTransporte) validateTransport(payload.datosTransporte, payload.pesos || {});
     if (!isDemo) {
-      const response = await rpc<Record<string, unknown>>('dispatch_inventory', {
+      const response = await rpc<Record<string, unknown>>(payload.datosTransporte ? 'dispatch_inventory_with_transport' : 'dispatch_inventory', {
         p_request_id: payload.requestId || crypto.randomUUID(), p_proyecto_id: project.id,
         p_entregado_por: payload.entregadoPor || user?.name, p_cargo_entregado: payload.cargoEntregado || user?.role,
         p_recibido_por: payload.recibidoPor, p_cargo_recibido: payload.cargoRecibido || '',
         p_observaciones: payload.observaciones || '',
-        p_items: cart.map(line => ({ elementoId: line.elemento.id, cantidad: line.cantidad })),
+        p_items: cart.map(line => ({ elementoId: line.elemento.id, cantidad: line.cantidad,
+          ...(payload.pesos?.[line.elemento.id] !== undefined && { pesoTotalKg: payload.pesos[line.elemento.id] }) })),
+        ...(payload.datosTransporte && { p_datos_transporte: payload.datosTransporte }),
       });
       const remission = mapRemision(response);
       rememberRemission(remission);
@@ -116,7 +120,9 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       entregadoPor: payload.entregadoPor || user?.name || '', cargoEntregado: payload.cargoEntregado || user?.role || '',
       recibidoPor: payload.recibidoPor, cargoRecibido: payload.cargoRecibido || '', observaciones: payload.observaciones || '',
       fecha: displayDate(now), items: cart.map(line => ({ elementoId: line.elemento.id, codigo: line.elemento.codigo,
-        nombre: line.elemento.nombre, cantidad: line.cantidad, unidad: line.elemento.unidad })),
+        nombre: line.elemento.nombre, cantidad: line.cantidad, unidad: line.elemento.unidad,
+        ...(payload.pesos?.[line.elemento.id] !== undefined && { pesoTotalKg: payload.pesos[line.elemento.id] }) })),
+      datosTransporte: payload.datosTransporte,
     };
     const requested = new Map(cart.map(line => [line.elemento.id, line.cantidad]));
     const history: HistorialMovimiento[] = cart.map(line => {

@@ -66,6 +66,18 @@ export interface DetalleRemision {
   nombre: string;
   cantidad: number;
   unidad: string;
+  pesoTotalKg?: number;
+}
+
+export interface DatosTransporte {
+  telefonoRemite: string;
+  telefonoRecibe: string;
+  transportador: string;
+  cedulaTransportador: string;
+  telefonoTransportador: string;
+  placaVehiculo: string;
+  fechaDespacho: string;
+  fechaDevolucion: string;
 }
 
 export interface Remision {
@@ -82,6 +94,7 @@ export interface Remision {
   observaciones: string;
   fecha: string;
   items: DetalleRemision[];
+  datosTransporte?: DatosTransporte;
 }
 
 export type TipoMovimiento = 'ENTRADA' | 'SALIDA' | 'AJUSTE' | 'REUBICACION';

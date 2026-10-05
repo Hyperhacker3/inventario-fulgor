@@ -7,6 +7,9 @@ playwright-report/
 build/
 dist/
 coverage/
+tmp/pdfs/
+output/pdf/
+REMISION.pdf
 .DS_Store
 *.log
 .env*
