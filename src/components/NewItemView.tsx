@@ -6,6 +6,8 @@ import { ItemLocationFields } from './item/ItemLocationFields';
 import { ItemStockFields } from './item/ItemStockFields';
 import { errorMessage } from '../shared/errors';
 import { NumberInput } from './NumberInput';
+import { ItemWeightFields } from './item/ItemWeightFields';
+import { parseWeightDraft, weightDraft } from '../domain/weight';
 
 export const NewItemView: React.FC = () => {
   const {
@@ -27,6 +29,7 @@ export const NewItemView: React.FC = () => {
   const [cajaId, setCajaId] = useState<string>('');
   const [cantidad, setCantidad] = useState<number>(0);
   const [unidad, setUnidad] = useState<string>('UND');
+  const [weight, setWeight] = useState(() => weightDraft());
   const [stockMinimo, setStockMinimo] = useState<number>(0);
   const [estado, setEstado] = useState<string>('BUENO');
   const [cantidadDanados, setCantidadDanados] = useState<number>(0);
@@ -83,6 +86,7 @@ export const NewItemView: React.FC = () => {
         categoria,
         cantidad: Number(cantidad),
         unidad,
+        pesoUnitario: parseWeightDraft(weight),
         fotoUrl: fotoUrl.trim(),
         fotosAdicionales,
         almacenId: selectedAlmacenId || null,
@@ -270,6 +274,7 @@ export const NewItemView: React.FC = () => {
 
         <ItemStockFields quantity={cantidad} unit={unidad} minimum={stockMinimo}
           onQuantity={setCantidad} onUnit={setUnidad} onMinimum={setStockMinimo} />
+        <ItemWeightFields value={weight} onChange={setWeight} stockUnit={unidad} disabled={pending} />
 
         {/* Action Buttons */}
         <div className="pt-4 flex items-center justify-end gap-3 border-t border-[#e2e8f0]">

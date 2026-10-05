@@ -1,4 +1,5 @@
 import { mapTransport } from '../domain/remissionTransport';
+import { mapWeight } from '../domain/weight';
 import type { Almacen, Caja, Elemento, Estanteria, HistorialMovimiento, Proyecto, Remision, DetalleRemision, TipoMovimiento } from '../types';
 import { categories, normalizeUnit } from '../domain/catalogs';
 import { displayDate, displayTime } from '../shared/dates';
@@ -35,6 +36,7 @@ export const mapElemento = (row: DbRow): Elemento => {
     id: str(row.id), codigo: str(row.codigo), nombre: str(row.nombre), descripcion: str(row.descripcion),
     categoria: categories.find(category => category === row.categoria) || 'OTROS',
     cantidad: numeric(row.cantidad), unidad: normalizeUnit(str(row.unidad, 'und')),
+    pesoUnitario: mapWeight(specs.peso_unitario),
     fotoUrl: str(row.foto_url), almacenId: id(row.almacen_id), estanteriaId: id(row.estanteria_id), cajaId: id(row.caja_id),
     fotosAdicionales: uniquePhotos(specs.fotos_adicionales).filter(photo => photo !== str(row.foto_url)),
     stockMinimo: numeric(row.stock_minimo, 10), estado: str(row.estado || specs.estado_material, 'BUENO'),
@@ -55,7 +57,8 @@ export const mapRemision = (row: DbRow, itemsByCode?: Map<string, Elemento>): Re
     return { elementoId: str(item.elementoId ?? item.elemento_id ?? itemsByCode?.get(str(item.codigo))?.id),
       codigo: str(item.codigo), nombre: str(item.nombre), cantidad: numeric(item.cantidad),
       unidad: normalizeUnit(str(item.unidad, 'und')),
-      ...(item.pesoTotalKg != null && { pesoTotalKg: numeric(item.pesoTotalKg) }) };
+      ...(item.pesoTotalKg != null && { pesoTotalKg: numeric(item.pesoTotalKg) }),
+      pesoUnitario: mapWeight(item.pesoUnitario) };
   }),
 });
 export const mapHistory = (row: DbRow, itemsByCode?: Map<string, Elemento>): HistorialMovimiento => {

@@ -44,6 +44,7 @@ export interface Elemento {
   categoria: CategoriaElemento;
   cantidad: number;
   unidad: 'und' | 'rll' | 'mts' | 'kg' | 'par' | 'jgo' | string;
+  pesoUnitario?: PesoUnitario | null;
   fotoUrl: string;
   fotosAdicionales?: string[];
   almacenId: string | null;
@@ -60,6 +61,8 @@ export interface Elemento {
   updatedAt: string;
 }
 
+export interface PesoUnitario { valor: number; unidad: 'g' | 'kg' }
+
 export interface DetalleRemision {
   elementoId: string;
   codigo: string;
@@ -67,6 +70,7 @@ export interface DetalleRemision {
   cantidad: number;
   unidad: string;
   pesoTotalKg?: number;
+  pesoUnitario?: PesoUnitario | null;
 }
 
 export interface DatosTransporte {

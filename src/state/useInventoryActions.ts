@@ -11,7 +11,8 @@ import { useAuth } from '../context/AuthContext';
 import { displayDate, displayTime } from '../shared/dates';
 import { saveImage, removeImage } from '../shared/images';
 import { saveGallery } from '../domain/photos';
-import { validateTransport } from '../domain/remissionTransport';
+import { emptyTransport, validateTransport } from '../domain/remissionTransport';
+import { lineWeightKg } from '../domain/weight';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
 const newId = (prefix: string) => `${prefix}-DEMO-${crypto.randomUUID()}`;
@@ -52,7 +53,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
         cantidad: item.cantidad, stock_minimo: item.stockMinimo, unidad: item.unidad,
         almacen_id: item.almacenId, estanteria_id: item.estanteriaId, caja_id: item.cajaId,
         foto_url: photo, estado: item.estado || 'BUENO', cantidad_danados: item.cantidadDanados || 0,
-        especificaciones: { ...item.especificaciones, fotos_adicionales: gallery.additional },
+        especificaciones: { ...item.especificaciones, peso_unitario: item.pesoUnitario ?? null, fotos_adicionales: gallery.additional },
       } }));
       applyItemChange(created.id, created);
       await syncAfterWrite(refreshItemIds([created.id]), refresh('historial'));
@@ -76,7 +77,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       const saved = await updateRow('elementos', id, {
         nombre: next.nombre, descripcion: next.descripcion, stock_minimo: next.stockMinimo,
         foto_url: photo, estado: next.estado, cantidad_danados: next.cantidadDanados ?? 0,
-        especificaciones: { ...next.especificaciones, fotos_adicionales: gallery.additional }, updated_at: isoNow(),
+        especificaciones: { ...next.especificaciones, peso_unitario: next.pesoUnitario ?? null, fotos_adicionales: gallery.additional }, updated_at: isoNow(),
       }, mapElemento);
       applyItemChange(id, saved);
       await syncAfterWrite(refreshItemIds([id]));
@@ -89,22 +90,21 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       applyItemChange(id, null); await syncAfterWrite(refreshItemIds([id])); }
   };
 
-  const processDispatch = async (payload: { proyectoId: string; entregadoPor: string; cargoEntregado?: string; recibidoPor: string; cargoRecibido?: string; observaciones?: string; requestId?: string; datosTransporte?: DatosTransporte; pesos?: Record<string, number> }): Promise<Remision> => {
+  const processDispatch = async (payload: { proyectoId: string; entregadoPor: string; cargoEntregado?: string; recibidoPor: string; cargoRecibido?: string; observaciones?: string; requestId?: string; datosTransporte?: DatosTransporte }): Promise<Remision> => {
     requireOperator();
     validateDispatch(cart, data.elementos);
     const project = data.proyectos.find(p => p.id === payload.proyectoId);
     if (!project || project.estado !== 'ACTIVO') throw new Error('Seleccione un proyecto válido.');
     if (!payload.recibidoPor.trim()) throw new Error('Indique quién recibe.');
-    if (payload.datosTransporte) validateTransport(payload.datosTransporte, payload.pesos || {});
+    if (payload.datosTransporte) validateTransport(payload.datosTransporte, {});
     if (!isDemo) {
-      const response = await rpc<Record<string, unknown>>(payload.datosTransporte ? 'dispatch_inventory_with_transport' : 'dispatch_inventory', {
+      const response = await rpc<Record<string, unknown>>('dispatch_inventory_with_unit_weights', {
         p_request_id: payload.requestId || crypto.randomUUID(), p_proyecto_id: project.id,
         p_entregado_por: payload.entregadoPor || user?.name, p_cargo_entregado: payload.cargoEntregado || user?.role,
         p_recibido_por: payload.recibidoPor, p_cargo_recibido: payload.cargoRecibido || '',
         p_observaciones: payload.observaciones || '',
-        p_items: cart.map(line => ({ elementoId: line.elemento.id, cantidad: line.cantidad,
-          ...(payload.pesos?.[line.elemento.id] !== undefined && { pesoTotalKg: payload.pesos[line.elemento.id] }) })),
-        ...(payload.datosTransporte && { p_datos_transporte: payload.datosTransporte }),
+        p_items: cart.map(line => ({ elementoId: line.elemento.id, cantidad: line.cantidad })),
+        p_datos_transporte: payload.datosTransporte || emptyTransport(),
       });
       const remission = mapRemision(response);
       rememberRemission(remission);
@@ -121,7 +121,8 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       recibidoPor: payload.recibidoPor, cargoRecibido: payload.cargoRecibido || '', observaciones: payload.observaciones || '',
       fecha: displayDate(now), items: cart.map(line => ({ elementoId: line.elemento.id, codigo: line.elemento.codigo,
         nombre: line.elemento.nombre, cantidad: line.cantidad, unidad: line.elemento.unidad,
-        ...(payload.pesos?.[line.elemento.id] !== undefined && { pesoTotalKg: payload.pesos[line.elemento.id] }) })),
+        pesoUnitario: line.elemento.pesoUnitario,
+        ...(line.elemento.pesoUnitario && { pesoTotalKg: lineWeightKg(line.elemento.pesoUnitario, line.cantidad)! }) })),
       datosTransporte: payload.datosTransporte,
     };
     const requested = new Map(cart.map(line => [line.elemento.id, line.cantidad]));

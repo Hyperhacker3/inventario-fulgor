@@ -8,11 +8,13 @@ import { ItemPhotoGallery } from './item/ItemPhotoGallery';
 import { ItemPhotoPicker } from './ItemPhotoPicker';
 import { ItemHistory } from './item/ItemHistory';
 import { NumberInput } from './NumberInput';
+import { ItemWeightFields } from './item/ItemWeightFields';
+import { formatUnitWeight, parseWeightDraft, weightDraft } from '../domain/weight';
 
 interface Props { item: Elemento | null; onClose: () => void }
 
 export function ItemDetailModal({ item, onClose }: Props) {
-  const { user, getLocationString, openQuickMovement, addToDispatchCart, setActiveView,
+  const { user, getLocationString, openQuickMovement, addToDispatchCart,
     updateElemento, deleteElemento } = useInventory();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(item?.nombre || '');
@@ -22,6 +24,7 @@ export function ItemDetailModal({ item, onClose }: Props) {
   const [additionalPhotos, setAdditionalPhotos] = useState<string[]>(item?.fotosAdicionales || []);
   const [condition, setCondition] = useState(item?.estado || 'BUENO');
   const [damaged, setDamaged] = useState(item?.cantidadDanados ?? 0);
+  const [weight, setWeight] = useState(() => weightDraft(item?.pesoUnitario));
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -43,6 +46,7 @@ export function ItemDetailModal({ item, onClose }: Props) {
     setName(item.nombre); setDescription(item.descripcion); setMinimum(item.stockMinimo);
     setPhoto(item.fotoUrl || ''); setCondition(item.estado || 'BUENO'); setDamaged(item.cantidadDanados ?? 0);
     setAdditionalPhotos(item.fotosAdicionales || []);
+    setWeight(weightDraft(item.pesoUnitario));
     setError(''); setEditing(true);
   };
   const save = async (event: FormEvent) => {
@@ -51,7 +55,7 @@ export function ItemDetailModal({ item, onClose }: Props) {
     setError(''); setPending(true);
     try {
       await updateElemento(item.id, { nombre: name.trim(), descripcion: description.trim(), stockMinimo: minimum,
-        fotoUrl: photo.trim(), fotosAdicionales: additionalPhotos, estado: condition, cantidadDanados: damaged });
+        fotoUrl: photo.trim(), fotosAdicionales: additionalPhotos, estado: condition, cantidadDanados: damaged, pesoUnitario: parseWeightDraft(weight) });
       setEditing(false);
     } catch (cause) { setError(errorMessage(cause)); }
     finally { setPending(false); }
@@ -93,6 +97,7 @@ export function ItemDetailModal({ item, onClose }: Props) {
               <NumberInput min="0" max={item.cantidad} step="0.001" required value={damaged} onValueChange={setDamaged} className="block w-full mt-1 p-2.5 border rounded-lg" />
             </label>
           </div>
+          <ItemWeightFields value={weight} onChange={setWeight} stockUnit={item.unidad} disabled={pending} />
           <label className="block text-sm font-semibold">Estado
             <select value={condition} onChange={event => setCondition(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg">
               {['BUENO', 'REGULAR', 'MALO', 'REPARACION', 'RETAL'].map(value => <option key={value}>{value}</option>)}
@@ -107,6 +112,7 @@ export function ItemDetailModal({ item, onClose }: Props) {
               <p className="text-sm text-[#454651] mt-2">{item.descripcion}</p>
               <p className="text-xs text-[#64748b] mt-3">Ubicación: {getLocationString(item)}</p>
               <p className="text-xs text-[#64748b] mt-1">Estado: {item.estado || 'BUENO'}</p>
+              <p className={`text-sm mt-2 ${item.pesoUnitario ? 'text-[#253685]' : 'text-amber-700'}`}>Peso por 1 {item.unidad.toUpperCase()}: {formatUnitWeight(item.pesoUnitario)}</p>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3 text-center">
@@ -118,8 +124,8 @@ export function ItemDetailModal({ item, onClose }: Props) {
             {canAdmin && <button type="button" onClick={startEdit} className="px-3 py-2 rounded-lg border text-sm font-semibold">Editar</button>}
             {canOperate && !item.stockPendiente && <button type="button" onClick={() => openQuickMovement(item, 'ENTRADA')} className="px-3 py-2 rounded-lg bg-[#e6f4ea] text-[#137333] text-sm font-semibold">Entrada</button>}
             {(canAdmin || canOperate && !item.stockPendiente) && <button type="button" onClick={() => openQuickMovement(item, 'AJUSTE')} className="px-3 py-2 rounded-lg bg-[#fef7e0] text-[#755b00] text-sm font-semibold">{item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'}</button>}
-            {canOperate && <button type="button" disabled={available(item) === 0} onClick={() => { addToDispatchCart(item); onClose(); setActiveView('dispatch'); }}
-              className="px-3 py-2 rounded-lg bg-[#dd4c42] text-white text-sm font-semibold disabled:opacity-40">Despachar</button>}
+            {canOperate && <button type="button" disabled={available(item) === 0} onClick={() => addToDispatchCart(item)}
+              className="px-3 py-2 rounded-lg bg-[#dd4c42] text-white text-sm font-semibold disabled:opacity-40">Agregar al despacho</button>}
             {canAdmin && <button type="button" disabled={pending} onClick={archive} className="px-3 py-2 rounded-lg border text-red-700 text-sm font-semibold">Archivar</button>}
           </div>
         </>}

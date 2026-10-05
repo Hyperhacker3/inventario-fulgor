@@ -8,6 +8,7 @@ const baseSql = fs.readFileSync(new URL('../../supabase_schema.sql', import.meta
   .replace(/^ALTER PUBLICATION.*$/gm, '');
 const migration = fs.readFileSync(new URL('../../supabase/migrations/20261001_secure_inventory.sql', import.meta.url), 'utf8');
 const transportMigration = fs.readFileSync(new URL('../../supabase/migrations/20261005_remission_transport.sql', import.meta.url), 'utf8');
+const unitWeightMigration = fs.readFileSync(new URL('../../supabase/migrations/20261005000100_unit_weights.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 
@@ -23,6 +24,7 @@ async function database() {
   await db.exec(baseSql);
   await db.exec(migration);
   await db.exec(transportMigration);
+  await db.exec(unitWeightMigration);
   await db.exec(demoSeed);
   return db;
 }
@@ -30,6 +32,40 @@ async function database() {
 const role = (db, value) => db.exec(`SELECT set_config('app.test_role','${value}',false); SET ROLE authenticated;`);
 const asOwner = db => db.exec('RESET ROLE;');
 const itemStock = async db => Number((await db.query("SELECT cantidad FROM public.elementos WHERE id = 'ELM-001'")).rows[0].cantidad);
+
+test('unit weights calculate from the locked catalog, preserve snapshots and ignore forged totals', async () => {
+  const db = await database();
+  try {
+    await db.exec(unitWeightMigration);
+    await role(db, 'admin');
+    assert.equal((await db.query('SELECT public.unit_weight_dispatch_ready() AS ready')).rows[0].ready, true);
+    await db.query(`UPDATE public.elementos SET especificaciones = especificaciones || '{"peso_unitario":{"valor":40,"unidad":"g"}}'::jsonb WHERE id='ELM-001'`);
+    await db.query(`UPDATE public.elementos SET especificaciones = especificaciones || '{"peso_unitario":{"valor":2.5,"unidad":"kg"}}'::jsonb WHERE id='ELM-002'`);
+    await db.query(`UPDATE public.elementos SET especificaciones = especificaciones || '{"peso_unitario":{"valor":0.001,"unidad":"g"}}'::jsonb WHERE id='ELM-006'`);
+    await assert.rejects(() => db.query(`UPDATE public.elementos SET especificaciones = '{"peso_unitario":{"valor":0,"unidad":"g"}}'::jsonb WHERE id='ELM-001'`), /Peso unitario inválido/);
+    const sql = 'SELECT public.dispatch_inventory_with_unit_weights($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb) AS rem';
+    const args = ['61f8c2c5-7b60-4920-b2a5-a320b6792c2f','PROY-001','Bodega','Admin','Obra','Residente','',JSON.stringify([
+      { elementoId: 'ELM-001', cantidad: 20, pesoTotalKg: 999 }, { elementoId: 'ELM-002', cantidad: 2 },
+      { elementoId: 'ELM-003', cantidad: 1 }, { elementoId: 'ELM-006', cantidad: 0.001 },
+    ]),'{}'];
+    const first = (await db.query(sql,args)).rows[0].rem;
+    assert.equal(first.items.find(item => item.elementoId === 'ELM-001').pesoTotalKg, 0.8);
+    assert.equal(first.items.find(item => item.elementoId === 'ELM-002').pesoTotalKg, 5);
+    assert.equal(first.items.find(item => item.elementoId === 'ELM-003').pesoTotalKg, undefined);
+    assert.equal(first.items.find(item => item.elementoId === 'ELM-006').pesoTotalKg, 0.000000001);
+    assert.deepEqual(first.items.find(item => item.elementoId === 'ELM-001').pesoUnitario, { valor: 40, unidad: 'g' });
+    await db.query(`UPDATE public.elementos SET especificaciones = especificaciones || '{"peso_unitario":{"valor":50,"unidad":"g"}}'::jsonb WHERE id='ELM-001'`);
+    const repeat = (await db.query(sql,args)).rows[0].rem;
+    assert.equal(repeat.id,first.id);
+    assert.equal(repeat.items.find(item => item.elementoId === 'ELM-001').pesoTotalKg,0.8);
+    assert.equal(await itemStock(db),164);
+    const changed = [...args]; changed[7] = JSON.stringify([{ elementoId:'ELM-001',cantidad:1 }]);
+    await assert.rejects(() => db.query(sql,changed),/otro contenido o usuario/);
+    await asOwner(db); await role(db,'consulta');
+    await assert.rejects(() => db.query(sql,args),/No autorizado/);
+    assert.equal((await db.query('SELECT count(*) AS n FROM public.remisiones')).rows[0].n,1);
+  } finally { await db.close(); }
+});
 
 test('transport and weights are saved atomically, validated and included in request identity', async () => {
   const db = await database();

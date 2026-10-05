@@ -24,6 +24,7 @@
 .rm-table th:nth-child(n+5), .rm-table td:nth-child(n+5) { text-align: right; }
 .rm-table td { padding: 9px 7px; border-bottom: 1px solid #e1e6f0; vertical-align: top; overflow-wrap: anywhere; }
 .rm-table td:nth-child(2), .rm-table td:nth-child(5) { font-weight: bold; color: #253685; }
+.rm-unit-weight { display: block; font-size: 8px; color: #64748b; padding-top: 3px; }
 .rm-table tr:nth-child(even) { background: #f8f9fd; }
 .rm-summary { padding: 10px 12px 14px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; color: #253685; font-size: 10px; border-top: 2px solid #253685; }
 .rm-summary span { text-align: right; overflow-wrap: anywhere; max-width: 540px; }

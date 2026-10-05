@@ -4,6 +4,7 @@ import { ItemImage } from '../ItemImage';
 import { isDemo } from '../../lib/supabase';
 import { available } from '../../domain/inventory';
 import { itemPhotos } from '../../domain/photos';
+import { formatUnitWeight } from '../../domain/weight';
 
 export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'grid' | 'list' }) {
   const { getAlmacenById, getEstanteriaById, getLocationString, openItemDetail, addToDispatchCart, user } = useInventory();
@@ -81,6 +82,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                         {item.nombre}
                       </h3>
 
+                      <p className={`text-[11px] ${item.pesoUnitario ? 'text-slate-500' : 'text-amber-700'}`}>{formatUnitWeight(item.pesoUnitario)}{item.pesoUnitario ? ` / ${item.unidad}` : ''}</p>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-mono-code text-xs font-semibold text-[#3e4e9e] bg-[#eaedff] px-2 py-0.5 rounded-md w-fit">
                           {item.codigo}
@@ -119,7 +121,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                           Detalles
                         </button>
                         {canOperate && <button
-                          onClick={() => addToDispatchCart(item, 1)}
+                          onClick={() => addToDispatchCart(item)}
                           disabled={available(item) === 0}
                           className={`flex-1 text-xs font-bold py-1.5 rounded-lg flex items-center justify-center gap-1 transition-all ${
                             available(item) > 0
@@ -173,6 +175,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                               <button type="button" onClick={() => openItemDetail(item)} title={item.nombre} className="block max-w-full text-left font-semibold text-[#131b2e] leading-snug truncate hover:text-[#3e4e9e] hover:underline">{item.nombre}</button>
                               <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-[#767682]">
                                 <span>{item.categoria}</span>
+                                <span className={item.pesoUnitario ? 'text-slate-500' : 'text-amber-700'}>{formatUnitWeight(item.pesoUnitario)}{item.pesoUnitario ? ` / ${item.unidad}` : ''}</span>
                                 {(item.cantidadDanados || 0) > 0 && (
                                   <span className="text-[10px] font-bold text-[#c5221f] bg-[#fce8e6] px-1 py-0.2 rounded">
                                     {item.cantidadDanados} dañados
@@ -213,7 +216,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                               <span className="material-symbols-outlined text-[18px]">visibility</span>
                             </button>
                             {canOperate && <button
-                              onClick={() => addToDispatchCart(item, 1)}
+                              onClick={() => addToDispatchCart(item)}
                               disabled={available(item) === 0}
                               className={`p-1 rounded-md ${
                                 available(item) > 0

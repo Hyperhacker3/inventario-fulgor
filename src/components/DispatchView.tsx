@@ -1,7 +1,8 @@
 import { ProjectSelector } from './dispatch/ProjectSelector';
 import { TransportFields } from './dispatch/TransportFields';
 import { emptyTransport } from '../domain/remissionTransport';
-import { useRemissionTransport } from '../state/useRemissionTransport';
+import { useRemissionTransport, useUnitWeightDispatch } from '../state/useRemissionTransport';
+import { formatKg, formatUnitWeight, lineWeightKg, totalWeight } from '../domain/weight';
 import React, { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { errorMessage } from '../shared/errors';
@@ -33,18 +34,20 @@ export const DispatchView: React.FC = () => {
   const [pending, setPending] = useState(false);
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
   const [transport, setTransport] = useState(emptyTransport);
-  const [weights, setWeights] = useState<Record<string, string>>({});
   const transportQuery = useRemissionTransport();
+  const automaticQuery = useUnitWeightDispatch();
+  const automaticReady = automaticQuery.data === true && !automaticQuery.isError;
   const transportReady = transportQuery.data === true && !transportQuery.isError;
 
   const effectiveProjectId = proyectos.some(p => p.id === selectedProyectoId && p.estado === 'ACTIVO') ? selectedProyectoId : '';
 
   // Total units in cart
-  const totalUnits = dispatchCart.reduce((sum, item) => sum + item.cantidad, 0);
+  const weightSummary = totalWeight(dispatchCart.map(line => ({ pesoTotalKg: lineWeightKg(line.elemento.pesoUnitario, line.cantidad) })));
 
   const handleDispatch = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    if (!automaticReady) { setErrorMsg('Active la actualización del cálculo automático de peso antes de generar la remisión.'); return; }
 
     if (dispatchCart.length === 0) {
       setErrorMsg('Debe agregar al menos un componente al despacho.');
@@ -74,8 +77,7 @@ export const DispatchView: React.FC = () => {
     try {
       await processDispatch({ proyectoId: effectiveProjectId, entregadoPor, cargoEntregado,
         recibidoPor, cargoRecibido, observaciones, requestId,
-        ...(transportReady && { datosTransporte: transport, pesos: Object.fromEntries(dispatchCart
-          .filter(line => weights[line.elemento.id]?.trim()).map(line => [line.elemento.id, Number(weights[line.elemento.id])])) }) });
+        ...(transportReady && { datosTransporte: transport }) });
       setRequestId(crypto.randomUUID());
       void import('canvas-confetti').then(({ default: confetti }) => {
         confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
@@ -194,7 +196,7 @@ export const DispatchView: React.FC = () => {
                   MATERIALES A DESPACHAR ({dispatchCart.length})
                 </label>
                 <span className="text-xs font-mono-code text-[#3e4e9e] font-bold">
-                  {totalUnits} unidades totales
+                  {dispatchCart.length} referencias
                 </span>
               </div>
 
@@ -264,19 +266,18 @@ export const DispatchView: React.FC = () => {
               </div>
             </div>
 
-            {transportReady && dispatchCart.length > 0 && <fieldset disabled={pending} className="space-y-2">
-              <legend className="text-xs font-bold text-[#253685]">PESO TOTAL POR MATERIAL (kg, opcional)</legend>
-              <p className="text-xs text-slate-500">Peso del total despachado de cada material, no de una unidad. Deje vacío si no se conoce.</p>
-              {dispatchCart.map(line => <label key={line.elemento.id} className="flex justify-between items-center gap-3 text-xs">
-                <span>{line.elemento.codigo} · {line.elemento.nombre}</span><input type="number" min="0" step="0.001" max="99999999999.999" value={weights[line.elemento.id] || ''} onChange={event => setWeights({ ...weights, [line.elemento.id]: event.target.value })} aria-label={`Peso total en kg de ${line.elemento.codigo}`} className="w-24 shrink-0 border rounded-lg p-2" />
-              </label>)}
-            </fieldset>}
+            {dispatchCart.length > 0 && <section className="space-y-2 rounded-xl bg-slate-50 border p-3">
+              <h4 className="text-sm font-bold text-[#253685]">{weightSummary.pending ? 'Peso parcial conocido' : 'Peso total'}: {formatKg(weightSummary.total)}</h4>
+              {!!weightSummary.pending && <p className="text-xs text-amber-700">{weightSummary.pending} material(es) con peso pendiente. Declare el peso desde la edición del producto para completar el total.</p>}
+              {dispatchCart.map(line => { const weight = lineWeightKg(line.elemento.pesoUnitario, line.cantidad); return <div key={line.elemento.id} className="text-xs flex justify-between gap-3"><span>{line.elemento.codigo} · {line.cantidad} {line.elemento.unidad} × {formatUnitWeight(line.elemento.pesoUnitario)}</span><strong className="shrink-0">{weight === null ? 'Pendiente' : formatKg(weight)}</strong></div>; })}
+            </section>}
+            {!automaticReady && <p role="status" className="text-xs text-amber-700">El cálculo automático de peso requiere activar la actualización de Supabase. <button type="button" className="underline" onClick={() => { void automaticQuery.refetch(); }}>Comprobar de nuevo</button></p>}
 
             {/* Primary Action Dispatch Button (Red Coral from Mockup Image 1) */}
             <button
               type="submit"
               id="btn-process-dispatch"
-              disabled={dispatchCart.length === 0 || pending}
+              disabled={dispatchCart.length === 0 || pending || !automaticReady}
               className={`w-full py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all shadow-sm ${
                 dispatchCart.length > 0
                   ? 'bg-[#dd4c42] hover:bg-[#b12c26] active:scale-[0.98]'

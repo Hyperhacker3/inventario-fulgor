@@ -11,3 +11,13 @@ export function useRemissionTransport() {
     },
   });
 }
+export function useUnitWeightDispatch() {
+  const { user } = useAuth();
+  return useQuery({ queryKey: ['fulgor', user?.email, 'unit-weight-dispatch-ready'], staleTime: 60_000, retry: false,
+    queryFn: async () => {
+      const result = await requireSupabase().rpc('unit_weight_dispatch_ready');
+      if (result.error) throw new Error('El cálculo automático de peso requiere activar la actualización de Supabase.');
+      return result.data === true;
+    },
+  });
+}

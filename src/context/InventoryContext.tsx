@@ -5,7 +5,7 @@ import { useInventoryData } from '../state/useInventoryData';
 import { useInventoryActions } from '../state/useInventoryActions';
 import { useViewNavigation } from '../state/useViewNavigation';
 import { locationLabel, available, byId } from '../domain/inventory';
-import { MIN_QUANTITY, roundQuantity } from '../domain/quantity';
+import { MIN_QUANTITY, roundQuantity, validQuantity } from '../domain/quantity';
 import { isDemo } from '../lib/supabase';
 import type { DispatchCartItem, Elemento, Remision } from '../types';
 import { INITIAL_ALMACENES, INITIAL_CAJAS, INITIAL_ELEMENTOS, INITIAL_ESTANTERIAS, INITIAL_HISTORIAL, INITIAL_PROYECTOS, INITIAL_REMISIONES } from '../data/initialData';
@@ -28,11 +28,19 @@ function useInventoryValue() {
   const [quickMovementId, setQuickMovementId] = useState<string | null>(null);
   const [quickMovementType, setQuickMovementType] = useState<'ENTRADA' | 'AJUSTE'>('ENTRADA');
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [dispatchSelection, setDispatchSelection] = useState<{ itemId: string; token: string } | null>(null);
+  const [dispatchFeedback, setDispatchFeedback] = useState<{ message: string; token: string } | null>(null);
+  useEffect(() => {
+    if (!dispatchFeedback) return;
+    const timer = setTimeout(() => setDispatchFeedback(null), 5000);
+    return () => clearTimeout(timer);
+  }, [dispatchFeedback]);
   const closeNavigationOverlays = useCallback(() => {
     setSelectedItemId(null);
     setSelectedRemisionForPdf(null);
     setQuickMovementId(null);
     setIsHelpModalOpen(false);
+    setDispatchSelection(null);
   }, []);
   const { activeView, setActiveView } = useViewNavigation(closeNavigationOverlays);
   const cartKey = `fulgor_cart_v4_${user?.email || 'anonymous'}`;
@@ -51,15 +59,23 @@ function useInventoryValue() {
   const selectedItemForDetail = selectedItemId ? itemIndex.get(selectedItemId) || null : null;
   const quickMovementItem = quickMovementId ? itemIndex.get(quickMovementId) || null : null;
 
-  const addToDispatchCart = (item: Elemento, quantity = 1) => {
-    if (!isDemo && !['admin', 'operador'].includes(user?.role || '')) return;
-    if (available(item) <= 0) return;
+  const dispatchSelectionItem = dispatchSelection ? itemIndex.get(dispatchSelection.itemId) || null : null;
+  const closeDispatchSelection = useCallback(() => setDispatchSelection(null), []);
+  const addToDispatchCart = (item: Elemento, quantity?: number) => {
+    if (!isDemo && !['admin', 'operador'].includes(user?.role || '')) throw new Error('Su cuenta no puede agregar materiales al despacho.');
+    if (quantity === undefined) { setDispatchSelection({ itemId: item.id, token: crypto.randomUUID() }); return; }
+    const live = itemIndex.get(item.id);
+    const existing = cartLines.find(line => line.elementoId === item.id)?.cantidad || 0;
+    if (!live || !validQuantity(quantity) || quantity <= 0 || quantity > roundQuantity(available(live) - existing))
+      throw new Error('La cantidad supera el stock disponible para agregar. Revise la cantidad.');
     setCartLines(prev => {
       const existing = prev.find(line => line.elementoId === item.id);
-      const amount = roundQuantity(Math.min(available(item), (existing?.cantidad ?? 0) + Math.max(MIN_QUANTITY, quantity)));
+      const amount = roundQuantity((existing?.cantidad ?? 0) + quantity);
       return existing ? prev.map(line => line.elementoId === item.id ? { ...line, cantidad: amount } : line)
         : [...prev, { elementoId: item.id, cantidad: amount }];
     });
+    setDispatchSelection(null);
+    setDispatchFeedback({ message: `Agregados ${quantity.toLocaleString('es-CO', { maximumFractionDigits: 3 })} ${live.unidad.toUpperCase()} de ${live.codigo} al despacho.`, token: crypto.randomUUID() });
   };
   const updateDispatchCartQuantity = (itemId: string, quantity: number) => {
     const item = itemIndex.get(itemId);
@@ -96,6 +112,7 @@ function useInventoryValue() {
     proyectos: data.proyectos, remisiones: data.remisiones, historial: data.historial,
     user: user!, activeView, dispatchCart, selectedItemForDetail, selectedRemisionForPdf, quickMovementItem,
     quickMovementType, isHelpModalOpen, globalSearch, isCloudConnected: data.isCloudConnected,
+    dispatchSelection, dispatchSelectionItem, closeDispatchSelection, dispatchFeedback,
     syncStatus: data.syncStatus, setActiveView, setGlobalSearch, openItemDetail, closeItemDetail,
     openPdfRemision, closePdfRemision, openQuickMovement, closeQuickMovement, setIsHelpModalOpen,
     addToDispatchCart, updateDispatchCartQuantity, removeFromDispatchCart, clearDispatchCart,

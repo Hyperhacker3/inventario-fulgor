@@ -15,6 +15,49 @@ Object.assign(globalThis, {
   IS_REACT_ACT_ENVIRONMENT: true,
 });
 const { createRoot } = await import('react-dom/client');
+const { DispatchQuantityModal } = await import('../../src/components/dispatch/DispatchQuantityModal');
+const { mapElemento } = await import('../../src/data/mappers');
+
+test('quantity dialog asks before adding, accepts typed amounts and confirms only once', async () => {
+  const item = mapElemento({ id:'EJE001',codigo:'EJE001',nombre:'Elemento',cantidad:100,unidad:'und',especificaciones:{ peso_unitario:{ valor:40,unidad:'g' } } });
+  const added: number[] = [];
+  const host = document.body.appendChild(document.createElement('div'));
+  const root = createRoot(host);
+  try {
+    await act(() => root.render(createElement(DispatchQuantityModal,{ item,inCart:0,onConfirm:(quantity: number) => added.push(quantity),onClose:() => {} })));
+    assert.deepEqual(added,[]);
+    const plus = document.querySelector<HTMLButtonElement>('[aria-label="Aumentar cantidad"]')!;
+    const minus = document.querySelector<HTMLButtonElement>('[aria-label="Reducir cantidad"]')!;
+    const input = document.querySelector<HTMLInputElement>('#dispatch-add-quantity')!;
+    await act(() => plus.click()); assert.equal(input.value,'2');
+    await act(() => minus.click()); assert.equal(input.value,'1');
+    const setValue = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
+    await act(() => { setValue.call(input,'20'); input.dispatchEvent(new dom.window.Event('input',{ bubbles:true })); });
+    assert.match(document.querySelector('[role="dialog"]')!.textContent!,/0,8 kg/);
+    await act(() => document.querySelector('form[role="dialog"]')!.dispatchEvent(new dom.window.Event('submit',{ bubbles:true,cancelable:true })));
+    await act(() => document.querySelector('form[role="dialog"]')!.dispatchEvent(new dom.window.Event('submit',{ bubbles:true,cancelable:true })));
+    assert.deepEqual(added,[20]);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
+test('quantity dialog respects stock changes and Escape closes only the selection', async () => {
+  const item = mapElemento({ id:'EJE001',codigo:'EJE001',nombre:'Elemento',cantidad:10,unidad:'und' });
+  let added = 0, closed = 0, outerEscapes = 0;
+  const outer = () => { outerEscapes++; };
+  const onClose = () => { closed++; };
+  const host = document.body.appendChild(document.createElement('div'));
+  const root = createRoot(host);
+  document.addEventListener('keydown',outer);
+  try {
+    await act(() => root.render(createElement(DispatchQuantityModal,{ item,inCart:8,onConfirm:() => { added++; },onClose })));
+    assert.equal(document.querySelector<HTMLInputElement>('#dispatch-add-quantity')!.max,'2');
+    await act(() => root.render(createElement(DispatchQuantityModal,{ item:{ ...item,cantidad:8 },inCart:8,onConfirm:() => { added++; },onClose })));
+    assert.equal(document.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled,true);
+    await act(() => document.querySelector('form[role="dialog"]')!.dispatchEvent(new dom.window.Event('submit',{ bubbles:true,cancelable:true })));
+    assert.equal(added,0);
+    await act(() => document.dispatchEvent(new dom.window.KeyboardEvent('keydown',{ key:'Escape',bubbles:true })));
+    assert.equal(closed,1); assert.equal(outerEscapes,0);
+  } finally { document.removeEventListener('keydown',outer); await act(() => root.unmount()); host.remove(); }
+});
 
 test('numeric fields can be cleared, require a replacement, and accept zero and decimals', async () => {
   let quantity = 0;

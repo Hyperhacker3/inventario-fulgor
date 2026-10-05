@@ -1,4 +1,5 @@
 import type { Remision } from '../../types';
+import { formatKg, lineWeightKg, totalWeight } from '../../domain/weight';
 const quantity = (value: number) => value.toLocaleString('es-CO', { maximumFractionDigits: 3 });
 const date = (value?: string) => value?.match(/^\d{4}-\d{2}-\d{2}$/) ? value.split('-').reverse().join('/') : value;
 function Field({ label, value }: { label: string; value?: string }) {
@@ -17,16 +18,16 @@ export function RemissionHeader({ remision: r }: { remision: Remision }) {
 export function RemissionTable({ remision, indices }: { remision: Remision; indices: number[] }) {
   return <table className="rm-table"><colgroup><col style={{ width: '6%' }} /><col style={{ width: '13%' }} /><col style={{ width: '44%' }} /><col style={{ width: '9%' }} /><col style={{ width: '14%' }} /><col style={{ width: '14%' }} /></colgroup>
     <thead><tr><th>Ítem</th><th>Cód. / Ref.</th><th>Descripción</th><th>Unidad</th><th>Cantidad</th><th>Peso (kg)</th></tr></thead>
-    <tbody>{indices.map(index => { const item = remision.items[index]; return <tr data-material-row key={index}><td>{index + 1}</td><td>{item.codigo}</td><td>{item.nombre}</td><td>{item.unidad.toUpperCase()}</td><td>{quantity(item.cantidad)}</td><td>{item.pesoTotalKg == null ? '—' : quantity(item.pesoTotalKg)}</td></tr>; })}</tbody>
+    <tbody>{indices.map(index => { const item = remision.items[index]; return <tr data-material-row key={index}><td>{index + 1}</td><td>{item.codigo}</td><td>{item.nombre}{item.pesoUnitario && <small className="rm-unit-weight">Por unidad: {formatKg(lineWeightKg(item.pesoUnitario, 1)!)}</small>}</td><td>{item.unidad.toUpperCase()}</td><td>{quantity(item.cantidad)}</td><td>{item.pesoTotalKg == null ? 'Pendiente' : item.pesoTotalKg.toLocaleString('es-CO', { maximumFractionDigits: 9 })}</td></tr>; })}</tbody>
   </table>;
 }
 export function RemissionClosing({ remision: r, notes, indices }: { remision: Remision; notes: string[]; indices: number[] }) {
   const totals = new Map<string, number>();
   r.items.forEach(item => { const unit = item.unidad.toUpperCase(); totals.set(unit, (totals.get(unit) || 0) + item.cantidad); });
-  const weights = r.items.flatMap(item => item.pesoTotalKg == null ? [] : [item.pesoTotalKg]);
+  const weights = totalWeight(r.items);
   const details = r.datosTransporte;
   return <>{indices.map(index => {
-    if (index === 0) return <div data-closing-block className="rm-summary" key={index}><strong>{r.items.length} referencias</strong><span>{[...totals].map(([unit, total]) => `${quantity(total)} ${unit}`).join(' · ')}<br />Peso {weights.length === r.items.length ? 'total' : 'registrado'}: {weights.length ? `${quantity(weights.reduce((sum, weight) => sum + weight, 0))} kg` : 'Sin registrar'}</span></div>;
+    if (index === 0) return <div data-closing-block className="rm-summary" key={index}><strong>{r.items.length} referencias</strong><span>{[...totals].map(([unit, total]) => `${quantity(total)} ${unit}`).join(' · ')}<br />Peso {weights.pending ? 'parcial conocido' : 'total'}: {weights.known ? formatKg(weights.total) : 'Sin declarar'}{weights.pending > 0 && <><br />{weights.pending} material(es) con peso pendiente</>}</span></div>;
     if (index <= notes.length) return <div data-closing-block key={index} className="rm-note">{index === 1 && <h2>Observaciones</h2>}<p>{notes[index - 1]}</p></div>;
     if (index === notes.length + 1) return <div data-closing-block key={index} className="rm-delivery"><h2>Datos de despacho y transporte</h2><div className="rm-details"><Field label="Entregado a / transportador" value={details?.transportador} /><Field label="Número de cédula" value={details?.cedulaTransportador} /><Field label="Placa del vehículo" value={details?.placaVehiculo} /><Field label="Teléfono del transportador" value={details?.telefonoTransportador} /><Field label="Fecha de despacho" value={date(details?.fechaDespacho) || r.fecha} /></div></div>;
     return <div data-closing-block key={index} className="rm-signatures"><p>Favor devolver firmado por correo o en físico, con nombre legible de quien recibe.</p><div className="rm-signature-grid">

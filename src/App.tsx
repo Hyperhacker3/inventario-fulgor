@@ -14,6 +14,7 @@ import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { isDemo } from './lib/supabase';
 const ProjectsView = lazy(() => import('./components/ProjectsView').then(m => ({ default: m.ProjectsView })));
+const DispatchQuantityModal = lazy(() => import('./components/dispatch/DispatchQuantityModal').then(m => ({ default: m.DispatchQuantityModal })));
 const DashboardView = lazy(() => import('./components/DashboardView').then(m => ({ default: m.DashboardView })));
 const ExplorerView = lazy(() => import('./components/ExplorerView').then(m => ({ default: m.ExplorerView })));
 const NewItemView = lazy(() => import('./components/NewItemView').then(m => ({ default: m.NewItemView })));
@@ -38,6 +39,7 @@ const MainLayout: React.FC = () => {
     quickMovementItem,
     quickMovementType,
     isHelpModalOpen,
+    dispatchSelection, dispatchSelectionItem, closeDispatchSelection, addToDispatchCart, dispatchFeedback,
     user
   } = useInventory();
   const canAdmin = isDemo || user.role === 'admin';
@@ -129,6 +131,7 @@ const MainLayout: React.FC = () => {
       </nav>
 
       {/* Global Modals */}
+      {dispatchFeedback && <div role="status" className="fixed top-20 left-4 right-4 sm:left-auto sm:max-w-md z-[70] rounded-xl bg-green-50 border border-green-200 text-green-900 shadow-lg p-4 text-sm flex gap-2 items-center"><span className="material-symbols-outlined">check_circle</span>{dispatchFeedback.message}</div>}
       <Suspense fallback={null}>{selectedRemisionForPdf && <PdfRemissionModal
         remision={selectedRemisionForPdf}
         onClose={closePdfRemision}
@@ -140,6 +143,7 @@ const MainLayout: React.FC = () => {
       />}
       {quickMovementItem && <QuickMovementModal key={`${quickMovementItem.id}:${quickMovementType}`} />}
       {isHelpModalOpen && <HelpModal />}</Suspense>
+      <Suspense fallback={<div role="status" className="fixed inset-0 z-[60] bg-black/60 grid place-items-center"><p className="bg-white p-6 rounded-xl">Preparando selección de cantidad…</p></div>}>{dispatchSelection && dispatchSelectionItem && <DispatchQuantityModal key={dispatchSelection.token} item={dispatchSelectionItem} inCart={dispatchCart.find(line => line.elemento.id === dispatchSelectionItem.id)?.cantidad || 0} onClose={closeDispatchSelection} onConfirm={quantity => addToDispatchCart(dispatchSelectionItem, quantity)} />}</Suspense>
     </div>
   );
 };
