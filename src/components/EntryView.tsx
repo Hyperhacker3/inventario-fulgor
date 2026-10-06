@@ -23,7 +23,7 @@ export function EntryView() {
         className="shrink-0 min-h-11 rounded-lg bg-[#253685] text-white px-4 py-3 text-sm font-semibold disabled:opacity-50">Agregar nuevo ítem</button>}
     </header>
     <section className="bg-white border rounded-2xl p-4 space-y-3">
-      <label className="block text-sm font-semibold">Buscar material<input type="search" disabled={busy} value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Código, nombre o ubicación" className="block w-full mt-2 p-3 rounded-xl border" /></label>
+      <label className="block text-sm font-semibold">Buscar material<input autoComplete="off" autoCorrect="off" spellCheck={false} type="search" disabled={busy} value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Código, nombre o ubicación" className="block w-full mt-2 p-3 rounded-xl border" /></label>
       <Presence open={!!query}><div className="ui-panel-enter space-y-3">
         <p role="status" className="text-xs text-slate-600">{matches.length} resultado(s){syncStatus === 'syncing' ? ' · Actualizando inventario…' : ''}</p>
         <div className="space-y-2">{matches.slice((currentPage - 1) * 5, currentPage * 5).map(result => <div key={result.id} className="entry-result-row grid w-full items-center gap-3 p-3 text-left border rounded-xl">

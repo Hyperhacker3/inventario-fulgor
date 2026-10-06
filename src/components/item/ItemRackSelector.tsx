@@ -45,11 +45,11 @@ export function ItemRackSelector({ warehouseId, rackId, racks, onRack, onCreate,
     </Select>
     <Presence open={creating}><div className="ui-panel-enter space-y-2">
       <label htmlFor="input-nueva-estanteria-codigo" className="block">Código de la nueva estantería</label>
-      <input id="input-nueva-estanteria-codigo" maxLength={100} value={code} disabled={busy} onChange={event => { setCode(event.target.value); setError(''); }}
+      <input autoComplete="off" autoCorrect="off" spellCheck={false} id="input-nueva-estanteria-codigo" maxLength={100} value={code} disabled={busy} onChange={event => { setCode(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}
         placeholder="Ej. EST-025" className="w-full px-3 py-2 rounded-lg border bg-white" />
       <label htmlFor="input-nueva-estanteria-nombre" className="block">Nombre de la nueva estantería</label>
-      <input id="input-nueva-estanteria-nombre" maxLength={100} value={name} disabled={busy} onChange={event => { setName(event.target.value); setError(''); }}
+      <input autoComplete="off" autoCorrect="off" spellCheck={false} id="input-nueva-estanteria-nombre" maxLength={100} value={name} disabled={busy} onChange={event => { setName(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}
         placeholder="Ej. Zona de materiales eléctricos" className="w-full px-3 py-2 rounded-lg border bg-white" />
       <button type="button" disabled={busy || !code.trim() || !name.trim()} onClick={() => { void create(); }} className="text-white bg-[#253685] rounded-lg px-3 py-2 disabled:opacity-50">{busy ? 'Creando…' : 'Crear y elegir estantería'}</button>

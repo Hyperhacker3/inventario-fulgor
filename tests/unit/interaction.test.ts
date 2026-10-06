@@ -20,6 +20,7 @@ const { mapElemento } = await import('../../src/data/mappers');
 const { ItemBoxSelector } = await import('../../src/components/item/ItemBoxSelector');
 const { ItemCategorySelector } = await import('../../src/components/item/ItemCategorySelector');
 const { ItemRackSelector } = await import('../../src/components/item/ItemRackSelector');
+const { ItemPrefixSelector } = await import('../../src/components/item/ItemPrefixSelector');
 const { EntryForm } = await import('../../src/components/entry/EntryForm');
 const { ArchivedItemDeletion } = await import('../../src/components/administration/ArchivedItemDeletion');
 const { ArchivedItemActions } = await import('../../src/components/administration/ArchivedItemActions');
@@ -481,4 +482,50 @@ test('rear camera selection stops old streams and rejects a front stream even if
     else Reflect.deleteProperty(globalThis, 'navigator');
   }
   assert.deepEqual(stopped, ['wide', 'tele', 'front', 'unknown', 'wide']);
+});
+
+
+test('inline prefixes allow only three letters, wait for server confirmation and prevent duplicate creation', async () => {
+  const selected: string[] = [], busy: boolean[] = [], drafts: boolean[] = [];
+  let calls=0;
+  let complete!: (value: import('../../src/types').PrefijoCodigo) => void;
+  const saved=new Promise<import('../../src/types').PrefijoCodigo>(resolve=>{complete=resolve;});
+  const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);
+  const props={value:'',prefixes:[],onChange:(id:string)=>selected.push(id),onBusyChange:(value:boolean)=>busy.push(value),onDraftChange:(value:boolean)=>drafts.push(value),
+    onCreate:async(code:string)=>{calls++;assert.equal(code,'CAB');return saved;}};
+  try {
+    await act(()=>root.render(createElement(ItemPrefixSelector,props)));
+    const select=host.querySelector('select')!;
+    assert.equal(select.options[0].value,'');assert.equal(select.options[1].value,'__NEW_PREFIX__');
+    await chooseVisible(host,'__NEW_PREFIX__');
+    const input=host.querySelector('input')!;
+    const setValue=Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
+    const type=(value:string)=>{setValue.call(input,value);input.dispatchEvent(new dom.window.Event('input',{bubbles:true}));};
+    const button=host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!;
+    await act(()=>type('c1a'));assert.equal(input.value,'CA');assert.equal(button.disabled,true);
+    await act(()=>type('ca-b123d'));assert.equal(input.value,'CAB');assert.equal(button.disabled,false);
+    await act(()=>{button.click();button.click();});assert.equal(calls,1);assert.deepEqual(selected,[]);assert.equal(select.disabled,true);
+    await act(async()=>complete({id:'SERVER-ID',prefijo:'CAB',nombre:'CAB',activo:true,ultimo:0}));
+    assert.deepEqual(selected,['SERVER-ID']);assert.deepEqual(busy,[true,false]);assert.deepEqual(drafts,[true,false]);
+    assert.match(host.querySelector('[role="status"]')!.textContent!,/guardado en Supabase y seleccionado/);
+  } finally {await act(()=>root.unmount());host.remove();}
+});
+
+test('failed prefix creation retains its draft and selecting an existing code does not write anything', async () => {
+  let calls=0;const selected:string[]=[];
+  const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);
+  const props={value:'',prefixes:[{id:'EXISTING',prefijo:'CAB',nombre:'Cables',activo:true,ultimo:100}],
+    onChange:(id:string)=>selected.push(id),onBusyChange:()=>{},onDraftChange:()=>{},
+    onCreate:async()=>{calls++;throw new Error('Conexión interrumpida');}};
+  try {
+    await act(()=>root.render(createElement(ItemPrefixSelector,props)));
+    await chooseVisible(host,'EXISTING');assert.deepEqual(selected,['EXISTING']);assert.equal(calls,0);
+    await chooseVisible(host,'__NEW_PREFIX__');
+    const input=host.querySelector('input')!;
+    const setValue=Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
+    await act(()=>{setValue.call(input,'EST');input.dispatchEvent(new dom.window.Event('input',{bubbles:true}));});
+    await act(async()=>host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click());
+    assert.equal(calls,1);assert.equal(input.value,'EST');assert.match(host.querySelector('[role="alert"]')!.textContent!,/Conexión interrumpida/);
+    assert.deepEqual(selected,['EXISTING']);assert.equal(host.querySelector('select')!.disabled,false);
+  } finally {await act(()=>root.unmount());host.remove();}
 });

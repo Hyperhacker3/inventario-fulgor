@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { rpc } from '../data/repository';
 import { supabase } from '../lib/supabase';
 import type { Categoria, PrefijoCodigo } from '../types';
-import { categoryNameKey, newCategoryKey } from '../domain/dataAdministration';
+import { categoryNameKey, newCategoryKey, ensurePrefixChoice } from '../domain/dataAdministration';
 import { initialQueryStatus } from '../domain/initialLoad';
 
 interface Catalog { categorias: Categoria[]; prefijos: PrefijoCodigo[] }
@@ -44,7 +44,13 @@ export function useDataAdministration() {
       throw error;
     }
   };
+  const createPrefijo = async (code: string): Promise<PrefijoCodigo> => {
+    if (user?.role !== 'admin') throw new Error('Solo administración puede crear códigos.');
+    return ensurePrefixChoice(code, client.getQueryData<Catalog>(key)?.prefijos || [],
+      async prefijo => (await save('prefijo', { prefijo, nombre: prefijo, activo: true })).prefijos,
+      async () => (await query.refetch()).data?.prefijos || []);
+  };
   return { categorias: query.data?.categorias || [], prefijos: query.data?.prefijos || [],
     catalogReady: Boolean(query.data), catalogLoading: query.isPending && query.isFetching,
-    catalogError: query.error, catalogLoadStatus: initialQueryStatus([query]), refreshCatalog: () => query.refetch(), saveCatalogEntry: save, createCategoria };
+    catalogError: query.error, catalogLoadStatus: initialQueryStatus([query]), refreshCatalog: () => query.refetch(), saveCatalogEntry: save, createCategoria, createPrefijo };
 }

@@ -43,7 +43,7 @@ export function ItemBoxSelector({ rackId, boxId, boxes, onBox, onCreate, onBusyC
     </Select>
     <Presence open={creating}><div className="ui-panel-enter space-y-2">
       <label className="block" htmlFor="input-nueva-caja">Código de la nueva caja</label>
-      <input id="input-nueva-caja" value={code} maxLength={100} disabled={busy} onChange={event => { setCode(event.target.value); setError(''); }}
+      <input autoComplete="off" autoCorrect="off" spellCheck={false} id="input-nueva-caja" value={code} maxLength={100} disabled={busy} onChange={event => { setCode(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}
         placeholder="Ej. CAJ-025" className="block w-full border rounded-lg px-3 py-2 bg-white" />
       <button type="button" disabled={busy || !code.trim()} onClick={() => { void create(); }} className="text-white bg-[#253685] rounded-lg px-3 py-2 disabled:opacity-50">{busy ? 'Creando…' : 'Crear y elegir caja'}</button>

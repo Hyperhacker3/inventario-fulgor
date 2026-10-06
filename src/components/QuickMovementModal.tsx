@@ -78,7 +78,7 @@ export const QuickMovementModal: React.FC<{ item: Elemento; movementType: 'ENTRA
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form autoComplete="off" onSubmit={handleSubmit} className="flex flex-col gap-4">
           {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
           <div className="bg-[#f8fafc] p-3 rounded-lg border border-[#e2e8f0] flex justify-between items-center text-xs">
             <span className="text-[#454651]">Stock Actual en Bodega:</span>
@@ -108,7 +108,7 @@ export const QuickMovementModal: React.FC<{ item: Elemento; movementType: 'ENTRA
             <label className="block text-xs font-bold uppercase text-[#454651] mb-1">
               Motivo o Justificación
             </label>
-            <input
+            <input autoComplete="off" autoCorrect="off" spellCheck={false}
               type="text"
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
@@ -121,7 +121,7 @@ export const QuickMovementModal: React.FC<{ item: Elemento; movementType: 'ENTRA
             <label className="block text-xs font-bold uppercase text-[#454651] mb-1">
               Responsable
             </label>
-            <input
+            <input autoComplete="off" autoCorrect="off" spellCheck={false}
               type="text"
               value={responsable}
               onChange={(e) => setResponsable(e.target.value)}

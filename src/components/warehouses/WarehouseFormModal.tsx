@@ -45,12 +45,12 @@ export function WarehouseFormModal({ target, onClose, onCreatedWarehouse }: Prop
   return createPortal(<Presence open={active}><div className="ui-modal-layer fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="presentation">
     <section ref={dialog} role="dialog" aria-modal="true" aria-label="Editar ubicación" className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl border shadow-xl w-full max-w-md p-6">
       <h3 className="font-bold text-lg mb-4">{target.mode === 'new' ? 'Nueva' : 'Editar'} {target.kind}</h3>
-      <form onSubmit={submit} className="space-y-3">
+      <form autoComplete="off" onSubmit={submit} className="space-y-3">
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-        <label className="text-sm block">Código<input required value={code} onChange={e => setCode(e.target.value.toUpperCase())} className="block border rounded-lg p-2 w-full mt-1" /></label>
-        {target.kind !== 'caja' && <label className="text-sm block">Nombre<input required value={name} onChange={e => setName(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
-        {target.kind === 'almacen' && <label className="text-sm block">Ciudad<input value={city} onChange={e => setCity(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
-        <label className="text-sm block">Descripción<input value={descripcion} onChange={e => setDescription(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>
+        <label className="text-sm block">Código<input autoComplete="off" autoCorrect="off" spellCheck={false} required value={code} onChange={e => setCode(e.target.value.toUpperCase())} className="block border rounded-lg p-2 w-full mt-1" /></label>
+        {target.kind !== 'caja' && <label className="text-sm block">Nombre<input autoComplete="off" autoCorrect="off" spellCheck={false} required value={name} onChange={e => setName(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
+        {target.kind === 'almacen' && <label className="text-sm block">Ciudad<input autoComplete="off" autoCorrect="off" spellCheck={false} value={city} onChange={e => setCity(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
+        <label className="text-sm block">Descripción<input autoComplete="off" autoCorrect="off" spellCheck={false} value={descripcion} onChange={e => setDescription(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>
         {(target.kind === 'caja' || target.kind === 'almacen' && target.mode === 'edit') &&
           <label className="text-sm block">Estado<Select value={state} onChange={e => setState(e.target.value as typeof state)} className="block border rounded-lg p-2 w-full mt-1">
             {(target.kind === 'caja' ? ['Completa', 'Parcial', 'Vacia'] : ['Operativo', 'Mantenimiento', 'Inactivo']).map(s => <option key={s}>{s}</option>)}

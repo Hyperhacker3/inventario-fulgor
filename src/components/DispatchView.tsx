@@ -117,7 +117,7 @@ export const DispatchView: React.FC = () => {
 
         {/* Formulario de salida y materiales elegidos. */}
         <section className="w-full flex flex-col gap-4">
-          <form
+          <form autoComplete="off"
             onSubmit={handleDispatch}
             aria-busy={pending || photoBusy}
             className="bg-white border border-[#e2e8f0] rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col gap-5"
@@ -154,7 +154,7 @@ export const DispatchView: React.FC = () => {
                 <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-1">
                   ENTREGA EN BODEGA
                 </label>
-                <input
+                <input autoComplete="off" autoCorrect="off" spellCheck={false}
                   type="text"
                   value={entregadoPor}
                   onChange={(e) => setEntregadoPor(e.target.value)}
@@ -167,7 +167,7 @@ export const DispatchView: React.FC = () => {
                 <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-1">
                   RECIBE EN OBRA <span className="text-[#dd4c42]">*</span>
                 </label>
-                <input
+                <input autoComplete="off" autoCorrect="off" spellCheck={false}
                   type="text"
                   value={recibidoPor}
                   onChange={(e) => setRecibidoPor(e.target.value)}
@@ -180,10 +180,10 @@ export const DispatchView: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label className="text-xs font-bold text-[#454651]">CARGO DE QUIEN ENTREGA
-                <input value={cargoEntregado} onChange={event => setCargoEntregado(event.target.value)} className="block w-full mt-1 px-3 py-2 border rounded-lg text-xs" />
+                <input autoComplete="off" autoCorrect="off" spellCheck={false} value={cargoEntregado} onChange={event => setCargoEntregado(event.target.value)} className="block w-full mt-1 px-3 py-2 border rounded-lg text-xs" />
               </label>
               <label className="text-xs font-bold text-[#454651]">CARGO DE QUIEN RECIBE
-                <input value={cargoRecibido} onChange={event => setCargoRecibido(event.target.value)} className="block w-full mt-1 px-3 py-2 border rounded-lg text-xs" />
+                <input autoComplete="off" autoCorrect="off" spellCheck={false} value={cargoRecibido} onChange={event => setCargoRecibido(event.target.value)} className="block w-full mt-1 px-3 py-2 border rounded-lg text-xs" />
               </label>
             </div>
 
@@ -194,7 +194,7 @@ export const DispatchView: React.FC = () => {
               <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-1">
                 OBSERVACIONES DE REMISIÓN
               </label>
-              <textarea
+              <textarea autoComplete="off" autoCorrect="off" spellCheck={false}
                 rows={2}
                 value={observaciones}
                 onChange={(e) => setObservaciones(e.target.value)}

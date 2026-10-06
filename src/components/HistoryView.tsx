@@ -121,7 +121,7 @@ export const HistoryView: React.FC = () => {
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#767682] text-[18px]">
               search
             </span>
-            <input
+            <input autoComplete="off" autoCorrect="off" spellCheck={false}
               id="history-search-input"
               type="text"
               value={searchQuery}

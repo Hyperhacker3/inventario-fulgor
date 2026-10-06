@@ -82,7 +82,7 @@ export const Header: React.FC = () => {
           {/* Quick Search bar (Desktop & Tablet) */}
           <div className="hidden sm:flex items-center bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-3.5 py-1.5 w-48 lg:w-80 focus-within:border-[#3e4e9e] focus-within:ring-1 focus-within:ring-[#3e4e9e] focus-within:bg-white transition-all shadow-2xs">
             <span className="material-symbols-outlined text-[18px] text-[#767682] mr-2">search</span>
-            <input
+            <input autoComplete="off" autoCorrect="off" spellCheck={false}
               id="header-search-input"
               type="text"
               value={globalSearch}

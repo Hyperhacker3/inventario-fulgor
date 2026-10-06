@@ -30,7 +30,7 @@ export function EntryForm({ item, responsible, onSave, onBusyChange }: Props) {
     } catch (cause) { setError(errorMessage(cause)); }
     finally { saving.current = false; setPending(false); onBusyChange(false); }
   };
-  return <form onSubmit={submit} className="space-y-5">
+  return <form autoComplete="off" onSubmit={submit} className="space-y-5">
     {error && <p role="alert" className="rounded-xl bg-red-50 text-red-800 p-3 text-sm">{error}</p>}
     {receipt && <p role="status" className="rounded-xl bg-green-50 text-green-900 border border-green-200 p-3 text-sm">Entrada registrada: +{receipt.cantidad} {receipt.unidad} de {receipt.itemCode}. Stock tras este movimiento: {receipt.stockNuevo} {receipt.unidad}.</p>}
     <fieldset disabled={pending || item.stockPendiente || item.archived} className="space-y-5 disabled:opacity-60">
@@ -38,7 +38,7 @@ export function EntryForm({ item, responsible, onSave, onBusyChange }: Props) {
       <label className="block text-sm font-semibold">Cantidad que entra ({item.unidad})
         <div className="flex gap-2 mt-2"><button type="button" aria-label="Reducir cantidad de entrada" onClick={() => setQuantity(roundQuantity(Math.max(0, quantity - 1)))} className="shrink-0 min-h-11 border rounded-xl w-11 text-xl">−</button><NumberInput required min="0.001" step="0.001" value={quantity} onValueChange={setQuantity} className="w-full min-w-0 border rounded-xl p-3 font-mono-code" /><button type="button" aria-label="Aumentar cantidad de entrada" onClick={() => setQuantity(roundQuantity(quantity + 1))} className="shrink-0 min-h-11 border rounded-xl w-11 text-xl">+</button></div>
       </label>
-      <label className="block text-sm font-semibold">Motivo o referencia de recepción<textarea required rows={3} maxLength={500} value={reason} onChange={event => setReason(event.target.value)} placeholder="Compra, devolución de obra, recepción de material…" className="block w-full mt-2 p-3 border rounded-xl" /></label>
+      <label className="block text-sm font-semibold">Motivo o referencia de recepción<textarea autoComplete="off" autoCorrect="off" spellCheck={false} required rows={3} maxLength={500} value={reason} onChange={event => setReason(event.target.value)} placeholder="Compra, devolución de obra, recepción de material…" className="block w-full mt-2 p-3 border rounded-xl" /></label>
       <p className="text-sm break-words text-slate-600">Responsable: <strong>{responsible}</strong>. Quedará registrado con su cuenta.</p>
       <button type="submit" className="w-full rounded-xl py-3 bg-[#137333] text-white font-bold">{pending ? 'Registrando entrada…' : 'Registrar entrada'}</button>
     </fieldset>

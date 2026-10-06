@@ -13,6 +13,7 @@ import { ItemWeightFields } from './item/ItemWeightFields';
 import { parseWeightDraft, weightDraft } from '../domain/weight';
 import { prefixPreview } from '../domain/dataAdministration';
 import { ItemValueField } from './item/ItemValueField';
+import { ItemPrefixSelector } from './item/ItemPrefixSelector';
 
 export const NewItemView: React.FC = () => {
   const {
@@ -21,7 +22,7 @@ export const NewItemView: React.FC = () => {
     cajas,
     addElemento,
     setActiveView,
-    prefijos, categorias, elementos, catalogReady, catalogLoading, refreshCatalog, createCategoria
+    prefijos, categorias, elementos, catalogReady, catalogLoading, refreshCatalog, createCategoria, createPrefijo
   } = useInventory();
 
   // Form State
@@ -53,6 +54,8 @@ export const NewItemView: React.FC = () => {
   const [categoryDraftPending, setCategoryDraftPending] = useState(false);
   const [rackBusy, setRackBusy] = useState(false);
   const [rackDraftPending, setRackDraftPending] = useState(false);
+  const [prefixBusy, setPrefixBusy] = useState(false);
+  const [prefixDraftPending, setPrefixDraftPending] = useState(false);
   const [formVersion, setFormVersion] = useState(0);
   const nameInput = useRef<HTMLInputElement>(null);
   useEffect(() => { if (formVersion > 0 && !isMobileCameraDevice(window.navigator)) nameInput.current?.focus({ preventScroll: true }); }, [formVersion]);
@@ -73,8 +76,13 @@ export const NewItemView: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pending || photoBusy || boxBusy || categoryBusy || rackBusy) return;
+    if (pending || photoBusy || boxBusy || categoryBusy || rackBusy || prefixBusy) return;
     setFeedback(null);
+
+    if (prefixDraftPending) {
+      setFeedback({ type: 'error', message: 'Pulse Crear y elegir código, o seleccione un código existente, antes de guardar el componente.' });
+      return;
+    }
 
     if (rackDraftPending) {
       setFeedback({ type: 'error', message: 'Pulse Crear y elegir estantería, o seleccione una estantería existente, antes de guardar el componente.' });
@@ -180,22 +188,15 @@ export const NewItemView: React.FC = () => {
         <p>{catalogLoading ? 'Cargando códigos y categorías…' : 'Active la migración de administración de datos en Supabase para registrar productos con código automático.'}</p>
         <button type="button" className="text-[#253685] underline" onClick={() => { void refreshCatalog(); }}>Comprobar de nuevo</button>
       </div>}
-      <form onSubmit={handleSubmit} className="bg-white border border-[#e2e8f0] rounded-2xl p-6 md:p-8 shadow-xs flex flex-col gap-6">
-        <fieldset key={formVersion} disabled={pending || boxBusy || categoryBusy || rackBusy} className="contents">
+      <form autoComplete="off" onSubmit={handleSubmit} className="bg-white border border-[#e2e8f0] rounded-2xl p-6 md:p-8 shadow-xs flex flex-col gap-6">
+        <fieldset key={formVersion} disabled={pending || boxBusy || categoryBusy || rackBusy || prefixBusy} className="contents">
         {/* Row 1: Code and Name */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <div>
-            <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-2">
-              PREFIJO DEL CÓDIGO <span className="text-[#dd4c42]">*</span>
-            </label>
-            <div className="relative">
-              <Select id="select-prefijo" required value={prefixId} onChange={event => setPrefixId(event.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg border bg-white text-sm">
-                <option value="">Seleccione un prefijo</option>{prefijos.filter(row => row.activo).map(row => <option key={row.id} value={row.id}>{row.prefijo} · {row.nombre}</option>)}
-              </Select>
-            </div>
+            <ItemPrefixSelector value={prefixId} prefixes={prefijos} onChange={setPrefixId} onCreate={createPrefijo}
+              onBusyChange={setPrefixBusy} onDraftChange={setPrefixDraftPending} disabled={!catalogReady} />
             <span className="text-[11px] text-[#767682] mt-1 block">
-              {codigo ? `Código estimado: ${codigo}. El definitivo se asigna al guardar.` : 'El número se asigna automáticamente en Supabase.'}
+              {codigo && !prefixDraftPending ? `Código estimado: ${codigo}. El definitivo se asigna al guardar.` : 'El número se asigna automáticamente en Supabase.'}
             </span>
             <button type="button" className="text-xs text-[#253685] underline mt-2" onClick={() => setActiveView('data-admin')}>Administrar códigos y categorías</button>
           </div>
@@ -204,7 +205,7 @@ export const NewItemView: React.FC = () => {
             <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-2">
               NOMBRE DEL COMPONENTE <span className="text-[#dd4c42]">*</span>
             </label>
-            <input
+            <input autoComplete="off" autoCorrect="off" spellCheck={false}
               id="input-nombre"
               ref={nameInput}
               type="text"
@@ -226,7 +227,7 @@ export const NewItemView: React.FC = () => {
             <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-2">
               DESCRIPCIÓN Y ESPECIFICACIONES TÉCNICAS
             </label>
-            <textarea
+            <textarea autoComplete="off" autoCorrect="off" spellCheck={false}
               id="input-descripcion"
               rows={2}
               value={descripcion}
@@ -296,7 +297,7 @@ export const NewItemView: React.FC = () => {
           <button
             type="submit"
             id="btn-submit-component"
-            disabled={pending || photoBusy || boxBusy || categoryBusy || rackBusy || !catalogReady || !selectedPrefix}
+            disabled={pending || photoBusy || boxBusy || categoryBusy || rackBusy || prefixBusy || prefixDraftPending || !catalogReady || !selectedPrefix}
             className="px-6 py-2.5 rounded-lg bg-[#3e4e9e] text-white text-sm font-bold hover:bg-[#323f80] active:scale-[0.98] transition-all shadow-sm flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-[18px]">save</span>

@@ -18,7 +18,11 @@ export function useMobileKeyboard() {
       const scale = viewport?.scale ?? 1;
       if (!typing) baseline = Math.max(window.innerHeight, height);
       setVisible(keyboardIsVisible(typing, baseline, height, scale));
-      if (scale === 1) document.documentElement.style.setProperty('--app-viewport-height', `${height}px`);
+      if (scale === 1) {
+        document.documentElement.style.setProperty('--app-viewport-height', `${height}px`);
+        // Mobile browsers can pan the visual viewport independently while focusing a field.
+        document.documentElement.style.setProperty('--app-viewport-top', `${Math.max(0, viewport?.offsetTop || 0)}px`);
+      }
     };
     const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(update); };
     const rotate = () => { baseline = window.innerHeight; schedule(); };
@@ -27,6 +31,7 @@ export function useMobileKeyboard() {
     window.addEventListener('resize', schedule);
     window.addEventListener('orientationchange', rotate);
     viewport?.addEventListener('resize', schedule);
+    viewport?.addEventListener('scroll', schedule);
     schedule();
     return () => {
       cancelAnimationFrame(frame);
@@ -35,7 +40,9 @@ export function useMobileKeyboard() {
       window.removeEventListener('resize', schedule);
       window.removeEventListener('orientationchange', rotate);
       viewport?.removeEventListener('resize', schedule);
+      viewport?.removeEventListener('scroll', schedule);
       document.documentElement.style.removeProperty('--app-viewport-height');
+      document.documentElement.style.removeProperty('--app-viewport-top');
     };
   }, []);
   return visible;

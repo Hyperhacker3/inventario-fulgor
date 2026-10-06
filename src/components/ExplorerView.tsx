@@ -49,7 +49,7 @@ export const ExplorerView: React.FC = () => {
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#767682]">
             <span className="material-symbols-outlined text-[20px] sm:text-[22px]">search</span>
           </div>
-          <input
+          <input autoComplete="off" autoCorrect="off" spellCheck={false}
             id="explorer-prominent-search"
             type="text"
             value={effectiveSearch}

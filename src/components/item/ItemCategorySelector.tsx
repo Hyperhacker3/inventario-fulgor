@@ -42,7 +42,7 @@ export function ItemCategorySelector({ value, categories, onChange, onCreate, on
     </Select>
     <Presence open={creating}><div className="ui-panel-enter space-y-2">
       <label htmlFor={`${id}-name`} className="block text-xs">Nombre de la nueva categoría</label>
-      <input id={`${id}-name`} value={name} maxLength={100} disabled={disabled || busy} onChange={event => { setName(event.target.value); setError(''); }}
+      <input autoComplete="off" autoCorrect="off" spellCheck={false} id={`${id}-name`} value={name} maxLength={100} disabled={disabled || busy} onChange={event => { setName(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}
         placeholder="Ej. Materiales eléctricos" className="w-full border rounded-lg px-3 py-2 text-sm" />
       <button type="button" disabled={disabled || busy || !name.trim()} onClick={() => { void create(); }} className="bg-[#253685] text-white text-xs font-semibold rounded-lg px-3 py-2 disabled:opacity-50">{busy ? 'Creando…' : 'Crear y elegir categoría'}</button>

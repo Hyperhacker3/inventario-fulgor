@@ -51,7 +51,7 @@ export function CameraCaptureModal({ isOpen, onClose, onPhotoCaptured, title = '
       </label>}
       {!photo && <p className="text-xs text-slate-500">{rearOnly ? `${cameras.length} cámaras traseras identificadas. Solo se pueden seleccionar los lentes traseros que el navegador permita usar.` : `${cameras.length} cámaras disponibles. Puede elegir la cámara integrada o una cámara conectada.`}</p>}
       <div className="responsive-actions">
-        <input ref={fileRef} type="file" accept="image/*" capture={rearOnly ? 'environment' : undefined} className="hidden" onChange={e => selectFile(e.target.files?.[0])} />
+        <input autoComplete="off" autoCorrect="off" spellCheck={false} ref={fileRef} type="file" accept="image/*" capture={rearOnly ? 'environment' : undefined} className="hidden" onChange={e => selectFile(e.target.files?.[0])} />
         <button type="button" onClick={() => fileRef.current?.click()} className="border rounded-lg px-3 py-2 text-sm">Elegir archivo</button>
         {!photo && <button type="button" disabled={loading || cameras.length < 2} onClick={() => {
           if (cameras.length > 1) setSelectedDeviceId(nextCameraId(cameras, currentDeviceId || selectedDeviceId));

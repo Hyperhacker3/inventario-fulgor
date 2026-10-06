@@ -8,7 +8,7 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 
 // Keep the editable text separate so clearing a field never turns it into zero.
 export function NumberInput({ value, onValueChange, onBlur, ...props }: Props) {
   const [draft, setDraft] = useState<{ text: string; committed: number } | null>(null);
-  return <input {...props} type="number"
+  return <input autoComplete="off" autoCorrect="off" spellCheck={false} {...props} type="number"
     value={draft && draft.committed === value ? draft.text : value}
     onChange={event => {
       const text = event.target.value;

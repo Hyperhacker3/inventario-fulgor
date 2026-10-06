@@ -57,7 +57,7 @@ export const RemissionView: React.FC = () => {
       {/* Search Bar */}
       <div className="bg-white border border-[#e2e8f0] rounded-2xl p-4 mb-6 shadow-xs flex items-center gap-3">
         <span className="material-symbols-outlined text-[#767682] text-[20px] pl-2">search</span>
-        <input
+        <input autoComplete="off" autoCorrect="off" spellCheck={false}
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}

@@ -55,13 +55,13 @@ export function ProjectsManager({ embedded = false, proyectos, user, addProyecto
     {admin && <button type="button" disabled={busy} onClick={() => { setEditing(null); setForm(empty); setError(''); setMessage(''); setFormOpen(true); }}
       className="min-h-11 rounded-lg bg-[#253685] text-white px-4 py-3 text-sm font-semibold disabled:opacity-50">Crear proyecto</button>}
     <Presence open={admin && formOpen}>{formOpen && <FormDialog title={editing ? 'Editar proyecto' : 'Crear proyecto'} busy={busy} onClose={close}>
-      <form key={editing || 'new'} onSubmit={save} className="space-y-4">
+      <form autoComplete="off" key={editing || 'new'} onSubmit={save} className="space-y-4">
         {error && <p role="alert" className="text-red-700">{error}</p>}
         {message && <p role="status" className="text-green-700">{message}</p>}
         <fieldset disabled={busy} className="grid sm:grid-cols-3 gap-4">
           {(['nombre', 'cliente', 'ubicacion'] as const).map(field => <label key={field} className="text-sm space-y-1">
             <span className="block">{{ nombre: 'Nombre *', cliente: 'Cliente', ubicacion: 'Ubicación' }[field]}</span>
-            <input required={field === 'nombre'} value={form[field]} onChange={event => setForm({ ...form, [field]: event.target.value })} className="border border-slate-300 rounded-lg p-3 w-full" />
+            <input autoComplete="off" autoCorrect="off" spellCheck={false} required={field === 'nombre'} value={form[field]} onChange={event => setForm({ ...form, [field]: event.target.value })} className="border border-slate-300 rounded-lg p-3 w-full" />
           </label>)}
         </fieldset>
         <div className="flex flex-wrap gap-4 items-center">

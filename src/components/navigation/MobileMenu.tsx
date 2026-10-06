@@ -21,8 +21,8 @@ export function MobileMenu({ open, onClose, items, activeView, onNavigate, searc
         <h2 id="mobile-menu-title" className="font-bold text-base">Menú</h2>
         <button type="button" data-dialog-close aria-label="Cerrar menú" onClick={onClose} className="w-11 h-11 rounded-xl hover:bg-slate-100"><span className="material-symbols-outlined">close</span></button>
       </div>
-      <form className="flex shrink-0 items-center border rounded-xl bg-slate-50 px-3 mb-2" onSubmit={event => { event.preventDefault(); onNavigate('explorer'); }}>
-        <input aria-label="Buscar en el inventario" type="search" value={search} onChange={event => onSearch(event.target.value)} placeholder="Buscar producto…" className="min-w-0 w-full bg-transparent py-2 outline-none" />
+      <form autoComplete="off" className="flex shrink-0 items-center border rounded-xl bg-slate-50 px-3 mb-2" onSubmit={event => { event.preventDefault(); onNavigate('explorer'); }}>
+        <input autoComplete="off" autoCorrect="off" spellCheck={false} aria-label="Buscar en el inventario" type="search" value={search} onChange={event => onSearch(event.target.value)} placeholder="Buscar producto…" className="min-w-0 w-full bg-transparent py-2 outline-none" />
         <button type="submit" aria-label="Buscar" className="w-11 h-11 shrink-0"><span className="material-symbols-outlined">search</span></button>
       </form>
       <nav aria-label="Todas las pantallas" className="min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-0.5">

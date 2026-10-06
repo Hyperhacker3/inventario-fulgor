@@ -20,7 +20,7 @@ export function ProjectSelector({ value, onChange, disabled }: { value: string; 
   };
   return <fieldset disabled={disabled || busy} className="space-y-2">
     <label htmlFor="dispatch-project-name" className="block text-xs font-bold">PROYECTO / DESTINO *</label>
-    <input id="dispatch-project-name" value={name || selected?.nombre || ''} placeholder="Escriba el nombre de un proyecto" className="w-full border border-slate-300 rounded-lg p-3 text-sm"
+    <input autoComplete="off" autoCorrect="off" spellCheck={false} id="dispatch-project-name" value={name || selected?.nombre || ''} placeholder="Escriba el nombre de un proyecto" className="w-full border border-slate-300 rounded-lg p-3 text-sm"
       onChange={event => {
         const text = event.target.value; setName(text); setError('');
         onChange(active.find(project => project.nombre.trim().toLocaleLowerCase() === text.trim().toLocaleLowerCase())?.id || '');

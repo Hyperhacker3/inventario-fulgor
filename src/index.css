@@ -76,9 +76,9 @@
 html:not([data-icons-ready='true']) .material-symbols-outlined { visibility: hidden; }
 
 /* Compact navigation is shared by phones and tablets below the desktop layout. */
-.app-viewport { position: fixed; inset: 0; height: 100vh; height: var(--app-viewport-height, 100dvh); }
+.app-viewport { position: fixed; inset: 0; top: var(--app-viewport-top, 0px); bottom: auto; height: 100vh; height: var(--app-viewport-height, 100dvh); }
 .app-header { padding-top: env(safe-area-inset-top, 0px); }
-.ui-modal-layer { bottom: auto; height: var(--app-viewport-height, 100dvh); }
+.ui-modal-layer { top: var(--app-viewport-top, 0px); bottom: auto; height: var(--app-viewport-height, 100dvh); }
 .ui-modal-layer, .print-layer { animation: ui-backdrop-open var(--ui-motion-duration) ease; }
 .inventory-card-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
 .responsive-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -111,7 +111,7 @@ html:not([data-icons-ready='true']) .material-symbols-outlined { visibility: hid
 .hamburger[data-open='true'] > span:nth-child(1) { top: 8px; transform: rotate(45deg); }
 .hamburger[data-open='true'] > span:nth-child(2) { opacity: 0; transform: translateX(-6px); }
 .hamburger[data-open='true'] > span:nth-child(3) { top: 8px; transform: rotate(-45deg); }
-.mobile-menu-layer { position: fixed; inset: 0; z-index: 80; visibility: hidden; pointer-events: none; transition: visibility 0s linear var(--ui-motion-duration); }
+.mobile-menu-layer { position: fixed; inset: 0; top: var(--app-viewport-top, 0px); bottom: auto; height: var(--app-viewport-height, 100dvh); z-index: 80; visibility: hidden; pointer-events: none; transition: visibility 0s linear var(--ui-motion-duration); }
 .mobile-menu-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; background: rgb(19 27 46 / .25); opacity: 0; transition: opacity var(--ui-motion-duration) ease; touch-action: none; }
 .mobile-menu-panel {
   --menu-top: clamp(12px, calc(var(--app-viewport-height, 100dvh) - 400px), calc(92px + env(safe-area-inset-top, 0px)));

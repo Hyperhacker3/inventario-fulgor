@@ -51,7 +51,7 @@ export function ItemPhotoPicker({ value, additional, onChange, onAdditionalChang
           <button type="button" onClick={() => mainInput.current?.click()} className="px-2 py-2 rounded-lg border text-sm">Subir foto</button>
         </div>
         {value && <button type="button" onClick={() => onChange('')} className="min-h-11 w-full text-sm text-red-700">Quitar principal</button>}
-        <input ref={mainInput} type="file" accept="image/*" className="hidden" onChange={event => void upload(event, true)} />
+        <input autoComplete="off" autoCorrect="off" spellCheck={false} ref={mainInput} type="file" accept="image/*" className="hidden" onChange={event => void upload(event, true)} />
       </div>
       <div className="min-w-0 space-y-3">
         <h3 className="text-sm font-bold">Imágenes adicionales ({additional.length})</h3>
@@ -68,10 +68,10 @@ export function ItemPhotoPicker({ value, additional, onChange, onAdditionalChang
           <button type="button" onClick={() => extraInput.current?.click()} className="px-2 py-2 rounded-lg border text-sm font-semibold">Añadir fotos</button>
           <button type="button" onClick={() => setCameraTarget('additional')} className="px-2 py-2 rounded-lg border text-sm font-semibold">Tomar foto adicional</button>
         </div>
-        <input ref={extraInput} type="file" accept="image/*" multiple className="hidden" onChange={event => void upload(event, false)} />
+        <input autoComplete="off" autoCorrect="off" spellCheck={false} ref={extraInput} type="file" accept="image/*" multiple className="hidden" onChange={event => void upload(event, false)} />
       </div>
     </div>
-    <input type="url" value={/^(data:|storage:|blob:)/.test(value) ? '' : value} onChange={event => onChange(event.target.value)} placeholder="URL opcional para la imagen principal" aria-label="URL de la imagen principal" className="w-full mt-4 px-3 py-2 rounded-lg border text-sm" />
+    <input autoComplete="off" autoCorrect="off" spellCheck={false} type="url" value={/^(data:|storage:|blob:)/.test(value) ? '' : value} onChange={event => onChange(event.target.value)} placeholder="URL opcional para la imagen principal" aria-label="URL de la imagen principal" className="w-full mt-4 px-3 py-2 rounded-lg border text-sm" />
     <p className="text-xs text-slate-500 mt-3">Fotos cuadradas de hasta 600 × 600. Se suben a Supabase al guardar. Puedes seleccionar varios archivos adicionales.</p>
     {!value && additional.length > 0 && <p className="text-xs text-[#3e4e9e] mt-2">La primera foto adicional se usará como principal al guardar.</p>}
     {reading && <p role="status" className="text-xs mt-2">Preparando fotos…</p>}

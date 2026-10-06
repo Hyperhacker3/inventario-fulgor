@@ -3,6 +3,28 @@ import type { Categoria, PrefijoCodigo } from '../types';
 export function formatItemCode(prefix: string, number: number) {
   return `${prefix}${String(number).padStart(3, '0')}`;
 }
+export async function ensurePrefixChoice(code: string, catalog: PrefijoCodigo[],
+  save: (prefix: string) => Promise<PrefijoCodigo[]>, refresh: () => Promise<PrefijoCodigo[]>): Promise<PrefijoCodigo> {
+  const prefix = code.trim().toUpperCase();
+  if (!/^[A-Z]{3}$/.test(prefix)) throw new Error('El código debe tener exactamente tres letras de A a Z, sin números.');
+  const existing = catalog.find(row => row.prefijo === prefix);
+  if (existing) {
+    if (!existing.activo) throw new Error('Este código está inactivo. Reactívelo en Administración de datos.');
+    return existing;
+  }
+  try {
+    const updated = await save(prefix);
+    const created = updated.find(row => row.prefijo === prefix && row.activo);
+    if (!created) throw new Error('No se pudo confirmar el código creado.');
+    return created;
+  } catch (error) {
+    // Recover a lost response or a concurrent creation without overwriting its name or counter.
+    const updated = await refresh();
+    const confirmed = updated.find(row => row.prefijo === prefix && row.activo);
+    if (confirmed) return confirmed;
+    throw error;
+  }
+}
 export function categoryChoices(catalog: Categoria[], used: string[]) {
   return [...new Set([...catalog.map(category => category.id), ...used])].sort();
 }

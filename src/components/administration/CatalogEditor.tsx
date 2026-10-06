@@ -52,16 +52,16 @@ export function CatalogManager({ kind, prefijos, categorias, elementos, saveCata
     {admin && <button type="button" disabled={busy} onClick={() => { reset(); setError(''); setMessage(''); setFormOpen(true); }}
       className="min-h-11 rounded-lg bg-[#253685] text-white px-4 py-3 text-sm font-semibold disabled:opacity-50">{prefix ? 'Crear código' : 'Crear categoría'}</button>}
     <Presence open={admin && formOpen}>{formOpen && <FormDialog title={`${id ? 'Editar' : 'Crear'} ${prefix ? 'prefijo de código' : 'categoría'}`} busy={busy} onClose={close}>
-      <form key={id || 'new'} onSubmit={save} className="space-y-4">
+      <form autoComplete="off" key={id || 'new'} onSubmit={save} className="space-y-4">
         {error && <p role="alert" className="text-red-700">{error}</p>}
         <fieldset disabled={busy} className="grid sm:grid-cols-2 gap-4">
           <label className="text-sm">{prefix ? 'Prefijo (tres letras)' : 'Clave de categoría'}
-            <input required maxLength={prefix ? 3 : 50} pattern={prefix ? '[A-Z]{3}' : '[A-Z][A-Z0-9_]{1,49}'}
+            <input autoComplete="off" autoCorrect="off" spellCheck={false} required maxLength={prefix ? 3 : 50} pattern={prefix ? '[A-Z]{3}' : '[A-Z][A-Z0-9_]{1,49}'}
               disabled={!prefix && Boolean(id)} value={code} onChange={event => setCode(event.target.value.toUpperCase())}
               placeholder={prefix ? 'CAB' : 'MATERIALES'} className="block border rounded-lg p-3 w-full mt-1 uppercase" />
           </label>
-          <label className="text-sm">Nombre<input required maxLength={100} value={name} onChange={event => setName(event.target.value)} className="block border rounded-lg p-3 w-full mt-1" /></label>
-          <label className="flex gap-2 items-center text-sm"><input type="checkbox" checked={active} onChange={event => setActive(event.target.checked)} />Disponible para nuevos productos</label>
+          <label className="text-sm">Nombre<input autoComplete="off" autoCorrect="off" spellCheck={false} required maxLength={100} value={name} onChange={event => setName(event.target.value)} className="block border rounded-lg p-3 w-full mt-1" /></label>
+          <label className="flex gap-2 items-center text-sm"><input autoComplete="off" autoCorrect="off" spellCheck={false} type="checkbox" checked={active} onChange={event => setActive(event.target.checked)} />Disponible para nuevos productos</label>
         </fieldset>
         <div className="responsive-actions"><button type="button" disabled={busy} onClick={close} className="border rounded-lg px-4 py-2">Cancelar</button>
           <button disabled={busy} className="bg-[#253685] text-white px-4 py-2 rounded-lg">{busy ? 'Guardando…' : 'Guardar'}</button></div>

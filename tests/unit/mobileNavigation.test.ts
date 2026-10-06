@@ -134,8 +134,8 @@ test('the software keyboard hides quick actions while typing; browser chrome and
   Object.defineProperty(window.navigator,'userAgent',{configurable:true,value:'Android'});
   Object.defineProperty(window,'innerHeight',{configurable:true,value:800});
   const viewport=new dom.window.EventTarget();
-  let height=800;
-  Object.defineProperties(viewport,{height:{get:()=>height},scale:{value:1}});
+  let height=800, offsetTop=0;
+  Object.defineProperties(viewport,{height:{get:()=>height},offsetTop:{get:()=>offsetTop},scale:{value:1}});
   Object.defineProperty(window,'visualViewport',{configurable:true,value:viewport});
   let next=0; const frames=new Map<number,FrameRequestCallback>();
   Object.assign(globalThis,{requestAnimationFrame:(callback:FrameRequestCallback)=>{frames.set(++next,callback);return next;},cancelAnimationFrame:(id:number)=>frames.delete(id)});
@@ -148,8 +148,15 @@ test('the software keyboard hides quick actions while typing; browser chrome and
     host.querySelector('input')!.focus(); height=420; viewport.dispatchEvent(new dom.window.Event('resize'));await flush();
     assert.equal(host.querySelector('nav')!.getAttribute('aria-hidden'),'true');assert.ok(host.querySelector('nav')!.hasAttribute('inert'));
     assert.equal(document.documentElement.style.getPropertyValue('--app-viewport-height'),'420px');
-    host.querySelector('input')!.blur();height=800;viewport.dispatchEvent(new dom.window.Event('resize'));await flush();
+    // Android can pan the visible area separately from resizing it to open the keyboard.
+    offsetTop=180;viewport.dispatchEvent(new dom.window.Event('scroll'));await flush();
+    assert.equal(document.documentElement.style.getPropertyValue('--app-viewport-top'),'180px');
+    assert.equal(document.documentElement.style.getPropertyValue('--app-viewport-height'),'420px');
+    assert.equal(document.activeElement,host.querySelector('input'));
+    host.querySelector('input')!.blur();height=800;offsetTop=0;viewport.dispatchEvent(new dom.window.Event('resize'));await flush();
     assert.equal(host.querySelector('nav')!.getAttribute('aria-hidden'),'false');
+    assert.equal(document.documentElement.style.getPropertyValue('--app-viewport-top'),'0px');
     await act(()=>root.unmount());assert.equal(document.documentElement.style.getPropertyValue('--app-viewport-height'),'');
+    assert.equal(document.documentElement.style.getPropertyValue('--app-viewport-top'),'');
   } finally {host.remove();if(agent)Object.defineProperty(window.navigator,'userAgent',agent);else Reflect.deleteProperty(window.navigator,'userAgent');Reflect.deleteProperty(window,'visualViewport');}
 });

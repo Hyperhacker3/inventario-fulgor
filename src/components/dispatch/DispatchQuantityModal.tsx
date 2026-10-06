@@ -26,7 +26,7 @@ export function DispatchQuantityModal({ item, inCart, onConfirm, onClose }: { it
   };
   const weight = validQuantity(quantity) && quantity >= 0 ? lineWeightKg(item.pesoUnitario, quantity) : null;
   return createPortal(<Presence open={active}><div className="ui-modal-layer fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
-    <form ref={form} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="dispatch-quantity-title" className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+    <form autoComplete="off" ref={form} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="dispatch-quantity-title" className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
       <div className="flex justify-between gap-4"><h2 id="dispatch-quantity-title" className="font-bold text-xl">Agregar a la salida</h2><button type="button" onClick={onClose} data-dialog-close aria-label="Cerrar selección de cantidad" className="min-w-11 min-h-11">✕</button></div>
       <p className="text-sm"><strong className="text-[#253685]">{item.codigo}</strong> · {item.nombre}</p>
       <p className="text-xs text-slate-600">En la salida: {inCart} {item.unidad}. Disponible para agregar: {maximum} {item.unidad}.</p>

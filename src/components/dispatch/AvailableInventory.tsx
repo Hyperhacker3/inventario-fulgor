@@ -21,7 +21,7 @@ export function AvailableInventory() {
   return <section className="w-full bg-white border rounded-2xl p-4 shadow-xs">
     <div className="relative">
       <span aria-hidden="true" className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 text-xl">search</span>
-      <input id="dispatch-search-available" type="search" value={search} onChange={event => setSearch(event.target.value)}
+      <input autoComplete="off" autoCorrect="off" spellCheck={false} id="dispatch-search-available" type="search" value={search} onChange={event => setSearch(event.target.value)}
         placeholder="Buscar material por código, nombre o ubicación" aria-label="Buscar inventario para salida"
         aria-controls={query ? 'dispatch-search-results' : undefined}
         className="w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm" />

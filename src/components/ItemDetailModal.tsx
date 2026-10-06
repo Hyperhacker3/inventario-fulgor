@@ -96,13 +96,13 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
         {item.stockPendiente && <p role="status" className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
           Stock pendiente de verificar desde el Excel. No disponible para salida hasta que administración registre el ajuste.
         </p>}
-        <ScreenTransition screen={editing ? "edit" : "detail"}>{editing ? <form id="item-edit-form" onSubmit={save} className="space-y-4">
+        <ScreenTransition screen={editing ? "edit" : "detail"}>{editing ? <form autoComplete="off" id="item-edit-form" onSubmit={save} className="space-y-4">
           <h2 id="item-detail-heading" className="text-xl font-bold">Editar {item.codigo}</h2>
           <label className="block text-sm font-semibold">Nombre
-            <input required value={name} onChange={event => setName(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg" />
+            <input autoComplete="off" autoCorrect="off" spellCheck={false} required value={name} onChange={event => setName(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg" />
           </label>
           <label className="block text-sm font-semibold">Descripción
-            <textarea value={description} onChange={event => setDescription(event.target.value)} rows={3} className="block w-full mt-1 p-2.5 border rounded-lg" />
+            <textarea autoComplete="off" autoCorrect="off" spellCheck={false} value={description} onChange={event => setDescription(event.target.value)} rows={3} className="block w-full mt-1 p-2.5 border rounded-lg" />
           </label>
           <ItemExistingLocationFields value={location} onChange={setLocation} warehouses={almacenes} racks={estanterias} boxes={cajas} disabled={pending || photoBusy} />
           <div className="grid grid-cols-2 gap-4">
