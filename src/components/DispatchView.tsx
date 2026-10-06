@@ -90,7 +90,7 @@ export const DispatchView: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 md:p-8 max-w-[1400px] mx-auto w-full">
+    <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 md:p-8 max-w-[1000px] mx-auto w-full">
       {/* Page Title from Mockup Image 1 */}
       <div className="mb-6">
         <h2 className="text-2xl md:text-3xl font-bold text-[#131b2e] tracking-tight">Salida de Material</h2>
@@ -99,15 +99,15 @@ export const DispatchView: React.FC = () => {
         </p>
       </div>
 
-      {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* Compact search above the dispatch form. */}
+      <div className="flex flex-col gap-5">
         <AvailableInventory />
 
-        {/* Right Column: Formulario de Despacho & Carrito (5 cols) */}
-        <section className="lg:col-span-5 flex flex-col gap-4">
+        {/* Formulario de despacho y materiales elegidos. */}
+        <section className="w-full flex flex-col gap-4">
           <form
             onSubmit={handleDispatch}
-            className="bg-white border border-[#e2e8f0] rounded-2xl p-6 shadow-xs flex flex-col gap-5 sticky top-20"
+            className="bg-white border border-[#e2e8f0] rounded-2xl p-6 shadow-xs flex flex-col gap-5"
           >
             <div className="flex items-center justify-between pb-3 border-b border-[#e2e8f0]">
               <div className="flex items-center gap-2 text-[#253685]">
@@ -203,7 +203,7 @@ export const DispatchView: React.FC = () => {
               <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-3 max-h-60 overflow-y-auto flex flex-col gap-2">
                 {dispatchCart.length === 0 ? (
                   <div className="py-6 text-center text-xs text-[#767682]">
-                    Seleccione componentes de la lista izquierda para despachar.
+                    Busque un material arriba y pulse Añadir para elegir la cantidad a despachar.
                   </div>
                 ) : (
                   dispatchCart.map((item) => (
