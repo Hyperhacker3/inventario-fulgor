@@ -19,6 +19,7 @@ const DashboardView = lazy(() => import('./components/DashboardView').then(m => 
 const ExplorerView = lazy(() => import('./components/ExplorerView').then(m => ({ default: m.ExplorerView })));
 const NewItemView = lazy(() => import('./components/NewItemView').then(m => ({ default: m.NewItemView })));
 const DispatchView = lazy(() => import('./components/DispatchView').then(m => ({ default: m.DispatchView })));
+const EntryView = lazy(() => import('./components/EntryView').then(m => ({ default: m.EntryView })));
 const HistoryView = lazy(() => import('./components/HistoryView').then(m => ({ default: m.HistoryView })));
 const WarehouseView = lazy(() => import('./components/WarehouseView').then(m => ({ default: m.WarehouseView })));
 const RemissionView = lazy(() => import('./components/RemissionView').then(m => ({ default: m.RemissionView })));
@@ -46,8 +47,9 @@ const MainLayout: React.FC = () => {
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
 
   const renderActiveView = () => {
+    if (activeView === 'entries' && !canOperate) return <p className="p-8" role="alert">Su cuenta no puede registrar entradas.</p>;
     if (activeView === 'new-item' && !canAdmin) return <p className="p-8" role="alert">Su cuenta no puede registrar componentes.</p>;
-    if (activeView === 'dispatch' && !canOperate) return <p className="p-8" role="alert">Su cuenta no puede realizar despachos.</p>;
+    if (activeView === 'dispatch' && !canOperate) return <p className="p-8" role="alert">Su cuenta no puede realizar salidas.</p>;
     switch (activeView) {
       case 'dashboard':
         return <DashboardView />;
@@ -57,6 +59,8 @@ const MainLayout: React.FC = () => {
         return <NewItemView />;
       case 'dispatch':
         return <DispatchView />;
+      case 'entries':
+        return <EntryView />;
       case 'history':
         return <HistoryView />;
       case 'warehouses':
@@ -75,7 +79,8 @@ const MainLayout: React.FC = () => {
   const mobileNavItems: { id: ActiveView; label: string; icon: string; badge?: number }[] = [
     { id: 'dashboard', label: 'Inicio', icon: 'dashboard' },
     { id: 'explorer', label: 'Inventario', icon: 'inventory_2' },
-    ...(canOperate ? [{ id: 'dispatch' as ActiveView, label: 'Despacho', icon: 'shopping_cart_checkout', badge: dispatchCart.length }] : []),
+    ...(canOperate ? [{ id: 'entries' as ActiveView, label: 'Entradas', icon: 'input' }] : []),
+    ...(canOperate ? [{ id: 'dispatch' as ActiveView, label: 'Salidas', icon: 'shopping_cart_checkout', badge: dispatchCart.length }] : []),
     { id: 'history', label: 'Historial', icon: 'history' },
     { id: 'warehouses', label: 'Almacenes', icon: 'warehouse' },
     { id: 'remissions', label: 'Remisiones', icon: 'picture_as_pdf' },
@@ -95,14 +100,14 @@ const MainLayout: React.FC = () => {
       </div>
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#e2e8f0] px-2 py-1.5 flex items-center justify-around shadow-lg select-none">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#e2e8f0] px-2 py-1.5 flex items-center justify-start overflow-x-auto shadow-lg select-none">
         {mobileNavItems.map((item) => {
           const isActive = activeView === item.id;
           return (
             <button
               key={item.id}
               onClick={() => setActiveView(item.id)}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all relative ${
+              className={`flex flex-1 shrink-0 min-w-[56px] flex-col items-center justify-center py-1 px-2 rounded-xl transition-all relative ${
                 isActive
                   ? 'text-[#253685] font-bold'
                   : 'text-[#767682] hover:text-[#454651]'

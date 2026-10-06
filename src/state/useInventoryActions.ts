@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { DemoData } from './useInventoryData';
 import { insertRow, updateRow, rpc } from '../data/repository';
-import { mapAlmacen, mapCaja, mapElemento, mapEstanteria, mapRemision } from '../data/mappers';
+import { mapAlmacen, mapCaja, mapElemento, mapEstanteria, mapRemision, mapHistory } from '../data/mappers';
 import { isDemo } from '../lib/supabase';
 import { validateItem } from '../domain/inventory';
 import { validateDispatch } from '../domain/dispatch';
@@ -174,9 +174,9 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     const delta = input.tipo === 'ENTRADA' ? input.cantidad : input.tipo === 'SALIDA' ? -input.cantidad : input.cantidad;
     if (item.cantidad + delta < 0) throw new Error('El stock no puede ser negativo.');
     if (!isDemo) {
-      await rpc('record_inventory_movement', { p_request_id: input.requestId || crypto.randomUUID(), p_elemento_id: item.id,
-        p_tipo: input.tipo, p_cantidad: input.cantidad, p_motivo: input.motivo });
-      await syncAfterWrite(refreshItemIds([item.id]), refresh('historial')); return;
+      const saved = mapHistory(await rpc<Record<string, unknown>>('record_inventory_movement', { p_request_id: input.requestId || crypto.randomUUID(), p_elemento_id: item.id,
+        p_tipo: input.tipo, p_cantidad: input.cantidad, p_motivo: input.motivo }));
+      await syncAfterWrite(refreshItemIds([item.id]), refresh('historial')); return saved;
     }
     const now = isoNow();
     const movement: HistorialMovimiento = { id: newId('MOV'), tipo: input.tipo, elementoId: item.id,
@@ -189,6 +189,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       return { ...prev, historial: [movement, ...prev.historial], elementos: prev.elementos.map(el => el.id === current.id
         ? { ...el, cantidad: current.cantidad + delta, stockPendiente: false, updatedAt: now } : el) };
     });
+    return movement;
   };
 
   const addAlmacen = async (input: Omit<Almacen, 'id'>) => {

@@ -63,6 +63,7 @@ export function useInventoryData() {
         const table = event.table;
         if (!['elementos', 'almacenes', 'estanterias', 'cajas', 'proyectos', 'remisiones', 'historial'].includes(table)) return;
         if (table === 'elementos') {
+          void client.invalidateQueries({ queryKey: ['fulgor', email, 'archived-items'] });
           const newRow = event.new as DbRow;
           const oldRow = event.old as DbRow;
           const changedId = String(newRow?.id ?? oldRow?.id ?? '');

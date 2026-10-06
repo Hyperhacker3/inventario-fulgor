@@ -41,7 +41,7 @@ export const RemissionView: React.FC = () => {
             Remisiones de Entrega
           </h2>
           <p className="text-sm md:text-base text-[#454651]">
-            Documentos oficiales de despacho fotovoltaico y control de entrega en obra.
+            Documentos oficiales de salida fotovoltaico y control de entrega en obra.
           </p>
         </div>
 
@@ -50,7 +50,7 @@ export const RemissionView: React.FC = () => {
           className="px-4 py-2.5 rounded-lg bg-[#3e4e9e] text-white text-sm font-semibold hover:bg-[#323f80] active:scale-95 transition-all shadow-xs flex items-center gap-2"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>
-          <span>Nuevo Despacho</span>
+          <span>Nueva salida</span>
         </button>}
       </div>
 
@@ -100,7 +100,7 @@ export const RemissionView: React.FC = () => {
                 {/* Items List Preview */}
                 <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-3 mb-4 flex flex-col gap-1.5 text-xs">
                   <span className="text-[10px] font-bold uppercase text-[#767682] tracking-wider">
-                    Componentes Despachados ({rem.items.length})
+                    Materiales de la salida ({rem.items.length})
                   </span>
                   {rem.items.slice(0, 3).map((item, idx) => {
                     const product = productsById.get(item.elementoId);

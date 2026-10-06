@@ -20,6 +20,70 @@ const { mapElemento } = await import('../../src/data/mappers');
 const { ItemBoxSelector } = await import('../../src/components/item/ItemBoxSelector');
 const { ItemCategorySelector } = await import('../../src/components/item/ItemCategorySelector');
 const { ItemRackSelector } = await import('../../src/components/item/ItemRackSelector');
+const { EntryForm } = await import('../../src/components/entry/EntryForm');
+const { ArchivedItemDeletion } = await import('../../src/components/administration/ArchivedItemDeletion');
+
+test('permanent deletion requires an archived item and exact code, blocks duplicate calls and allows a failed request to retry', async () => {
+  const active = mapElemento({id:'MAT-1',codigo:'MAT001',nombre:'Material',archived:false});
+  const archived = { ...active,archived:true };
+  let calls = 0;
+  let fail!: (cause: Error) => void;
+  const first = new Promise<void>((_resolve,reject) => { fail=reject; });
+  const host = document.body.appendChild(document.createElement('div'));
+  const root = createRoot(host);
+  const onDelete = async (item: import('../../src/types').Elemento) => { calls++; assert.equal(item.id,archived.id); assert.equal(item.archived,true); if (calls===1) await first; };
+  try {
+    await act(() => root.render(createElement(ArchivedItemDeletion,{item:active,onDelete})));
+    assert.equal(host.querySelector('button'),null);
+    await act(() => root.render(createElement(ArchivedItemDeletion,{item:archived,onDelete})));
+    await act(() => host.querySelector('button')!.click());
+    const setValue = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
+    const submit = () => host.querySelector('form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));
+    const typeCode = (code: string) => { const input=host.querySelector('input')!; setValue.call(input,code); input.dispatchEvent(new dom.window.Event('input',{bubbles:true})); };
+    await act(() => typeCode('OTRO001'));
+    await act(() => submit()); assert.equal(calls,0);
+    await act(() => typeCode(archived.codigo));
+    await act(() => { submit(); submit(); }); assert.equal(calls,1);
+    await act(async () => fail(new Error('Conexión interrumpida')));
+    assert.match(host.querySelector('[role="alert"]')!.textContent!,/Conexión interrumpida/); assert.equal(host.querySelector('input')!.value,archived.codigo);
+    await act(async () => submit()); assert.equal(calls,2);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
+
+test('entry reception preserves a failed draft and request, blocks double saves and displays the confirmed movement', async () => {
+  const item = mapElemento({id:'MAT-1',codigo:'MAT001',nombre:'Material',cantidad:4,unidad:'UND',archived:false});
+  let fail = true, calls = 0;
+  let complete!: (value: import('../../src/types').HistorialMovimiento) => void;
+  const saved = new Promise<import('../../src/types').HistorialMovimiento>(resolve => { complete = resolve; });
+  const requests: string[] = [], busy: boolean[] = [];
+  const host = document.body.appendChild(document.createElement('div'));
+  const root = createRoot(host);
+  try {
+    await act(() => root.render(createElement(EntryForm,{ item,responsible:'Operador',onBusyChange:(value: boolean)=>busy.push(value),
+      onSave:async (input: import('../../src/components/entry/EntryForm').EntryInput) => {
+        calls++; requests.push(input.requestId); assert.equal(input.tipo,'ENTRADA'); assert.equal(input.cantidad,1.125); assert.equal(input.elementoId,item.id);
+        assert.equal(input.motivo,'Devolución de obra');
+        if (fail) throw new Error('Se perdió la conexión'); return saved;
+      } })));
+    const inputSet = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
+    const textSet = Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype,'value')!.set!;
+    await act(() => {
+      const input = host.querySelector('input')!; inputSet.call(input,'1.125'); input.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+      const reason = host.querySelector('textarea')!; textSet.call(reason,'Devolución de obra'); reason.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+    });
+    await act(async () => host.querySelector('form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true})));
+    assert.match(host.querySelector('[role="alert"]')!.textContent!,/Se perdió la conexión/);
+    assert.equal(host.querySelector('input')!.value,'1.125'); assert.equal(host.querySelector('textarea')!.value,'Devolución de obra');
+    fail = false;
+    await act(() => { for (let i=0;i<2;i++) host.querySelector('form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true})); });
+    assert.equal(calls,2); assert.equal(requests[0],requests[1]); assert.equal(host.querySelector('fieldset')!.disabled,true);
+    await act(async () => complete({id:'MOV-1',tipo:'ENTRADA',elementoId:item.id,itemCode:item.codigo,itemName:item.nombre,cantidad:1.125,unidad:'und',
+      stockAnterior:4,stockNuevo:5.125,motivo:'Devolución de obra',responsable:'Operador',fecha:'2026-10-06',hora:'10:00',docType:'view'}));
+    assert.match(host.querySelector('[role="status"]')!.textContent!,/Stock tras este movimiento: 5.125/);
+    assert.equal(host.querySelector('input')!.value,'0'); assert.equal(host.querySelector('textarea')!.value,'');
+    assert.deepEqual(busy,[true,false,true,false]);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
 
 test('inline category creation follows the placeholder, selects the saved category and guards duplicate submissions', async () => {
   let calls = 0;

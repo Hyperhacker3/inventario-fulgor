@@ -27,7 +27,7 @@ export function ProjectsView({ embedded = false }: { embedded?: boolean }) {
   };
   const edit = (project: Proyecto) => { setEditing(project.id); setForm(project); setError(''); setMessage(''); };
   return <div className={embedded ? 'space-y-6' : 'p-4 md:p-8 w-full max-w-6xl mx-auto space-y-6'}>
-    <div><h2 className="text-3xl font-bold">Proyectos</h2><p className="text-slate-600 mt-2">Destinos para los despachos. Al quitar un proyecto, se conserva el historial y puede reactivarse.</p></div>
+    <div><h2 className="text-3xl font-bold">Proyectos</h2><p className="text-slate-600 mt-2">Destinos para las salidas. Al quitar un proyecto, se conserva el historial y puede reactivarse.</p></div>
     {error && <p role="alert" className="text-red-700">{error}</p>}
     {message && <p role="status" className="text-green-700">{message}</p>}
     {admin && <form onSubmit={save} className="bg-white p-5 rounded-2xl border border-slate-200 space-y-4">
@@ -44,12 +44,12 @@ export function ProjectsView({ embedded = false }: { embedded?: boolean }) {
         <button type="button" disabled={busy} className="text-[#253685] underline" onClick={() => { void run(addExampleProjects, 'Los dos proyectos de ejemplo están guardados en Supabase.'); }}>Añadir dos proyectos de ejemplo</button>
       </div>
     </form>}
-    {!proyectos.length && <p>{syncStatus === 'syncing' ? 'Cargando proyectos…' : 'No hay proyectos registrados. Añada uno para comenzar a despachar.'}</p>}
+    {!proyectos.length && <p>{syncStatus === 'syncing' ? 'Cargando proyectos…' : 'No hay proyectos registrados. Añada uno para comenzar a registrar una salida.'}</p>}
     <div className="grid md:grid-cols-2 gap-4">{[...proyectos].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(project => <article key={project.id} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
       <div className="flex justify-between gap-3"><h3 className="font-bold break-words">{project.nombre}</h3><span className={`text-xs shrink-0 ${project.estado === 'ACTIVO' ? 'text-green-700' : 'text-slate-500'}`}>{project.estado === 'ACTIVO' ? 'Activo' : 'Finalizado'}</span></div>
       <p className="text-sm text-slate-600">Cliente: {project.cliente || 'Sin especificar'}<br />Ubicación: {project.ubicacion || 'Sin especificar'}</p>
       {admin && <div className="flex gap-4 text-sm"><button disabled={busy} onClick={() => edit(project)} className="text-[#253685]">Editar</button>
-        <button disabled={busy} onClick={() => { void run(() => updateProyecto(project.id, { ...project, estado: project.estado === 'ACTIVO' ? 'FINALIZADO' : 'ACTIVO' }), project.estado === 'ACTIVO' ? 'Proyecto quitado de los despachos.' : 'Proyecto reactivado.'); }} className="text-[#253685]">{project.estado === 'ACTIVO' ? 'Quitar de despachos' : 'Reactivar'}</button></div>}
+        <button disabled={busy} onClick={() => { void run(() => updateProyecto(project.id, { ...project, estado: project.estado === 'ACTIVO' ? 'FINALIZADO' : 'ACTIVO' }), project.estado === 'ACTIVO' ? 'Proyecto quitado de las salidas.' : 'Proyecto reactivado.'); }} className="text-[#253685]">{project.estado === 'ACTIVO' ? 'Quitar de salidas' : 'Reactivar'}</button></div>}
     </article>)}</div>
   </div>;
 }

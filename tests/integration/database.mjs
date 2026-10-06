@@ -10,6 +10,7 @@ const migration = fs.readFileSync(new URL('../../supabase/migrations/20261001_se
 const transportMigration = fs.readFileSync(new URL('../../supabase/migrations/20261005_remission_transport.sql', import.meta.url), 'utf8');
 const unitWeightMigration = fs.readFileSync(new URL('../../supabase/migrations/20261005000100_unit_weights.sql', import.meta.url), 'utf8');
 const catalogMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000100_data_administration.sql', import.meta.url), 'utf8');
+const archivedMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000200_archived_inventory.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 
@@ -22,18 +23,109 @@ async function database() {
         'user_metadata', jsonb_build_object('name', 'Operador de prueba')) $$;
     GRANT USAGE ON SCHEMA auth TO authenticated;
     GRANT EXECUTE ON FUNCTION auth.uid(), auth.jwt() TO authenticated;`);
+  await db.exec('CREATE SCHEMA storage; CREATE TABLE storage.objects(bucket_id text, name text);');
   await db.exec(baseSql);
   await db.exec(migration);
   await db.exec(transportMigration);
   await db.exec(unitWeightMigration);
   await db.exec(demoSeed);
   await db.exec(catalogMigration);
+  await db.exec(archivedMigration);
   return db;
 }
 
 const role = (db, value) => db.exec(`SELECT set_config('app.test_role','${value}',false); SET ROLE authenticated;`);
 const asOwner = db => db.exec('RESET ROLE;');
 const itemStock = async db => Number((await db.query("SELECT cantidad FROM public.elementos WHERE id = 'ELM-001'")).rows[0].cantidad);
+
+test('only admins can permanently delete archived items; history, codes and cleanup retries survive', async () => {
+  const db = await database();
+  try {
+    const deletion = 'SELECT public.delete_archived_inventory_item($1) AS job';
+    for (const userRole of ['consulta', 'operador', '']) {
+      await role(db, userRole);
+      await assert.rejects(() => db.query(deletion, ['ELM-001']), /No autorizado/);
+      await assert.rejects(() => db.query('SELECT public.inventory_image_cleanup_jobs()'), /No autorizado/);
+      await asOwner(db);
+    }
+    await db.exec('SET ROLE anon');
+    await assert.rejects(() => db.query(deletion, ['ELM-001']), /permission denied/);
+    await asOwner(db); await role(db, 'admin');
+    await assert.rejects(() => db.query(deletion, ['ELM-001']), /Solo se pueden eliminar elementos archivados/);
+    await assert.rejects(() => db.query("DELETE FROM public.elementos WHERE id='ELM-001'"), /permission denied/);
+    const prefix = (await db.query('SELECT public.inventory_data_catalog() AS data')).rows[0].data.prefijos.find(row => row.prefijo === 'PAN');
+    const own = 'storage://account/main/full.jpg', extra = 'storage://account/extra/full.jpg', shared = 'storage://account/shared/full.jpg';
+    const input = { nombre:'Material a archivar',categoria:'PANELES',cantidad:4,stock_minimo:0,unidad:'UND',
+      almacen_id:'ALM-BOG-01',foto_url:own,especificaciones:{fotos_adicionales:[extra,shared]} };
+    const creation = 'SELECT public.create_inventory_item_auto($1,$2::uuid,$3::jsonb) AS item';
+    const args = [prefix.id,'742f307a-fbbd-450f-99b1-8ab34fb0699a',JSON.stringify(input)];
+    const created = (await db.query(creation,args)).rows[0].item;
+    await db.query('UPDATE public.elementos SET foto_url=$1 WHERE id=$2',[shared,'ELM-002']);
+    const rem = (await db.query('SELECT public.dispatch_inventory_with_unit_weights($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb) AS remission',
+      ['77989d34-fcc6-4aa9-86b8-5bdd6c4e79c8','PROY-001','Entrega','Admin','Recibe','','',JSON.stringify([{elementoId:created.id,cantidad:1}]),'{}'])).rows[0].remission;
+    const historyBefore = (await db.query('SELECT * FROM public.historial WHERE elemento_id=$1 ORDER BY id',[created.id])).rows;
+    await db.query('UPDATE public.elementos SET archived=true WHERE id=$1',[created.id]);
+    await asOwner(db);
+    await db.query("INSERT INTO storage.objects(bucket_id,name) VALUES('item-images','account/main/full.jpg'),('item-images','account/main/thumb.jpg'),('item-images','account/extra/full.jpg'),('item-images','account/shared/full.jpg')");
+    await assert.rejects(() => db.query("DELETE FROM public.elementos WHERE id='ELM-001'"), /Solo se pueden eliminar elementos archivados/);
+    await role(db,'admin');
+    const job = (await db.query(deletion,[created.id])).rows[0].job;
+    assert.deepEqual(job.fotos.sort(),[own,extra].sort());
+    assert.equal((await db.query('SELECT count(*) AS n FROM public.elementos WHERE id=$1',[created.id])).rows[0].n,0);
+    assert.deepEqual((await db.query('SELECT * FROM public.historial WHERE elemento_id=$1 ORDER BY id',[created.id])).rows,historyBefore);
+    assert.deepEqual((await db.query('SELECT items FROM public.remisiones WHERE id=$1',[rem.id])).rows[0].items,rem.items);
+    assert.deepEqual((await db.query(deletion,[created.id])).rows[0].job,job);
+    await assert.rejects(() => db.query('SELECT public.complete_inventory_image_cleanup($1)',[created.id]), /Quedan fotos/);
+    assert.equal((await db.query('SELECT public.inventory_image_cleanup_jobs() AS jobs')).rows[0].jobs.length,1);
+    await assert.rejects(() => db.query('UPDATE public.elementos SET foto_url=$1 WHERE id=$2',[own,'ELM-002']), /producto eliminado/);
+    await assert.rejects(() => db.query(creation,args), /eliminado definitivamente/);
+    const next = (await db.query(creation,[prefix.id,'0a80e1f2-35dd-4ac1-9043-d729a8f70a57',JSON.stringify({...input,foto_url:'',especificaciones:{}})])).rows[0].item;
+    assert.equal(Number(next.codigo.slice(3)),Number(created.codigo.slice(3))+1);
+    await assert.rejects(() => db.query('SELECT public.create_inventory_item($1::jsonb)',[JSON.stringify({...input,codigo:created.codigo,foto_url:'',especificaciones:{}})]), /código ya pertenecía/);
+    await db.query('UPDATE public.elementos SET archived=true WHERE id=$1',[next.id]);
+    await db.query(deletion,[next.id]);
+    await db.query('SELECT public.save_inventory_catalog_entry($1,$2::jsonb)',['prefijo',JSON.stringify({id:prefix.id,prefijo:'SOL',nombre:'Solar',activo:true})]);
+    const newCatalog = (await db.query('SELECT public.save_inventory_catalog_entry($1,$2::jsonb) AS data',['prefijo',JSON.stringify({prefijo:'PAN',nombre:'Paneles nuevos',activo:true})])).rows[0].data;
+    const recreatedPrefix = newCatalog.prefijos.find(row=>row.prefijo==='PAN');
+    const afterPrefixChange = (await db.query(creation,[recreatedPrefix.id,'1d315fef-2026-4e57-9f98-00f6716d87bb',JSON.stringify({...input,foto_url:'',especificaciones:{}})])).rows[0].item;
+    assert.equal(Number(afterPrefixChange.codigo.slice(3)),Number(next.codigo.slice(3))+1);
+    await assert.rejects(() => db.query('SELECT * FROM public.inventario_eliminaciones'), /permission denied/);
+    await asOwner(db);
+    assert.equal((await db.query('SELECT elemento_id FROM public.inventario_altas WHERE request_id=$1',[args[1]])).rows[0].elemento_id,null);
+    await db.exec(archivedMigration);
+    await db.query("DELETE FROM storage.objects WHERE name IN ('account/main/full.jpg','account/main/thumb.jpg','account/extra/full.jpg')");
+    await role(db,'admin');
+    assert.equal((await db.query('SELECT public.complete_inventory_image_cleanup($1) AS done',[created.id])).rows[0].done,true);
+    assert.deepEqual((await db.query('SELECT public.inventory_image_cleanup_jobs() AS jobs')).rows[0].jobs,[]);
+    await asOwner(db);
+    assert.equal((await db.query("SELECT count(*) AS n FROM storage.objects WHERE name='account/shared/full.jpg'")).rows[0].n,1);
+  } finally { await db.close(); }
+});
+
+test('entries add decimal quantities atomically, record the signed-in operator and reject archived or pending items', async () => {
+  const db = await database();
+  try {
+    await role(db,'operador');
+    const sql = 'SELECT public.record_inventory_movement($1::uuid,$2,$3,$4::numeric,$5) AS movement';
+    const args = ['f883fbca-58c4-4a17-8f4a-9786d050b636','ELM-001','ENTRADA',1.125,'Recepción de material'];
+    const movement = (await db.query(sql,args)).rows[0].movement;
+    assert.equal(movement.stock_anterior,184); assert.equal(movement.stock_nuevo,185.125);
+    assert.equal(movement.responsable,'Operador de prueba');
+    assert.equal((await db.query(sql,args)).rows[0].movement.id,movement.id);
+    assert.equal(await itemStock(db),185.125);
+    for (const quantity of [0,-1,0.0001]) await assert.rejects(() => db.query(sql,['3c7bf4e7-8199-4490-80c1-f0e4f7835bcd','ELM-001','ENTRADA',quantity,'Recepción']), /Movimiento inválido/);
+    await asOwner(db); await db.exec("UPDATE public.elementos SET archived=true WHERE id='ELM-001'; UPDATE public.elementos SET stock_pendiente=true WHERE id='ELM-002'");
+    await role(db,'operador');
+    await assert.rejects(() => db.query(sql,['8906b098-7637-42f7-b984-0f0b8ba0c7e8','ELM-001','ENTRADA',2,'Recepción']), /Componente no encontrado/);
+    await assert.rejects(() => db.query(sql,['8906b098-7637-42f7-b984-0f0b8ba0c7e8','ELM-002','ENTRADA',2,'Recepción']), /stock pendiente/);
+    await asOwner(db); await role(db,'consulta');
+    await assert.rejects(() => db.query(sql,['8906b098-7637-42f7-b984-0f0b8ba0c7e8','ELM-003','ENTRADA',2,'Recepción']), /No autorizado/);
+    await asOwner(db);
+    await db.exec(`CREATE OR REPLACE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql AS $$ SELECT '{"app_metadata":{}}'::jsonb $$; SET ROLE authenticated;`);
+    await assert.rejects(() => db.query(sql,['8906b098-7637-42f7-b984-0f0b8ba0c7e8','ELM-003','ENTRADA',2,'Recepción']), /No autorizado/);
+    await assert.rejects(() => db.query('SELECT public.delete_archived_inventory_item($1)',['ELM-001']), /No autorizado/);
+  } finally { await db.close(); }
+});
 
 test('data catalogs preserve inventory, enforce permissions and support editable names and prefixes', async () => {
   const db = await database();
@@ -205,7 +297,7 @@ test('projects support admin management, safe example retries and reject finaliz
 test('postdeploy audit runs against the migrated schema without changing inventory', async () => {
   const db = await database();
   try {
-    await db.exec('CREATE SCHEMA storage; CREATE TABLE storage.buckets(id text, public boolean);');
+    await db.exec('CREATE TABLE storage.buckets(id text, public boolean);');
     const before = Number((await db.query('SELECT count(*) AS n FROM public.elementos')).rows[0].n);
     const results = await db.exec(postdeployAudit);
     assert.equal(Number(results[0].rows[0].productos_activos), before);

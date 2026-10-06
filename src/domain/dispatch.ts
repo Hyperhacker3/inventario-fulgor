@@ -9,7 +9,7 @@ export function validateDispatch(cart: DispatchCartItem[], inventory: Elemento[]
     const id = line.elemento.id;
     if (seen.has(id)) throw new Error('Hay un componente repetido.');
     seen.add(id);
-    if (!validQuantity(line.cantidad) || line.cantidad <= 0) throw new Error('La cantidad del despacho debe ser positiva, con hasta tres decimales.');
+    if (!validQuantity(line.cantidad) || line.cantidad <= 0) throw new Error('La cantidad de la salida debe ser positiva, con hasta tres decimales.');
     const item = stock.get(id);
     if (!item || available(item) < line.cantidad) throw new Error(`Stock insuficiente para ${item?.codigo ?? id}.`);
   }

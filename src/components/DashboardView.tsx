@@ -14,7 +14,7 @@ export function DashboardView() {
   const recent = historial.filter(row => warehouse === 'ALL' || itemIndex.has(row.elementoId)).slice(0, 6);
   const metrics = [
     { label: 'Productos activos', value: summary.total, hint: 'Referencias distintas del catálogo', color: 'text-[#253685]' },
-    { label: 'Sin disponibilidad', value: summary.statuses['Sin disponibilidad'], hint: 'Sin stock utilizable para despachar', color: 'text-red-600' },
+    { label: 'Sin disponibilidad', value: summary.statuses['Sin disponibilidad'], hint: 'Sin stock utilizable para registrar una salida', color: 'text-red-600' },
     { label: 'Stock bajo', value: summary.statuses['Stock bajo'], hint: 'Disponibilidad igual o inferior al mínimo', color: 'text-amber-600' },
     { label: 'Conteos pendientes', value: summary.statuses['Pendiente de conteo'], hint: 'Requieren confirmar existencias', color: 'text-indigo-600' },
     { label: 'Productos con daños', value: summary.damagedProducts, hint: 'Tienen material marcado como dañado', color: 'text-rose-600' },

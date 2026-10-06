@@ -10,10 +10,11 @@ import { ItemHistory } from './item/ItemHistory';
 import { NumberInput } from './NumberInput';
 import { ItemWeightFields } from './item/ItemWeightFields';
 import { formatUnitWeight, parseWeightDraft, weightDraft } from '../domain/weight';
+import { ArchivedItemDeletion } from './administration/ArchivedItemDeletion';
 
-interface Props { item: Elemento | null; onClose: () => void }
+interface Props { item: Elemento | null; onClose: () => void; onPermanentDelete?: (item: Elemento) => Promise<void> }
 
-export function ItemDetailModal({ item, onClose }: Props) {
+export function ItemDetailModal({ item, onClose, onPermanentDelete }: Props) {
   const { user, getLocationString, openQuickMovement, addToDispatchCart,
     updateElemento, deleteElemento, categoryLabel } = useInventory();
   const [editing, setEditing] = useState(false);
@@ -78,8 +79,9 @@ export function ItemDetailModal({ item, onClose }: Props) {
       </header>
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
+        {item.archived && <p className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm">Elemento archivado. No admite entradas, salidas ni edición.</p>}
         {item.stockPendiente && <p role="status" className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
-          Stock pendiente de verificar desde el Excel. No disponible para despacho hasta que administración registre el ajuste.
+          Stock pendiente de verificar desde el Excel. No disponible para salida hasta que administración registre el ajuste.
         </p>}
         {editing ? <form id="item-edit-form" onSubmit={save} className="space-y-4">
           <h2 id="item-detail-heading" className="text-xl font-bold">Editar {item.codigo}</h2>
@@ -121,13 +123,16 @@ export function ItemDetailModal({ item, onClose }: Props) {
             <div className="p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-lg">{item.cantidadDanados ?? 0}</strong><span className="text-xs">Dañado</span></div>
           </div>
           <div className="flex flex-wrap gap-2">
+            {!item.archived && <>
             {canAdmin && <button type="button" onClick={startEdit} className="px-3 py-2 rounded-lg border text-sm font-semibold">Editar</button>}
             {canOperate && !item.stockPendiente && <button type="button" onClick={() => openQuickMovement(item, 'ENTRADA')} className="px-3 py-2 rounded-lg bg-[#e6f4ea] text-[#137333] text-sm font-semibold">Entrada</button>}
             {(canAdmin || canOperate && !item.stockPendiente) && <button type="button" onClick={() => openQuickMovement(item, 'AJUSTE')} className="px-3 py-2 rounded-lg bg-[#fef7e0] text-[#755b00] text-sm font-semibold">{item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'}</button>}
             {canOperate && <button type="button" disabled={available(item) === 0} onClick={() => addToDispatchCart(item)}
-              className="px-3 py-2 rounded-lg bg-[#dd4c42] text-white text-sm font-semibold disabled:opacity-40">Agregar al despacho</button>}
+              className="px-3 py-2 rounded-lg bg-[#dd4c42] text-white text-sm font-semibold disabled:opacity-40">Agregar a la salida</button>}
             {canAdmin && <button type="button" disabled={pending} onClick={archive} className="px-3 py-2 rounded-lg border text-red-700 text-sm font-semibold">Archivar</button>}
+            </>}
           </div>
+          {item.archived && canAdmin && onPermanentDelete && <ArchivedItemDeletion item={item} onDelete={onPermanentDelete} />}
         </>}
         <ItemHistory itemId={item.id} />
       </div>

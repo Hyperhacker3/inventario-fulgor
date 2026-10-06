@@ -1,6 +1,6 @@
 # Inventario turpial
 
-Aplicación de inventario fotovoltaico con React, TypeScript, Vite y Supabase. Incluye almacenes, catálogo, movimientos, despachos, remisiones e historial.
+Aplicación de inventario fotovoltaico con React, TypeScript, Vite y Supabase. Incluye almacenes, catálogo, entradas, salidas, remisiones, administración de datos e historial.
 
 ## Desarrollo local
 
@@ -11,11 +11,13 @@ Configure `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY`. La clave public
 ## Preparación de Supabase
 
 1. Cree un respaldo verificable del esquema y de los datos existentes. Ejecute `supabase/preflight_readonly.sql` para inspeccionar tablas, políticas, permisos, conteos y el código `EST001`. Ensaye primero en un proyecto de pruebas.
-2. En una base nueva, aplique `supabase_schema.sql`, luego `supabase/migrations/20261001_secure_inventory.sql` y finalmente `supabase/migrations/20261002_private_item_images.sql`. El esquema ya no incluye artículos de ejemplo. En una base existente, inspeccione el esquema y aplique las migraciones después del respaldo. La migración se detiene si detecta políticas RLS desconocidas para evitar conservar accesos inesperados.
-3. Cree usuarios en Supabase Auth. Asigne `app_metadata.role` desde un entorno administrativo: `admin` gestiona catálogo/ubicaciones y realiza movimientos; `operador` registra movimientos y despachos; `consulta` solo lee. Un usuario sin rol queda sin permisos de inventario. No use `user_metadata` para roles.
+2. En una base nueva, aplique `supabase_schema.sql` y después las migraciones de `supabase/migrations` en este orden: `20261001_secure_inventory.sql`, `20261002_private_item_images.sql`, `20261005_remission_transport.sql`, `20261005000100_unit_weights.sql`, `20261006000100_data_administration.sql` y `20261006000200_archived_inventory.sql`. El esquema no incluye artículos de ejemplo. En una base existente, aplique solo las migraciones pendientes después del respaldo. La migración de seguridad se detiene si detecta políticas RLS desconocidas para evitar conservar accesos inesperados.
+3. Cree usuarios en Supabase Auth. Asigne `app_metadata.role` desde un entorno administrativo: `admin` gestiona catálogo/ubicaciones y realiza movimientos; `operador` registra entradas y salidas; `consulta` solo lee. Un usuario sin rol queda sin permisos de inventario. No use `user_metadata` para roles.
 4. Compruebe las políticas RLS y el bucket privado `item-images` con usuarios de cada rol antes de habilitar la aplicación para el equipo.
 
-El despacho, el movimiento y el alta de artículos se hacen mediante funciones SQL transaccionales. Cada despacho utiliza un identificador de solicitud para impedir descuentos duplicados. Las fotos nuevas se comprimen antes de subirlas al bucket privado; el catálogo guarda su ruta y genera enlaces de lectura temporales.
+Las salidas, movimientos y altas de artículos se hacen mediante funciones SQL transaccionales. Cada salida utiliza un identificador de solicitud para impedir descuentos duplicados. Las fotos nuevas se comprimen antes de subirlas al bucket privado; el catálogo guarda su ruta y genera enlaces de lectura temporales.
+
+La pantalla Entradas registra recepciones sin PDF. Administración de datos → Archivados permite a los administradores eliminar individualmente productos archivados, conservando historial y remisiones. Consulte `docs/entradas-y-archivados.md` para activar y utilizar estas funciones.
 
 ## Inventario histórico
 

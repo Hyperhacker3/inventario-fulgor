@@ -69,7 +69,7 @@ function useInventoryValue() {
   const dispatchSelectionItem = dispatchSelection ? itemIndex.get(dispatchSelection.itemId) || null : null;
   const closeDispatchSelection = useCallback(() => setDispatchSelection(null), []);
   const addToDispatchCart = (item: Elemento, quantity?: number) => {
-    if (!isDemo && !['admin', 'operador'].includes(user?.role || '')) throw new Error('Su cuenta no puede agregar materiales al despacho.');
+    if (!isDemo && !['admin', 'operador'].includes(user?.role || '')) throw new Error('Su cuenta no puede agregar materiales a la salida.');
     if (quantity === undefined) { setDispatchSelection({ itemId: item.id, token: crypto.randomUUID() }); return; }
     const live = itemIndex.get(item.id);
     const existing = cartLines.find(line => line.elementoId === item.id)?.cantidad || 0;
@@ -82,7 +82,7 @@ function useInventoryValue() {
         : [...prev, { elementoId: item.id, cantidad: amount }];
     });
     setDispatchSelection(null);
-    setDispatchFeedback({ message: `Agregados ${quantity.toLocaleString('es-CO', { maximumFractionDigits: 3 })} ${live.unidad.toUpperCase()} de ${live.codigo} al despacho.`, token: crypto.randomUUID() });
+    setDispatchFeedback({ message: `Agregados ${quantity.toLocaleString('es-CO', { maximumFractionDigits: 3 })} ${live.unidad.toUpperCase()} de ${live.codigo} a la salida.`, token: crypto.randomUUID() });
   };
   const updateDispatchCartQuantity = (itemId: string, quantity: number) => {
     const item = itemIndex.get(itemId);

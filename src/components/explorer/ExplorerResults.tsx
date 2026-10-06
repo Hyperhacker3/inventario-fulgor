@@ -128,7 +128,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                               ? 'bg-[#3e4e9e] text-white hover:bg-[#323f80] active:scale-95'
                               : 'bg-[#e2e8f0] text-[#767682] cursor-not-allowed'
                           }`}
-                          title={available(item) > 0 ? 'Agregar al despacho' : 'Sin stock disponible'}
+                          title={available(item) > 0 ? 'Agregar a la salida' : 'Sin stock disponible'}
                         >
                           <span className="material-symbols-outlined text-[16px]">add_shopping_cart</span>
                         </button>}
@@ -223,7 +223,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                                   ? 'text-[#dd4c42] hover:bg-[#ffdad6]/50'
                                   : 'text-[#cbd5e1] cursor-not-allowed'
                               }`}
-                              title="Despachar"
+                              title="Registrar salida"
                             >
                               <span className="material-symbols-outlined text-[18px]">shopping_cart_checkout</span>
                             </button>}

@@ -50,7 +50,7 @@ export const DispatchView: React.FC = () => {
     if (!automaticReady) { setErrorMsg('Active la actualización del cálculo automático de peso antes de generar la remisión.'); return; }
 
     if (dispatchCart.length === 0) {
-      setErrorMsg('Debe agregar al menos un componente al despacho.');
+      setErrorMsg('Debe agregar al menos un componente a la salida.');
       return;
     }
 
@@ -93,7 +93,7 @@ export const DispatchView: React.FC = () => {
     <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 md:p-8 max-w-[1000px] mx-auto w-full">
       {/* Page Title from Mockup Image 1 */}
       <div className="mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#131b2e] tracking-tight">Salida de Material</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-[#131b2e] tracking-tight">Salidas</h2>
         <p className="text-sm md:text-base text-[#454651]">
           Gestione la salida de inventario y genere la remisión de entrega para proyectos solares.
         </p>
@@ -103,7 +103,7 @@ export const DispatchView: React.FC = () => {
       <div className="flex flex-col gap-5">
         <AvailableInventory />
 
-        {/* Formulario de despacho y materiales elegidos. */}
+        {/* Formulario de salida y materiales elegidos. */}
         <section className="w-full flex flex-col gap-4">
           <form
             onSubmit={handleDispatch}
@@ -112,7 +112,7 @@ export const DispatchView: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-[#e2e8f0]">
               <div className="flex items-center gap-2 text-[#253685]">
                 <span className="material-symbols-outlined text-[22px]">local_shipping</span>
-                <h3 className="font-bold text-lg text-[#131b2e]">Datos del Despacho</h3>
+                <h3 className="font-bold text-lg text-[#131b2e]">Datos de la salida</h3>
               </div>
               {dispatchCart.length > 0 && (
                 <button
@@ -174,7 +174,7 @@ export const DispatchView: React.FC = () => {
             </div>
 
             <TransportFields value={transport} onChange={setTransport} disabled={pending || !transportReady} />
-            {!transportReady && <p className="text-xs text-slate-600">Los campos de transporte requieren activar la actualización de remisiones. El despacho habitual sigue disponible. <button type="button" className="underline" onClick={() => { void transportQuery.refetch(); }}>Comprobar de nuevo</button></p>}
+            {!transportReady && <p className="text-xs text-slate-600">Los campos de transporte requieren activar la actualización de remisiones. La salida habitual sigue disponible. <button type="button" className="underline" onClick={() => { void transportQuery.refetch(); }}>Comprobar de nuevo</button></p>}
             {/* Observaciones */}
             <div>
               <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-1">
@@ -189,11 +189,11 @@ export const DispatchView: React.FC = () => {
               />
             </div>
 
-            {/* Materiales en el Despacho (Cart Table) */}
+            {/* Materiales en la salida (Cart Table) */}
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="text-xs font-bold tracking-wider text-[#454651] uppercase">
-                  MATERIALES A DESPACHAR ({dispatchCart.length})
+                  MATERIALES PARA LA SALIDA ({dispatchCart.length})
                 </label>
                 <span className="text-xs font-mono-code text-[#3e4e9e] font-bold">
                   {dispatchCart.length} referencias
@@ -203,7 +203,7 @@ export const DispatchView: React.FC = () => {
               <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-3 max-h-60 overflow-y-auto flex flex-col gap-2">
                 {dispatchCart.length === 0 ? (
                   <div className="py-6 text-center text-xs text-[#767682]">
-                    Busque un material arriba y pulse Añadir para elegir la cantidad a despachar.
+                    Busque un material arriba y pulse Añadir para elegir la cantidad de la salida.
                   </div>
                 ) : (
                   dispatchCart.map((item) => (
@@ -285,7 +285,7 @@ export const DispatchView: React.FC = () => {
               }`}
             >
               <span className="material-symbols-outlined text-[20px]">assignment_turned_in</span>
-              <span>Generar Remisión y Despachar</span>
+              <span>Registrar salida y generar remisión</span>
             </button>
           </form>
         </section>

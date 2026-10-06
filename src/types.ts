@@ -139,6 +139,7 @@ export type ActiveView =
   | 'explorer' 
   | 'new-item' 
   | 'dispatch' 
+  | 'entries'
   | 'history' 
   | 'warehouses' 
   | 'remissions'

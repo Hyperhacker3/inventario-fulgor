@@ -25,7 +25,7 @@ En **Categorías**, escriba una clave (letras, números o guion bajo, como `FERR
 - En **Estanterías**, seleccione un almacén y pulse **Crear estantería**.
 - En **Cajas**, seleccione una estantería y pulse **Crear caja**.
 - En ambas pestañas puede editar los datos de las ubicaciones existentes.
-- En **Proyectos** puede crear, editar, finalizar y reactivar los destinos de los despachos. Los proyectos actuales se conservan; la administración se ha integrado en esta pantalla.
+- En **Proyectos** puede crear, editar, finalizar y reactivar los destinos de las salidas. Los proyectos actuales se conservan; la administración se ha integrado en esta pantalla.
 
 Solo las cuentas con rol `admin` pueden modificar estos datos. Operadores y cuentas de consulta pueden leerlos.
 
@@ -39,6 +39,8 @@ El selector **Estantería** sigue el mismo orden: **Seleccione una estantería**
 
 Después de guardar un componente, el formulario permanece abierto. Conserva el prefijo, categoría, almacén y estantería. Reinicia nombre, descripción, caja, stock, unidad, peso, mínimo, estado, daños y fotografías. El código del siguiente componente sigue asignándose automáticamente al guardar.
 
-Este ajuste utiliza las tablas existentes y no requiere ejecutar otro SQL.
+Crear categorías, cajas y estanterías desde el alta utiliza las tablas existentes y no requiere ejecutar otro SQL.
+
+La pestaña **Archivados** permite consultar productos archivados y eliminarlos individualmente con rol de administrador. Para activar esa eliminación, aplique la nueva migración `20261006000200_archived_inventory.sql`, descrita en `docs/entradas-y-archivados.md`. Esa migración no elimina los productos existentes.
 
 La activación en Supabase y la comprobación visual del despliegue se realizan desde la cuenta del administrador; las pruebas locales no acceden a la base de datos real.

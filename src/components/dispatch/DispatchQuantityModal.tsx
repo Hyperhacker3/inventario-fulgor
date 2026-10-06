@@ -40,9 +40,9 @@ export function DispatchQuantityModal({ item, inCart, onConfirm, onClose }: { it
   const weight = validQuantity(quantity) && quantity >= 0 ? lineWeightKg(item.pesoUnitario, quantity) : null;
   return createPortal(<div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
     <form ref={form} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="dispatch-quantity-title" className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-      <div className="flex justify-between gap-4"><h2 id="dispatch-quantity-title" className="font-bold text-xl">Agregar al despacho</h2><button type="button" onClick={onClose} aria-label="Cerrar selección de cantidad">✕</button></div>
+      <div className="flex justify-between gap-4"><h2 id="dispatch-quantity-title" className="font-bold text-xl">Agregar a la salida</h2><button type="button" onClick={onClose} aria-label="Cerrar selección de cantidad">✕</button></div>
       <p className="text-sm"><strong className="text-[#253685]">{item.codigo}</strong> · {item.nombre}</p>
-      <p className="text-xs text-slate-600">En el despacho: {inCart} {item.unidad}. Disponible para agregar: {maximum} {item.unidad}.</p>
+      <p className="text-xs text-slate-600">En la salida: {inCart} {item.unidad}. Disponible para agregar: {maximum} {item.unidad}.</p>
       <label htmlFor="dispatch-add-quantity" className="block text-sm font-semibold">¿Cuántas {item.unidad.toUpperCase()} quieres agregar?</label>
       <div className="flex items-center gap-3">
         <button type="button" aria-label="Reducir cantidad" disabled={quantity <= Math.min(1, maximum) || maximum === 0} onClick={() => setQuantity(roundQuantity(Math.max(MIN_QUANTITY, quantity - 1)))} className="border rounded-xl w-12 h-12 text-xl disabled:opacity-40">−</button>
@@ -52,7 +52,7 @@ export function DispatchQuantityModal({ item, inCart, onConfirm, onClose }: { it
       <p className="text-xs text-slate-600">{weight === null ? 'Peso pendiente de declarar en el producto.' : `Peso de esta cantidad: ${formatKg(weight)}`}</p>
       {maximum === 0 && <p role="status" className="text-sm text-amber-700">No quedan existencias disponibles para agregar.</p>}
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-      <div className="flex justify-end gap-3"><button type="button" onClick={onClose} className="border rounded-lg px-4 py-2">Cancelar</button><button type="submit" disabled={maximum === 0} className="bg-[#253685] text-white rounded-lg px-4 py-2 disabled:opacity-40">Agregar al despacho</button></div>
+      <div className="flex justify-end gap-3"><button type="button" onClick={onClose} className="border rounded-lg px-4 py-2">Cancelar</button><button type="submit" disabled={maximum === 0} className="bg-[#253685] text-white rounded-lg px-4 py-2 disabled:opacity-40">Agregar a la salida</button></div>
     </form>
   </div>, document.body);
 }
