@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { itemPhotos, saveGallery } from '../../src/domain/photos';
 import { mapElemento } from '../../src/data/mappers';
-import { cameraInputs, nextCameraId } from '../../src/shared/cameraDevices';
+import { cameraInputs, isRearCamera, nextCameraId } from '../../src/shared/cameraDevices';
 
 test('gallery maps cloud metadata, preserves order and removes empty or duplicate photos', () => {
   const item = mapElemento({ foto_url: 'storage://main', especificaciones: {
@@ -47,17 +47,26 @@ test('changing principal to an existing extra keeps both files and adds no galle
   assert.deepEqual(removed, []);
 });
 
-test('camera switch cycles every exposed lens and removes duplicate device IDs', () => {
+test('camera switch cycles only rear lenses, excludes front and unidentified devices and removes duplicates', () => {
   const devices = cameraInputs([
     { kind: 'videoinput', deviceId: 'wide', label: 'Trasera gran angular' },
     { kind: 'audioinput', deviceId: 'mic', label: 'Micrófono' },
     { kind: 'videoinput', deviceId: 'tele', label: 'Trasera telefoto' },
     { kind: 'videoinput', deviceId: 'front', label: 'Frontal' },
+    { kind: 'videoinput', deviceId: 'selfie', label: 'Front Camera' },
+    { kind: 'videoinput', deviceId: 'unknown', label: '' },
+    { kind: 'videoinput', deviceId: 'confirmed', label: 'camera2 0' },
     { kind: 'videoinput', deviceId: 'wide', label: 'Trasera gran angular' },
-  ]);
+  ], ['confirmed']);
   assert.equal(devices.length, 3);
   assert.equal(nextCameraId(devices, 'wide'), 'tele');
-  assert.equal(nextCameraId(devices, 'tele'), 'front');
-  assert.equal(nextCameraId(devices, 'front'), 'wide');
+  assert.equal(nextCameraId(devices, 'tele'), 'confirmed');
+  assert.equal(nextCameraId(devices, 'confirmed'), 'wide');
   assert.equal(nextCameraId([], ''), '');
+  assert.equal(cameraInputs([{ kind: 'videoinput', deviceId: 'front', label: 'Front Camera' }], ['front']).length, 0);
+  assert.equal(isRearCamera('Back Camera'), true);
+  assert.equal(isRearCamera('camera2 1, facing front', 'environment'), false);
+  assert.equal(isRearCamera('Rear Camera', 'user'), false);
+  assert.equal(isRearCamera('camera2 0', 'environment'), true);
+  assert.equal(isRearCamera('camera2 0'), false);
 });

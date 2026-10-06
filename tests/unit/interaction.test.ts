@@ -347,44 +347,65 @@ test('inventory list preference survives leaving and reopening the screen', asyn
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
-test('camera changes request the selected lens and stop the previous stream', async () => {
+test('rear camera selection stops old streams and rejects a front stream even if constraints were ignored', async () => {
   const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
   const originalPlay = dom.window.HTMLMediaElement.prototype.play;
   const requested: MediaStreamConstraints[] = [];
   const stopped: string[] = [];
+  const played: string[] = [];
   const mediaDevices = {
     getUserMedia: async (constraints: MediaStreamConstraints) => {
       requested.push(constraints);
       const video = constraints.video as MediaTrackConstraints;
       const id = (video.deviceId as ConstrainDOMStringParameters)?.exact as string || 'wide';
-      const track = { stop: () => stopped.push(id), getSettings: () => ({ deviceId: id, facingMode: id === 'front' ? 'user' : 'environment' }) };
+      if (id === 'unavailable') throw Object.assign(new Error('No matching rear camera'), { name: 'OverconstrainedError' });
+      const track = { label: id, stop: () => stopped.push(id), getSettings: () => ({ deviceId: id, facingMode: id === 'unknown' ? undefined : id === 'front' ? 'user' : 'environment' }) };
       return { getTracks: () => [track], getVideoTracks: () => [track] } as unknown as MediaStream;
     },
-    enumerateDevices: async () => ['wide', 'tele', 'front'].map(id => ({ kind: 'videoinput', deviceId: id, label: id })),
+    enumerateDevices: async () => ['wide', 'tele', 'front', 'unknown'].map(id => ({ kind: 'videoinput', deviceId: id, label: id === 'tele' ? 'Back telephoto' : id === 'front' ? 'Front Camera' : id })),
     addEventListener: () => {}, removeEventListener: () => {},
   };
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { mediaDevices } });
-  dom.window.HTMLMediaElement.prototype.play = async () => {};
+  dom.window.HTMLMediaElement.prototype.play = async function () { played.push((this.srcObject as MediaStream).getVideoTracks()[0].getSettings().deviceId || ''); };
   let camera!: ReturnType<typeof useCamera>;
-  function Camera({ id }: { id: string }) { camera = useCamera(true, 'environment', id); return createElement('video', { ref: camera.videoRef }); }
+  function Camera({ id }: { id: string }) { camera = useCamera(true, id); return createElement('video', { ref: camera.videoRef }); }
   const host = document.body.appendChild(document.createElement('div'));
   const root = createRoot(host);
   try {
     await act(async () => root.render(createElement(Camera, { id: '' })));
-    assert.equal(camera.cameras.length, 3);
+    assert.deepEqual(camera.cameras.map(device => device.id), ['wide', 'tele']);
     assert.equal(camera.currentDeviceId, 'wide');
+    assert.deepEqual((requested[0].video as MediaTrackConstraints).facingMode, { exact: 'environment' });
     await act(async () => root.render(createElement(Camera, { id: 'tele' })));
     assert.deepEqual((requested[1].video as MediaTrackConstraints).deviceId, { exact: 'tele' });
+    assert.deepEqual((requested[1].video as MediaTrackConstraints).facingMode, { exact: 'environment' });
+    assert.deepEqual(camera.cameras.map(device => device.id), ['wide', 'tele']);
     assert.deepEqual(stopped, ['wide']);
     await act(async () => root.render(createElement(Camera, { id: 'front' })));
-    assert.equal(camera.mirrored, true);
-    assert.equal(camera.currentDeviceId, 'front');
-    assert.deepEqual(stopped, ['wide', 'tele']);
+    assert.equal(camera.ready, false);
+    assert.equal(camera.currentDeviceId, '');
+    assert.match(camera.error, /cámara trasera/);
+    assert.deepEqual(played, ['wide', 'tele']);
+    assert.deepEqual(stopped, ['wide', 'tele', 'front']);
+    await act(async () => root.render(createElement(Camera, { id: 'unknown' })));
+    assert.equal(camera.ready, false);
+    assert.match(camera.error, /cámara trasera/);
+    assert.deepEqual(stopped, ['wide', 'tele', 'front', 'unknown']);
+    await act(async () => root.render(createElement(Camera, { id: 'unavailable' })));
+    assert.equal(camera.ready, false);
+    assert.match(camera.error, /No hay una cámara trasera disponible/);
+    assert.equal(requested.length, 5);
+    assert.deepEqual(played, ['wide', 'tele']);
+    await act(async () => root.render(createElement(Camera, { id: '' })));
+    assert.equal(camera.ready, true);
+    assert.equal(camera.error, '');
+    assert.equal(camera.currentDeviceId, 'wide');
+    assert.deepEqual(played, ['wide', 'tele', 'wide']);
   } finally {
     await act(() => root.unmount()); host.remove();
     dom.window.HTMLMediaElement.prototype.play = originalPlay;
     if (originalNavigator) Object.defineProperty(globalThis, 'navigator', originalNavigator);
     else Reflect.deleteProperty(globalThis, 'navigator');
   }
-  assert.deepEqual(stopped, ['wide', 'tele', 'front']);
+  assert.deepEqual(stopped, ['wide', 'tele', 'front', 'unknown', 'wide']);
 });

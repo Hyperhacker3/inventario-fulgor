@@ -15,6 +15,8 @@ En **Salidas**, la sección **Registro fotográfico de la salida** permite tomar
 
 Las fotos conservan el encuadre completo y se comprimen en JPEG con un máximo de 600 píxeles en el lado mayor. Las vistas previas usan la misma foto, sin generar archivos de miniatura. Las fotos de productos mantienen su recorte cuadrado habitual.
 
+El selector de cámara y el botón Cambiar cámara utilizan únicamente lentes traseros identificados por el navegador. Las cámaras frontales no aparecen y no se usan como alternativa. Si solo hay un lente trasero, el botón de cambio queda deshabilitado; si no se puede abrir una cámara trasera, se puede usar Elegir archivo. Los lentes con nombres genéricos solo se incluyen después de que el navegador confirme que son traseros.
+
 Al pulsar **Registrar salida y generar remisión**, primero se suben las fotos a un bucket privado de Supabase. La transacción comprueba que los archivos existen y corresponden a la cuenta y solicitud de salida, descuenta el stock y asocia el registro a la remisión. Si falla la subida, no se descuenta stock. Si la base de datos devuelve un rechazo confirmado del primer intento, se retiran los archivos temporales y se permite corregir el formulario. Si se pierde la respuesta y no se puede confirmar el resultado, se conservan los archivos y se reutilizan las mismas referencias al reintentar.
 
 Los borradores de imagen y las referencias preparadas se mantienen solo en memoria de la sesión; no se guardan en localStorage ni se incluyen en los archivos publicados de la web. Una subida o limpieza interrumpida puede dejar un archivo temporal sin asociar; no se elimina un archivo que pudiera haber quedado asociado tras una respuesta perdida.

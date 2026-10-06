@@ -1,35 +1,39 @@
 import { useEffect, useRef, useState } from 'react';
-import { cameraInputs } from './cameraDevices';
+import { cameraInputs, isRearCamera } from './cameraDevices';
 
-export function useCamera(enabled: boolean, facingMode: 'environment' | 'user', deviceId = '', aspectRatio = 1) {
+export function useCamera(enabled: boolean, deviceId = '', aspectRatio = 1) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const verifiedRearIds = useRef(new Set<string>());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
   const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
   const [currentDeviceId, setCurrentDeviceId] = useState('');
-  const [mirrored, setMirrored] = useState(false);
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) { verifiedRearIds.current.clear(); return; }
     let cancelled = false;
     let stream: MediaStream | null = null;
     let activeVideo: HTMLVideoElement | null = null;
+    let rearDeviceId = '';
     const refreshDevices = async () => {
       try {
-        const inputs = cameraInputs(await navigator.mediaDevices.enumerateDevices());
+        const inputs = cameraInputs(await navigator.mediaDevices.enumerateDevices(), [...verifiedRearIds.current]);
         if (!cancelled) setCameras(inputs);
       } catch { /* Capturing remains available if device enumeration is restricted. */ }
     };
     const start = async () => {
       if (cancelled) return;
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('La cámara requiere un navegador compatible y una conexión segura.');
-      const acquired = await navigator.mediaDevices.getUserMedia({ video: { ...(deviceId ? { deviceId: { exact: deviceId } } : { facingMode: { ideal: facingMode } }), width: { ideal: 1280 }, aspectRatio: { ideal: aspectRatio } }, audio: false });
+      const acquired = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: 'environment' }, ...(deviceId ? { deviceId: { exact: deviceId } } : {}), width: { ideal: 1280 }, aspectRatio: { ideal: aspectRatio } }, audio: false });
       if (cancelled) { acquired.getTracks().forEach(track => track.stop()); return; }
       stream = acquired;
-      const settings = acquired.getVideoTracks()[0]?.getSettings();
+      const track = acquired.getVideoTracks()[0];
+      const settings = track?.getSettings();
+      if (!track || !isRearCamera(track.label || '', settings?.facingMode)) throw new Error('No se pudo identificar una cámara trasera. Puede subir una foto desde Elegir archivo.');
+      rearDeviceId = settings?.deviceId || deviceId;
+      if (rearDeviceId) verifiedRearIds.current.add(rearDeviceId);
       if (!cancelled) {
-        setCurrentDeviceId(settings?.deviceId || deviceId);
-        setMirrored(settings?.facingMode === 'user' || (!deviceId && facingMode === 'user'));
+        setCurrentDeviceId(rearDeviceId);
       }
       activeVideo = videoRef.current;
       if (activeVideo) {
@@ -39,12 +43,15 @@ export function useCamera(enabled: boolean, facingMode: 'environment' | 'user', 
       if (!cancelled) { setReady(true); setLoading(false); }
       await refreshDevices();
     };
-    Promise.resolve().then(() => { setLoading(true); setError(''); setReady(false); return start(); })
-      .catch(cause => { stream?.getTracks().forEach(track => track.stop()); if (!cancelled) { setError(cause instanceof Error ? cause.message : 'No se pudo abrir la cámara.'); setLoading(false); setReady(false); } });
+    Promise.resolve().then(() => { if (cancelled) return; setLoading(true); setError(''); setReady(false); setCameras([]); setCurrentDeviceId(''); return start(); })
+      .catch(cause => { stream?.getTracks().forEach(track => track.stop()); stream = null; if (!cancelled) {
+        const unavailable = cause instanceof Error && ['OverconstrainedError', 'NotFoundError'].includes(cause.name);
+        setError(unavailable ? 'No hay una cámara trasera disponible para esta selección. Puede subir una foto desde Elegir archivo.' : cause instanceof Error ? cause.message : 'No se pudo abrir la cámara trasera.'); setLoading(false); setReady(false);
+      } });
     navigator.mediaDevices?.addEventListener('devicechange', refreshDevices);
     return () => { cancelled = true; stream?.getTracks().forEach(track => track.stop());
       navigator.mediaDevices?.removeEventListener('devicechange', refreshDevices);
       if (activeVideo) activeVideo.srcObject = null; };
-  }, [enabled, facingMode, deviceId, aspectRatio]);
-  return { videoRef, loading, error, ready, cameras, currentDeviceId, mirrored };
+  }, [enabled, deviceId, aspectRatio]);
+  return { videoRef, loading, error, ready, cameras, currentDeviceId };
 }
