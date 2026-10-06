@@ -69,11 +69,16 @@ test('save submits all three location IDs once, preserves a failed draft and clo
     await act(() => root.render(h(ItemDetailContent, { item, onClose: () => {}, inventory: inventory(update) })));
     await act(() => button(host, 'Editar').click());
     await choose(host, 'Almacén', 'w2'); await choose(host, 'Estantería', 'r2'); await choose(host, 'Caja', 'b2');
+    const priceLabel = [...host.querySelectorAll<HTMLLabelElement>('label')].find(label => label.textContent?.includes('(COP)'))!;
+    const price = document.getElementById(priceLabel.htmlFor) as HTMLInputElement;
+    await act(() => { Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value')!.set!.call(price, '12500.5');
+      price.dispatchEvent(new dom.window.Event('input', { bubbles: true })); });
     const submit = () => host.querySelector('form')!.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
     await act(() => { submit(); submit(); }); assert.equal(calls, 1);
     assert.equal(field(host, 'Almacén').disabled, true);
     assert.deepEqual([payloads[0].almacenId, payloads[0].estanteriaId, payloads[0].cajaId], ['w2', 'r2', 'b2']);
     assert.equal(payloads[0].cantidad, undefined);
+    assert.equal(payloads[0].valorUnitario, 12500.5);
     await act(async () => fail(new Error('Sin conexión')));
     assert.match(host.querySelector('[role="alert"]')!.textContent!, /Sin conexión/); assert.equal(native(host, 'Caja').value, 'b2');
     await act(async () => { submit(); }); assert.equal(calls, 2);

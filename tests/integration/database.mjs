@@ -13,6 +13,7 @@ const catalogMigration = fs.readFileSync(new URL('../../supabase/migrations/2026
 const archivedMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000200_archived_inventory.sql', import.meta.url), 'utf8');
 const outgoingPhotoMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000300_outgoing_photos.sql', import.meta.url), 'utf8');
 const locationMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000400_item_locations.sql', import.meta.url), 'utf8');
+const valueMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000500_inventory_values.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 
@@ -40,12 +41,77 @@ async function database() {
   await db.exec(archivedMigration);
   await db.exec(outgoingPhotoMigration);
   await db.exec(locationMigration);
+  await db.exec(valueMigration);
   return db;
 }
 
 const role = (db, value) => db.exec(`SELECT set_config('app.test_role','${value}',false); SET ROLE authenticated;`);
 const asOwner = db => db.exec('RESET ROLE;');
 const itemStock = async db => Number((await db.query("SELECT cantidad FROM public.elementos WHERE id = 'ELM-001'")).rows[0].cantidad);
+
+test('unit values start at zero, reject invalid prices, persist in automatic creation and snapshot authoritative COP costs', async () => {
+  const db = await database();
+  try {
+    assert.equal(Number((await db.query("SELECT count(*) AS n FROM public.elementos WHERE especificaciones->>'valor_unitario_cop'<>'0'")).rows[0].n), 0);
+    await role(db, 'consulta');
+    assert.equal((await db.query("UPDATE public.elementos SET especificaciones=especificaciones||'{\"valor_unitario_cop\":100}'::jsonb WHERE id='ELM-001' RETURNING *")).rows.length, 0);
+    await asOwner(db); await role(db, 'admin');
+    for (const price of [-1, 1.001, 'bad', 10000000000]) {
+      await assert.rejects(() => db.query("UPDATE public.elementos SET especificaciones=especificaciones||$1::jsonb WHERE id='ELM-001'", [JSON.stringify({valor_unitario_cop:price})]), /COP/);
+    }
+    const prefix=(await db.query('SELECT public.inventory_data_catalog() AS data')).rows[0].data.prefijos.find(row=>row.prefijo==='PAN').id;
+    const input={nombre:'Producto con valor',categoria:'PANELES',cantidad:3.5,stock_minimo:0,unidad:'UND',almacen_id:'ALM-BOG-01',cantidad_danados:0,especificaciones:{valor_unitario_cop:12.34}};
+    const created=(await db.query('SELECT public.create_inventory_item_auto($1,$2::uuid,$3::jsonb) AS item',[prefix,'952c5929-a55a-4b1c-9e0b-2466aaf59e67',JSON.stringify(input)])).rows[0].item;
+    assert.equal(created.especificaciones.valor_unitario_cop,12.34);
+    const sql='SELECT public.dispatch_inventory_with_photos($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb) AS remission';
+    const args=['fb3e535b-62fa-499d-bb1a-dcc6c6443a5b','PROY-001','Entrega','Admin','Recibe','','',JSON.stringify([{elementoId:created.id,cantidad:3,valorUnitarioCOP:99999,valorTotalCOP:99999}]),'{}','[]'];
+    const first=(await db.query(sql,args)).rows[0].remission;
+    assert.equal(first.items[0].valorUnitarioCOP,12.34); assert.equal(first.items[0].valorTotalCOP,37.02);
+    await db.query("UPDATE public.elementos SET especificaciones=especificaciones||'{\"valor_unitario_cop\":99}'::jsonb WHERE id=$1",[created.id]);
+    assert.deepEqual((await db.query(sql,args)).rows[0].remission,first);
+    const costs=(await db.query('SELECT * FROM public.inventory_project_spending()')).rows;
+    assert.equal(Number(costs.find(row=>row.proyecto_id==='PROY-001').total_cop),37.02);
+    assert.equal(Number(costs.find(row=>row.proyecto_id==='PROY-001').salidas),1);
+    await asOwner(db); await db.exec(valueMigration);
+    assert.equal((await db.query('SELECT especificaciones FROM public.elementos WHERE id=$1',[created.id])).rows[0].especificaciones.valor_unitario_cop,99);
+    assert.deepEqual((await db.query('SELECT items FROM public.remisiones WHERE id=$1',[first.id])).rows[0].items,first.items);
+  } finally { await db.close(); }
+});
+
+test('project spending includes more than 100 outputs, rounds fractional quantities, survives deletion and respects read permissions', async () => {
+  const db = await database();
+  try {
+    await role(db,'admin');
+    await db.query("UPDATE public.elementos SET especificaciones=especificaciones||'{\"valor_unitario_cop\":12.34}'::jsonb WHERE id='ELM-001'");
+    const sql='SELECT public.dispatch_inventory_with_photos($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb) AS remission';
+    for (let i=1;i<=105;i++) {
+      const request=`a1000000-0000-4000-8000-${i.toString(16).padStart(12,'0')}`;
+      const result=(await db.query(sql,[request,'PROY-001','Entrega','Admin','Recibe','','',JSON.stringify([{elementoId:'ELM-001',cantidad:0.001}]),'{}','[]'])).rows[0].remission;
+      assert.equal(result.items[0].valorTotalCOP,0.01);
+    }
+    await assert.rejects(()=>db.query(sql,['a1000000-0000-4000-8000-000000000200','PROY-001','Entrega','Admin','Recibe','','',JSON.stringify([{elementoId:'ELM-001',cantidad:999}]),'{}','[]']),/Stock no disponible/);
+    const cost=async()=> (await db.query('SELECT * FROM public.inventory_project_spending()')).rows.find(row=>row.proyecto_id==='PROY-001');
+    assert.equal(Number((await cost()).total_cop),1.05); assert.equal(Number((await cost()).salidas),105);
+    await db.query("UPDATE public.elementos SET archived=true WHERE id='ELM-001'"); await db.query("SELECT public.delete_archived_inventory_item('ELM-001')");
+    await db.query("UPDATE public.proyectos SET estado='FINALIZADO' WHERE id='PROY-001'");
+    assert.equal(Number((await cost()).total_cop),1.05);
+    for (const value of ['operador','consulta']) { await asOwner(db); await role(db,value); assert.equal(Number((await cost()).total_cop),1.05); }
+    await asOwner(db); await db.exec('SET ROLE anon'); await assert.rejects(()=>db.query('SELECT * FROM public.inventory_project_spending()'),/permission denied/);
+  } finally { await db.close(); }
+});
+
+test('legacy documents without item IDs are initialized to zero without revaluing them at current product prices', async () => {
+  const db = await database();
+  try {
+    await db.exec('DROP TRIGGER snapshot_inventory_line_values ON public.remisiones');
+    await db.query("INSERT INTO public.remisiones(id,numero_remision,fecha,proyecto_id,proyecto_nombre,cliente,entregado_por,cargo_entregado,recibido_por,cargo_recibido,items) VALUES ('OLD','OLD','2026-10-01','PROY-001','Anterior','Cliente','Entrega','Admin','Recibe','',$1::jsonb)",[JSON.stringify([{codigo:'PAN550',cantidad:4}])]);
+    await db.query("UPDATE public.elementos SET especificaciones=especificaciones||'{\"valor_unitario_cop\":1000}'::jsonb WHERE id='ELM-001'");
+    await db.exec(valueMigration);
+    const old=(await db.query("SELECT items FROM public.remisiones WHERE id='OLD'")).rows[0].items[0];
+    assert.equal(old.valorUnitarioCOP,0); assert.equal(old.valorTotalCOP,0);
+    assert.equal(Number((await db.query("SELECT total_cop FROM public.inventory_project_spending() WHERE proyecto_id='PROY-001'")).rows[0].total_cop),0);
+  } finally { await db.close(); }
+});
 
 test('location changes require admin, preserve stock and atomically record the old and new locations', async () => {
   const db = await database();

@@ -15,6 +15,7 @@ export function useProjectActions() {
   };
   const remember = (project: Proyecto) => {
     client.setQueryData<Proyecto[]>(key, previous => [project, ...(previous || []).filter(p => p.id !== project.id)]);
+    void client.invalidateQueries({ queryKey: ['fulgor', user?.email || '', 'project-spending'] });
   };
   const values = (input: ProjectInput) => {
     if (!input.nombre.trim()) throw new Error('Escriba el nombre del proyecto.');

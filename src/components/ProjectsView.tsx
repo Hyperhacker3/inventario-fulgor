@@ -1,20 +1,26 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useMemo, useRef, useState, type FormEvent } from 'react';
 import { useInventory } from '../context/InventoryContext';
-import type { Proyecto } from '../types';
+import type { Proyecto, ProjectSpending } from '../types';
 import type { ProjectInput } from '../state/useProjectActions';
 import { FormDialog } from './ui/FormDialog';
 import { Presence } from './ui/Motion';
+import { useProjectSpending } from '../state/useProjectSpending';
+import { formatCOP } from '../domain/money';
 
 const empty: ProjectInput = { nombre: '', cliente: '', ubicacion: '', estado: 'ACTIVO' };
 type ProjectProps = Pick<ReturnType<typeof useInventory>, 'proyectos' | 'user' | 'addProyecto' | 'updateProyecto' | 'addExampleProjects' | 'syncStatus'> & {
   embedded?: boolean;
+  spending?: ProjectSpending[]; spendingState?: 'loading' | 'error' | 'ready'; onRetrySpending?: () => void;
 };
 export function ProjectsView({ embedded = false }: { embedded?: boolean }) {
   const { proyectos, user, addProyecto, updateProyecto, addExampleProjects, syncStatus } = useInventory();
-  return <ProjectsManager {...{ embedded, proyectos, user, addProyecto, updateProyecto, addExampleProjects, syncStatus }} />;
+  const costs = useProjectSpending();
+  return <ProjectsManager {...{ embedded, proyectos, user, addProyecto, updateProyecto, addExampleProjects, syncStatus }}
+    spending={costs.data} spendingState={costs.isError ? 'error' : costs.isPending ? 'loading' : 'ready'} onRetrySpending={() => { void costs.refetch(); }} />;
 }
 
-export function ProjectsManager({ embedded = false, proyectos, user, addProyecto, updateProyecto, addExampleProjects, syncStatus }: ProjectProps) {
+export function ProjectsManager({ embedded = false, proyectos, user, addProyecto, updateProyecto, addExampleProjects, syncStatus, spending, spendingState = 'ready', onRetrySpending }: ProjectProps) {
+  const costIndex = useMemo(() => new Map(spending?.map(row => [row.proyectoId, row])), [spending]);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState<ProjectInput>(empty);
@@ -45,6 +51,7 @@ export function ProjectsManager({ embedded = false, proyectos, user, addProyecto
     <div><h2 className="text-3xl font-bold">Proyectos</h2><p className="text-slate-600 mt-2">Destinos para las salidas. Al quitar un proyecto, se conserva el historial y puede reactivarse.</p></div>
     {error && !formOpen && <p role="alert" className="text-red-700">{error}</p>}
     {message && !formOpen && <p role="status" className="text-green-700">{message}</p>}
+    {spendingState === 'error' && <p role="alert" className="text-red-700 text-sm">No se pudo consultar el gasto de los proyectos. <button type="button" onClick={onRetrySpending} className="underline min-h-11">Reintentar</button></p>}
     {admin && <button type="button" disabled={busy} onClick={() => { setEditing(null); setForm(empty); setError(''); setMessage(''); setFormOpen(true); }}
       className="min-h-11 rounded-lg bg-[#253685] text-white px-4 py-3 text-sm font-semibold disabled:opacity-50">Crear proyecto</button>}
     <Presence open={admin && formOpen}>{formOpen && <FormDialog title={editing ? 'Editar proyecto' : 'Crear proyecto'} busy={busy} onClose={close}>
@@ -67,6 +74,11 @@ export function ProjectsManager({ embedded = false, proyectos, user, addProyecto
     <div className="grid md:grid-cols-2 gap-4">{[...proyectos].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(project => <article key={project.id} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
       <div className="flex justify-between gap-3"><h3 className="font-bold break-words">{project.nombre}</h3><span className={`text-xs shrink-0 ${project.estado === 'ACTIVO' ? 'text-green-700' : 'text-slate-500'}`}>{project.estado === 'ACTIVO' ? 'Activo' : 'Finalizado'}</span></div>
       <p className="text-sm text-slate-600">Cliente: {project.cliente || 'Sin especificar'}<br />Ubicación: {project.ubicacion || 'Sin especificar'}</p>
+      <div className="rounded-xl bg-[#f8fafc] p-3">
+        <p className="text-xs text-slate-500">Gasto acumulado en material</p>
+        <p className="text-xl font-bold text-[#253685] break-words mt-1">{spendingState === 'ready' ? formatCOP(costIndex.get(project.id)?.totalCOP || 0) : spendingState === 'loading' ? 'Consultando…' : 'No disponible'}</p>
+        {spendingState === 'ready' && <p className="text-xs text-slate-500 mt-1">{costIndex.get(project.id)?.salidas || 0} salida(s) confirmada(s). Se conserva el valor registrado en cada salida.</p>}
+      </div>
       {admin && <div className="flex gap-4 text-sm"><button disabled={busy} onClick={() => edit(project)} className="text-[#253685]">Editar</button>
         <button disabled={busy} onClick={() => { void run(() => updateProyecto(project.id, { ...project, estado: project.estado === 'ACTIVO' ? 'FINALIZADO' : 'ACTIVO' }), project.estado === 'ACTIVO' ? 'Proyecto quitado de las salidas.' : 'Proyecto reactivado.'); }} className="text-[#253685]">{project.estado === 'ACTIVO' ? 'Quitar de salidas' : 'Reactivar'}</button></div>}
     </article>)}</div>

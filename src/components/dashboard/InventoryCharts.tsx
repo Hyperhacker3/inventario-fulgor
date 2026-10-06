@@ -23,12 +23,12 @@ export function StockChart({ statuses, total }: { statuses: Record<StockStatus, 
     </div>
   </section>;
 }
-export function InventoryBars({ title, description, rows }: { title: string; description: string; rows: { label: string; value: number }[] }) {
+export function InventoryBars({ title, description, rows, formatValue = value => number.format(value) }: { title: string; description: string; rows: { label: string; value: number }[]; formatValue?: (value: number) => string }) {
   const max = Math.max(1, ...rows.map(row => row.value));
   return <section className="bg-white border border-[#e2e8f0] rounded-2xl p-5">
     <h3 className="font-bold">{title}</h3><p className="text-xs text-slate-500 mt-1">{description}</p>
     <ul className="mt-5 space-y-3 max-h-72 overflow-y-auto pr-1">{rows.map((row, index) => <li key={`${row.label}-${index}`}>
-      <div className="flex justify-between gap-3 text-xs mb-1"><span>{row.label}</span><strong>{number.format(row.value)}</strong></div>
+      <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs mb-1"><span className="min-w-0 break-words">{row.label}</span><strong>{formatValue(row.value)}</strong></div>
       <div aria-hidden="true" className="h-2.5 rounded-full bg-slate-100 overflow-hidden"><div className="h-full bg-[#3e4e9e] rounded-full" style={{ width: `${row.value / max * 100}%` }} /></div>
     </li>)}</ul>
     {rows.length === 0 && <p className="py-8 text-sm text-slate-500">Sin productos en este alcance.</p>}

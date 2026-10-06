@@ -4,13 +4,21 @@ import { useInventory } from '../context/InventoryContext';
 import { summarizeInventory, stockStatus } from '../domain/dashboard';
 import { available } from '../domain/inventory';
 import { InventoryBars, StockChart } from './dashboard/InventoryCharts';
+import { formatCOP, inventoryValues } from '../domain/money';
+import { useProjectSpending } from '../state/useProjectSpending';
+import { ProjectInvestmentChart } from './dashboard/ProjectInvestmentChart';
 
 const number = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 3 });
 export function DashboardView() {
-  const { elementos, almacenes, historial, setActiveView, openItemDetail, getLocationString, syncStatus, categoryLabel } = useInventory();
+  const { elementos, almacenes, proyectos, historial, setActiveView, openItemDetail, getLocationString, syncStatus, categoryLabel } = useInventory();
+  const spending = useProjectSpending();
   const [warehouse, setWarehouse] = useState('ALL');
   const items = useMemo(() => elementos.filter(item => warehouse === 'ALL' || (warehouse === 'NONE' ? !item.almacenId : item.almacenId === warehouse)), [elementos, warehouse]);
   const summary = useMemo(() => summarizeInventory(items, almacenes), [items, almacenes]);
+  const values = useMemo(() => inventoryValues(items), [items]);
+  const warehouseValues = almacenes.filter(row => warehouse === 'ALL' || row.id === warehouse)
+    .map(row => ({ label: row.nombre, value: values.warehouses.get(row.id) || 0 }));
+  if (values.warehouses.has('')) warehouseValues.push({ label: 'Sin almacén asignado', value: values.warehouses.get('')! });
   const itemIndex = useMemo(() => new Map(items.map(item => [item.id, item])), [items]);
   const recent = historial.filter(row => warehouse === 'ALL' || itemIndex.has(row.elementoId)).slice(0, 6);
   const metrics = [
@@ -36,6 +44,21 @@ export function DashboardView() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{metrics.map(metric => <section key={metric.label} className="bg-white border border-[#e2e8f0] rounded-xl p-4">
         <h3 className="text-xs font-semibold text-slate-600">{metric.label}</h3><p className={`text-3xl font-bold mt-2 ${metric.color}`}>{number.format(metric.value)}</p><p className="text-[11px] text-slate-500 mt-2">{metric.hint}</p>
       </section>)}</div>
+      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        {[
+          ['Valor del inventario', formatCOP(values.total), 'Stock confirmado × valor unitario. Incluye material dañado.'],
+          ['Valor del material utilizable', formatCOP(values.usable), 'Valor del stock confirmado sin las unidades dañadas.'],
+          ['Valor del material dañado', formatCOP(values.damaged), 'Unidades marcadas como dañadas × valor unitario.'],
+          ['Porcentaje dañado en valor', `${number.format(values.damagedPercent)} %`, 'Valor dañado dividido entre el valor del inventario.'],
+        ].map(([title, value, hint]) => <section key={title} className="min-w-0 bg-white border rounded-xl p-4">
+          <h3 className="text-xs font-semibold text-slate-600">{title}</h3><p className="text-xl sm:text-2xl font-bold text-[#253685] break-words mt-2">{value}</p><p className="text-xs text-slate-500 mt-2">{hint}</p>
+        </section>)}
+      </div>
+      <p className="text-xs text-slate-500">Valores en COP para el alcance seleccionado. Productos sin precio: valor 0. Se excluyen elementos archivados y conteos pendientes.</p>
+      <div className="grid lg:grid-cols-2 gap-5">
+        <InventoryBars title="Valor por almacén" description="Valor del stock confirmado dentro del alcance seleccionado." rows={warehouseValues} formatValue={formatCOP} />
+        <ProjectInvestmentChart projects={proyectos} spending={spending.data || []} loading={spending.isPending} error={spending.isError} onRetry={() => { void spending.refetch(); }} />
+      </div>
       <div className="grid lg:grid-cols-2 gap-5"><StockChart statuses={summary.statuses} total={summary.total} /><InventoryBars title="Productos por categoría" description="Cantidad de referencias distintas, independientemente de sus unidades." rows={summary.categories.map(row => ({ ...row, label: categoryLabel(row.id) }))} /></div>
       <div className="grid lg:grid-cols-2 gap-5">
         <InventoryBars title="Distribución por almacén" description="Productos asignados a cada almacén dentro del alcance seleccionado." rows={summary.warehouses} />

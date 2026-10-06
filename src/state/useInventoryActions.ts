@@ -19,6 +19,7 @@ import { lineWeightKg } from '../domain/weight';
 import { OutgoingPhotoSubmission } from '../domain/outgoingPhotos';
 import { saveOutgoingImage, removeOutgoingImage } from '../shared/outgoingImages';
 import { itemLocationColumns } from '../domain/itemLocation';
+import { roundCOP } from '../domain/money';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
 const newId = (prefix: string) => `${prefix}-DEMO-${crypto.randomUUID()}`;
@@ -78,7 +79,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
         cantidad: item.cantidad, stock_minimo: item.stockMinimo, unidad: item.unidad,
         almacen_id: item.almacenId, estanteria_id: item.estanteriaId, caja_id: item.cajaId,
         foto_url: photo, estado: item.estado || 'BUENO', cantidad_danados: item.cantidadDanados || 0,
-        especificaciones: { ...item.especificaciones, peso_unitario: item.pesoUnitario ?? null, fotos_adicionales: gallery.additional },
+        especificaciones: { ...item.especificaciones, peso_unitario: item.pesoUnitario ?? null, valor_unitario_cop: item.valorUnitario ?? 0, fotos_adicionales: gallery.additional },
       });
     });
   };
@@ -100,7 +101,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
         nombre: next.nombre, descripcion: next.descripcion, stock_minimo: next.stockMinimo,
         ...itemLocationColumns(updates),
         foto_url: photo, estado: next.estado, cantidad_danados: next.cantidadDanados ?? 0,
-        especificaciones: { ...next.especificaciones, peso_unitario: next.pesoUnitario ?? null, fotos_adicionales: gallery.additional }, updated_at: isoNow(),
+        especificaciones: { ...next.especificaciones, peso_unitario: next.pesoUnitario ?? null, valor_unitario_cop: next.valorUnitario ?? 0, fotos_adicionales: gallery.additional }, updated_at: isoNow(),
       }, mapElemento);
       applyItemChange(id, saved);
       await syncAfterWrite(refreshItemIds([id]), ...(Object.keys(itemLocationColumns(updates)).length
@@ -137,7 +138,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
         photos => rpc<Record<string, unknown>>('dispatch_inventory_with_photos', { ...values, p_fotos: photos }));
       const remission = mapRemision(response);
       rememberRemission(remission);
-      await syncAfterWrite(refreshItemIds(cart.map(line => line.elemento.id)), refresh('historial'));
+      await syncAfterWrite(refreshItemIds(cart.map(line => line.elemento.id)), refresh('historial', 'project-spending'));
       clearCart(); openRemision(remission);
       return remission;
     }
@@ -151,6 +152,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       fecha: displayDate(now), items: cart.map(line => ({ elementoId: line.elemento.id, codigo: line.elemento.codigo,
         nombre: line.elemento.nombre, cantidad: line.cantidad, unidad: line.elemento.unidad,
         pesoUnitario: line.elemento.pesoUnitario,
+        valorUnitarioCOP: line.elemento.valorUnitario || 0, valorTotalCOP: roundCOP(line.cantidad * (line.elemento.valorUnitario || 0)),
         ...(line.elemento.pesoUnitario && { pesoTotalKg: lineWeightKg(line.elemento.pesoUnitario, line.cantidad)! }) })),
       datosTransporte: payload.datosTransporte,
       fotosSalida: payload.fotosSalida || [],

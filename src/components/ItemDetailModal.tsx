@@ -16,6 +16,8 @@ import { ArchivedItemActions } from './administration/ArchivedItemActions';
 import { useDialogFocus } from '../hooks/useDialogFocus';
 import { ItemExistingLocationFields } from './item/ItemExistingLocationFields';
 import { changedItemLocation, itemLocationDraft } from '../domain/itemLocation';
+import { ItemValueField } from './item/ItemValueField';
+import { formatCOP } from '../domain/money';
 
 interface Props { item: Elemento | null; onClose: () => void; onPermanentDelete?: (item: Elemento) => Promise<void>; onRestore?: (item: Elemento) => Promise<void> }
 
@@ -38,6 +40,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   const [damaged, setDamaged] = useState(item?.cantidadDanados ?? 0);
   const [weight, setWeight] = useState(() => weightDraft(item?.pesoUnitario));
   const [location, setLocation] = useState(() => itemLocationDraft(item));
+  const [valorUnitario, setValorUnitario] = useState(item?.valorUnitario || 0);
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -55,6 +58,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
     setAdditionalPhotos(item.fotosAdicionales || []);
     setWeight(weightDraft(item.pesoUnitario));
     setLocation(itemLocationDraft(item));
+    setValorUnitario(item.valorUnitario || 0);
     setError(''); setEditing(true);
   };
   const save = async (event: FormEvent) => {
@@ -65,7 +69,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
     try {
       await updateElemento(item.id, { nombre: name.trim(), descripcion: description.trim(), stockMinimo: minimum,
         fotoUrl: photo.trim(), fotosAdicionales: additionalPhotos, estado: condition, cantidadDanados: damaged, pesoUnitario: parseWeightDraft(weight),
-        ...changedItemLocation(location, item) });
+        valorUnitario, ...changedItemLocation(location, item) });
       setEditing(false);
     } catch (cause) { setError(errorMessage(cause)); }
     finally { saving.current = false; setPending(false); }
@@ -110,6 +114,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
             </label>
           </div>
           <ItemWeightFields value={weight} onChange={setWeight} stockUnit={item.unidad} disabled={pending} />
+          <ItemValueField value={valorUnitario} onChange={setValorUnitario} unit={item.unidad} disabled={pending} />
           <label className="block text-sm font-semibold">Estado
             <Select value={condition} onChange={event => setCondition(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg">
               {['BUENO', 'REGULAR', 'MALO', 'REPARACION', 'RETAL'].map(value => <option key={value}>{value}</option>)}
@@ -125,6 +130,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
               <p className="text-xs text-[#64748b] mt-3">Ubicación: {getLocationString(item)}</p>
               <p className="text-xs text-[#64748b] mt-1">Estado: {item.estado || 'BUENO'}</p>
               <p className={`text-sm mt-2 ${item.pesoUnitario ? 'text-[#253685]' : 'text-amber-700'}`}>Peso por 1 {item.unidad.toUpperCase()}: {formatUnitWeight(item.pesoUnitario)}</p>
+              <p className="text-sm mt-2 text-[#253685]">Valor por 1 {item.unidad.toUpperCase()}: {formatCOP(item.valorUnitario || 0)}</p>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">

@@ -12,6 +12,7 @@ import { NumberInput } from './NumberInput';
 import { ItemWeightFields } from './item/ItemWeightFields';
 import { parseWeightDraft, weightDraft } from '../domain/weight';
 import { prefixPreview } from '../domain/dataAdministration';
+import { ItemValueField } from './item/ItemValueField';
 
 export const NewItemView: React.FC = () => {
   const {
@@ -37,6 +38,7 @@ export const NewItemView: React.FC = () => {
   const [cantidad, setCantidad] = useState<number>(0);
   const [unidad, setUnidad] = useState<string>('UND');
   const [weight, setWeight] = useState(() => weightDraft());
+  const [valorUnitario, setValorUnitario] = useState(0);
   const [stockMinimo, setStockMinimo] = useState<number>(0);
   const [estado, setEstado] = useState<string>('BUENO');
   const [cantidadDanados, setCantidadDanados] = useState<number>(0);
@@ -111,6 +113,7 @@ export const NewItemView: React.FC = () => {
         cantidad: Number(cantidad),
         unidad,
         pesoUnitario: parseWeightDraft(weight),
+        valorUnitario,
         fotoUrl: fotoUrl.trim(),
         fotosAdicionales,
         almacenId: selectedAlmacenId || null,
@@ -134,6 +137,7 @@ export const NewItemView: React.FC = () => {
       setAlmacenId(selectedAlmacenId); setEstanteriaId(selectedEstanteriaId);
       setNombre(''); setDescripcion(''); setCajaId('');
       setCantidad(0); setUnidad('UND'); setWeight(weightDraft()); setStockMinimo(0);
+      setValorUnitario(0);
       setEstado('BUENO'); setCantidadDanados(0); setFotoUrl(''); setFotosAdicionales([]);
       request.current = null;
       // Remount editable numeric/photo/box fields to clear their internal drafts too.
@@ -278,6 +282,7 @@ export const NewItemView: React.FC = () => {
         <ItemStockFields quantity={cantidad} unit={unidad} minimum={stockMinimo}
           onQuantity={setCantidad} onUnit={setUnidad} onMinimum={setStockMinimo} />
         <ItemWeightFields value={weight} onChange={setWeight} stockUnit={unidad} disabled={pending} />
+        <ItemValueField value={valorUnitario} onChange={setValorUnitario} unit={unidad} disabled={pending} />
 
         {/* Action Buttons */}
         <div className="pt-4 flex items-center justify-end gap-3 border-t border-[#e2e8f0]">

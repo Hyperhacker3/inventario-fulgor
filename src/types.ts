@@ -74,7 +74,11 @@ export interface DetalleRemision {
   unidad: string;
   pesoTotalKg?: number;
   pesoUnitario?: PesoUnitario | null;
+  valorUnitarioCOP?: number;
+  valorTotalCOP?: number;
 }
+
+export interface ProjectSpending { proyectoId: string; totalCOP: number; salidas: number }
 
 export interface DatosTransporte {
   telefonoRemite: string;

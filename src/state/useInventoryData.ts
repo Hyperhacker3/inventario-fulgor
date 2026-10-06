@@ -82,6 +82,7 @@ export function useInventoryData() {
           }
         }
         if (table === 'remisiones' && event.eventType === 'INSERT' && (event.new as DbRow)?.numero_remision) {
+          void client.invalidateQueries({ queryKey: ['fulgor', email, 'project-spending'] });
           const incoming = mapRemision(event.new as DbRow);
           client.setQueryData<Remision[]>(['fulgor', email, 'remisiones'], previous => previous
             ? [incoming, ...previous.filter(row => row.id !== incoming.id)] : previous);
@@ -94,6 +95,7 @@ export function useInventoryData() {
           if (table === 'historial') void client.invalidateQueries({ queryKey: ['fulgor', email, 'item-history'] });
           if (table === 'historial') void client.invalidateQueries({ queryKey: ['fulgor', email, 'history-page'] });
           if (table === 'remisiones') void client.invalidateQueries({ queryKey: ['fulgor', email, 'remissions-page'] });
+          if (table === 'remisiones' || table === 'proyectos') void client.invalidateQueries({ queryKey: ['fulgor', email, 'project-spending'] });
           pending.delete(table);
         }, 250));
       })

@@ -1,5 +1,5 @@
 import { requireSupabase } from '../lib/supabase';
-import type { Almacen, Caja, Elemento, Estanteria, Proyecto, Remision, HistorialMovimiento, Page } from '../types';
+import type { Almacen, Caja, Elemento, Estanteria, Proyecto, Remision, HistorialMovimiento, Page, ProjectSpending } from '../types';
 import { mapAlmacen, mapCaja, mapElemento, mapEstanteria, mapProyecto, mapRemision, mapHistory, type DbRow } from './mappers';
 
 type Table = 'almacenes' | 'estanterias' | 'cajas' | 'proyectos' | 'elementos' | 'remisiones' | 'historial';
@@ -71,4 +71,8 @@ export async function updateRow<T>(table: Table, id: string, values: Record<stri
 export async function rpc<T>(name: string, values: Record<string, unknown>): Promise<T> {
   const result = await requireSupabase().rpc(name, values);
   return unwrap(result) as T;
+}
+export async function readProjectSpending(): Promise<ProjectSpending[]> {
+  const rows = await rpc<{ proyecto_id: string; total_cop: number | string; salidas: number | string }[]>('inventory_project_spending', {});
+  return rows.map(row => ({ proyectoId: row.proyecto_id, totalCOP: Number(row.total_cop), salidas: Number(row.salidas) }));
 }
