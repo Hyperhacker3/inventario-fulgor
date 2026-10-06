@@ -22,6 +22,19 @@ const { ItemCategorySelector } = await import('../../src/components/item/ItemCat
 const { ItemRackSelector } = await import('../../src/components/item/ItemRackSelector');
 const { EntryForm } = await import('../../src/components/entry/EntryForm');
 const { ArchivedItemDeletion } = await import('../../src/components/administration/ArchivedItemDeletion');
+const { MovementDocuments } = await import('../../src/components/history/MovementDocuments');
+
+test('history routes PDF and photo actions separately to the same remission and omits them for entries',async()=>{
+  const events:string[]=[];
+  const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);
+  const props={onPdf:(id:string)=>events.push(`pdf:${id}`),onPhotos:(id:string)=>events.push(`photos:${id}`)};
+  try{
+    await act(()=>root.render(createElement(MovementDocuments,props)));assert.equal(host.querySelectorAll('button').length,0);
+    await act(()=>root.render(createElement(MovementDocuments,{...props,remissionId:'REM-1'})));
+    await act(()=>{host.querySelector<HTMLButtonElement>('[aria-label="Ver remisión PDF"]')!.click();host.querySelector<HTMLButtonElement>('[aria-label="Ver fotografías de la salida"]')!.click();});
+    assert.deepEqual(events,['pdf:REM-1','photos:REM-1']);
+  }finally{await act(()=>root.unmount());host.remove();}
+});
 
 test('permanent deletion requires an archived item and exact code, blocks duplicate calls and allows a failed request to retry', async () => {
   const active = mapElemento({id:'MAT-1',codigo:'MAT001',nombre:'Material',archived:false});

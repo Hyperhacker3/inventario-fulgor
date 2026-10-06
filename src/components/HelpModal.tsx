@@ -13,7 +13,7 @@ export function HelpModal() {
         <p><strong>Inventario:</strong> busque por código o nombre, consulte la ubicación y edite la ficha si tiene permisos.</p>
         <p><strong>Movimientos:</strong> entradas y ajustes registran responsable, fecha y stock anterior y nuevo.</p>
         <p><strong>Entradas:</strong> busque un material, indique la cantidad recibida y su motivo. Al confirmar se aumenta el stock y se guarda el movimiento, sin generar una remisión.</p>
-        <p><strong>Salidas:</strong> seleccione el material y proyecto. El stock se confirma cuando la base de datos acepta la remisión.</p>
+        <p><strong>Salidas:</strong> seleccione el material y proyecto. Puede tomar o subir fotos opcionales; el historial tiene accesos separados a PDF y Fotos. Las fotos quedan fuera del PDF. El stock se confirma cuando la base de datos acepta la remisión.</p>
         <p><strong>Instalación:</strong> siga el README y aplique las migraciones versionadas en un entorno de pruebas. Cree cuentas y roles desde la administración de Supabase.</p>
       </div>
       {isDemo && <div className="bg-[#f8fafc] rounded-xl p-4 flex justify-between gap-3 items-center text-sm">

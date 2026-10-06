@@ -2,19 +2,20 @@ import { useMemo } from 'react';
 import type { HistorialMovimiento } from '../../types';
 import { useInventory } from '../../context/InventoryContext';
 import { MovementBadge } from './MovementBadge';
+import { MovementDocuments } from './MovementDocuments';
 
 interface Props {
   rows: HistorialMovimiento[]; total: number; page: number; pages: number; loading: boolean;
   onPage: (page: number) => void; onDocument: (id: string) => void;
 }
 export function HistoryTable({ rows, total, page, pages, loading, onPage, onDocument }: Props) {
-  const { elementos, proyectos, openItemDetail } = useInventory();
+  const { elementos, proyectos, openItemDetail, openOutgoingPhotos } = useInventory();
   const items = useMemo(() => new Map(elementos.map(item => [item.id, item])), [elementos]);
   const projectNames = useMemo(() => new Map(proyectos.map(project => [project.id, project.nombre])), [proyectos]);
   return <div className="bg-white border rounded-2xl overflow-hidden shadow-xs">
     <div className="overflow-x-auto"><table className="w-full text-left border-collapse text-sm">
       <thead><tr className="bg-[#f8fafc] border-b text-xs font-bold uppercase text-[#454651]">
-        {['Tipo', 'Fecha y hora', 'Código SKU', 'Componente', 'Proyecto / destino', 'Cantidad', 'Stock final', 'Responsable', 'Documento']
+        {['Tipo', 'Fecha y hora', 'Código SKU', 'Componente', 'Proyecto / destino', 'Cantidad', 'Stock final', 'Responsable', 'PDF / fotografías']
           .map(label => <th key={label} className="p-3.5 whitespace-nowrap">{label}</th>)}
       </tr></thead>
       <tbody className="divide-y">
@@ -36,8 +37,7 @@ export function HistoryTable({ rows, total, page, pages, loading, onPage, onDocu
             <td className="p-3.5 text-right font-mono-code whitespace-nowrap">{row.tipo === 'SALIDA' ? '-' : '+'}{Math.abs(row.cantidad)} {row.unidad}</td>
             <td className="p-3.5 text-right font-mono-code whitespace-nowrap">{row.stockNuevo ?? '—'} {row.unidad}</td>
             <td className="p-3.5">{row.responsable}</td>
-            <td className="p-3.5 text-center">{row.remisionId ? <button type="button" onClick={() => onDocument(row.remisionId!)}
-              className="px-2.5 py-1 bg-[#eaedff] text-[#253685] rounded-md font-semibold">PDF</button> : '—'}</td>
+            <td className="p-3.5 text-center"><MovementDocuments remissionId={row.remisionId} onPdf={onDocument} onPhotos={openOutgoingPhotos} /></td>
           </tr>;
         })}
       </tbody>

@@ -11,6 +11,7 @@ const transportMigration = fs.readFileSync(new URL('../../supabase/migrations/20
 const unitWeightMigration = fs.readFileSync(new URL('../../supabase/migrations/20261005000100_unit_weights.sql', import.meta.url), 'utf8');
 const catalogMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000100_data_administration.sql', import.meta.url), 'utf8');
 const archivedMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000200_archived_inventory.sql', import.meta.url), 'utf8');
+const outgoingPhotoMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000300_outgoing_photos.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 
@@ -23,7 +24,12 @@ async function database() {
         'user_metadata', jsonb_build_object('name', 'Operador de prueba')) $$;
     GRANT USAGE ON SCHEMA auth TO authenticated;
     GRANT EXECUTE ON FUNCTION auth.uid(), auth.jwt() TO authenticated;`);
-  await db.exec('CREATE SCHEMA storage; CREATE TABLE storage.objects(bucket_id text, name text);');
+  await db.exec(`CREATE SCHEMA storage;
+    CREATE TABLE storage.objects(bucket_id text, name text, PRIMARY KEY(bucket_id,name));
+    CREATE TABLE storage.buckets(id text PRIMARY KEY,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+    ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+    GRANT USAGE ON SCHEMA storage TO authenticated;
+    GRANT SELECT,INSERT,UPDATE,DELETE ON storage.objects TO authenticated;`);
   await db.exec(baseSql);
   await db.exec(migration);
   await db.exec(transportMigration);
@@ -31,12 +37,69 @@ async function database() {
   await db.exec(demoSeed);
   await db.exec(catalogMigration);
   await db.exec(archivedMigration);
+  await db.exec(outgoingPhotoMigration);
   return db;
 }
 
 const role = (db, value) => db.exec(`SELECT set_config('app.test_role','${value}',false); SET ROLE authenticated;`);
 const asOwner = db => db.exec('RESET ROLE;');
 const itemStock = async db => Number((await db.query("SELECT cantidad FROM public.elementos WHERE id = 'ELM-001'")).rows[0].cantidad);
+
+test('outgoing photos are private, attached atomically, immutable after dispatch and independent of deleted products', async () => {
+  const db = await database();
+  try {
+    const user='00000000-0000-0000-0000-000000000001', request='8c6d1dd1-74e8-46f1-8610-2d123c5013bf';
+    const path1=`${user}/${request}/eb1e485b-348f-4db3-aadc-f33e4266e79b.jpg`;
+    const path2=`${user}/${request}/3a659640-0240-4f77-8460-b73c98529c04.jpg`;
+    const refs=[`outgoing://${path1}`,`outgoing://${path2}`];
+    const sql='SELECT public.dispatch_inventory_with_photos($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb) AS remission';
+    const args=[request,'PROY-001','Entrega','Admin','Recibe','','Registro de prueba',JSON.stringify([{elementoId:'ELM-001',cantidad:4}]),'{}',JSON.stringify(refs)];
+    const before=(await db.query('SELECT id,codigo,cantidad FROM public.elementos ORDER BY id')).rows;
+    await db.exec(outgoingPhotoMigration);
+    assert.deepEqual((await db.query('SELECT id,codigo,cantidad FROM public.elementos ORDER BY id')).rows,before);
+    assert.equal((await db.query("SELECT public FROM storage.buckets WHERE id='outgoing-images'")).rows[0].public,false);
+    await role(db,'consulta');
+    await assert.rejects(()=>db.query(sql,args),/No autorizado/);
+    await assert.rejects(()=>db.query("INSERT INTO storage.objects(bucket_id,name) VALUES('outgoing-images',$1)",[path1]),/row-level security/);
+    await asOwner(db); await role(db,'operador');
+    await assert.rejects(()=>db.query(sql,args),/aún no está guardada/);
+    assert.equal(await itemStock(db),184);
+    await assert.rejects(()=>db.query(sql,[...args.slice(0,9),'{}']),/Registro fotográfico inválido/);
+    await assert.rejects(()=>db.query(sql,[...args.slice(0,9),JSON.stringify([refs[0].replace(user,'00000000-0000-0000-0000-000000000002')])]),/pertenecer a esta cuenta/);
+    await assert.rejects(()=>db.query("INSERT INTO storage.objects(bucket_id,name) VALUES('outgoing-images',$1)",[path1.replace(user,'00000000-0000-0000-0000-000000000002')]),/row-level security/);
+    await db.query("INSERT INTO storage.objects(bucket_id,name) VALUES('outgoing-images',$1),('outgoing-images',$2)",[path1,path2]);
+    const staged=`${user}/${request}/229c9eb4-d73c-4d79-89fb-0e2bb643bb57.jpg`;
+    await db.query("INSERT INTO storage.objects(bucket_id,name) VALUES('outgoing-images',$1)",[staged]);
+    assert.equal((await db.query("DELETE FROM storage.objects WHERE name=$1 RETURNING name",[staged])).rows.length,1);
+    await asOwner(db); await role(db,'consulta');
+    assert.equal((await db.query("SELECT * FROM storage.objects WHERE bucket_id='outgoing-images'")).rows.length,0);
+    await asOwner(db); await role(db,'admin');
+    await db.query('UPDATE public.elementos SET especificaciones=$1::jsonb WHERE id=$2',[JSON.stringify({peso_unitario:{valor:40,unidad:'g'}}),'ELM-001']);
+    await asOwner(db); await role(db,'operador');
+    const first=(await db.query(sql,args)).rows[0].remission;
+    assert.deepEqual(first.fotos_salida,refs); assert.equal(first.items[0].pesoTotalKg,0.16); assert.equal(await itemStock(db),180);
+    assert.deepEqual((await db.query(sql,args)).rows[0].remission,first); assert.equal(await itemStock(db),180);
+    await assert.rejects(()=>db.query(sql,[...args.slice(0,9),JSON.stringify([refs[0]])]),/otras fotos/);
+    const changed=[...args]; changed[7]=JSON.stringify([{elementoId:'ELM-001',cantidad:2}]);
+    await assert.rejects(()=>db.query(sql,changed),/otro contenido/);
+    assert.equal((await db.query("DELETE FROM storage.objects WHERE bucket_id='outgoing-images' RETURNING name")).rows.length,0);
+    assert.equal((await db.query("UPDATE storage.objects SET name=name WHERE bucket_id='outgoing-images' RETURNING name")).rows.length,0);
+    await assert.rejects(()=>db.query("UPDATE public.remisiones SET fotos_salida='[]' WHERE id=$1",[first.id]),/permission denied/);
+    await asOwner(db); await role(db,'consulta');
+    assert.equal((await db.query("SELECT * FROM storage.objects WHERE bucket_id='outgoing-images'")).rows.length,2);
+    await asOwner(db); await role(db,'admin');
+    await db.query("UPDATE public.elementos SET archived=true WHERE id='ELM-001'");
+    await db.query("SELECT public.delete_archived_inventory_item('ELM-001')");
+    assert.deepEqual((await db.query('SELECT fotos_salida FROM public.remisiones WHERE id=$1',[first.id])).rows[0].fotos_salida,refs);
+    assert.equal((await db.query("SELECT count(*) AS n FROM storage.objects WHERE bucket_id='outgoing-images'")).rows[0].n,2);
+    await asOwner(db);
+    await db.exec("CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '00000000-0000-0000-0000-000000000002'::uuid $$;");
+    await role(db,'operador');
+    await assert.rejects(()=>db.query(sql,[...args.slice(0,9),'[]']),/usuario/);
+    await asOwner(db); await db.exec('SET ROLE anon');
+    await assert.rejects(()=>db.query(sql,args),/permission denied/);
+  } finally { await db.close(); }
+});
 
 test('only admins can permanently delete archived items; history, codes and cleanup retries survive', async () => {
   const db = await database();
@@ -297,7 +360,6 @@ test('projects support admin management, safe example retries and reject finaliz
 test('postdeploy audit runs against the migrated schema without changing inventory', async () => {
   const db = await database();
   try {
-    await db.exec('CREATE TABLE storage.buckets(id text, public boolean);');
     const before = Number((await db.query('SELECT count(*) AS n FROM public.elementos')).rows[0].n);
     const results = await db.exec(postdeployAudit);
     assert.equal(Number(results[0].rows[0].productos_activos), before);

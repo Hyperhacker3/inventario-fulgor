@@ -32,6 +32,7 @@ function useInventoryValue() {
   const [globalSearch, setGlobalSearch] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [selectedRemisionForPdf, setSelectedRemisionForPdf] = useState<Remision | null>(null);
+  const [selectedOutgoingPhotosId, setSelectedOutgoingPhotosId] = useState<string | null>(null);
   const [quickMovementId, setQuickMovementId] = useState<string | null>(null);
   const [quickMovementType, setQuickMovementType] = useState<'ENTRADA' | 'AJUSTE'>('ENTRADA');
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
@@ -45,6 +46,7 @@ function useInventoryValue() {
   const closeNavigationOverlays = useCallback(() => {
     setSelectedItemId(null);
     setSelectedRemisionForPdf(null);
+    setSelectedOutgoingPhotosId(null);
     setQuickMovementId(null);
     setIsHelpModalOpen(false);
     setDispatchSelection(null);
@@ -96,6 +98,8 @@ function useInventoryValue() {
   const closeItemDetail = () => setSelectedItemId(null);
   const openPdfRemision = useCallback((remission: Remision) => setSelectedRemisionForPdf(remission), []);
   const closePdfRemision = () => setSelectedRemisionForPdf(null);
+  const openOutgoingPhotos = useCallback((id: string) => setSelectedOutgoingPhotosId(id), []);
+  const closeOutgoingPhotos = useCallback(() => setSelectedOutgoingPhotosId(null), []);
   const openQuickMovement = (item: Elemento, type: 'ENTRADA' | 'AJUSTE') => { setQuickMovementId(item.id); setQuickMovementType(type); };
   const closeQuickMovement = () => setQuickMovementId(null);
 
@@ -118,6 +122,7 @@ function useInventoryValue() {
     elementos: data.elementos, almacenes: data.almacenes, estanterias: data.estanterias, cajas: data.cajas,
     proyectos: data.proyectos, remisiones: data.remisiones, historial: data.historial,
     user: user!, activeView, dispatchCart, selectedItemForDetail, selectedRemisionForPdf, quickMovementItem,
+    selectedOutgoingPhotosId, openOutgoingPhotos, closeOutgoingPhotos,
     quickMovementType, isHelpModalOpen, globalSearch, isCloudConnected: data.isCloudConnected,
     dispatchSelection, dispatchSelectionItem, closeDispatchSelection, dispatchFeedback,
     syncStatus: data.syncStatus, setActiveView, setGlobalSearch, openItemDetail, closeItemDetail,

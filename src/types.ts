@@ -102,6 +102,7 @@ export interface Remision {
   fecha: string;
   items: DetalleRemision[];
   datosTransporte?: DatosTransporte;
+  fotosSalida?: string[];
 }
 
 export type TipoMovimiento = 'ENTRADA' | 'SALIDA' | 'AJUSTE' | 'REUBICACION';

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import type { UserProfile } from '../types';
 import { useQueryClient } from '@tanstack/react-query';
 import { clearImageCache } from '../shared/images';
+import { clearOutgoingImageCache } from '../shared/outgoingImages';
 import { sessionIdentity, shouldClearSessionCache } from '../domain/session';
 
 interface AuthValue {
@@ -51,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (shouldClearSessionCache(identity, nextIdentity)) {
         queryClient.clear();
         clearImageCache();
+        clearOutgoingImageCache();
       }
       identity = nextIdentity;
       setUser(profile(session));
@@ -79,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
     queryClient.clear();
     clearImageCache();
+    clearOutgoingImageCache();
     clearUserDrafts();
   };
   return <AuthContext.Provider value={{ user, loading, signIn, signOut }}>{children}</AuthContext.Provider>;

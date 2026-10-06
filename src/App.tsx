@@ -27,6 +27,7 @@ const PdfRemissionModal = lazy(() => import('./components/PdfRemissionModal').th
 const ItemDetailModal = lazy(() => import('./components/ItemDetailModal').then(m => ({ default: m.ItemDetailModal })));
 const QuickMovementModal = lazy(() => import('./components/QuickMovementModal').then(m => ({ default: m.QuickMovementModal })));
 const HelpModal = lazy(() => import('./components/HelpModal').then(m => ({ default: m.HelpModal })));
+const OutgoingPhotoModal = lazy(() => import('./components/history/OutgoingPhotoModal').then(m => ({ default: m.OutgoingPhotoModal })));
 
 const MainLayout: React.FC = () => {
   const {
@@ -41,6 +42,7 @@ const MainLayout: React.FC = () => {
     quickMovementType,
     isHelpModalOpen,
     dispatchSelection, dispatchSelectionItem, closeDispatchSelection, addToDispatchCart, dispatchFeedback,
+    selectedOutgoingPhotosId, closeOutgoingPhotos,
     user
   } = useInventory();
   const canAdmin = isDemo || user.role === 'admin';
@@ -150,6 +152,7 @@ const MainLayout: React.FC = () => {
       />}
       {quickMovementItem && <QuickMovementModal key={`${quickMovementItem.id}:${quickMovementType}`} />}
       {isHelpModalOpen && <HelpModal />}</Suspense>
+      <Suspense fallback={<div role="status" className="no-print fixed inset-0 z-[70] bg-black/60 grid place-items-center"><p className="bg-white rounded-xl p-6">Abriendo fotografías…</p></div>}>{selectedOutgoingPhotosId && <OutgoingPhotoModal key={selectedOutgoingPhotosId} remissionId={selectedOutgoingPhotosId} onClose={closeOutgoingPhotos} />}</Suspense>
       <Suspense fallback={<div role="status" className="fixed inset-0 z-[60] bg-black/60 grid place-items-center"><p className="bg-white p-6 rounded-xl">Preparando selección de cantidad…</p></div>}>{dispatchSelection && dispatchSelectionItem && <DispatchQuantityModal key={dispatchSelection.token} item={dispatchSelectionItem} inCart={dispatchCart.find(line => line.elemento.id === dispatchSelectionItem.id)?.cantidad || 0} onClose={closeDispatchSelection} onConfirm={quantity => addToDispatchCart(dispatchSelectionItem, quantity)} />}</Suspense>
     </div>
   );

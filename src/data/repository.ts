@@ -3,8 +3,8 @@ import type { Almacen, Caja, Elemento, Estanteria, Proyecto, Remision, Historial
 import { mapAlmacen, mapCaja, mapElemento, mapEstanteria, mapProyecto, mapRemision, mapHistory, type DbRow } from './mappers';
 
 type Table = 'almacenes' | 'estanterias' | 'cajas' | 'proyectos' | 'elementos' | 'remisiones' | 'historial';
-export function unwrap<T>(result: { data: T | null; error: { message: string } | null }): T {
-  if (result.error) throw new Error(result.error.message);
+export function unwrap<T>(result: { data: T | null; error: { message: string; code?: string } | null }): T {
+  if (result.error) throw Object.assign(new Error(result.error.message), { code: result.error.code });
   if (result.data === null) throw new Error('La base de datos no devolvió un resultado.');
   return result.data;
 }

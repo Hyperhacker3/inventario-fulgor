@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { cameraInputs } from './cameraDevices';
 
-export function useCamera(enabled: boolean, facingMode: 'environment' | 'user', deviceId = '') {
+export function useCamera(enabled: boolean, facingMode: 'environment' | 'user', deviceId = '', aspectRatio = 1) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +23,7 @@ export function useCamera(enabled: boolean, facingMode: 'environment' | 'user', 
     const start = async () => {
       if (cancelled) return;
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('La cámara requiere un navegador compatible y una conexión segura.');
-      const acquired = await navigator.mediaDevices.getUserMedia({ video: { ...(deviceId ? { deviceId: { exact: deviceId } } : { facingMode: { ideal: facingMode } }), width: { ideal: 1280 }, aspectRatio: { ideal: 1 } }, audio: false });
+      const acquired = await navigator.mediaDevices.getUserMedia({ video: { ...(deviceId ? { deviceId: { exact: deviceId } } : { facingMode: { ideal: facingMode } }), width: { ideal: 1280 }, aspectRatio: { ideal: aspectRatio } }, audio: false });
       if (cancelled) { acquired.getTracks().forEach(track => track.stop()); return; }
       stream = acquired;
       const settings = acquired.getVideoTracks()[0]?.getSettings();
@@ -45,6 +45,6 @@ export function useCamera(enabled: boolean, facingMode: 'environment' | 'user', 
     return () => { cancelled = true; stream?.getTracks().forEach(track => track.stop());
       navigator.mediaDevices?.removeEventListener('devicechange', refreshDevices);
       if (activeVideo) activeVideo.srcObject = null; };
-  }, [enabled, facingMode, deviceId]);
+  }, [enabled, facingMode, deviceId, aspectRatio]);
   return { videoRef, loading, error, ready, cameras, currentDeviceId, mirrored };
 }

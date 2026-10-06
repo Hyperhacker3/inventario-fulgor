@@ -2,19 +2,21 @@ import { useRef, useState } from 'react';
 import { useCamera } from '../shared/useCamera';
 import { squareCanvas } from '../shared/squareImage';
 import { nextCameraId } from '../shared/cameraDevices';
+import { evidenceCanvas } from '../shared/evidenceCanvas';
 
-interface Props { isOpen: boolean; onClose: () => void; onPhotoCaptured: (photoDataUrl: string) => void; title?: string }
-export function CameraCaptureModal({ isOpen, onClose, onPhotoCaptured, title = 'Tomar foto' }: Props) {
+interface Props { isOpen: boolean; onClose: () => void; onPhotoCaptured: (photoDataUrl: string) => void; title?: string; square?: boolean }
+export function CameraCaptureModal({ isOpen, onClose, onPhotoCaptured, title = 'Tomar foto', square = true }: Props) {
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [photo, setPhoto] = useState<string | null>(null);
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
-  const { videoRef, loading, error, ready, cameras, currentDeviceId, mirrored } = useCamera(isOpen && !photo, facingMode, selectedDeviceId);
+  const { videoRef, loading, error, ready, cameras, currentDeviceId, mirrored } = useCamera(isOpen && !photo, facingMode, selectedDeviceId, square ? 1 : 4 / 3);
   const fileRef = useRef<HTMLInputElement>(null);
   const close = () => { setPhoto(null); onClose(); };
   const snap = () => {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
-    const canvas = squareCanvas(video, video.videoWidth, video.videoHeight, 600, mirrored);
+    const canvas = square ? squareCanvas(video, video.videoWidth, video.videoHeight, 600, mirrored)
+      : evidenceCanvas(video, video.videoWidth, video.videoHeight, mirrored);
     setPhoto(canvas.toDataURL('image/jpeg', 0.78));
   };
   const selectFile = (file?: File) => {
@@ -27,12 +29,12 @@ export function CameraCaptureModal({ isOpen, onClose, onPhotoCaptured, title = '
   if (!isOpen) return null;
   return <div className="fixed inset-0 z-60 bg-black/80 flex items-center justify-center p-4">
     <section role="dialog" aria-modal="true" aria-label={title} className="bg-white rounded-2xl w-full max-w-lg p-5 space-y-4">
-      <div className="flex justify-between"><h2 className="font-bold">{title}</h2><button aria-label="Cerrar cámara" onClick={close}>×</button></div>
-      <div className="relative w-full max-w-[min(100%,45vh)] mx-auto aspect-square overflow-hidden rounded-lg bg-black">
-        {photo ? <img src={photo} alt="Vista previa" className="absolute inset-0 w-full h-full object-cover object-center" />
-          : <video ref={videoRef} muted playsInline autoPlay className="absolute inset-0 w-full h-full object-cover object-center" style={{ transform: mirrored ? 'scaleX(-1)' : undefined }} />}
+      <div className="flex justify-between"><h2 className="font-bold">{title}</h2><button type="button" aria-label="Cerrar cámara" onClick={close}>×</button></div>
+      <div className={`relative w-full max-w-[min(100%,45vh)] mx-auto ${square ? 'aspect-square' : 'aspect-[4/3]'} overflow-hidden rounded-lg bg-black`}>
+        {photo ? <img src={photo} alt="Vista previa" className={`absolute inset-0 w-full h-full ${square ? 'object-cover' : 'object-contain'} object-center`} />
+          : <video ref={videoRef} muted playsInline autoPlay className={`absolute inset-0 w-full h-full ${square ? 'object-cover' : 'object-contain'} object-center`} style={{ transform: mirrored ? 'scaleX(-1)' : undefined }} />}
       </div>
-      <p className="text-xs text-slate-500">Encuadre el producto dentro del cuadrado. La captura conserva este recorte centrado.</p>
+      <p className="text-xs text-slate-500">{square ? 'Encuadre el producto dentro del cuadrado. La captura conserva este recorte centrado.' : 'La captura conserva el encuadre completo para el registro de la salida.'}</p>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       {loading && <p className="text-sm">Abriendo cámara…</p>}
       {!photo && cameras.length > 1 && <label className="block text-xs font-semibold">Cámara o lente

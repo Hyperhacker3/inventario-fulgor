@@ -52,6 +52,7 @@ export const mapRemision = (row: DbRow, itemsByCode?: Map<string, Elemento>): Re
   recibidoPor: str(row.recibido_por), cargoRecibido: str(row.cargo_recibido),
   observaciones: str(row.observaciones), fecha: str(row.fecha) || displayDate(str(row.created_at)),
   datosTransporte: mapTransport(row.datos_transporte),
+  fotosSalida: uniquePhotos(row.fotos_salida),
   items: (Array.isArray(row.items) ? row.items : []).map((raw: unknown): DetalleRemision => {
     const item = object(raw);
     return { elementoId: str(item.elementoId ?? item.elemento_id ?? itemsByCode?.get(str(item.codigo))?.id),

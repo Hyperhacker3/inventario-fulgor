@@ -1,14 +1,15 @@
 import { ProjectSelector } from './dispatch/ProjectSelector';
 import { TransportFields } from './dispatch/TransportFields';
 import { emptyTransport } from '../domain/remissionTransport';
-import { useRemissionTransport, useUnitWeightDispatch } from '../state/useRemissionTransport';
+import { useRemissionTransport, useUnitWeightDispatch, useOutgoingPhotos } from '../state/useRemissionTransport';
 import { formatKg, formatUnitWeight, lineWeightKg, totalWeight } from '../domain/weight';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { errorMessage } from '../shared/errors';
 import { available } from '../domain/inventory';
 import { AvailableInventory } from './dispatch/AvailableInventory';
 import { NumberInput } from './NumberInput';
+import { OutgoingPhotoPicker } from './dispatch/OutgoingPhotoPicker';
 
 export const DispatchView: React.FC = () => {
   const {
@@ -34,6 +35,12 @@ export const DispatchView: React.FC = () => {
   const [pending, setPending] = useState(false);
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
   const [transport, setTransport] = useState(emptyTransport);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [attempted, setAttempted] = useState(false);
+  const sending = useRef(false);
+  const photoQuery = useOutgoingPhotos();
+  const photosReady = photoQuery.data === true && !photoQuery.isError;
   const transportQuery = useRemissionTransport();
   const automaticQuery = useUnitWeightDispatch();
   const automaticReady = automaticQuery.data === true && !automaticQuery.isError;
@@ -46,7 +53,9 @@ export const DispatchView: React.FC = () => {
 
   const handleDispatch = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (sending.current || photoBusy) return;
     setErrorMsg('');
+    if (!photosReady) { setErrorMsg('Active la actualización de registro fotográfico antes de registrar la salida.'); return; }
     if (!automaticReady) { setErrorMsg('Active la actualización del cálculo automático de peso antes de generar la remisión.'); return; }
 
     if (dispatchCart.length === 0) {
@@ -54,7 +63,7 @@ export const DispatchView: React.FC = () => {
       return;
     }
 
-    if (!effectiveProjectId) {
+    if (!attempted && !effectiveProjectId) {
       setErrorMsg('Debe seleccionar el proyecto de destino.');
       return;
     }
@@ -65,7 +74,7 @@ export const DispatchView: React.FC = () => {
     }
 
     // Check if any cart item exceeds stock
-    for (const item of dispatchCart) {
+    for (const item of attempted ? [] : dispatchCart) {
       const live = elementos.find((el) => el.id === item.elemento.id);
       if (!live || available(live) < item.cantidad) {
         setErrorMsg(`Stock insuficiente para ${item.elemento.nombre}. Disponible: ${live ? available(live) : 0}`);
@@ -73,12 +82,13 @@ export const DispatchView: React.FC = () => {
       }
     }
 
-    setPending(true);
+    sending.current = true; setPending(true); setAttempted(true);
     try {
-      await processDispatch({ proyectoId: effectiveProjectId, entregadoPor, cargoEntregado,
-        recibidoPor, cargoRecibido, observaciones, requestId,
+      await processDispatch({ proyectoId: selectedProyectoId, entregadoPor, cargoEntregado,
+        recibidoPor, cargoRecibido, observaciones, requestId, fotosSalida: photos,
         ...(transportReady && { datosTransporte: transport }) });
       setRequestId(crypto.randomUUID());
+      setPhotos([]); setAttempted(false);
       void import('canvas-confetti').then(({ default: confetti }) => {
         confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
       }).catch(() => {});
@@ -86,6 +96,7 @@ export const DispatchView: React.FC = () => {
       setErrorMsg(errorMessage(error));
     } finally {
       setPending(false);
+      sending.current = false;
     }
   };
 
@@ -101,14 +112,16 @@ export const DispatchView: React.FC = () => {
 
       {/* Compact search above the dispatch form. */}
       <div className="flex flex-col gap-5">
-        <AvailableInventory />
+        <fieldset disabled={pending || photoBusy} className="min-w-0"><AvailableInventory /></fieldset>
 
         {/* Formulario de salida y materiales elegidos. */}
         <section className="w-full flex flex-col gap-4">
           <form
             onSubmit={handleDispatch}
+            aria-busy={pending || photoBusy}
             className="bg-white border border-[#e2e8f0] rounded-2xl p-6 shadow-xs flex flex-col gap-5"
           >
+            <fieldset disabled={pending || photoBusy} className="min-w-0 flex flex-col gap-5">
             <div className="flex items-center justify-between pb-3 border-b border-[#e2e8f0]">
               <div className="flex items-center gap-2 text-[#253685]">
                 <span className="material-symbols-outlined text-[22px]">local_shipping</span>
@@ -126,7 +139,7 @@ export const DispatchView: React.FC = () => {
             </div>
 
             {errorMsg && (
-              <div className="p-3 bg-[#fce8e6] border border-[#ffdad6] rounded-lg text-xs font-semibold text-[#c5221f] flex items-center gap-2">
+              <div role="alert" className="p-3 bg-[#fce8e6] border border-[#ffdad6] rounded-lg text-xs font-semibold text-[#c5221f] flex items-center gap-2">
                 <span className="material-symbols-outlined text-[16px]">error</span>
                 <span>{errorMsg}</span>
               </div>
@@ -271,13 +284,16 @@ export const DispatchView: React.FC = () => {
               {!!weightSummary.pending && <p className="text-xs text-amber-700">{weightSummary.pending} material(es) con peso pendiente. Declare el peso desde la edición del producto para completar el total.</p>}
               {dispatchCart.map(line => { const weight = lineWeightKg(line.elemento.pesoUnitario, line.cantidad); return <div key={line.elemento.id} className="text-xs flex justify-between gap-3"><span>{line.elemento.codigo} · {line.cantidad} {line.elemento.unidad} × {formatUnitWeight(line.elemento.pesoUnitario)}</span><strong className="shrink-0">{weight === null ? 'Pendiente' : formatKg(weight)}</strong></div>; })}
             </section>}
+            <OutgoingPhotoPicker photos={photos} onChange={setPhotos} disabled={!photosReady} onBusyChange={setPhotoBusy} />
+            </fieldset>
             {!automaticReady && <p role="status" className="text-xs text-amber-700">El cálculo automático de peso requiere activar la actualización de Supabase. <button type="button" className="underline" onClick={() => { void automaticQuery.refetch(); }}>Comprobar de nuevo</button></p>}
+            {!photosReady && <p role="status" className="text-xs text-amber-700">El registro fotográfico requiere activar la actualización de Supabase. <button type="button" className="underline" onClick={() => { void photoQuery.refetch(); }}>Comprobar de nuevo</button></p>}
 
             {/* Primary Action Dispatch Button (Red Coral from Mockup Image 1) */}
             <button
               type="submit"
               id="btn-process-dispatch"
-              disabled={dispatchCart.length === 0 || pending || !automaticReady}
+              disabled={dispatchCart.length === 0 || pending || photoBusy || !automaticReady || !photosReady}
               className={`w-full py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all shadow-sm ${
                 dispatchCart.length > 0
                   ? 'bg-[#dd4c42] hover:bg-[#b12c26] active:scale-[0.98]'
@@ -285,7 +301,7 @@ export const DispatchView: React.FC = () => {
               }`}
             >
               <span className="material-symbols-outlined text-[20px]">assignment_turned_in</span>
-              <span>Registrar salida y generar remisión</span>
+              <span>{pending ? (photos.length ? 'Guardando salida y fotografías…' : 'Registrando salida…') : 'Registrar salida y generar remisión'}</span>
             </button>
           </form>
         </section>

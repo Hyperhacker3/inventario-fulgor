@@ -21,3 +21,13 @@ export function useUnitWeightDispatch() {
     },
   });
 }
+export function useOutgoingPhotos() {
+  const { user } = useAuth();
+  return useQuery({ queryKey: ['fulgor', user?.email, 'outgoing-photos-ready'], staleTime: 60_000, retry: false,
+    queryFn: async () => {
+      const result = await requireSupabase().rpc('outgoing_photos_ready');
+      if (result.error) throw new Error('El registro fotográfico requiere activar la actualización de Supabase.');
+      return result.data === true;
+    },
+  });
+}

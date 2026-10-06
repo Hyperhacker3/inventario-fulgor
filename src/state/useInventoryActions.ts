@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { DemoData } from './useInventoryData';
 import { insertRow, updateRow, rpc } from '../data/repository';
+import { isDatabaseRejection } from '../data/databaseErrors';
 import { mapAlmacen, mapCaja, mapElemento, mapEstanteria, mapRemision, mapHistory } from '../data/mappers';
 import { isDemo } from '../lib/supabase';
 import { validateItem } from '../domain/inventory';
@@ -15,6 +16,8 @@ import { saveImage, removeImage } from '../shared/images';
 import { saveGallery } from '../domain/photos';
 import { emptyTransport, validateTransport } from '../domain/remissionTransport';
 import { lineWeightKg } from '../domain/weight';
+import { OutgoingPhotoSubmission } from '../domain/outgoingPhotos';
+import { saveOutgoingImage, removeOutgoingImage } from '../shared/outgoingImages';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
 const newId = (prefix: string) => `${prefix}-DEMO-${crypto.randomUUID()}`;
@@ -28,6 +31,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
   const { user } = useAuth();
   const client = useQueryClient();
   const createRequests = useRef(new Map<string, { signature: string; payload: Record<string, unknown> }>());
+  const outgoingRequests = useRef(new OutgoingPhotoSubmission<Record<string, unknown>>());
   const requireAdmin = () => {
     if (!isDemo && user?.role !== 'admin') throw new Error('Esta acción requiere rol de administración.');
   };
@@ -107,22 +111,27 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       applyItemChange(id, null); await syncAfterWrite(refreshItemIds([id])); }
   };
 
-  const processDispatch = async (payload: { proyectoId: string; entregadoPor: string; cargoEntregado?: string; recibidoPor: string; cargoRecibido?: string; observaciones?: string; requestId?: string; datosTransporte?: DatosTransporte }): Promise<Remision> => {
+  const processDispatch = async (payload: { proyectoId: string; entregadoPor: string; cargoEntregado?: string; recibidoPor: string; cargoRecibido?: string; observaciones?: string; requestId?: string; datosTransporte?: DatosTransporte; fotosSalida?: string[] }): Promise<Remision> => {
     requireOperator();
-    validateDispatch(cart, data.elementos);
+    const requestId = payload.requestId || crypto.randomUUID();
+    const retrying = outgoingRequests.current.has(requestId);
+    if (!retrying) validateDispatch(cart, data.elementos);
     const project = data.proyectos.find(p => p.id === payload.proyectoId);
-    if (!project || project.estado !== 'ACTIVO') throw new Error('Seleccione un proyecto válido.');
+    if (!project || !retrying && project.estado !== 'ACTIVO') throw new Error('Seleccione un proyecto válido.');
     if (!payload.recibidoPor.trim()) throw new Error('Indique quién recibe.');
     if (payload.datosTransporte) validateTransport(payload.datosTransporte, {});
     if (!isDemo) {
-      const response = await rpc<Record<string, unknown>>('dispatch_inventory_with_unit_weights', {
-        p_request_id: payload.requestId || crypto.randomUUID(), p_proyecto_id: project.id,
+      const values = {
+        p_request_id: requestId, p_proyecto_id: project.id,
         p_entregado_por: payload.entregadoPor || user?.name, p_cargo_entregado: payload.cargoEntregado || user?.role,
         p_recibido_por: payload.recibidoPor, p_cargo_recibido: payload.cargoRecibido || '',
         p_observaciones: payload.observaciones || '',
         p_items: cart.map(line => ({ elementoId: line.elemento.id, cantidad: line.cantidad })),
         p_datos_transporte: payload.datosTransporte || emptyTransport(),
-      });
+      };
+      const response = await outgoingRequests.current.submit(requestId, values, payload.fotosSalida || [],
+        { save: saveOutgoingImage, remove: removeOutgoingImage, definitelyRejected: isDatabaseRejection },
+        photos => rpc<Record<string, unknown>>('dispatch_inventory_with_photos', { ...values, p_fotos: photos }));
       const remission = mapRemision(response);
       rememberRemission(remission);
       await syncAfterWrite(refreshItemIds(cart.map(line => line.elemento.id)), refresh('historial'));
@@ -141,6 +150,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
         pesoUnitario: line.elemento.pesoUnitario,
         ...(line.elemento.pesoUnitario && { pesoTotalKg: lineWeightKg(line.elemento.pesoUnitario, line.cantidad)! }) })),
       datosTransporte: payload.datosTransporte,
+      fotosSalida: payload.fotosSalida || [],
     };
     const requested = new Map(cart.map(line => [line.elemento.id, line.cantidad]));
     const history: HistorialMovimiento[] = cart.map(line => {

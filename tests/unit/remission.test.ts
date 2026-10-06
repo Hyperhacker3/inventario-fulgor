@@ -3,6 +3,19 @@ import test from 'node:test';
 import { observationChunks, paginateRemission } from '../../src/domain/remissionLayout';
 import { emptyTransport, validateTransport } from '../../src/domain/remissionTransport';
 import { mapRemision } from '../../src/data/mappers';
+import { createElement, Fragment } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { RemissionHeader, RemissionTable, RemissionClosing } from '../../src/components/remission/RemissionSections';
+
+test('photographic evidence maps separately and never appears in the printable remission sections',()=>{
+  const photo='outgoing://account/request/evidence.jpg';
+  const remission=mapRemision({numero_remision:'REM-1',fotos_salida:[photo,photo],items:[{codigo:'MAT001',nombre:'Material',cantidad:4,unidad:'UND'}]});
+  assert.deepEqual(remission.fotosSalida,[photo]);
+  assert.deepEqual(mapRemision({}).fotosSalida,[]);
+  const output=renderToStaticMarkup(createElement(Fragment,null,createElement(RemissionHeader,{remision:remission}),createElement(RemissionTable,{remision:remission,indices:[0]}),createElement(RemissionClosing,{remision:remission,notes:[],indices:[0,1,2]})));
+  assert.equal(output.includes(photo),false);assert.equal(output.includes('evidence.jpg'),false);assert.equal(output.includes('Registro fotográfico'),false);
+  assert.match(output,/MAT001/);assert.match(output,/logo-completo\.png/);
+});
 
 test('measured remission pagination keeps all rows and closing blocks without empty pages', () => {
   assert.deepEqual(paginateRemission([32, 32], [40, 100, 140], 650, 40), [{ rows: [0, 1], closing: [0, 1, 2] }]);
