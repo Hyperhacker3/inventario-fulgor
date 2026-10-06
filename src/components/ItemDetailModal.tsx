@@ -10,11 +10,11 @@ import { ItemHistory } from './item/ItemHistory';
 import { NumberInput } from './NumberInput';
 import { ItemWeightFields } from './item/ItemWeightFields';
 import { formatUnitWeight, parseWeightDraft, weightDraft } from '../domain/weight';
-import { ArchivedItemDeletion } from './administration/ArchivedItemDeletion';
+import { ArchivedItemActions } from './administration/ArchivedItemActions';
 
-interface Props { item: Elemento | null; onClose: () => void; onPermanentDelete?: (item: Elemento) => Promise<void> }
+interface Props { item: Elemento | null; onClose: () => void; onPermanentDelete?: (item: Elemento) => Promise<void>; onRestore?: (item: Elemento) => Promise<void> }
 
-export function ItemDetailModal({ item, onClose, onPermanentDelete }: Props) {
+export function ItemDetailModal({ item, onClose, onPermanentDelete, onRestore }: Props) {
   const { user, getLocationString, openQuickMovement, addToDispatchCart,
     updateElemento, deleteElemento, categoryLabel } = useInventory();
   const [editing, setEditing] = useState(false);
@@ -132,7 +132,7 @@ export function ItemDetailModal({ item, onClose, onPermanentDelete }: Props) {
             {canAdmin && <button type="button" disabled={pending} onClick={archive} className="px-3 py-2 rounded-lg border text-red-700 text-sm font-semibold">Archivar</button>}
             </>}
           </div>
-          {item.archived && canAdmin && onPermanentDelete && <ArchivedItemDeletion item={item} onDelete={onPermanentDelete} />}
+          {item.archived && canAdmin && <ArchivedItemActions item={item} onDelete={onPermanentDelete} onRestore={onRestore} />}
         </>}
         <ItemHistory itemId={item.id} />
       </div>

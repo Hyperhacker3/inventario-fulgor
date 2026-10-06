@@ -1,6 +1,6 @@
 import { requireSupabase } from '../lib/supabase';
 import { mapElemento } from './mappers';
-import { rpc, unwrap } from './repository';
+import { rpc, unwrap, updateRow } from './repository';
 import { removeImage } from '../shared/images';
 import type { Elemento, Page } from '../types';
 
@@ -14,6 +14,8 @@ export async function readArchivedItems(page: number, search: string): Promise<P
   return { rows: unwrap(result).map(mapElemento), total: result.count ?? 0 };
 }
 export const readImageCleanupJobs = () => rpc<ImageCleanupJob[]>('inventory_image_cleanup_jobs', {});
+export const restoreArchivedItem = (id: string) => updateRow('elementos', id,
+  { archived: false, updated_at: new Date().toISOString() }, mapElemento);
 
 export async function finishImageCleanup(job: ImageCleanupJob): Promise<boolean> {
   // A durable server job allows retrying if the network fails after the item was deleted.

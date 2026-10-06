@@ -14,6 +14,8 @@ Requiere haber aplicado las migraciones anteriores de inventario seguro, fotos p
 
 Abra **Administración de datos → Archivados**. Busque por código o nombre y abra un producto. Su detalle permite consultar fotos, existencias, ubicación y movimientos, sin editarlo ni registrar entradas o salidas.
 
+Para recuperarlo, pulse **Desarchivar** en su detalle. Solo un administrador puede hacerlo. El producto vuelve al inventario activo con el mismo código, cantidades, fotos, peso y ubicación; se conservan sus movimientos y remisiones. Se muestra una confirmación y se actualizan las listas de archivados e inventario. Si falla la conexión, el botón permite reintentar. No necesita ejecutar una migración adicional.
+
 Para borrarlo, pulse **Eliminar definitivamente**, escriba su código exactamente y confirme. Solo un administrador puede hacerlo y Supabase exige que el producto esté archivado. Los productos activos conservan únicamente la acción **Archivar**.
 
 La eliminación retira el producto del catálogo y limpia sus fotos de Supabase Storage, incluida cualquier miniatura antigua. Las fotos compartidas con otros productos se conservan. Las remisiones y movimientos históricos mantienen sus datos; se guarda un registro interno mínimo de la eliminación y las solicitudes de alta originales para evitar que un reintento recree el producto. El consecutivo de códigos no retrocede.

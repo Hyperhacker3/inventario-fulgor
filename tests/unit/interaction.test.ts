@@ -22,7 +22,36 @@ const { ItemCategorySelector } = await import('../../src/components/item/ItemCat
 const { ItemRackSelector } = await import('../../src/components/item/ItemRackSelector');
 const { EntryForm } = await import('../../src/components/entry/EntryForm');
 const { ArchivedItemDeletion } = await import('../../src/components/administration/ArchivedItemDeletion');
+const { ArchivedItemActions } = await import('../../src/components/administration/ArchivedItemActions');
 const { MovementDocuments } = await import('../../src/components/history/MovementDocuments');
+
+test('unarchiving is available only for archived items, guards concurrent deletion and allows retry after a failure', async () => {
+  const active = mapElemento({id:'MAT-1',codigo:'MAT001',nombre:'Material',archived:false});
+  const archived = { ...active, archived:true };
+  let calls = 0, deleted = 0;
+  let fail!: (cause: Error) => void;
+  const request = new Promise<void>((_resolve, reject) => { fail = reject; });
+  const onRestore = async (value: import('../../src/types').Elemento) => {
+    assert.equal(value.id, archived.id); calls++; if (calls === 1) await request;
+  };
+  const onDelete = async () => { deleted++; };
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  try {
+    await act(() => root.render(createElement(ArchivedItemActions, {item:active,onRestore,onDelete})));
+    assert.equal(host.querySelector('button'), null);
+    await act(() => root.render(createElement(ArchivedItemActions, {item:archived,onRestore,onDelete})));
+    await act(() => { const button = host.querySelector('button')!; button.click(); button.click(); });
+    assert.equal(calls, 1); assert.equal(host.querySelector('fieldset')!.disabled, true);
+    await act(() => host.querySelectorAll<HTMLButtonElement>('button')[1].click());
+    assert.equal(deleted, 0);
+    await act(async () => fail(new Error('Conexión interrumpida')));
+    assert.match(host.querySelector('[role="alert"]')!.textContent!, /Conexión interrumpida/);
+    assert.equal(host.querySelector('fieldset')!.disabled, false);
+    await act(async () => host.querySelector('button')!.click());
+    assert.equal(calls, 2); assert.equal(deleted, 0);
+    assert.equal(host.querySelector('[role="alert"]'), null);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
 
 test('history routes PDF and photo actions separately to the same remission and omits them for entries',async()=>{
   const events:string[]=[];
@@ -347,6 +376,42 @@ test('inventory list preference survives leaving and reopening the screen', asyn
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
+test('PC capture opens the integrated webcam without a rear constraint and switches to any connected camera', async () => {
+  const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  const originalPlay = dom.window.HTMLMediaElement.prototype.play;
+  const requested: MediaStreamConstraints[] = [], stopped: string[] = [];
+  const mediaDevices = {
+    getUserMedia: async (constraints: MediaStreamConstraints) => {
+      requested.push(constraints);
+      const id = ((constraints.video as MediaTrackConstraints).deviceId as ConstrainDOMStringParameters)?.exact as string || 'integrated';
+      const track = {label:id, stop:()=>stopped.push(id),getSettings:()=>({deviceId:id,facingMode:id==='integrated'?'user':undefined})};
+      return {getTracks:()=>[track],getVideoTracks:()=>[track]} as unknown as MediaStream;
+    },
+    enumerateDevices: async () => [{kind:'videoinput',deviceId:'integrated',label:'Integrated Front Camera'}, {kind:'videoinput',deviceId:'usb',label:'USB Webcam'}],
+    addEventListener:()=>{},removeEventListener:()=>{},
+  };
+  Object.defineProperty(globalThis,'navigator',{configurable:true,value:{mediaDevices,userAgent:'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',maxTouchPoints:10}});
+  dom.window.HTMLMediaElement.prototype.play = async () => {};
+  let camera!: ReturnType<typeof useCamera>;
+  function Camera({id}:{id:string}) {camera=useCamera(true,id);return createElement('video',{ref:camera.videoRef});}
+  const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);
+  try {
+    await act(async()=>root.render(createElement(Camera,{id:''})));
+    assert.equal(camera.rearOnly,false);assert.equal(camera.ready,true);assert.equal(camera.currentDeviceId,'integrated');
+    assert.deepEqual(camera.cameras.map(value=>value.id),['integrated','usb']);
+    assert.equal((requested[0].video as MediaTrackConstraints).facingMode,undefined);
+    await act(async()=>root.render(createElement(Camera,{id:'usb'})));
+    assert.equal(camera.ready,true);assert.equal(camera.currentDeviceId,'usb');
+    assert.deepEqual((requested[1].video as MediaTrackConstraints).deviceId,{exact:'usb'});
+    assert.equal((requested[1].video as MediaTrackConstraints).facingMode,undefined);
+    assert.deepEqual(stopped,['integrated']);
+  } finally {
+    await act(()=>root.unmount());host.remove();dom.window.HTMLMediaElement.prototype.play=originalPlay;
+    if(originalNavigator)Object.defineProperty(globalThis,'navigator',originalNavigator);else Reflect.deleteProperty(globalThis,'navigator');
+  }
+  assert.deepEqual(stopped,['integrated','usb']);
+});
+
 test('rear camera selection stops old streams and rejects a front stream even if constraints were ignored', async () => {
   const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
   const originalPlay = dom.window.HTMLMediaElement.prototype.play;
@@ -365,7 +430,7 @@ test('rear camera selection stops old streams and rejects a front stream even if
     enumerateDevices: async () => ['wide', 'tele', 'front', 'unknown'].map(id => ({ kind: 'videoinput', deviceId: id, label: id === 'tele' ? 'Back telephoto' : id === 'front' ? 'Front Camera' : id })),
     addEventListener: () => {}, removeEventListener: () => {},
   };
-  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { mediaDevices } });
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { mediaDevices, userAgent: 'Mozilla/5.0 (Linux; Android 16)' } });
   dom.window.HTMLMediaElement.prototype.play = async function () { played.push((this.srcObject as MediaStream).getVideoTracks()[0].getSettings().deviceId || ''); };
   let camera!: ReturnType<typeof useCamera>;
   function Camera({ id }: { id: string }) { camera = useCamera(true, id); return createElement('video', { ref: camera.videoRef }); }

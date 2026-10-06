@@ -45,6 +45,32 @@ const role = (db, value) => db.exec(`SELECT set_config('app.test_role','${value}
 const asOwner = db => db.exec('RESET ROLE;');
 const itemStock = async db => Number((await db.query("SELECT cantidad FROM public.elementos WHERE id = 'ELM-001'")).rows[0].cantidad);
 
+test('only admins can restore archived products without changing stock, code, photos, weight or history', async () => {
+  const db = await database();
+  try {
+    await db.exec("UPDATE public.elementos SET archived=true,foto_url='storage://test/photo.jpg',especificaciones='{\"peso_unitario\":{\"valor\":40,\"unidad\":\"g\"},\"fotos_adicionales\":[\"storage://test/other.jpg\"]}'::jsonb WHERE id='ELM-001'");
+    const before=(await db.query("SELECT * FROM public.elementos WHERE id='ELM-001'")).rows[0];
+    const history=(await db.query('SELECT count(*) AS total FROM public.historial')).rows[0].total;
+    const restore="UPDATE public.elementos SET archived=false,updated_at=now() WHERE id='ELM-001' RETURNING *";
+    for (const value of ['operador','consulta','']) {
+      await role(db,value);
+      assert.equal((await db.query(restore)).rows.length,0);
+      await asOwner(db);
+      assert.equal((await db.query("SELECT archived FROM public.elementos WHERE id='ELM-001'")).rows[0].archived,true);
+    }
+    await role(db,'admin');
+    const restored=(await db.query(restore)).rows[0];
+    assert.equal(restored.archived,false);
+    for (const key of Object.keys(before).filter(value=>!['archived','updated_at'].includes(value))) assert.deepEqual(restored[key],before[key]);
+    assert.equal((await db.query(restore)).rows.length,1);
+    assert.equal((await db.query('SELECT count(*) AS total FROM public.historial')).rows[0].total,history);
+    await asOwner(db);await role(db,'operador');
+    assert.equal((await db.query("SELECT id FROM public.elementos WHERE id='ELM-001' AND archived=false")).rows.length,1);
+    await asOwner(db);await db.exec('SET ROLE anon');
+    await assert.rejects(()=>db.query(restore),/permission denied/);
+  } finally {await db.close();}
+});
+
 test('outgoing photos are private, attached atomically, immutable after dispatch and independent of deleted products', async () => {
   const db = await database();
   try {
