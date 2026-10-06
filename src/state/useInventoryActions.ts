@@ -18,6 +18,7 @@ import { emptyTransport, validateTransport } from '../domain/remissionTransport'
 import { lineWeightKg } from '../domain/weight';
 import { OutgoingPhotoSubmission } from '../domain/outgoingPhotos';
 import { saveOutgoingImage, removeOutgoingImage } from '../shared/outgoingImages';
+import { itemLocationColumns } from '../domain/itemLocation';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
 const newId = (prefix: string) => `${prefix}-DEMO-${crypto.randomUUID()}`;
@@ -97,11 +98,13 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       }
       const saved = await updateRow('elementos', id, {
         nombre: next.nombre, descripcion: next.descripcion, stock_minimo: next.stockMinimo,
+        ...itemLocationColumns(updates),
         foto_url: photo, estado: next.estado, cantidad_danados: next.cantidadDanados ?? 0,
         especificaciones: { ...next.especificaciones, peso_unitario: next.pesoUnitario ?? null, fotos_adicionales: gallery.additional }, updated_at: isoNow(),
       }, mapElemento);
       applyItemChange(id, saved);
-      await syncAfterWrite(refreshItemIds([id]));
+      await syncAfterWrite(refreshItemIds([id]), ...(Object.keys(itemLocationColumns(updates)).length
+        ? [refresh('historial'), client.invalidateQueries({ queryKey: ['fulgor', user?.email || '', 'item-history', id] })] : []));
     });
   };
   const deleteElemento = async (id: string) => {

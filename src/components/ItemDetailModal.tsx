@@ -1,6 +1,6 @@
 import { ScreenTransition } from './ui/Motion';
 import { Select } from './ui/Select';
-import { useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import type { Elemento } from '../types';
 import { isDemo } from '../lib/supabase';
@@ -14,12 +14,20 @@ import { ItemWeightFields } from './item/ItemWeightFields';
 import { formatUnitWeight, parseWeightDraft, weightDraft } from '../domain/weight';
 import { ArchivedItemActions } from './administration/ArchivedItemActions';
 import { useDialogFocus } from '../hooks/useDialogFocus';
+import { ItemExistingLocationFields } from './item/ItemExistingLocationFields';
+import { changedItemLocation, itemLocationDraft } from '../domain/itemLocation';
 
 interface Props { item: Elemento | null; onClose: () => void; onPermanentDelete?: (item: Elemento) => Promise<void>; onRestore?: (item: Elemento) => Promise<void> }
 
-export function ItemDetailModal({ item, onClose, onPermanentDelete, onRestore }: Props) {
+export function ItemDetailModal(props: Props) {
+  const inventory = useInventory();
+  return <ItemDetailContent {...props} inventory={inventory} history={props.item && <ItemHistory itemId={props.item.id} />} />;
+}
+type DetailInventory = Pick<ReturnType<typeof useInventory>, 'user' | 'getLocationString' | 'openQuickMovement' | 'addToDispatchCart'
+  | 'updateElemento' | 'deleteElemento' | 'categoryLabel' | 'almacenes' | 'estanterias' | 'cajas'>;
+export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore, inventory, history }: Props & { inventory: DetailInventory; history?: ReactNode }) {
   const { user, getLocationString, openQuickMovement, addToDispatchCart,
-    updateElemento, deleteElemento, categoryLabel } = useInventory();
+    updateElemento, deleteElemento, categoryLabel, almacenes, estanterias, cajas } = inventory;
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(item?.nombre || '');
   const [description, setDescription] = useState(item?.descripcion || '');
@@ -29,10 +37,12 @@ export function ItemDetailModal({ item, onClose, onPermanentDelete, onRestore }:
   const [condition, setCondition] = useState(item?.estado || 'BUENO');
   const [damaged, setDamaged] = useState(item?.cantidadDanados ?? 0);
   const [weight, setWeight] = useState(() => weightDraft(item?.pesoUnitario));
+  const [location, setLocation] = useState(() => itemLocationDraft(item));
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const dialog = useRef<HTMLElement>(null);
+  const saving = useRef(false);
   const canAdmin = isDemo || user.role === 'admin';
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
 
@@ -44,18 +54,21 @@ export function ItemDetailModal({ item, onClose, onPermanentDelete, onRestore }:
     setPhoto(item.fotoUrl || ''); setCondition(item.estado || 'BUENO'); setDamaged(item.cantidadDanados ?? 0);
     setAdditionalPhotos(item.fotosAdicionales || []);
     setWeight(weightDraft(item.pesoUnitario));
+    setLocation(itemLocationDraft(item));
     setError(''); setEditing(true);
   };
   const save = async (event: FormEvent) => {
     event.preventDefault();
-    if (pending || photoBusy) return;
+    if (saving.current || photoBusy || !canAdmin || item.archived) return;
+    saving.current = true;
     setError(''); setPending(true);
     try {
       await updateElemento(item.id, { nombre: name.trim(), descripcion: description.trim(), stockMinimo: minimum,
-        fotoUrl: photo.trim(), fotosAdicionales: additionalPhotos, estado: condition, cantidadDanados: damaged, pesoUnitario: parseWeightDraft(weight) });
+        fotoUrl: photo.trim(), fotosAdicionales: additionalPhotos, estado: condition, cantidadDanados: damaged, pesoUnitario: parseWeightDraft(weight),
+        ...changedItemLocation(location, item) });
       setEditing(false);
     } catch (cause) { setError(errorMessage(cause)); }
-    finally { setPending(false); }
+    finally { saving.current = false; setPending(false); }
   };
   const archive = async () => {
     if (!window.confirm(`¿Archivar ${item.codigo} - ${item.nombre}?`)) return;
@@ -87,6 +100,7 @@ export function ItemDetailModal({ item, onClose, onPermanentDelete, onRestore }:
           <label className="block text-sm font-semibold">Descripción
             <textarea value={description} onChange={event => setDescription(event.target.value)} rows={3} className="block w-full mt-1 p-2.5 border rounded-lg" />
           </label>
+          <ItemExistingLocationFields value={location} onChange={setLocation} warehouses={almacenes} racks={estanterias} boxes={cajas} disabled={pending || photoBusy} />
           <div className="grid grid-cols-2 gap-4">
             <label className="text-sm font-semibold">Stock mínimo
               <NumberInput min="0" step="0.001" required value={minimum} onValueChange={setMinimum} className="block w-full mt-1 p-2.5 border rounded-lg" />
@@ -130,7 +144,7 @@ export function ItemDetailModal({ item, onClose, onPermanentDelete, onRestore }:
           </div>
           {item.archived && canAdmin && <ArchivedItemActions item={item} onDelete={onPermanentDelete} onRestore={onRestore} />}
         </>}</ScreenTransition>
-        <ItemHistory itemId={item.id} />
+        {history}
       </div>
       <footer className="p-4 border-t bg-[#f8fafc] flex justify-end gap-2">
         {editing && <><button type="button" onClick={() => setEditing(false)} disabled={pending || photoBusy} className="px-4 py-2 border rounded-lg text-sm">Cancelar</button>

@@ -12,6 +12,7 @@ const unitWeightMigration = fs.readFileSync(new URL('../../supabase/migrations/2
 const catalogMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000100_data_administration.sql', import.meta.url), 'utf8');
 const archivedMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000200_archived_inventory.sql', import.meta.url), 'utf8');
 const outgoingPhotoMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000300_outgoing_photos.sql', import.meta.url), 'utf8');
+const locationMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000400_item_locations.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 
@@ -38,12 +39,59 @@ async function database() {
   await db.exec(catalogMigration);
   await db.exec(archivedMigration);
   await db.exec(outgoingPhotoMigration);
+  await db.exec(locationMigration);
   return db;
 }
 
 const role = (db, value) => db.exec(`SELECT set_config('app.test_role','${value}',false); SET ROLE authenticated;`);
 const asOwner = db => db.exec('RESET ROLE;');
 const itemStock = async db => Number((await db.query("SELECT cantidad FROM public.elementos WHERE id = 'ELM-001'")).rows[0].cantidad);
+
+test('location changes require admin, preserve stock and atomically record the old and new locations', async () => {
+  const db = await database();
+  try {
+    const before = (await db.query("SELECT * FROM public.elementos WHERE id='ELM-001'")).rows[0];
+    await db.exec(locationMigration); // Safe to apply again, without touching inventory.
+    const count = async () => Number((await db.query("SELECT count(*) AS n FROM public.historial WHERE tipo='REUBICACION' AND elemento_id='ELM-001'")).rows[0].n);
+    assert.equal(await count(), 0);
+    const move = "UPDATE public.elementos SET almacen_id='ALM-BOG-01',estanteria_id='EST-C03',caja_id='CAJ-A01-01' WHERE id='ELM-001' RETURNING *";
+    for (const value of ['operador', 'consulta', '']) {
+      await role(db, value); assert.equal((await db.query(move)).rows.length, 0); await asOwner(db);
+    }
+    await db.exec('SET ROLE anon'); await assert.rejects(() => db.query(move), /permission denied/); await asOwner(db);
+    await role(db, 'admin');
+    const after = (await db.query(move)).rows[0];
+    assert.equal(after.estanteria_id, 'EST-C03'); assert.equal(after.caja_id, 'CAJ-A01-01');
+    for (const key of Object.keys(before).filter(key => !['almacen_id', 'estanteria_id', 'caja_id'].includes(key))) assert.deepEqual(after[key], before[key]);
+    const audit = (await db.query("SELECT * FROM public.historial WHERE tipo='REUBICACION' AND elemento_id='ELM-001'")).rows[0];
+    assert.match(audit.origen_ubicacion, /Paneles/); assert.match(audit.destino_ubicacion, /CAJ-MC4-01/);
+    assert.equal(Number(audit.cantidad), 0); assert.equal(Number(audit.stock_anterior), 184); assert.equal(Number(audit.stock_nuevo), 184);
+    assert.equal(audit.actor_id, '00000000-0000-0000-0000-000000000001');
+    await db.query(move); assert.equal(await count(), 1);
+    await db.query("UPDATE public.elementos SET almacen_id=NULL,estanteria_id=NULL,caja_id=NULL WHERE id='ELM-001'");
+    assert.equal(await count(), 2); assert.equal(await itemStock(db), 184);
+  } finally { await db.close(); }
+});
+
+test('invalid and archived relocations roll back metadata and add no movement', async () => {
+  const db = await database();
+  try {
+    await role(db, 'admin');
+    const before = (await db.query("SELECT * FROM public.elementos WHERE id='ELM-001'")).rows[0];
+    const total = (await db.query('SELECT count(*) AS n FROM public.historial')).rows[0].n;
+    for (const [assignment, error] of [
+      ["almacen_id='ALM-MED-02'", /estantería no pertenece/],
+      ["caja_id='CAJ-A01-01'", /caja no pertenece/],
+      ["estanteria_id=NULL,caja_id='CAJ-A01-01'", /caja no pertenece/],
+      ["almacen_id=NULL", /estantería no pertenece/],
+      ["almacen_id='MISSING'", /Almacén no encontrado/],
+    ]) await assert.rejects(() => db.query(`UPDATE public.elementos SET nombre='No guardar',${assignment} WHERE id='ELM-001'`), error);
+    assert.deepEqual((await db.query("SELECT * FROM public.elementos WHERE id='ELM-001'")).rows[0], before);
+    assert.equal((await db.query('SELECT count(*) AS n FROM public.historial')).rows[0].n, total);
+    await db.query("UPDATE public.elementos SET archived=true WHERE id='ELM-001'");
+    await assert.rejects(() => db.query("UPDATE public.elementos SET estanteria_id=NULL WHERE id='ELM-001'"), /archivado/);
+  } finally { await db.close(); }
+});
 
 test('only admins can restore archived products without changing stock, code, photos, weight or history', async () => {
   const db = await database();
