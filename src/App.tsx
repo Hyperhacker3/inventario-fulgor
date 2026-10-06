@@ -13,6 +13,7 @@ import { ActiveView } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { isDemo } from './lib/supabase';
+import { AppInitialContent, AppLoadingScreen } from './components/AppLoadingScreen';
 const DataAdministrationView = lazy(() => import('./components/DataAdministrationView').then(m => ({ default: m.DataAdministrationView })));
 const DispatchQuantityModal = lazy(() => import('./components/dispatch/DispatchQuantityModal').then(m => ({ default: m.DispatchQuantityModal })));
 const DashboardView = lazy(() => import('./components/DashboardView').then(m => ({ default: m.DashboardView })));
@@ -97,7 +98,7 @@ const MainLayout: React.FC = () => {
       <div className="flex-1 flex flex-col h-full md:pl-64 overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto relative flex flex-col pb-20 md:pb-0">
-          <Suspense fallback={<p className="p-8">Cargando vista…</p>}>{renderActiveView()}</Suspense>
+          {renderActiveView()}
         </main>
       </div>
 
@@ -160,7 +161,7 @@ const MainLayout: React.FC = () => {
 
 function ProtectedApp() {
   const { user, loading, signOut } = useAuth();
-  if (loading) return <p className="p-8">Cargando sesión…</p>;
+  if (loading) return <AppLoadingScreen message="Cargando sesión…" />;
   if (!user) return <AuthScreen />;
   if (!isDemo && !['admin', 'operador', 'consulta'].includes(user.role)) return (
     <main className="min-h-screen grid place-content-center gap-4 p-8 text-center">
@@ -170,9 +171,14 @@ function ProtectedApp() {
   );
   return (
     <InventoryProvider key={user.email}>
-      <MainLayout />
+      <InventoryStartup />
     </InventoryProvider>
   );
+}
+function InventoryStartup() {
+  const { startupStatus, retryInitialLoad } = useInventory();
+  const { signOut } = useAuth();
+  return <AppInitialContent status={startupStatus} onRetry={() => { void retryInitialLoad(); }} onSignOut={() => { void signOut(); }}><MainLayout /></AppInitialContent>;
 }
 const queryClient = new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } } });
 export default function App() { return <QueryClientProvider client={queryClient}><AuthProvider><ProtectedApp /></AuthProvider></QueryClientProvider>; }

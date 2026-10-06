@@ -6,15 +6,53 @@
     <link rel="icon" type="image/png" sizes="256x256" href="/logo-favicon.png" />
     <title>EL TURPIAL - Logística Solar e Inventario</title>
     <meta name="description" content="Sistema integral de gestión de inventario fotovoltaico, almacenes, despachos y remisiones de EL TURPIAL" />
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <!-- Material Symbols Outlined -->
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/hanken-grotesk-latin.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/jetbrains-mono-latin.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/material-symbols.woff2" crossorigin />
+    <link rel="preload" as="image" href="/logo-completo.png" />
+    <style>
+      body { margin: 0; background: #faf8ff; }
+      .app-loading { box-sizing: border-box; min-height: 100vh; min-height: 100dvh; width: 100%; display: grid; place-items: center; padding: 24px; background: #faf8ff; color: #131b2e; font: 16px/1.5 Arial, sans-serif; text-align: center; }
+      .app-loading-content { width: 100%; max-width: 380px; }
+      .app-loading h1 { margin: 0 0 16px; color: #253685; font-size: 24px; font-weight: 700; }
+      .app-loading p { margin: 16px 0; color: #64748b; }
+      .app-spinner { box-sizing: border-box; width: 44px; height: 44px; margin: 24px auto; border: 4px solid #e0e4f2; border-top-color: #3e4e9e; border-radius: 50%; animation: app-spin .8s linear infinite; }
+      .app-loading button { padding: 12px 20px; border: 0; border-radius: 10px; background: #253685; color: white; font: inherit; cursor: pointer; }
+      .app-loading button:disabled { opacity: .5; cursor: wait; }
+      .app-loading button.app-secondary { display: block; margin: 12px auto 0; background: transparent; color: #253685; text-decoration: underline; }
+      .app-spinner[hidden], .app-loading [hidden] { display: none; }
+      @keyframes app-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { .app-spinner { animation: none; } }
+    </style>
+    <script>
+      window.addEventListener('error', function (event) {
+        if (!(event.target instanceof HTMLScriptElement)) return;
+        function showStartupError() {
+          var message = document.getElementById('startup-message');
+          if (!message) return;
+          message.textContent = 'No se pudo cargar la aplicación. Compruebe su conexión e inténtelo de nuevo.';
+          message.closest('main').setAttribute('aria-busy', 'false');
+          message.closest('main').setAttribute('role', 'alert');
+          document.querySelector('#root .app-spinner').hidden = true;
+          document.getElementById('startup-retry').hidden = false;
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showStartupError, { once: true });
+        else showStartupError();
+      }, true);
+    </script>
   </head>
   <body class="bg-[#faf8ff] text-[#131b2e] antialiased selection:bg-[#3e4e9e]/20 selection:text-[#3e4e9e]">
-    <div id="root"></div>
+    <div id="root">
+      <main class="app-loading" role="status" aria-live="polite" aria-busy="true">
+        <div class="app-loading-content">
+          <h1>Inventario turpial</h1>
+          <div class="app-spinner" aria-hidden="true"></div>
+          <p id="startup-message">Cargando aplicación…</p>
+          <button id="startup-retry" type="button" hidden onclick="window.location.reload()">Reintentar</button>
+          <noscript>Active JavaScript para usar el inventario.</noscript>
+        </div>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

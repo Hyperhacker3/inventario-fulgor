@@ -62,6 +62,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted || authEventReceived) return;
       if (error) console.warn('No se pudo restaurar la sesión:', error);
       applySession(data.session);
+    }).catch(error => {
+      if (!mounted || authEventReceived) return;
+      console.warn('No se pudo restaurar la sesión:', error);
+      applySession(null);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       authEventReceived = true;

@@ -3,10 +3,14 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { initializeSupabase } from './lib/supabase';
+import { AppErrorBoundary, AppLoadingError, AppLoadingScreen } from './components/AppLoadingScreen';
+import { loadStartupAssets } from './shared/startupAssets';
 
-initializeSupabase().then(() => {
-  createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);
+const root = createRoot(document.getElementById('root')!);
+root.render(<AppLoadingScreen message="Cargando aplicación…" />);
+Promise.all([initializeSupabase(), loadStartupAssets()]).then(() => {
+  root.render(<StrictMode><AppErrorBoundary><App /></AppErrorBoundary></StrictMode>);
 }).catch(error => {
-  const element = document.getElementById('root');
-  if (element) element.textContent = `No se pudo iniciar la aplicación: ${error instanceof Error ? error.message : String(error)}`;
+  console.error('No se pudo iniciar la aplicación:', error);
+  root.render(<AppLoadingError onRetry={() => window.location.reload()} />);
 });

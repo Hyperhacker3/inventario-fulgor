@@ -4,6 +4,7 @@ import { rpc } from '../data/repository';
 import { supabase } from '../lib/supabase';
 import type { Categoria, PrefijoCodigo } from '../types';
 import { categoryNameKey, newCategoryKey } from '../domain/dataAdministration';
+import { initialQueryStatus } from '../domain/initialLoad';
 
 interface Catalog { categorias: Categoria[]; prefijos: PrefijoCodigo[] }
 export function useDataAdministration() {
@@ -45,5 +46,5 @@ export function useDataAdministration() {
   };
   return { categorias: query.data?.categorias || [], prefijos: query.data?.prefijos || [],
     catalogReady: Boolean(query.data), catalogLoading: query.isPending && query.isFetching,
-    catalogError: query.error, refreshCatalog: () => query.refetch(), saveCatalogEntry: save, createCategoria };
+    catalogError: query.error, catalogLoadStatus: initialQueryStatus([query]), refreshCatalog: () => query.refetch(), saveCatalogEntry: save, createCategoria };
 }

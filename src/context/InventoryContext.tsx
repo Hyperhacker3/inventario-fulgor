@@ -1,6 +1,7 @@
 import { useProjectActions } from '../state/useProjectActions';
 import { useDataAdministration } from '../state/useDataAdministration';
 import { categoryChoices } from '../domain/dataAdministration';
+import { combinedInitialStatus } from '../domain/initialLoad';
 import { categories } from '../domain/catalogs';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
@@ -126,6 +127,10 @@ function useInventoryValue() {
     quickMovementType, isHelpModalOpen, globalSearch, isCloudConnected: data.isCloudConnected,
     dispatchSelection, dispatchSelectionItem, closeDispatchSelection, dispatchFeedback,
     syncStatus: data.syncStatus, setActiveView, setGlobalSearch, openItemDetail, closeItemDetail,
+    startupStatus: combinedInitialStatus(data.initialLoadStatus, catalogs.catalogLoadStatus),
+    retryInitialLoad: () => Promise.allSettled([
+      data.refresh('elementos', 'almacenes', 'estanterias', 'cajas', 'proyectos', 'remisiones', 'historial'), catalogs.refreshCatalog(),
+    ]),
     openPdfRemision, closePdfRemision, openQuickMovement, closeQuickMovement, setIsHelpModalOpen,
     addToDispatchCart, updateDispatchCartQuantity, removeFromDispatchCart, clearDispatchCart,
     getAlmacenById, getEstanteriaById, getCajaById, getProyectoById, getLocationString,

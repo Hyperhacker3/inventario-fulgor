@@ -6,6 +6,7 @@ import { mapElemento, mapRemision, type DbRow } from '../data/mappers';
 import { INITIAL_ALMACENES, INITIAL_CAJAS, INITIAL_ELEMENTOS, INITIAL_ESTANTERIAS, INITIAL_HISTORIAL, INITIAL_PROYECTOS, INITIAL_REMISIONES } from '../data/initialData';
 import type { Almacen, Caja, Elemento, Estanteria, HistorialMovimiento, Proyecto, Remision } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { initialQueryStatus } from '../domain/initialLoad';
 
 export interface DemoData {
   elementos: Elemento[]; almacenes: Almacen[]; estanterias: Estanteria[]; cajas: Caja[];
@@ -51,6 +52,7 @@ export function useInventoryData() {
   const remissions = useTableQuery(key('remisiones'), readRecentRemisiones, enabled);
   const movements = useTableQuery(key('historial'), readRecentHistory, enabled);
   const queries = [items, warehouses, racks, boxes, projects, remissions, movements];
+  const initialLoadStatus = isDemo ? 'ready' : initialQueryStatus(queries);
   const syncStatus = !enabled || !connected || queries.some(q => q.isError) ? 'offline'
     : queries.some(q => q.isPending || q.isFetching) ? 'syncing' : 'synced';
 
@@ -149,5 +151,5 @@ export function useInventoryData() {
   };
   const historyPage = (page: number, pageSize: number, type?: string, search?: string) =>
     readHistory(page, pageSize, { type, search });
-  return { ...data, setDemoData, refresh, refreshItemIds, applyItemChange, rememberRemission, historyPage, isCloudConnected: enabled && connected && syncStatus !== 'offline', syncStatus } as const;
+  return { ...data, setDemoData, refresh, refreshItemIds, applyItemChange, rememberRemission, historyPage, isCloudConnected: enabled && connected && syncStatus !== 'offline', syncStatus, initialLoadStatus } as const;
 }

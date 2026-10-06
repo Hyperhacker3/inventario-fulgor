@@ -21,6 +21,8 @@ La pantalla Entradas registra recepciones sin PDF. Administración de datos → 
 
 Salidas permite tomar o subir fotografías opcionales. Se almacenan en Supabase y se consultan con el botón Fotos del historial, separado del botón PDF. Las fotografías no aparecen en la remisión impresa. Activación y permisos en `docs/registro-fotografico-salidas.md`.
 
+La pantalla inicial muestra un indicador desde el HTML, antes de ejecutar JavaScript. Espera fuentes locales, logo, sesión, datos del inventario y la vista inicial. No oculta la aplicación durante actualizaciones de datos ya cargados. Los errores iniciales ofrecen Reintentar. Las fuentes WOFF2 y sus licencias están en `public/fonts`; los iconos incluyen únicamente los símbolos usados. Si agrega iconos, actualice ese paquete con `node scripts/vendor-fonts.mjs` (requiere conexión). El despliegue y la compilación utilizan los archivos guardados, sin descargar fuentes externas.
+
 ## Inventario histórico
 
 El 1 de octubre de 2026 se conciliaron 677 artículos y se cargaron en el proyecto Supabase. Los archivos completos del Excel, JSON y SQL de importación se retiraron del árbol de trabajo después de verificar la carga. No hay productos reales ni ejemplos en el código de la aplicación. Las pruebas de integración usan únicamente datos sintéticos.
