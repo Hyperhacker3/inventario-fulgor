@@ -1,3 +1,4 @@
+import { Select } from './ui/Select';
 import { useMemo, useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { summarizeInventory, stockStatus } from '../domain/dashboard';
@@ -24,9 +25,9 @@ export function DashboardView() {
       <div><p className="text-xs font-bold tracking-widest text-[#3e4e9e] uppercase mb-1">EL TURPIAL · Control de inventario</p>
         <h2 className="text-2xl md:text-3xl font-bold">Panel de inventario</h2><p className="text-sm text-slate-500 mt-1">Disponibilidad, distribución y prioridades del inventario actual.</p></div>
       <div className="flex flex-wrap gap-3 items-end">
-        <label className="text-xs text-slate-500">Alcance<select value={warehouse} onChange={event => setWarehouse(event.target.value)} className="block mt-1 border rounded-lg p-2 text-sm bg-white text-slate-800">
+        <label className="text-xs text-slate-500">Alcance<Select value={warehouse} onChange={event => setWarehouse(event.target.value)} className="block mt-1 border rounded-lg p-2 text-sm bg-white text-slate-800">
           <option value="ALL">Todos los almacenes</option>{almacenes.map(row => <option key={row.id} value={row.id}>{row.nombre}</option>)}<option value="NONE">Sin almacén</option>
-        </select></label>
+        </Select></label>
         <button type="button" onClick={() => setActiveView('explorer')} className="px-4 py-2.5 text-sm font-bold rounded-lg bg-[#3e4e9e] text-white">Ver inventario</button>
       </div>
     </div>

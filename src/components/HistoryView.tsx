@@ -1,3 +1,4 @@
+import { Select } from './ui/Select';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useInventory } from '../context/InventoryContext';
@@ -135,7 +136,8 @@ export const HistoryView: React.FC = () => {
           <div className="grid grid-cols-2 sm:flex items-center gap-2">
             {/* Type Select */}
             <div className="relative flex-1 sm:min-w-[140px]">
-              <select
+              <Select
+                aria-label="Tipo de movimiento"
                 value={filterType}
                 onChange={(e) => {
                   setFilterType(e.target.value);
@@ -147,10 +149,7 @@ export const HistoryView: React.FC = () => {
                 <option value="ENTRADA">Entrada</option>
                 <option value="AJUSTE">Ajuste</option>
                 <option value="REUBICACION">Reubicación</option>
-              </select>
-              <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[#767682] text-[16px] pointer-events-none">
-                expand_more
-              </span>
+              </Select>
             </div>
 
             {/* Export button on mobile grid / desktop */}

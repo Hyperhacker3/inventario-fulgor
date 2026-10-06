@@ -25,6 +25,14 @@ const { ArchivedItemDeletion } = await import('../../src/components/administrati
 const { ArchivedItemActions } = await import('../../src/components/administration/ArchivedItemActions');
 const { MovementDocuments } = await import('../../src/components/history/MovementDocuments');
 
+
+async function chooseVisible(host: HTMLElement, value: string) {
+  await act(() => host.querySelector<HTMLButtonElement>('[role="combobox"]')!.click());
+  const option = document.querySelector<HTMLButtonElement>(`[role="option"][data-value="${value}"]`)!;
+  assert.ok(option, 'The custom list presents the creation option');
+  await act(() => option.click());
+}
+
 test('unarchiving is available only for archived items, guards concurrent deletion and allows retry after a failure', async () => {
   const active = mapElemento({id:'MAT-1',codigo:'MAT001',nombre:'Material',archived:false});
   const archived = { ...active, archived:true };
@@ -140,13 +148,13 @@ test('inline category creation follows the placeholder, selects the saved catego
     const select=host.querySelector('select')!;
     assert.equal(select.options[0].value,'');
     assert.equal(select.options[1].value,'__NEW_CATEGORY__');
-    await act(() => { select.value='__NEW_CATEGORY__'; select.dispatchEvent(new dom.window.Event('change',{bubbles:true})); });
+    await chooseVisible(host,'__NEW_CATEGORY__');
     const setValue=Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
     await act(() => { const input=host.querySelector('input')!; setValue.call(input,'Materiales eléctricos'); input.dispatchEvent(new dom.window.Event('input',{bubbles:true})); });
-    await act(() => { host.querySelector('button')!.click(); host.querySelector('button')!.click(); });
+    await act(() => { host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); });
     assert.equal(calls,1); assert.deepEqual(selected,[]);
     await act(async () => complete({id:'MATERIALES_ELECTRICOS',nombre:'Materiales eléctricos',activo:true}));
-    assert.deepEqual(selected,['MATERIALES_ELECTRICOS']); assert.equal(host.querySelector('input'),null);
+    assert.deepEqual(selected,['MATERIALES_ELECTRICOS']); assert.equal(host.querySelector('input')?.closest('[inert]') !== null,true); await act(async () => { await new Promise(resolve => setTimeout(resolve,200)); }); assert.equal(host.querySelector('input'),null);
     assert.match(host.querySelector('[role="status"]')!.textContent!,/guardada en Supabase y seleccionada/);
   } finally { await act(() => root.unmount()); host.remove(); }
 });
@@ -167,16 +175,16 @@ test('inline box selection saves in the selected rack, blocks double creation an
     const select = host.querySelector('select')!;
     assert.equal(select.options[0].value,'');
     assert.equal(select.options[1].value,'__NEW_BOX__');
-    await act(() => { select.value='__NEW_BOX__'; select.dispatchEvent(new dom.window.Event('change',{ bubbles:true })); });
+    await chooseVisible(host,'__NEW_BOX__');
     const input = host.querySelector('input')!;
     const setValue = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
     await act(() => { setValue.call(input,' caj-025 '); input.dispatchEvent(new dom.window.Event('input',{ bubbles:true })); });
-    await act(() => { host.querySelector('button')!.click(); host.querySelector('button')!.click(); });
+    await act(() => { host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); });
     assert.equal(calls,1); assert.deepEqual(selected,[]); assert.equal(select.disabled,true); assert.deepEqual(busy,[true]);
     await act(async () => complete({ id:'BOX-SERVER',estanteriaId:'RACK-1',codigoCaja:'CAJ-025',estado:'Parcial' }));
     assert.deepEqual(selected,['BOX-SERVER']); assert.deepEqual(busy,[true,false]); assert.deepEqual(drafts,[true,false]);
     assert.match(host.querySelector('[role="status"]')!.textContent!,/creada en Supabase/);
-    assert.equal(host.querySelector('input'),null);
+    assert.equal(host.querySelector('input')?.closest('[inert]') !== null,true); await act(async () => { await new Promise(resolve => setTimeout(resolve,200)); }); assert.equal(host.querySelector('input'),null);
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
@@ -191,16 +199,16 @@ test('box creation failures keep the draft and an existing box is selected witho
     } };
   try {
     await act(() => root.render(createElement(ItemBoxSelector,props)));
-    await act(() => { const select=host.querySelector('select')!; select.value='__NEW_BOX__'; select.dispatchEvent(new dom.window.Event('change',{bubbles:true})); });
+    await chooseVisible(host,'__NEW_BOX__');
     const setValue = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
     await act(() => { const input=host.querySelector('input')!; setValue.call(input,'CAJ-025'); input.dispatchEvent(new dom.window.Event('input',{bubbles:true})); });
-    await act(async () => host.querySelector('button')!.click());
+    await act(async () => host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click());
     assert.deepEqual(selected,[]); assert.equal(host.querySelector('input')!.value,'CAJ-025');
     assert.match(host.querySelector('[role="alert"]')!.textContent!,/No se pudo conectar/);
     fail=false;
     // A refresh can reveal that this box already exists; retry selects it without duplication.
     await act(() => root.render(createElement(ItemBoxSelector,{ ...props,boxes:[{id:'EXISTING',estanteriaId:'RACK-1',codigoCaja:'CAJ-025',estado:'Parcial' as const}] })));
-    await act(async () => host.querySelector('button')!.click());
+    await act(async () => host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click());
     assert.deepEqual(selected,['EXISTING']); assert.equal(calls,1);
   } finally { await act(() => root.unmount()); host.remove(); }
 });
@@ -221,19 +229,19 @@ test('inline racks require a warehouse, keep failed drafts and select a confirme
     assert.equal(host.querySelector('select')!.options[0].value,'');
     assert.equal(host.querySelector('select')!.options[1].value,'__NEW_RACK__');
     await act(() => root.render(createElement(ItemRackSelector,{ ...props,warehouseId:'WAREHOUSE-1' })));
-    await act(() => { const select=host.querySelector('select')!; select.value='__NEW_RACK__'; select.dispatchEvent(new dom.window.Event('change',{bubbles:true})); });
+    await chooseVisible(host,'__NEW_RACK__');
     const setValue=Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
     await act(() => {
       const inputs=host.querySelectorAll('input');
       setValue.call(inputs[0],' est-025 '); inputs[0].dispatchEvent(new dom.window.Event('input',{bubbles:true}));
       setValue.call(inputs[1],'Zona eléctrica'); inputs[1].dispatchEvent(new dom.window.Event('input',{bubbles:true}));
     });
-    await act(async () => host.querySelector('button')!.click());
+    await act(async () => host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click());
     assert.deepEqual(selected,[]); assert.match(host.querySelector('[role="alert"]')!.textContent!,/No se pudo guardar/);
     assert.equal(host.querySelectorAll('input')[1].value,'Zona eléctrica');
     fail=false;
-    await act(async () => { host.querySelector('button')!.click(); host.querySelector('button')!.click(); });
-    assert.equal(calls,2); assert.deepEqual(selected,['RACK-SERVER']); assert.equal(host.querySelector('input'),null);
+    await act(async () => { host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); });
+    assert.equal(calls,2); assert.deepEqual(selected,['RACK-SERVER']); assert.equal(host.querySelector('input')?.closest('[inert]') !== null,true); await act(async () => { await new Promise(resolve => setTimeout(resolve,200)); }); assert.equal(host.querySelector('input'),null);
     assert.match(host.querySelector('[role="status"]')!.textContent!,/creada en Supabase y seleccionada/);
   } finally { await act(() => root.unmount()); host.remove(); }
 });

@@ -1,3 +1,5 @@
+import { useMotionActive } from './ui/Motion';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Remision } from '../types';
@@ -9,6 +11,9 @@ interface PdfRemissionModalProps {
 }
 
 export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, onClose }) => {
+  const active = useMotionActive();
+  const dialog = useRef<HTMLDivElement>(null);
+  useDialogFocus(dialog, onClose);
   const containerRef = useRef<HTMLDivElement>(null);
   const [scaleMode, setScaleMode] = useState<'fit' | '100' | '75' | '50'>('fit');
   const [computedScale, setComputedScale] = useState<number>(1);
@@ -53,9 +58,9 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
   const a4MinHeight = 1123; // Standard A4 height proportion
 
   return createPortal(
-    <div className="print-layer fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-1 sm:p-4 overflow-hidden">
+    <div data-motion-open={active} inert={!active} aria-hidden={!active || undefined} className="print-layer fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-1 sm:p-4 overflow-hidden">
       {/* Container Dialog */}
-      <div className="ui-panel-enter bg-[#1e293b] text-white rounded-2xl max-w-5xl w-full flex flex-col h-[98dvh] shadow-2xl border border-slate-700 overflow-hidden">
+      <div ref={dialog} role="dialog" aria-modal="true" aria-label="Vista de remisión" className="ui-panel-enter bg-[#1e293b] text-white rounded-2xl max-w-5xl w-full flex flex-col h-[98dvh] shadow-2xl border border-slate-700 overflow-hidden">
         {/* Top Control Bar (Hidden when printing) */}
         <div className="no-print bg-slate-900 px-3 sm:px-6 py-3 border-b border-slate-700 flex flex-wrap items-center justify-between gap-2 sm:gap-4 shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -120,7 +125,7 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
 
             {/* Close Button */}
             <button
-              onClick={onClose}
+              data-dialog-close onClick={onClose}
               id="btn-close-pdf-modal"
               className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-colors"
             >

@@ -30,7 +30,7 @@ export function ProjectsView({ embedded = false }: { embedded?: boolean }) {
     <div><h2 className="text-3xl font-bold">Proyectos</h2><p className="text-slate-600 mt-2">Destinos para las salidas. Al quitar un proyecto, se conserva el historial y puede reactivarse.</p></div>
     {error && <p role="alert" className="text-red-700">{error}</p>}
     {message && <p role="status" className="text-green-700">{message}</p>}
-    {admin && <form onSubmit={save} className="bg-white p-5 rounded-2xl border border-slate-200 space-y-4">
+    {admin && <form key={editing || 'new'} onSubmit={save} className="ui-panel-enter bg-white p-5 rounded-2xl border border-slate-200 space-y-4">
       <h3 className="font-bold text-lg">{editing ? 'Editar proyecto' : 'Añadir proyecto'}</h3>
       <fieldset disabled={busy} className="grid sm:grid-cols-3 gap-4">
         {(['nombre', 'cliente', 'ubicacion'] as const).map(field => <label key={field} className="text-sm space-y-1">

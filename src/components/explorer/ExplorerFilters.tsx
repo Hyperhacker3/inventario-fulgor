@@ -1,3 +1,4 @@
+import { Select } from '../ui/Select';
 import type { CategoriaElemento } from '../../types';
 import { useInventory } from '../../context/InventoryContext';
 
@@ -13,8 +14,8 @@ interface Props {
 export function ExplorerFilters({ visible, selectedCategories, onCategory, stock, onStock,
   warehouseId, onWarehouse, onClear }: Props) {
   const { almacenes, categoryOptions, categoryLabel } = useInventory();
-  return <aside id="inventory-filters" className={`w-full lg:w-56 shrink-0 ${visible ? 'block ui-panel-enter' : 'hidden lg:block'}`}>
-    <div className="bg-white border rounded-xl p-4 sm:p-5 shadow-xs space-y-5">
+  return <aside id="inventory-filters" data-expanded={visible} className="filter-panel w-full lg:w-56 shrink-0">
+    <div className="filter-panel-inner"><div className="bg-white border rounded-xl p-4 sm:p-5 shadow-xs space-y-5">
       <div className="flex justify-between items-center border-b pb-2"><h3 className="font-bold">Filtros</h3>
         <button id="btn-clear-filters" type="button" onClick={onClear} className="text-[#3e4e9e] text-xs font-semibold">Limpiar</button></div>
       <fieldset><legend className="text-xs font-bold text-[#454651] uppercase mb-2">Categoría</legend>
@@ -33,11 +34,11 @@ export function ExplorerFilters({ visible, selectedCategories, onCategory, stock
         </div>
       </fieldset>
       <label className="block text-xs font-bold text-[#454651] uppercase">Almacén
-        <select value={warehouseId} onChange={event => onWarehouse(event.target.value)} className="block w-full mt-2 p-2 border rounded-lg bg-white">
+        <Select value={warehouseId} onChange={event => onWarehouse(event.target.value)} className="block w-full mt-2 p-2 border rounded-lg bg-white">
           <option value="ALL">Todos los almacenes</option>
           {almacenes.map(warehouse => <option key={warehouse.id} value={warehouse.id}>{warehouse.nombre}</option>)}
-        </select>
+        </Select>
       </label>
-    </div>
+    </div></div>
   </aside>;
 }

@@ -1,3 +1,4 @@
+import { Presence } from './ui/Motion';
 import { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { WarehouseTree } from './warehouses/WarehouseTree';
@@ -37,6 +38,6 @@ export function WarehouseView() {
         onEditBox={id => setForm({ kind: 'caja', mode: 'edit', id })} />
         : <div className="bg-white rounded-2xl border p-8 text-sm">Seleccione un almacén.</div>}
     </div>
-    {canAdmin && form && <WarehouseFormModal target={form} onClose={() => setForm(null)} onCreatedWarehouse={setSelectedId} />}
+    <Presence open={canAdmin && !!form}>{canAdmin && form && <WarehouseFormModal target={form} onClose={() => setForm(null)} onCreatedWarehouse={setSelectedId} />}</Presence>
   </div>;
 }

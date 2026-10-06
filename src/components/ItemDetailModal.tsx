@@ -1,3 +1,5 @@
+import { ScreenTransition } from './ui/Motion';
+import { Select } from './ui/Select';
 import { useRef, useState, type FormEvent } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import type { Elemento } from '../types';
@@ -77,7 +79,7 @@ export function ItemDetailModal({ item, onClose, onPermanentDelete, onRestore }:
         {item.stockPendiente && <p role="status" className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
           Stock pendiente de verificar desde el Excel. No disponible para salida hasta que administración registre el ajuste.
         </p>}
-        {editing ? <form id="item-edit-form" onSubmit={save} className="space-y-4">
+        <ScreenTransition screen={editing ? "edit" : "detail"}>{editing ? <form id="item-edit-form" onSubmit={save} className="space-y-4">
           <h2 id="item-detail-heading" className="text-xl font-bold">Editar {item.codigo}</h2>
           <label className="block text-sm font-semibold">Nombre
             <input required value={name} onChange={event => setName(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg" />
@@ -95,9 +97,9 @@ export function ItemDetailModal({ item, onClose, onPermanentDelete, onRestore }:
           </div>
           <ItemWeightFields value={weight} onChange={setWeight} stockUnit={item.unidad} disabled={pending} />
           <label className="block text-sm font-semibold">Estado
-            <select value={condition} onChange={event => setCondition(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg">
+            <Select value={condition} onChange={event => setCondition(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg">
               {['BUENO', 'REGULAR', 'MALO', 'REPARACION', 'RETAL'].map(value => <option key={value}>{value}</option>)}
-            </select>
+            </Select>
           </label>
           <ItemPhotoPicker value={photo} additional={additionalPhotos} category={item.categoria} onChange={setPhoto} onAdditionalChange={setAdditionalPhotos} onBusyChange={setPhotoBusy} disabled={pending} />
         </form> : <>
@@ -127,7 +129,7 @@ export function ItemDetailModal({ item, onClose, onPermanentDelete, onRestore }:
             </>}
           </div>
           {item.archived && canAdmin && <ArchivedItemActions item={item} onDelete={onPermanentDelete} onRestore={onRestore} />}
-        </>}
+        </>}</ScreenTransition>
         <ItemHistory itemId={item.id} />
       </div>
       <footer className="p-4 border-t bg-[#f8fafc] flex justify-end gap-2">

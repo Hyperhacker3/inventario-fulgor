@@ -7,7 +7,6 @@ export function HelpModal() {
   const { isHelpModalOpen, setIsHelpModalOpen, resetToDefaultData, syncStatus } = useInventory();
   const dialog = useRef<HTMLElement>(null);
   useDialogFocus(dialog, () => setIsHelpModalOpen(false), isHelpModalOpen);
-  if (!isHelpModalOpen) return null;
   return <div className="ui-modal-layer fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
     <section ref={dialog} role="dialog" aria-modal="true" aria-label="Ayuda" className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl shadow-xl border max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-5">
       <header className="flex justify-between items-center"><h2 className="text-xl font-bold text-[#253685]">Ayuda y conexión</h2>

@@ -1,3 +1,4 @@
+import { Select } from '../ui/Select';
 import { NumberInput } from '../NumberInput';
 
 interface Props {
@@ -16,9 +17,9 @@ export function ItemStockFields({ quantity, unit, minimum, onQuantity, onUnit, o
       </div>
     </label>
     <label className="text-xs font-bold text-[#454651] uppercase">Unidad de medida
-      <select id="select-unidad" value={unit} onChange={event => onUnit(event.target.value)} className="block w-full mt-2 px-3 py-2 border rounded-lg bg-white">
+      <Select id="select-unidad" value={unit} onChange={event => onUnit(event.target.value)} className="block w-full mt-2 px-3 py-2 border rounded-lg bg-white">
         {units.map(value => <option key={value} value={value}>{value}</option>)}
-      </select>
+      </Select>
     </label>
     <label className="text-xs font-bold text-[#454651] uppercase">Stock mínimo
       <NumberInput min="0" step="0.001" required value={minimum} onValueChange={onMinimum}

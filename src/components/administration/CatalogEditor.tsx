@@ -35,7 +35,7 @@ export function CatalogEditor({ kind }: { kind: 'prefijo' | 'categoria' }) {
       : 'Puede editar el nombre visible. La clave identifica la categoría y se conserva para mantener asociados sus productos. Las categorías inactivas siguen visibles en el inventario.'}</p>
     {error && <p role="alert" className="text-red-700">{error}</p>}
     {message && <p role="status" className="text-green-700">{message}</p>}
-    {admin && <form onSubmit={save} className="border bg-white rounded-2xl p-5 space-y-4">
+    {admin && <form key={id || 'new'} onSubmit={save} className="ui-panel-enter border bg-white rounded-2xl p-5 space-y-4">
       <h3 className="font-bold text-lg">{id ? 'Editar' : 'Crear'} {prefix ? 'prefijo de código' : 'categoría'}</h3>
       <fieldset disabled={busy} className="grid sm:grid-cols-2 gap-4">
         <label className="text-sm">{prefix ? 'Prefijo (tres letras)' : 'Clave de categoría'}

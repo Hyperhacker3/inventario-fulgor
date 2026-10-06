@@ -1,3 +1,4 @@
+import { Select } from './ui/Select';
 import { isMobileCameraDevice } from '../shared/cameraDevices';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useInventory } from '../context/InventoryContext';
@@ -184,10 +185,10 @@ export const NewItemView: React.FC = () => {
               PREFIJO DEL CÓDIGO <span className="text-[#dd4c42]">*</span>
             </label>
             <div className="relative">
-              <select id="select-prefijo" required value={prefixId} onChange={event => setPrefixId(event.target.value)}
+              <Select id="select-prefijo" required value={prefixId} onChange={event => setPrefixId(event.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-lg border bg-white text-sm">
                 <option value="">Seleccione un prefijo</option>{prefijos.filter(row => row.activo).map(row => <option key={row.id} value={row.id}>{row.prefijo} · {row.nombre}</option>)}
-              </select>
+              </Select>
             </div>
             <span className="text-[11px] text-[#767682] mt-1 block">
               {codigo ? `Código estimado: ${codigo}. El definitivo se asigna al guardar.` : 'El número se asigna automáticamente en Supabase.'}
@@ -238,7 +239,8 @@ export const NewItemView: React.FC = () => {
             <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-1.5">
               ESTADO DEL MATERIAL / CONDICIÓN FÍSICA
             </label>
-            <select
+            <Select
+              aria-label="Estado del material"
               value={estado}
               onChange={(e) => setEstado(e.target.value)}
               className="w-full px-3.5 py-2 rounded-lg border border-[#e2e8f0] bg-white text-xs font-semibold text-[#131b2e]"
@@ -248,7 +250,7 @@ export const NewItemView: React.FC = () => {
               <option value="MAL ESTADO">Mal Estado / Dañado (Averiado)</option>
               <option value="EN REPARACIÓN">En Reparación / En Taller</option>
               <option value="RETAZOS / BUENO">Retazos / Sobrantes Buenos</option>
-            </select>
+            </Select>
           </div>
 
           <div>

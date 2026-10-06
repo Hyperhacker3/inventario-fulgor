@@ -1,3 +1,4 @@
+import { Presence } from './ui/Motion';
 import React, { useEffect, useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { ActiveView } from '../types';
@@ -139,7 +140,7 @@ export const Header: React.FC = () => {
               )}
             </button>
 
-            {showNotifications && <button type="button" tabIndex={-1} aria-label="Cerrar notificaciones al tocar fuera" onClick={() => setShowNotifications(false)} className="fixed inset-0 z-40 bg-black/10 cursor-default" />}
+            <Presence open={showNotifications}>{showNotifications && <button type="button" tabIndex={-1} aria-label="Cerrar notificaciones al tocar fuera" onClick={() => setShowNotifications(false)} className="fixed inset-0 z-40 bg-black/10 cursor-default" />}
             {showNotifications && (
               <div className="fixed sm:absolute right-3 sm:right-0 top-14 sm:top-auto sm:mt-2 w-[calc(100vw-1.5rem)] sm:w-80 max-w-sm bg-white border border-[#e2e8f0] rounded-2xl shadow-xl p-3.5 z-50 ui-panel-enter">
                 <div className="flex items-center justify-between pb-2 border-b border-[#e2e8f0] mb-2">
@@ -200,7 +201,7 @@ export const Header: React.FC = () => {
                   )}
                 </div>
               </div>
-            )}
+            )}</Presence>
           </div>
 
           {/* Help Button */}

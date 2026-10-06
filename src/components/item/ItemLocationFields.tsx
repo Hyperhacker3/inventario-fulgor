@@ -1,3 +1,4 @@
+import { Select } from '../ui/Select';
 import { useInventory } from '../../context/InventoryContext';
 import { ItemBoxSelector } from './ItemBoxSelector';
 import { ItemRackSelector } from './ItemRackSelector';
@@ -20,10 +21,10 @@ export function ItemLocationFields({ warehouseId, rackId, boxId, onWarehouse, on
     <h3 className="text-xs font-bold text-[#253685] uppercase mb-3">Ubicación en almacén</h3>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <label className="text-xs font-semibold text-[#454651]">Almacén
-        <select id="select-almacen-form" value={warehouseId} onChange={event => { onWarehouse(event.target.value); onRack(''); onBox(''); }}
+        <Select id="select-almacen-form" value={warehouseId} onChange={event => { onWarehouse(event.target.value); onRack(''); onBox(''); }}
           className="block w-full mt-1.5 px-3 py-2 rounded-lg border bg-white">
           {almacenes.map(warehouse => <option key={warehouse.id} value={warehouse.id}>{warehouse.nombre} ({warehouse.codigo})</option>)}
-        </select>
+        </Select>
       </label>
       <ItemRackSelector key={warehouseId} warehouseId={warehouseId} rackId={rackId} racks={racks}
         onRack={id => { onRack(id); onBox(''); }} onCreate={addEstanteria} onBusyChange={onRackBusyChange} onDraftChange={onRackDraftChange} />

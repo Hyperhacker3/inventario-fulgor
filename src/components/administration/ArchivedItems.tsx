@@ -1,3 +1,4 @@
+import { Presence } from '../ui/Motion';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useInventory } from '../../context/InventoryContext';
@@ -72,6 +73,6 @@ export function ArchivedItems() {
       {!items.data?.rows.length && <p>No se encontraron elementos archivados.</p>}
       {pages > 1 && <div className="flex justify-center items-center gap-4"><button disabled={page <= 1} onClick={() => setPage(page - 1)} className="border rounded-lg p-2 disabled:opacity-40">Anterior</button><span>{page} / {pages}</span><button disabled={page >= pages} onClick={() => setPage(page + 1)} className="border rounded-lg p-2 disabled:opacity-40">Siguiente</button></div>}
     </>}
-    {selected && <ItemDetailModal key={selected.id} item={selected} onClose={() => setSelected(null)} onRestore={restore} onPermanentDelete={jobs.isSuccess ? remove : undefined} />}
+    <Presence open={!!selected}>{selected && <ItemDetailModal key={selected.id} item={selected} onClose={() => setSelected(null)} onRestore={restore} onPermanentDelete={jobs.isSuccess ? remove : undefined} />}</Presence>
   </section>;
 }

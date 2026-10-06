@@ -1,3 +1,4 @@
+import { Select } from '../ui/Select';
 import { useState } from 'react';
 import { useInventory } from '../../context/InventoryContext';
 
@@ -25,12 +26,12 @@ export function ProjectSelector({ value, onChange, disabled }: { value: string; 
         onChange(active.find(project => project.nombre.trim().toLocaleLowerCase() === text.trim().toLocaleLowerCase())?.id || '');
       }} />
     <label htmlFor="select-dispatch-project" className="block text-xs text-slate-600">O elija un proyecto guardado</label>
-    <select id="select-dispatch-project" value={selected?.id || ''} onChange={event => {
+    <Select id="select-dispatch-project" value={selected?.id || ''} onChange={event => {
       onChange(event.target.value); setName(active.find(project => project.id === event.target.value)?.nombre || ''); setError('');
     }} className="w-full border border-slate-300 rounded-lg p-3 text-sm">
       <option value="">{active.length ? 'Seleccione un proyecto' : 'No hay proyectos activos'}</option>
       {active.map(project => <option key={project.id} value={project.id}>{project.nombre}{project.cliente ? ` (${project.cliente})` : ''}</option>)}
-    </select>
+    </Select>
     {selected?.ubicacion && <p className="text-xs text-slate-600">{selected.ubicacion}</p>}
     {name.trim() && !selected && (user.role === 'admin'
       ? <button type="button" onClick={() => { void create(); }} className="text-sm font-semibold text-[#253685]">{busy ? 'Guardando…' : `Crear y seleccionar «${name.trim()}»`}</button>

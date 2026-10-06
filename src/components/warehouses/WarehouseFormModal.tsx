@@ -1,4 +1,8 @@
-import { useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
+import { Presence, useMotionActive } from '../ui/Motion';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
+import { Select } from '../ui/Select';
+import { useRef, useState, type FormEvent } from 'react';
 import { useInventory } from '../../context/InventoryContext';
 import { errorMessage } from '../../shared/errors';
 
@@ -6,6 +10,9 @@ export type WarehouseFormTarget = { kind: 'almacen' | 'estanteria' | 'caja'; mod
 interface Props { target: WarehouseFormTarget; onClose: () => void; onCreatedWarehouse: (id: string) => void }
 
 export function WarehouseFormModal({ target, onClose, onCreatedWarehouse }: Props) {
+  const active = useMotionActive();
+  const dialog = useRef<HTMLElement>(null);
+  useDialogFocus(dialog, onClose);
   const inventory = useInventory();
   const existing = target.kind === 'almacen' ? inventory.almacenes.find(x => x.id === target.id)
     : target.kind === 'estanteria' ? inventory.estanterias.find(x => x.id === target.id) : inventory.cajas.find(x => x.id === target.id);
@@ -35,8 +42,8 @@ export function WarehouseFormModal({ target, onClose, onCreatedWarehouse }: Prop
     } catch (cause) { setError(errorMessage(cause)); }
     finally { setPending(false); }
   };
-  return <div className="ui-modal-layer fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="presentation">
-    <section role="dialog" aria-modal="true" aria-label="Editar ubicación" className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl border shadow-xl w-full max-w-md p-6">
+  return createPortal(<Presence open={active}><div className="ui-modal-layer fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="presentation">
+    <section ref={dialog} role="dialog" aria-modal="true" aria-label="Editar ubicación" className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl border shadow-xl w-full max-w-md p-6">
       <h3 className="font-bold text-lg mb-4">{target.mode === 'new' ? 'Nueva' : 'Editar'} {target.kind}</h3>
       <form onSubmit={submit} className="space-y-3">
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
@@ -45,12 +52,12 @@ export function WarehouseFormModal({ target, onClose, onCreatedWarehouse }: Prop
         {target.kind === 'almacen' && <label className="text-sm block">Ciudad<input value={city} onChange={e => setCity(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
         <label className="text-sm block">Descripción<input value={descripcion} onChange={e => setDescription(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>
         {(target.kind === 'caja' || target.kind === 'almacen' && target.mode === 'edit') &&
-          <label className="text-sm block">Estado<select value={state} onChange={e => setState(e.target.value as typeof state)} className="block border rounded-lg p-2 w-full mt-1">
+          <label className="text-sm block">Estado<Select value={state} onChange={e => setState(e.target.value as typeof state)} className="block border rounded-lg p-2 w-full mt-1">
             {(target.kind === 'caja' ? ['Completa', 'Parcial', 'Vacia'] : ['Operativo', 'Mantenimiento', 'Inactivo']).map(s => <option key={s}>{s}</option>)}
-          </select></label>}
-        <div className="responsive-actions pt-3"><button type="button" onClick={onClose} className="border rounded-lg px-4 py-2">Cancelar</button>
+          </Select></label>}
+        <div className="responsive-actions pt-3"><button type="button" data-dialog-close onClick={onClose} className="border rounded-lg px-4 py-2">Cancelar</button>
           <button disabled={pending} type="submit" className="bg-[#3e4e9e] text-white rounded-lg px-4 py-2">{pending ? 'Guardando…' : 'Guardar'}</button></div>
       </form>
     </section>
-  </div>;
+  </div></Presence>, document.body);
 }

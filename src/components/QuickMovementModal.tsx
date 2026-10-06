@@ -1,13 +1,12 @@
+import type { Elemento } from '../types';
 import React, { useRef, useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { errorMessage } from '../shared/errors';
 import { NumberInput } from './NumberInput';
 import { useDialogFocus } from '../hooks/useDialogFocus';
 
-export const QuickMovementModal: React.FC = () => {
+export const QuickMovementModal: React.FC<{ item: Elemento; movementType: 'ENTRADA' | 'AJUSTE' }> = ({ item: quickMovementItem, movementType: quickMovementType }) => {
   const {
-    quickMovementItem,
-    quickMovementType,
     closeQuickMovement,
     addStockMovement,
     user
@@ -26,7 +25,6 @@ export const QuickMovementModal: React.FC = () => {
   const dialog = useRef<HTMLDivElement>(null);
   useDialogFocus(dialog, closeQuickMovement, !!quickMovementItem);
 
-  if (!quickMovementItem) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,3 +1,5 @@
+import { Presence } from '../ui/Motion';
+import { Select } from '../ui/Select';
 import { useEffect, useRef, useState } from 'react';
 import type { Estanteria } from '../../types';
 import { errorMessage } from '../../shared/errors';
@@ -34,14 +36,14 @@ export function ItemRackSelector({ warehouseId, rackId, racks, onRack, onCreate,
   };
   return <div className="text-xs font-semibold text-[#454651] space-y-2">
     <label htmlFor="select-estanteria-form" className="block">Estantería</label>
-    <select id="select-estanteria-form" value={creating ? '__NEW_RACK__' : rackId} disabled={!warehouseId || busy}
+    <Select id="select-estanteria-form" value={creating ? '__NEW_RACK__' : rackId} disabled={!warehouseId || busy}
       onChange={event => { const draft = event.target.value === '__NEW_RACK__'; setCreating(draft); onDraftChange?.(draft); setError(''); setMessage(''); if (!draft) onRack(event.target.value); }}
       className="block w-full px-3 py-2 rounded-lg border bg-white">
       <option value="">Seleccione una estantería</option>
       <option value="__NEW_RACK__">+ Crear nueva estantería</option>
       {racks.map(rack => <option key={rack.id} value={rack.id}>{rack.codigo} - {rack.nombre}</option>)}
-    </select>
-    {creating && <div className="ui-panel-enter space-y-2">
+    </Select>
+    <Presence open={creating}><div className="ui-panel-enter space-y-2">
       <label htmlFor="input-nueva-estanteria-codigo" className="block">Código de la nueva estantería</label>
       <input id="input-nueva-estanteria-codigo" maxLength={100} value={code} disabled={busy} onChange={event => { setCode(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}
@@ -52,7 +54,7 @@ export function ItemRackSelector({ warehouseId, rackId, racks, onRack, onCreate,
         placeholder="Ej. Zona de materiales eléctricos" className="w-full px-3 py-2 rounded-lg border bg-white" />
       <button type="button" disabled={busy || !code.trim() || !name.trim()} onClick={() => { void create(); }} className="text-white bg-[#253685] rounded-lg px-3 py-2 disabled:opacity-50">{busy ? 'Creando…' : 'Crear y elegir estantería'}</button>
       <p className="font-normal text-slate-500">Se guardará en el almacén elegido.</p>
-    </div>}
+    </div></Presence>
     {!warehouseId && <p className="font-normal text-slate-500">Seleccione un almacén para elegir o crear una estantería.</p>}
     {error && <p role="alert" className="font-normal text-red-700">{error}</p>}
     {message && <p role="status" className="font-normal text-green-700">{message}</p>}

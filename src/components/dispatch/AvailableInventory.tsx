@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useInventory } from '../../context/InventoryContext';
 import { available } from '../../domain/inventory';
 import { ItemImage } from '../ItemImage';
+import { Presence } from '../ui/Motion';
 
 export function AvailableInventory() {
   const { elementos, dispatchCart, addToDispatchCart, getLocationString, openItemDetail } = useInventory();
@@ -25,7 +26,7 @@ export function AvailableInventory() {
         aria-controls={query ? 'dispatch-search-results' : undefined}
         className="w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm" />
     </div>
-    {query && <div id="dispatch-search-results" className="mt-3 space-y-3">
+    <Presence open={!!query}><div id="dispatch-search-results" className="ui-panel-enter mt-3 space-y-3">
       <p role="status" className="text-xs text-slate-500">{filtered.length ? `${filtered.length} resultado(s) con stock disponible` : 'Sin componentes disponibles para esta búsqueda.'}</p>
       <div className="flex flex-col gap-2">
       {visible.map(item => <div key={item.id} className="border rounded-lg p-2.5 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
@@ -48,6 +49,6 @@ export function AvailableInventory() {
       <span>{currentPage} / {pages}</span>
       <button disabled={currentPage >= pages} onClick={() => { setPageKey(query); setPage(currentPage + 1); }} className="px-3 py-1.5 border rounded disabled:opacity-40">Siguiente</button>
     </nav>}
-    </div>}
+    </div></Presence>
   </section>;
 }

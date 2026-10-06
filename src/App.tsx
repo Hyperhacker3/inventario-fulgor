@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { Presence, ScreenTransition } from './components/ui/Motion';
 import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AuthScreen } from './components/AuthScreen';
@@ -93,26 +94,26 @@ const MainLayout: React.FC = () => {
       <div className="flex-1 flex flex-col h-full xl:pl-64 overflow-hidden">
         <Header />
         <main className={`app-main flex-1 min-h-0 overflow-y-auto relative flex flex-col ${keyboardOpen ? 'keyboard-open' : ''}`}>
-          <div key={activeView} className="ui-view-enter flex flex-col flex-1 min-h-0">{renderActiveView()}</div>
+          <ScreenTransition screen={activeView} className="flex flex-col flex-1 min-h-0">{renderActiveView()}</ScreenTransition>
         </main>
         <MobileBottomNav items={mobileNavItems} activeView={activeView} keyboardOpen={keyboardOpen} onNavigate={setActiveView} />
       </div>
 
       {/* Global Modals */}
       {dispatchFeedback && <div role="status" className="fixed top-20 left-4 right-4 sm:left-auto sm:max-w-md z-[70] ui-panel-enter rounded-xl bg-green-50 border border-green-200 text-green-900 shadow-lg p-4 text-sm flex gap-2 items-center"><span className="material-symbols-outlined">check_circle</span>{dispatchFeedback.message}</div>}
-      <Suspense fallback={null}>{selectedRemisionForPdf && <PdfRemissionModal
+      <Suspense fallback={null}><Presence open={!!selectedRemisionForPdf}>{selectedRemisionForPdf && <PdfRemissionModal
         remision={selectedRemisionForPdf}
         onClose={closePdfRemision}
-      />}
-      {selectedItemForDetail && <ItemDetailModal
+      />}</Presence>
+      <Presence open={!!selectedItemForDetail}>{selectedItemForDetail && <ItemDetailModal
         key={selectedItemForDetail.id}
         item={selectedItemForDetail}
         onClose={closeItemDetail}
-      />}
-      {quickMovementItem && <QuickMovementModal key={`${quickMovementItem.id}:${quickMovementType}`} />}
-      {isHelpModalOpen && <HelpModal />}</Suspense>
-      <Suspense fallback={<div role="status" className="no-print fixed inset-0 z-[70] bg-black/60 grid place-items-center"><p className="bg-white rounded-xl p-6">Abriendo fotografías…</p></div>}>{selectedOutgoingPhotosId && <OutgoingPhotoModal key={selectedOutgoingPhotosId} remissionId={selectedOutgoingPhotosId} onClose={closeOutgoingPhotos} />}</Suspense>
-      <Suspense fallback={<div role="status" className="fixed inset-0 z-[60] bg-black/60 grid place-items-center"><p className="bg-white p-6 rounded-xl">Preparando selección de cantidad…</p></div>}>{dispatchSelection && dispatchSelectionItem && <DispatchQuantityModal key={dispatchSelection.token} item={dispatchSelectionItem} inCart={dispatchCart.find(line => line.elemento.id === dispatchSelectionItem.id)?.cantidad || 0} onClose={closeDispatchSelection} onConfirm={quantity => addToDispatchCart(dispatchSelectionItem, quantity)} />}</Suspense>
+      />}</Presence>
+      <Presence open={!!quickMovementItem}>{quickMovementItem && <QuickMovementModal item={quickMovementItem} movementType={quickMovementType} key={`${quickMovementItem.id}:${quickMovementType}`} />}</Presence>
+      <Presence open={isHelpModalOpen}>{isHelpModalOpen && <HelpModal />}</Presence></Suspense>
+      <Suspense fallback={<div role="status" className="no-print fixed inset-0 z-[70] bg-black/60 grid place-items-center"><p className="bg-white rounded-xl p-6">Abriendo fotografías…</p></div>}><Presence open={!!selectedOutgoingPhotosId}>{selectedOutgoingPhotosId && <OutgoingPhotoModal key={selectedOutgoingPhotosId} remissionId={selectedOutgoingPhotosId} onClose={closeOutgoingPhotos} />}</Presence></Suspense>
+      <Suspense fallback={<div role="status" className="fixed inset-0 z-[60] bg-black/60 grid place-items-center"><p className="bg-white p-6 rounded-xl">Preparando selección de cantidad…</p></div>}><Presence open={!!dispatchSelection && !!dispatchSelectionItem}>{dispatchSelection && dispatchSelectionItem && <DispatchQuantityModal key={dispatchSelection.token} item={dispatchSelectionItem} inCart={dispatchCart.find(line => line.elemento.id === dispatchSelectionItem.id)?.cantidad || 0} onClose={closeDispatchSelection} onConfirm={quantity => addToDispatchCart(dispatchSelectionItem, quantity)} />}</Presence></Suspense>
     </div>
   );
 };
