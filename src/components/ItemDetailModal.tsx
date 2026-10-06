@@ -121,6 +121,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
           <ItemValueField value={valorUnitario} onChange={setValorUnitario} unit={item.unidad} disabled={pending} />
           <label className="block text-sm font-semibold">Estado
             <Select value={condition} onChange={event => setCondition(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg">
+              {!['BUENO', 'REGULAR', 'MALO', 'REPARACION', 'RETAL'].includes(condition) && <option value={condition}>{condition}</option>}
               {['BUENO', 'REGULAR', 'MALO', 'REPARACION', 'RETAL'].map(value => <option key={value}>{value}</option>)}
             </Select>
           </label>
