@@ -4,7 +4,13 @@ La navegación compacta se utiliza por debajo de 1280 px, para aprovechar tambi�
 
 El menú es una capa fija: no desplaza el contenido. Tiene transición de apertura y cierre, botón de hamburguesa animado, cierre al tocar fuera, al elegir una pantalla, con Escape y al regresar con el navegador. El foco queda dentro del menú mientras está abierto y vuelve al botón al cerrarlo. Las notificaciones también se recogen al tocar fuera.
 
+El menú se monta directamente en `body`, fuera de la capa de la cabecera. Su ancho máximo es de 300 px y su altura está limitada; solo la lista de opciones tiene desplazamiento, manteniendo visibles la búsqueda y los controles de ayuda y sesión. La barra inferior ocupa espacio dentro de la columna de la aplicación, en lugar de flotar encima de las listas y formularios.
+
 Las ventanas y pantallas tienen animaciones cortas y los botones responden visualmente al pulsarlos. La preferencia del sistema de reducir movimiento desactiva estos efectos. Los campos tienen un tamaño legible en pantallas compactas y los accesos principales tienen superficies táctiles de al menos 44 px. La cuadrícula del inventario calcula sus columnas con el espacio disponible; los filtros se pueden recoger por debajo de 1024 px.
+
+Los controles del producto, almacenes y fotografías usan columnas que permiten ajustar el texto. Las pestañas de administración mantienen una cuadrícula ordenada. Las filas de búsqueda de Entradas separan la imagen, el texto y Seleccionar, y usan iconos compactos cuando no hay foto. Entradas y Salidas muestran sus cinco resultados por página sin una segunda zona de desplazamiento dentro de la lista.
+
+El selector de fotos adapta las columnas al espacio de su propio contenedor: la principal queda centrada y las adicionales forman una cuadrícula. Quitar aparece sobre cada foto y Hacer principal debajo. Las fotos del registro de salida también se distribuyen según el ancho disponible.
 
 ## Teclado
 
@@ -15,7 +21,7 @@ Se utiliza la altura de `VisualViewport` para adaptar el espacio disponible en d
 ## Verificación
 
 - `pnpm typecheck`, `pnpm lint`, `pnpm test:unit` y `pnpm build`.
-- Pruebas de DOM para permisos, cierre exterior, Escape, foco estable tras actualizar datos, ventanas superpuestas, apertura explícita del teclado y ocultación de la barra inferior.
+- Pruebas de DOM para permisos, montaje del menú fuera de la cabecera, cierre exterior, Escape, foco estable tras actualizar datos, ventanas superpuestas, apertura explícita del teclado, ocultación de la barra inferior y acciones de las fotografías.
 - No se utilizaron navegadores automatizados ni computer use. La revisión visual y el teclado real quedan por comprobar en dispositivos físicos.
 
 Tras el despliegue, probar desde un teléfono y una tablet:
@@ -25,5 +31,7 @@ Tras el despliegue, probar desde un teléfono y una tablet:
 3. Abrir la selección de cantidad: el teclado debe esperar al toque en el número.
 4. Abrir la cámara desde la ficha y cerrarla, conservando la ficha debajo.
 5. Girar el dispositivo y comprobar la cuadrícula, el menú y la barra inferior.
+6. Llegar al final de Entradas, Archivados y Almacenes: sus últimos botones y filas deben quedar por encima de la barra inferior.
+7. Añadir varias fotos, cambiar la principal y quitar una adicional; verificar que los controles se mantienen separados.
 
 Esta actualización no requiere SQL ni modifica el inventario de Supabase.

@@ -42,30 +42,32 @@ export function ItemPhotoPicker({ value, additional, onChange, onAdditionalChang
   };
   return <fieldset disabled={disabled || reading} className="p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl min-w-0">
     <legend className="text-xs font-bold tracking-wider text-[#454651] uppercase px-1">Fotografías del producto</legend>
-    <div className="flex flex-col sm:flex-row gap-5">
-      <div className="sm:w-36 shrink-0 space-y-2">
-        <h3 className="text-xs font-bold">Imagen principal</h3>
-        <div className="w-32 h-32 rounded-xl border overflow-hidden"><ItemImage source={value} category={category} compact alt="Imagen principal" className="w-full h-full object-cover" /></div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => setCameraTarget('main')} className="px-2 py-1.5 rounded-lg bg-[#3e4e9e] text-white text-xs font-bold">Tomar foto</button>
-          <button type="button" onClick={() => mainInput.current?.click()} className="px-2 py-1.5 rounded-lg border text-xs">Subir</button>
-          {value && <button type="button" onClick={() => onChange('')} className="text-xs text-red-700">Quitar principal</button>}
+    <div className="photo-editor-grid">
+      <div className="min-w-0 space-y-3">
+        <h3 className="text-sm font-bold">Imagen principal</h3>
+        <div className="w-full max-w-60 mx-auto aspect-square rounded-xl border overflow-hidden"><ItemImage source={value} category={category} compact alt="Imagen principal" className="w-full h-full object-cover" /></div>
+        <div className="responsive-actions">
+          <button type="button" onClick={() => setCameraTarget('main')} className="px-2 py-2 rounded-lg bg-[#3e4e9e] text-white text-sm font-bold">Tomar foto</button>
+          <button type="button" onClick={() => mainInput.current?.click()} className="px-2 py-2 rounded-lg border text-sm">Subir foto</button>
         </div>
+        {value && <button type="button" onClick={() => onChange('')} className="min-h-11 w-full text-sm text-red-700">Quitar principal</button>}
         <input ref={mainInput} type="file" accept="image/*" className="hidden" onChange={event => void upload(event, true)} />
       </div>
-      <div className="flex-1 min-w-0 space-y-2">
-        <h3 className="text-xs font-bold">Imágenes adicionales ({additional.length})</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      <div className="min-w-0 space-y-3">
+        <h3 className="text-sm font-bold">Imágenes adicionales ({additional.length})</h3>
+        {!additional.length && <p className="rounded-xl border-2 border-dashed p-5 text-center text-sm text-slate-500">Puedes añadir más fotos del producto.</p>}
+        <div className="photo-tiles">
           {additional.map((photo, index) => <div key={`${index}-${photo.slice(-40)}`} className="min-w-0">
-            <div className="relative aspect-square rounded-lg border overflow-hidden"><ItemImage source={photo} category={category} compact alt={`Foto adicional ${index + 1}`} className="absolute inset-0 w-full h-full object-cover" /></div>
-            <div className="flex flex-wrap justify-between gap-1 mt-1">
-              <button type="button" onClick={() => makeMain(index)} aria-label={`Usar foto ${index + 1} como principal`} className="text-[11px] font-semibold text-[#3e4e9e] hover:underline">Hacer principal</button>
-              <button type="button" onClick={() => onAdditionalChange(additional.filter((_, position) => position !== index))} aria-label={`Quitar foto adicional ${index + 1}`} className="text-[11px] text-red-700 hover:underline">Quitar</button>
+            <div className="relative aspect-square rounded-lg border overflow-hidden"><ItemImage source={photo} category={category} compact alt={`Foto adicional ${index + 1}`} className="absolute inset-0 w-full h-full object-cover" />
+              <button type="button" onClick={() => onAdditionalChange(additional.filter((_, position) => position !== index))} aria-label={`Quitar foto adicional ${index + 1}`} className="absolute top-1 right-1 w-11 h-11 rounded-lg bg-white/95 shadow text-red-700 text-xl">×</button>
             </div>
+            <button type="button" onClick={() => makeMain(index)} aria-label={`Usar foto ${index + 1} como principal`} className="w-full min-h-11 rounded-lg border bg-white text-xs font-semibold text-[#3e4e9e] mt-1">Hacer principal</button>
           </div>)}
-          <button type="button" onClick={() => extraInput.current?.click()} className="aspect-square rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-[#3e4e9e] hover:bg-white"><span className="text-3xl">+</span><span className="text-xs font-semibold">Añadir fotos</span></button>
         </div>
-        <button type="button" onClick={() => setCameraTarget('additional')} className="px-3 py-2 rounded-lg border text-xs font-semibold">Tomar foto adicional</button>
+        <div className="responsive-actions">
+          <button type="button" onClick={() => extraInput.current?.click()} className="px-2 py-2 rounded-lg border text-sm font-semibold">Añadir fotos</button>
+          <button type="button" onClick={() => setCameraTarget('additional')} className="px-2 py-2 rounded-lg border text-sm font-semibold">Tomar foto adicional</button>
+        </div>
         <input ref={extraInput} type="file" accept="image/*" multiple className="hidden" onChange={event => void upload(event, false)} />
       </div>
     </div>

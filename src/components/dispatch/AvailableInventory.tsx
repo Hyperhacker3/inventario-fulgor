@@ -27,18 +27,18 @@ export function AvailableInventory() {
     </div>
     {query && <div id="dispatch-search-results" className="mt-3 space-y-3">
       <p role="status" className="text-xs text-slate-500">{filtered.length ? `${filtered.length} resultado(s) con stock disponible` : 'Sin componentes disponibles para esta búsqueda.'}</p>
-      <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
-      {visible.map(item => <div key={item.id} className="border rounded-lg p-2.5 flex justify-between items-center gap-3">
+      <div className="flex flex-col gap-2">
+      {visible.map(item => <div key={item.id} className="border rounded-lg p-2.5 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <button type="button" onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${item.nombre}`} className="shrink-0 rounded-lg hover:opacity-80">
             <ItemImage source={item.fotoUrl} category={item.categoria} compact alt={item.nombre} className="w-10 h-10 rounded-lg object-cover" />
           </button>
-          <div className="min-w-0"><button type="button" onClick={() => openItemDetail(item)} title={item.nombre} className="block max-w-full text-left font-bold text-sm truncate hover:text-[#3e4e9e] hover:underline">{item.nombre}</button>
-            <span className="block text-xs text-[#64748b] truncate">{item.codigo} · {getLocationString(item)}</span></div>
+          <div className="min-w-0"><button type="button" onClick={() => openItemDetail(item)} title={item.nombre} className="block max-w-full text-left font-bold text-sm break-words hover:text-[#3e4e9e] hover:underline">{item.nombre}</button>
+            <span className="block text-xs text-[#64748b] break-words">{item.codigo} · {getLocationString(item)}</span></div>
         </div>
-        <div className="text-right shrink-0"><span className="block text-xs">{available(item)} {item.unidad}</span>
+        <div className="flex items-center justify-between gap-3 sm:block sm:text-right shrink-0"><span className="block text-xs">{available(item)} {item.unidad}</span>
           <button id={`btn-add-cart-${item.codigo}`} type="button" onClick={() => addToDispatchCart(item)}
-            className="mt-1 px-3 py-1.5 bg-[#3e4e9e] text-white rounded-lg text-xs font-bold">
+            className="min-h-11 sm:mt-1 px-3 py-1.5 bg-[#3e4e9e] text-white rounded-lg text-xs font-bold">
             {dispatchCart.some(line => line.elemento.id === item.id) ? 'Añadir otro' : 'Añadir'}
           </button></div>
       </div>)}

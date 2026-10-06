@@ -95,9 +95,8 @@ const MainLayout: React.FC = () => {
         <main className={`app-main flex-1 min-h-0 overflow-y-auto relative flex flex-col ${keyboardOpen ? 'keyboard-open' : ''}`}>
           <div key={activeView} className="ui-view-enter flex flex-col flex-1 min-h-0">{renderActiveView()}</div>
         </main>
+        <MobileBottomNav items={mobileNavItems} activeView={activeView} keyboardOpen={keyboardOpen} onNavigate={setActiveView} />
       </div>
-
-      <MobileBottomNav items={mobileNavItems} activeView={activeView} keyboardOpen={keyboardOpen} onNavigate={setActiveView} />
 
       {/* Global Modals */}
       {dispatchFeedback && <div role="status" className="fixed top-20 left-4 right-4 sm:left-auto sm:max-w-md z-[70] ui-panel-enter rounded-xl bg-green-50 border border-green-200 text-green-900 shadow-lg p-4 text-sm flex gap-2 items-center"><span className="material-symbols-outlined">check_circle</span>{dispatchFeedback.message}</div>}

@@ -66,12 +66,12 @@ export function ItemDetailModal({ item, onClose, onPermanentDelete, onRestore }:
   return <div className="ui-modal-layer fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-6" role="presentation">
     <section ref={dialog} role="dialog" aria-modal="true" aria-labelledby="item-detail-heading"
       className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] shadow-2xl border flex flex-col overflow-hidden">
-      <header className="px-6 py-4 border-b flex items-center justify-between bg-[#f8fafc]">
-        <div><span className="font-mono-code font-bold text-[#253685]">{item.codigo}</span>
-          <span className="ml-3 text-xs text-[#64748b]">{categoryLabel(item.categoria)}</span></div>
+      <header className="px-4 sm:px-6 py-3 sm:py-4 border-b flex items-center justify-between bg-[#f8fafc]">
+        <div className="min-w-0 flex flex-wrap gap-x-3 gap-y-1"><span className="font-mono-code font-bold text-[#253685]">{item.codigo}</span>
+          <span className="break-words text-xs text-[#64748b]">{categoryLabel(item.categoria)}</span></div>
         <button data-dialog-close type="button" onClick={onClose} aria-label="Cerrar detalle" className="min-w-11 min-h-11 text-2xl text-[#64748b]">×</button>
       </header>
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">
         {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
         {item.archived && <p className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm">Elemento archivado. No admite entradas, salidas ni edición.</p>}
         {item.stockPendiente && <p role="status" className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
@@ -111,12 +111,12 @@ export function ItemDetailModal({ item, onClose, onPermanentDelete, onRestore }:
               <p className={`text-sm mt-2 ${item.pesoUnitario ? 'text-[#253685]' : 'text-amber-700'}`}>Peso por 1 {item.unidad.toUpperCase()}: {formatUnitWeight(item.pesoUnitario)}</p>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-lg">{item.cantidad}</strong><span className="text-xs">Stock {item.unidad}</span></div>
-            <div className="p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-lg">{available(item)}</strong><span className="text-xs">Disponible</span></div>
-            <div className="p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-lg">{item.cantidadDanados ?? 0}</strong><span className="text-xs">Dañado</span></div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-lg">{item.cantidad}</strong><span className="text-xs">Stock {item.unidad}</span></div>
+            <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-lg">{available(item)}</strong><span className="text-xs">Disponible</span></div>
+            <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-lg">{item.cantidadDanados ?? 0}</strong><span className="text-xs">Dañado</span></div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="responsive-actions">
             {!item.archived && <>
             {canAdmin && <button type="button" onClick={startEdit} className="px-3 py-2 rounded-lg border text-sm font-semibold">Editar</button>}
             {canOperate && !item.stockPendiente && <button type="button" onClick={() => openQuickMovement(item, 'ENTRADA')} className="px-3 py-2 rounded-lg bg-[#e6f4ea] text-[#137333] text-sm font-semibold">Entrada</button>}

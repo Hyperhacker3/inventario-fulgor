@@ -1,7 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-const url = (import.meta.env.VITE_SUPABASE_URL ?? '').replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
-const publishableKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+const environment = import.meta.env ?? {};
+const url = (environment.VITE_SUPABASE_URL ?? '').replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
+const publishableKey = (environment.VITE_SUPABASE_PUBLISHABLE_KEY || environment.VITE_SUPABASE_ANON_KEY || '').trim();
 // El inventario solo se obtiene del proyecto Supabase configurado.
 export const isDemo = false;
 export const isSupabaseConfigured = !isDemo && /^https:\/\//.test(url) && publishableKey.length > 20;

@@ -119,7 +119,7 @@ export const DispatchView: React.FC = () => {
           <form
             onSubmit={handleDispatch}
             aria-busy={pending || photoBusy}
-            className="bg-white border border-[#e2e8f0] rounded-2xl p-6 shadow-xs flex flex-col gap-5"
+            className="bg-white border border-[#e2e8f0] rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col gap-5"
           >
             <fieldset disabled={pending || photoBusy} className="min-w-0 flex flex-col gap-5">
             <div className="flex items-center justify-between pb-3 border-b border-[#e2e8f0]">
@@ -294,13 +294,13 @@ export const DispatchView: React.FC = () => {
               type="submit"
               id="btn-process-dispatch"
               disabled={dispatchCart.length === 0 || pending || photoBusy || !automaticReady || !photosReady}
-              className={`w-full py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all shadow-sm ${
+              className={`w-full px-3 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all shadow-sm ${
                 dispatchCart.length > 0
                   ? 'bg-[#dd4c42] hover:bg-[#b12c26] active:scale-[0.98]'
                   : 'bg-[#cbd5e1] cursor-not-allowed opacity-70'
               }`}
             >
-              <span className="material-symbols-outlined text-[20px]">assignment_turned_in</span>
+              <span className="material-symbols-outlined shrink-0 text-[20px]">assignment_turned_in</span>
               <span>{pending ? (photos.length ? 'Guardando salida y fotografías…' : 'Registrando salida…') : 'Registrar salida y generar remisión'}</span>
             </button>
           </form>

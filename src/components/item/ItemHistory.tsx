@@ -28,9 +28,9 @@ export function ItemHistory({ itemId }: { itemId: string }) {
     {documentError && <p role="alert" className="text-xs text-red-700">{documentError}</p>}
     {rows.length === 0 && !query.isPending && <p className="text-xs text-[#64748b]">Sin movimientos registrados.</p>}
     <div className="max-h-48 overflow-y-auto space-y-2">
-      {rows.map(row => <div key={row.id} className="flex justify-between gap-3 p-2.5 rounded-lg border bg-[#f8fafc] text-xs">
-        <div><strong>{row.tipo}</strong><span className="ml-2">{row.motivo}</span><span className="block text-[#64748b]">{row.fecha}</span></div>
-        <div className="space-y-2 text-right"><span className="font-mono-code whitespace-nowrap">{row.cantidad > 0 && row.tipo !== 'SALIDA' ? '+' : ''}{row.cantidad} {row.unidad}</span>{row.remisionId && <MovementDocuments remissionId={row.remisionId} onPdf={id=>{void openPdf(id);}} onPhotos={openOutgoingPhotos} />}</div>
+      {rows.map(row => <div key={row.id} className="flex flex-col sm:flex-row justify-between gap-3 p-2.5 rounded-lg border bg-[#f8fafc] text-xs">
+        <div className="min-w-0 break-words"><strong>{row.tipo}</strong><span className="ml-2">{row.motivo}</span><span className="block text-[#64748b]">{row.fecha}</span></div>
+        <div className="space-y-2 text-left sm:text-right"><span className="font-mono-code whitespace-nowrap">{row.cantidad > 0 && row.tipo !== 'SALIDA' ? '+' : ''}{row.cantidad} {row.unidad}</span>{row.remisionId && <MovementDocuments remissionId={row.remisionId} onPdf={id=>{void openPdf(id);}} onPhotos={openOutgoingPhotos} />}</div>
       </div>)}
     </div>
   </section>;

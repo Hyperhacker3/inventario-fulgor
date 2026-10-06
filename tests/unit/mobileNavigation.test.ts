@@ -7,10 +7,35 @@ import { MobileMenu } from '../../src/components/navigation/MobileMenu';
 import { MobileBottomNav } from '../../src/components/navigation/MobileBottomNav';
 import { keyboardIsVisible, useMobileKeyboard } from '../../src/hooks/useMobileKeyboard';
 import { useDialogFocus } from '../../src/hooks/useDialogFocus';
+import { ItemPhotoPicker } from '../../src/components/ItemPhotoPicker';
+import { OutgoingPhotoPicker } from '../../src/components/dispatch/OutgoingPhotoPicker';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://app.test/' });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, HTMLInputElement: dom.window.HTMLInputElement, IS_REACT_ACT_ENVIRONMENT: true });
 const { createRoot } = await import('react-dom/client');
+
+test('photo editor preserves promotion, removal and disabled controls with multiple images', async () => {
+  const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);
+  let main='https://images.test/main.jpg',additional=['https://images.test/a.jpg','https://images.test/b.jpg'];
+  const render=(disabled=false)=>createElement(ItemPhotoPicker,{value:main,additional,disabled,onChange:(value:string)=>{main=value;},onAdditionalChange:(value:string[])=>{additional=value;}});
+  try {
+    await act(()=>root.render(render()));
+    assert.equal(host.querySelectorAll('img').length,3);
+    await act(()=>host.querySelector<HTMLButtonElement>('[aria-label="Usar foto 1 como principal"]')!.click());
+    assert.equal(main,'https://images.test/a.jpg');
+    assert.deepEqual(additional,['https://images.test/main.jpg','https://images.test/b.jpg']);
+    await act(()=>root.render(render()));
+    await act(()=>host.querySelector<HTMLButtonElement>('[aria-label="Quitar foto adicional 2"]')!.click());
+    assert.deepEqual(additional,['https://images.test/main.jpg']);
+    await act(()=>root.render(render(true)));
+    const remove=host.querySelector<HTMLButtonElement>('[aria-label="Quitar foto adicional 1"]')!;
+    assert.equal(remove.matches(':disabled'),true);
+    await act(()=>remove.click());assert.equal(additional.length,1);
+    await act(()=>root.render(createElement(OutgoingPhotoPicker,{photos:['https://images.test/evidence.jpg'],onChange:value=>{additional=value;},onBusyChange:()=>{}})));
+    await act(()=>host.querySelector<HTMLButtonElement>('[aria-label="Quitar foto de salida 1"]')!.click());
+    assert.deepEqual(additional,[]);
+  } finally {await act(()=>root.unmount());host.remove();}
+});
 
 test('quick navigation has at most four actions while the complete menu retains every permitted screen', () => {
   assert.deepEqual(quickNavigationItems('admin', 3).map(item => item.id), ['dashboard','explorer','entries','dispatch']);
@@ -30,24 +55,26 @@ test('overlay menu closes outside or with Escape, traps focus, and preserves inp
   const props = { items:navigationItems('admin',2), activeView:'explorer' as const, search:'', onSearch:()=>{}, onNavigate:(view:string)=>{selected=view;}, onHelp:()=>{}, onSignOut:()=>{} };
   try {
     await act(()=>root.render(createElement(MobileMenu,{...props,open:false,onClose:()=>{closed++;}})));
-    assert.ok(host.querySelector('[aria-hidden="true"][inert]'));
+    assert.ok(document.querySelector('[aria-hidden="true"][inert]'));
+    assert.equal(document.querySelector('.mobile-menu-layer')!.parentElement, document.body);
+    assert.equal(host.querySelector('[role="dialog"]'), null);
     await act(()=>root.render(createElement(MobileMenu,{...props,open:true,onClose:()=>{closed++;}})));
-    const close=host.querySelector<HTMLButtonElement>('[data-dialog-close]')!;
+    const close=document.querySelector<HTMLButtonElement>('[data-dialog-close]')!;
     assert.equal(document.activeElement,close);
-    const input=host.querySelector<HTMLInputElement>('input')!;
+    const input=document.querySelector<HTMLInputElement>('input')!;
     input.focus();
     await act(()=>root.render(createElement(MobileMenu,{...props,search:'CAB',open:true,onClose:()=>{latest++;}})));
     assert.equal(document.activeElement,input); assert.equal(input.value,'CAB');
     // Sign-out is the final focusable control.
-    const controls=host.querySelectorAll<HTMLButtonElement>('section button');
+    const controls=document.querySelectorAll<HTMLButtonElement>('section button');
     controls[controls.length-1].focus();
     await act(()=>document.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true})));
     assert.equal(document.activeElement,close);
-    await act(()=>host.querySelector<HTMLButtonElement>('[aria-label="Cerrar menú al tocar fuera"]')!.click());
+    await act(()=>document.querySelector<HTMLButtonElement>('[aria-label="Cerrar menú al tocar fuera"]')!.click());
     assert.equal(latest,1); assert.equal(closed,0);
     await act(()=>document.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true})));
     assert.equal(latest,2);
-    await act(()=>host.querySelector<HTMLFormElement>('form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true})));
+    await act(()=>document.querySelector<HTMLFormElement>('form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true})));
     assert.equal(selected,'explorer');
     await act(()=>root.render(createElement(MobileMenu,{...props,open:false,onClose:()=>{latest++;}})));
     assert.equal(document.activeElement,trigger);

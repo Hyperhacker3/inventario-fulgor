@@ -35,8 +35,8 @@ export function WarehouseFormModal({ target, onClose, onCreatedWarehouse }: Prop
     } catch (cause) { setError(errorMessage(cause)); }
     finally { setPending(false); }
   };
-  return <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="presentation">
-    <section role="dialog" aria-modal="true" aria-label="Editar ubicación" className="bg-white rounded-2xl border shadow-xl w-full max-w-md p-6">
+  return <div className="ui-modal-layer fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="presentation">
+    <section role="dialog" aria-modal="true" aria-label="Editar ubicación" className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl border shadow-xl w-full max-w-md p-6">
       <h3 className="font-bold text-lg mb-4">{target.mode === 'new' ? 'Nueva' : 'Editar'} {target.kind}</h3>
       <form onSubmit={submit} className="space-y-3">
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
@@ -48,7 +48,7 @@ export function WarehouseFormModal({ target, onClose, onCreatedWarehouse }: Prop
           <label className="text-sm block">Estado<select value={state} onChange={e => setState(e.target.value as typeof state)} className="block border rounded-lg p-2 w-full mt-1">
             {(target.kind === 'caja' ? ['Completa', 'Parcial', 'Vacia'] : ['Operativo', 'Mantenimiento', 'Inactivo']).map(s => <option key={s}>{s}</option>)}
           </select></label>}
-        <div className="flex justify-end gap-2 pt-3"><button type="button" onClick={onClose} className="border rounded-lg px-4 py-2">Cancelar</button>
+        <div className="responsive-actions pt-3"><button type="button" onClick={onClose} className="border rounded-lg px-4 py-2">Cancelar</button>
           <button disabled={pending} type="submit" className="bg-[#3e4e9e] text-white rounded-lg px-4 py-2">{pending ? 'Guardando…' : 'Guardar'}</button></div>
       </form>
     </section>
