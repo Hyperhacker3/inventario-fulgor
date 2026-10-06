@@ -3,6 +3,7 @@ import { useInventory } from '../context/InventoryContext';
 import { CategoriaElemento } from '../types';
 import { ItemPhotoPicker } from './ItemPhotoPicker';
 import { ItemLocationFields } from './item/ItemLocationFields';
+import { ItemCategorySelector } from './item/ItemCategorySelector';
 import { ItemStockFields } from './item/ItemStockFields';
 import { errorMessage } from '../shared/errors';
 import { NumberInput } from './NumberInput';
@@ -17,7 +18,7 @@ export const NewItemView: React.FC = () => {
     cajas,
     addElemento,
     setActiveView,
-    prefijos, categorias, elementos, catalogReady, catalogLoading, refreshCatalog, categoryLabel
+    prefijos, categorias, elementos, catalogReady, catalogLoading, refreshCatalog, createCategoria
   } = useInventory();
 
   // Form State
@@ -44,6 +45,8 @@ export const NewItemView: React.FC = () => {
   const [photoBusy, setPhotoBusy] = useState(false);
   const [boxBusy, setBoxBusy] = useState(false);
   const [boxDraftPending, setBoxDraftPending] = useState(false);
+  const [categoryBusy, setCategoryBusy] = useState(false);
+  const [categoryDraftPending, setCategoryDraftPending] = useState(false);
   const [formVersion, setFormVersion] = useState(0);
   const nameInput = useRef<HTMLInputElement>(null);
   useEffect(() => { if (formVersion > 0) nameInput.current?.focus(); }, [formVersion]);
@@ -64,11 +67,15 @@ export const NewItemView: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pending || photoBusy || boxBusy) return;
+    if (pending || photoBusy || boxBusy || categoryBusy) return;
     setFeedback(null);
 
     if (boxDraftPending) {
       setFeedback({ type: 'error', message: 'Pulse Crear y elegir caja, o seleccione una caja existente, antes de guardar el componente.' });
+      return;
+    }
+    if (categoryDraftPending) {
+      setFeedback({ type: 'error', message: 'Pulse Crear y elegir categoría, o seleccione una categoría existente, antes de guardar el componente.' });
       return;
     }
 
@@ -161,7 +168,7 @@ export const NewItemView: React.FC = () => {
         <button type="button" className="text-[#253685] underline" onClick={() => { void refreshCatalog(); }}>Comprobar de nuevo</button>
       </div>}
       <form onSubmit={handleSubmit} className="bg-white border border-[#e2e8f0] rounded-2xl p-6 md:p-8 shadow-xs flex flex-col gap-6">
-        <fieldset key={formVersion} disabled={pending || boxBusy} className="contents">
+        <fieldset key={formVersion} disabled={pending || boxBusy || categoryBusy} className="contents">
         {/* Row 1: Code and Name */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <div>
@@ -199,21 +206,8 @@ export const NewItemView: React.FC = () => {
 
         {/* Row 2: Category and Description */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          <div>
-            <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-2">
-              CATEGORÍA <span className="text-[#dd4c42]">*</span>
-            </label>
-            <select
-              id="select-categoria"
-              required
-              value={categoria}
-              onChange={(e) => setCategoria(e.target.value as CategoriaElemento)}
-              className="w-full px-3.5 py-2.5 rounded-lg border border-[#e2e8f0] bg-white text-sm focus:outline-hidden focus:ring-2 focus:ring-[#3e4e9e] text-[#131b2e] cursor-pointer"
-            >
-              <option value="">Seleccione una categoría</option>
-              {categorias.filter(row => row.activo).map(row => <option key={row.id} value={row.id}>{categoryLabel(row.id)}</option>)}
-            </select>
-          </div>
+          <ItemCategorySelector value={categoria} categories={categorias} onChange={setCategoria}
+            onCreate={createCategoria} onBusyChange={setCategoryBusy} onDraftChange={setCategoryDraftPending} disabled={!catalogReady} />
 
           <div className="md:col-span-2">
             <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-2">
@@ -286,7 +280,7 @@ export const NewItemView: React.FC = () => {
           <button
             type="submit"
             id="btn-submit-component"
-            disabled={pending || photoBusy || boxBusy || !catalogReady || !selectedPrefix}
+            disabled={pending || photoBusy || boxBusy || categoryBusy || !catalogReady || !selectedPrefix}
             className="px-6 py-2.5 rounded-lg bg-[#3e4e9e] text-white text-sm font-bold hover:bg-[#323f80] active:scale-[0.98] transition-all shadow-sm flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-[18px]">save</span>

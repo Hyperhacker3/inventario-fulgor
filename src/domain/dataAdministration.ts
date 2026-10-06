@@ -14,3 +14,20 @@ export function prefixPreview(prefix: PrefijoCodigo, codes: string[]) {
   }, prefix.ultimo);
   return formatItemCode(prefix.prefijo, highest + 1);
 }
+
+export function categoryNameKey(name: string) {
+  return name.trim().replace(/\s+/g, ' ').toLocaleLowerCase('es');
+}
+export function newCategoryKey(name: string, catalog: Categoria[]) {
+  let base = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  if (!/^[A-Z]/.test(base) || base.length < 2) base = `CAT_${base}`;
+  base = base.slice(0, 50);
+  const occupied = new Set(catalog.map(category => category.id));
+  let key = base;
+  for (let number = 2; occupied.has(key); number++) {
+    const suffix = `_${number}`;
+    key = base.slice(0, 50 - suffix.length) + suffix;
+  }
+  return key;
+}
