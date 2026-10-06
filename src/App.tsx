@@ -15,6 +15,7 @@ import { MobileBottomNav } from './components/navigation/MobileBottomNav';
 import { useMobileKeyboard } from './hooks/useMobileKeyboard';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
+import { ThemeProvider } from './context/ThemeContext';
 import { isDemo } from './lib/supabase';
 import { AppInitialContent, AppLoadingScreen } from './components/AppLoadingScreen';
 const DataAdministrationView = lazy(() => import('./components/DataAdministrationView').then(m => ({ default: m.DataAdministrationView })));
@@ -142,4 +143,4 @@ function InventoryStartup() {
   return <AppInitialContent status={startupStatus} onRetry={() => { void retryInitialLoad(); }} onSignOut={() => { void signOut(); }}><MainLayout /></AppInitialContent>;
 }
 const queryClient = new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } } });
-export default function App() { return <QueryClientProvider client={queryClient}><AuthProvider><ProtectedApp /></AuthProvider></QueryClientProvider>; }
+export default function App() { return <ThemeProvider><QueryClientProvider client={queryClient}><AuthProvider><ProtectedApp /></AuthProvider></QueryClientProvider></ThemeProvider>; }

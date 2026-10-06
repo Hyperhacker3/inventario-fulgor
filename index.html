@@ -1,8 +1,19 @@
 <!doctype html>
-<html lang="es" class="light">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#faf8ff" />
+    <script>
+      (function () {
+        var preference = null;
+        try { preference = localStorage.getItem('el_turpial_theme'); } catch (_) {}
+        var theme = preference === 'light' || preference === 'dark' ? preference : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+        document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#101522' : '#faf8ff';
+      })();
+    </script>
     <link rel="icon" type="image/png" sizes="256x256" href="/logo-favicon.png" />
     <title>EL TURPIAL - Logística Solar e Inventario</title>
     <meta name="description" content="Sistema integral de gestión de inventario fotovoltaico, almacenes, entradas, salidas y remisiones de EL TURPIAL" />
@@ -21,6 +32,10 @@
       .app-loading button:disabled { opacity: .5; cursor: wait; }
       .app-loading button.app-secondary { display: block; margin: 12px auto 0; background: transparent; color: #253685; text-decoration: underline; }
       .app-spinner[hidden], .app-loading [hidden] { display: none; }
+      html[data-theme='dark'] body, html[data-theme='dark'] .app-loading { background: #101522; color: #e7edf7; }
+      html[data-theme='dark'] .app-loading p { color: #a4b2c8; }
+      html[data-theme='dark'] .app-loading h1, html[data-theme='dark'] .app-loading button.app-secondary { color: #aebfff; }
+      html[data-theme='dark'] .app-spinner { border-color: #303b53; border-top-color: #aebfff; }
       @keyframes app-spin { to { transform: rotate(360deg); } }
       @media (prefers-reduced-motion: reduce) { .app-spinner { animation: none; } }
     </style>

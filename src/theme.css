@@ -1,0 +1,68 @@
+/* Screen palettes also cover portaled dialogs. Printable document colors are independent. */
+:root { --theme-duration: 320ms; }
+.theme-toggle-icon { display: inline-block; position: relative; width: 22px; height: 22px; flex-shrink: 0; }
+.theme-toggle-icon svg { position: absolute; inset: 0; width: 100%; height: 100%; transition: transform var(--theme-duration) ease, opacity var(--theme-duration) ease; }
+.theme-toggle-icon .theme-moon { opacity: 1; transform: rotate(0) scale(1); }
+.theme-toggle-icon .theme-sun { opacity: 0; transform: rotate(-90deg) scale(.4); }
+.theme-toggle-icon[data-theme='dark'] .theme-moon { opacity: 0; transform: rotate(90deg) scale(.4); }
+.theme-toggle-icon[data-theme='dark'] .theme-sun { opacity: 1; transform: rotate(0) scale(1); }
+@media screen {
+  :root[data-theme-changing='true'] body,
+  :root[data-theme-changing='true'] *:not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) {
+    transition-property: background-color, color, border-color, box-shadow, fill, stroke, opacity, transform;
+    transition-duration: var(--theme-duration);
+    transition-timing-function: ease;
+  }
+  :root[data-theme='dark'] { color-scheme: dark; }
+  :root[data-theme='dark'] body { color: #e7edf7; background: #101522; }
+  :root[data-theme='dark'] *:not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { border-color: #354158; }
+  :root[data-theme='dark'] :is([class~='bg-[#faf8ff]'], .app-loading) { background-color: #101522; color: #e7edf7; }
+  :root[data-theme='dark'] :is(.bg-white, .mobile-menu-panel, .app-select-list, .app-select-trigger):not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { background-color: #1a2233; }
+  :root[data-theme='dark'] :is(.bg-slate-50, [class~='bg-[#f8fafc]']):not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { background-color: #151d2d; }
+  :root[data-theme='dark'] :is(.bg-slate-100, [class~='bg-[#e2e8f0]'], [class~='bg-[#cbd5e1]']):not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { background-color: #263247; }
+  :root[data-theme='dark'] .bg-slate-300 { background-color: #354158; }
+  :root[data-theme='dark'] :is([class~='bg-white/80'], [class~='bg-white/90'], [class~='bg-white/95']) { background-color: rgb(26 34 51 / .95); }
+  :root[data-theme='dark'] :is([class~='bg-[#eaedff]'], .bg-blue-50) { background-color: #26345c; }
+  :root[data-theme='dark'] :is(.bg-green-50, .bg-emerald-50, [class~='bg-[#e6f4ea]']) { background-color: #15382d; }
+  :root[data-theme='dark'] :is(.bg-red-50, [class~='bg-[#fce8e6]']) { background-color: #44252d; }
+  :root[data-theme='dark'] :is(.bg-amber-50, [class~='bg-[#fef7e0]']) { background-color: #3e321b; }
+  :root[data-theme='dark'] .mobile-bottom-nav { background: rgb(26 34 51 / .96); }
+  :root[data-theme='dark'] [class~='from-[#f2f3ff]'] { background-image: linear-gradient(135deg, #26345c, #151d2d); }
+
+  :root[data-theme='dark'] :is([class~='text-[#131b2e]'], .text-slate-800, .text-slate-900, .app-select-trigger):not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { color: #e7edf7; }
+  :root[data-theme='dark'] :is([class~='text-[#454651]'], [class~='text-[#5f6368]'], .text-slate-600, .text-slate-700, .app-select-option):not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { color: #c4cfe0; }
+  :root[data-theme='dark'] :is([class~='text-[#767682]'], [class~='text-[#64748b]'], .text-slate-500):not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { color: #a4b2c8; }
+  :root[data-theme='dark'] :is([class~='text-[#253685]'], [class~='text-[#3e4e9e]'], .text-indigo-600):not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { color: #aebfff; }
+  :root[data-theme='dark'] :is(.text-green-700, .text-green-800, .text-green-900, .text-emerald-700, [class~='text-[#137333]']) { color: #88dfb2; }
+  :root[data-theme='dark'] :is(.text-red-600, .text-red-700, .text-red-800, .text-red-900, .text-rose-600, .text-rose-700, [class~='text-[#ba1a1a]'], [class~='text-[#c5221f]'], [class~='text-[#dd4c42]']) { color: #ffaaa5; }
+  :root[data-theme='dark'] :is(.text-amber-600, .text-amber-700, .text-amber-800, .text-amber-900, [class~='text-[#755b00]'], [class~='text-[#b06000]']) { color: #f3d483; }
+
+  :root[data-theme='dark'] :is(input:not([type='checkbox']):not([type='radio']):not([type='file']):not(.bg-transparent), textarea):not(:where(.a4-print-container *, .rm-measure *)) { background-color: #151d2d; color: #e7edf7; }
+  :root[data-theme='dark'] :is(input, textarea)::placeholder { color: #899bb5; opacity: 1; }
+  :root[data-theme='dark'] :is(input[type='checkbox'], input[type='radio']) { accent-color: #3e4e9e; }
+  :root[data-theme='dark'] :is(.divide-slate-100, .divide-slate-200) > :not(:last-child) { border-color: #354158; }
+  :root[data-theme='dark'] :is([class~='border-[#3e4e9e]'], [class~='border-[#253685]']) { border-color: #798fdf; }
+  :root[data-theme='dark'] :is(.border-green-200, [class~='border-[#ceead6]'], [class~='border-[#e6f4ea]']) { border-color: #285d48; }
+  :root[data-theme='dark'] :is(.border-red-200, [class~='border-[#ffdad6]'], [class~='border-[#fad2cf]']) { border-color: #76404a; }
+  :root[data-theme='dark'] :is(.border-amber-200, [class~='border-[#ffdf90]']) { border-color: #705e2e; }
+  :root[data-theme='dark'] .app-select-trigger[aria-invalid='true'] { border-color: #ffaaa5; }
+  :root[data-theme='dark'] .ring-white { --tw-ring-color: #1a2233; }
+  :root[data-theme='dark'] .app-select-chevron { border-color: #aebfff; }
+  :root[data-theme='dark'] :is(.app-select-option[data-highlighted='true'], .app-select-option[aria-selected='true'], .app-select-trigger[aria-expanded='true'], .app-select-trigger:hover:not(:disabled)) { background-color: #26345c; color: #aebfff; }
+  :root[data-theme='dark'] :is([class~='hover:bg-[#f2f3ff]'], [class~='hover:bg-[#eaedff]'], [class~='hover:bg-[#f8fafc]'], [class~='hover:bg-[#e8eaed]'], [class~='hover:bg-slate-50'], [class~='hover:bg-slate-100']):hover { background-color: #263247; }
+  :root[data-theme='dark'] :is([class~='hover:bg-red-50'], [class~='hover:bg-[#ffdad6]/40'], [class~='hover:bg-[#ffdad6]/50']):hover { background-color: #44252d; }
+  :root[data-theme='dark'] :is([class~='hover:text-[#253685]'], [class~='hover:text-[#3e4e9e]']):hover { color: #aebfff; }
+  :root[data-theme='dark'] [class~='hover:text-[#131b2e]']:hover { color: #e7edf7; }
+  :root[data-theme='dark'] :is([class~='hover:text-[#ba1a1a]'], [class~='hover:text-[#dd4c42]']):hover { color: #ffaaa5; }
+  :root[data-theme='dark'] :is([class~='focus:bg-white']:focus, [class~='focus-within:bg-white']:focus-within) { background-color: #1a2233; }
+  :root[data-theme='dark'] [class~='disabled:bg-slate-100']:disabled { background-color: #263247; }
+  :root[data-theme='dark'] .brand-logo { filter: brightness(0) invert(1); }
+  :root[data-theme='dark'] ::-webkit-scrollbar-thumb { background: #4a5870; }
+  :root[data-theme='dark'] ::-webkit-scrollbar-thumb:hover { background: #667795; }
+  :root[data-theme='dark'] .app-loading p { color: #a4b2c8; }
+  :root[data-theme='dark'] .app-spinner { border-color: #354158; border-top-color: #aebfff; }
+  .a4-print-container, .rm-measure { color-scheme: light; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme-changing='true'] *, .theme-toggle-icon svg { transition: none !important; }
+}

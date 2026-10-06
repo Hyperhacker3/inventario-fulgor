@@ -5,7 +5,9 @@ import './index.css';
 import { initializeSupabase } from './lib/supabase';
 import { AppErrorBoundary, AppLoadingError, AppLoadingScreen } from './components/AppLoadingScreen';
 import { loadStartupAssets } from './shared/startupAssets';
+import { initializeTheme } from './shared/theme';
 
+initializeTheme();
 const root = createRoot(document.getElementById('root')!);
 root.render(<AppLoadingScreen message="Cargando aplicación…" />);
 Promise.all([initializeSupabase(), loadStartupAssets()]).then(() => {

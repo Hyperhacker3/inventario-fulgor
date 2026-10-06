@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { navigationItems } from '../domain/navigation';
 import { MobileMenu } from './navigation/MobileMenu';
 import { errorMessage } from '../shared/errors';
+import { ThemeToggle } from './ThemeToggle';
 
 export const Header: React.FC = () => {
   const {
@@ -74,7 +75,7 @@ export const Header: React.FC = () => {
             className="xl:hidden flex items-center shrink-0"
             onClick={() => navigate('dashboard')}
           >
-            <img src="/logo-completo.png" alt="EL TURPIAL" width="303" height="131" className="w-28 sm:w-32 h-auto object-contain" />
+            <img src="/logo-completo.png" alt="EL TURPIAL" width="303" height="131" className="brand-logo w-28 sm:w-32 h-auto object-contain" />
           </button>
 
           {/* Quick Search bar (Desktop & Tablet) */}
@@ -125,6 +126,7 @@ export const Header: React.FC = () => {
           </button>
 
           {/* Notifications button */}
+          <ThemeToggle />
           <div className="relative">
             <button
               id="btn-notifications"
@@ -233,6 +235,7 @@ export const Header: React.FC = () => {
         items={navigationItems(user.role, dispatchCart.length, isDemo)} activeView={activeView}
         onNavigate={navigate} search={globalSearch} onSearch={setGlobalSearch}
         onHelp={() => { setMobileMenuOpen(false); setIsHelpModalOpen(true); }}
+        themeAction={<ThemeToggle menu />}
         onSignOut={() => { void signOut().catch(cause => setMenuError(errorMessage(cause))); }} error={menuError} />
     </header>
   );
