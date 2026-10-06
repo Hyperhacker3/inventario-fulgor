@@ -47,6 +47,8 @@ export const NewItemView: React.FC = () => {
   const [boxDraftPending, setBoxDraftPending] = useState(false);
   const [categoryBusy, setCategoryBusy] = useState(false);
   const [categoryDraftPending, setCategoryDraftPending] = useState(false);
+  const [rackBusy, setRackBusy] = useState(false);
+  const [rackDraftPending, setRackDraftPending] = useState(false);
   const [formVersion, setFormVersion] = useState(0);
   const nameInput = useRef<HTMLInputElement>(null);
   useEffect(() => { if (formVersion > 0) nameInput.current?.focus(); }, [formVersion]);
@@ -67,8 +69,13 @@ export const NewItemView: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pending || photoBusy || boxBusy || categoryBusy) return;
+    if (pending || photoBusy || boxBusy || categoryBusy || rackBusy) return;
     setFeedback(null);
+
+    if (rackDraftPending) {
+      setFeedback({ type: 'error', message: 'Pulse Crear y elegir estantería, o seleccione una estantería existente, antes de guardar el componente.' });
+      return;
+    }
 
     if (boxDraftPending) {
       setFeedback({ type: 'error', message: 'Pulse Crear y elegir caja, o seleccione una caja existente, antes de guardar el componente.' });
@@ -168,7 +175,7 @@ export const NewItemView: React.FC = () => {
         <button type="button" className="text-[#253685] underline" onClick={() => { void refreshCatalog(); }}>Comprobar de nuevo</button>
       </div>}
       <form onSubmit={handleSubmit} className="bg-white border border-[#e2e8f0] rounded-2xl p-6 md:p-8 shadow-xs flex flex-col gap-6">
-        <fieldset key={formVersion} disabled={pending || boxBusy || categoryBusy} className="contents">
+        <fieldset key={formVersion} disabled={pending || boxBusy || categoryBusy || rackBusy} className="contents">
         {/* Row 1: Code and Name */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <div>
@@ -260,7 +267,8 @@ export const NewItemView: React.FC = () => {
         </div>
 
         <ItemLocationFields warehouseId={selectedAlmacenId} rackId={selectedEstanteriaId} boxId={selectedCajaId}
-          onWarehouse={setAlmacenId} onRack={setEstanteriaId} onBox={setCajaId} onBoxBusyChange={setBoxBusy} onBoxDraftChange={setBoxDraftPending} />
+          onWarehouse={setAlmacenId} onRack={setEstanteriaId} onBox={setCajaId} onBoxBusyChange={setBoxBusy} onBoxDraftChange={setBoxDraftPending}
+          rackDraftPending={rackDraftPending} onRackBusyChange={setRackBusy} onRackDraftChange={setRackDraftPending} />
 
         <ItemPhotoPicker value={fotoUrl} additional={fotosAdicionales} category={categoria} onChange={setFotoUrl} onAdditionalChange={setFotosAdicionales} onBusyChange={setPhotoBusy} disabled={pending} />
 
@@ -280,7 +288,7 @@ export const NewItemView: React.FC = () => {
           <button
             type="submit"
             id="btn-submit-component"
-            disabled={pending || photoBusy || boxBusy || categoryBusy || !catalogReady || !selectedPrefix}
+            disabled={pending || photoBusy || boxBusy || categoryBusy || rackBusy || !catalogReady || !selectedPrefix}
             className="px-6 py-2.5 rounded-lg bg-[#3e4e9e] text-white text-sm font-bold hover:bg-[#323f80] active:scale-[0.98] transition-all shadow-sm flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-[18px]">save</span>

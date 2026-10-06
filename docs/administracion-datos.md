@@ -31,9 +31,11 @@ Solo las cuentas con rol `admin` pueden modificar estos datos. Operadores y cuen
 
 ## Registrar varios productos y crear cajas desde el alta
 
-En **Nuevo ítem**, la primera opción del selector **Caja** es **Crear nueva caja**, seguida de las cajas existentes. Escriba su código y pulse **Crear y elegir caja**. Se guarda en Supabase dentro de la estantería seleccionada y queda elegida para el componente. Es necesario seleccionar primero una estantería. La caja creada también queda disponible en Administración de datos.
+En **Nuevo ítem**, el selector **Caja** muestra primero **Seleccione una caja**, debajo **Crear nueva caja** y después las cajas existentes. Escriba su código y pulse **Crear y elegir caja**. Se guarda en Supabase dentro de la estantería seleccionada y queda elegida para el componente. Es necesario seleccionar primero una estantería. La caja creada también queda disponible en Administración de datos.
 
-El selector **Categoría** también empieza con **Crear nueva categoría**, seguido de las categorías existentes. Escriba el nombre y pulse **Crear y elegir categoría**. Se guarda en Supabase y queda seleccionada para el componente; su clave se genera automáticamente. Puede seguir eligiendo categorías existentes. Las categorías inactivas requieren reactivarse en Administración de datos.
+El selector **Categoría** muestra primero **Seleccione una categoría**, debajo **Crear nueva categoría** y después las categorías existentes. Escriba el nombre y pulse **Crear y elegir categoría**. Se guarda en Supabase y queda seleccionada para el componente; su clave se genera automáticamente. Puede seguir eligiendo categorías existentes. Las categorías inactivas requieren reactivarse en Administración de datos.
+
+El selector **Estantería** sigue el mismo orden: **Seleccione una estantería**, **Crear nueva estantería** y las existentes del almacén elegido. Para crearla, escriba su código y nombre y pulse **Crear y elegir estantería**. Se guarda en Supabase en el almacén seleccionado y queda lista para asignarle una caja. Al cambiar de estantería se limpia la selección de caja.
 
 Después de guardar un componente, el formulario permanece abierto. Conserva el prefijo, categoría, almacén y estantería. Reinicia nombre, descripción, caja, stock, unidad, peso, mínimo, estado, daños y fotografías. El código del siguiente componente sigue asignándose automáticamente al guardar.
 

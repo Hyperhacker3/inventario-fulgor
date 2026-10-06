@@ -120,3 +120,11 @@ El selector de categoría del alta permite elegir una existente o Crear nueva ca
 La opción Crear nueva caja también se movió al principio de su selector. La categoría elegida se sigue conservando después de registrar un componente. La pantalla Salida de Material no tiene cambios en este commit; el cambio provisional preparado antes de la aclaración del usuario se retiró por completo antes de publicar.
 
 Verificación: 32 pruebas unitarias correctas, typecheck, lint y build correctos. Las nuevas pruebas verifican claves válidas para nombres con tildes, números y nombres largos, conservación de claves ocupadas, primera opción de creación, selección de la categoría confirmada y bloqueo de doble pulsación. No requiere SQL adicional. No se utilizó computer use ni navegador de pruebas; pendiente de comprobación visual en producción después del despliegue.
+
+## Orden de selectores y estanterías desde Nuevo ítem (6 de octubre de 2026)
+
+Categoría, caja y estantería muestran primero Seleccione…, debajo Crear nueva… y después las opciones existentes. El selector de estantería permite escribir código y nombre, guardar en Supabase dentro del almacén seleccionado y elegir el identificador confirmado. La caché se actualiza con la escritura aceptada antes de la lectura posterior, igual que en cajas. Se conservan borradores si la escritura falla, se protege contra doble creación y se reutiliza una estantería cargada con el mismo código y nombre en el mismo almacén sin sobrescribirla. Si el código existe con otro nombre se pide elegirla o usar otro código.
+
+Una nueva estantería pendiente de confirmar bloquea el guardado del componente y la selección de cajas para evitar asociar una caja del padre anterior. Al seleccionar otra estantería se limpia la caja. Los datos de alta que ya se conservaban después de guardar siguen conservándose, incluida la estantería nueva. Salida de Material no tiene cambios.
+
+Validación: 33 pruebas unitarias correctas, typecheck, lint y build correctos. La nueva prueba comprueba necesidad de almacén, guardado con el padre correcto, orden de opciones, conservación del borrador ante un error, selección del ID confirmado y protección contra doble pulsación. No requiere SQL adicional. No se utilizaron herramientas de computer use ni navegador de pruebas; queda pendiente la comprobación visual en producción tras el despliegue.

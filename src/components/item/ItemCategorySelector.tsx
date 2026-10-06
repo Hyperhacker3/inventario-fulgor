@@ -34,8 +34,8 @@ export function ItemCategorySelector({ value, categories, onChange, onCreate, on
     <select id={id} required={required} value={creating ? '__NEW_CATEGORY__' : value} disabled={disabled || busy}
       onChange={event => { const draft = event.target.value === '__NEW_CATEGORY__'; setCreating(draft); onDraftChange?.(draft); setError(''); setMessage(''); if (!draft) onChange(event.target.value); }}
       className="w-full px-3.5 py-2.5 rounded-lg border bg-white text-sm">
-      {canCreate && <option value="__NEW_CATEGORY__">+ Crear nueva categoría</option>}
       <option value="">{emptyLabel}</option>
+      {canCreate && <option value="__NEW_CATEGORY__">+ Crear nueva categoría</option>}
       {categories.filter(category => category.activo).map(category => <option key={category.id} value={category.id}>{category.nombre}</option>)}
     </select>
     {creating && <div className="space-y-2">

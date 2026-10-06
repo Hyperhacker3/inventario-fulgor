@@ -35,8 +35,8 @@ export function ItemBoxSelector({ rackId, boxId, boxes, onBox, onCreate, onBusyC
     <select id="select-caja-form" value={creating ? '__NEW_BOX__' : boxId} disabled={!rackId || busy}
       onChange={event => { const draft = event.target.value === '__NEW_BOX__'; setCreating(draft); onDraftChange?.(draft); setError(''); setMessage(''); if (!draft) onBox(event.target.value); }}
       className="block w-full px-3 py-2 rounded-lg border bg-white">
+      <option value="">Seleccione una caja</option>
       <option value="__NEW_BOX__">+ Crear nueva caja</option>
-      <option value="">Sin caja</option>
       {boxes.map(box => <option key={box.id} value={box.id}>{box.codigoCaja} ({box.estado})</option>)}
     </select>
     {creating && <div className="space-y-2">

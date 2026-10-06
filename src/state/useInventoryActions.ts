@@ -211,7 +211,9 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     if (isDemo) { const value = { ...input, id: newId('EST') }; setDemoData(prev => ({ ...prev, estanterias: [...prev.estanterias, value] })); return value; }
     const value = await insertRow('estanterias', { id: `EST-${crypto.randomUUID()}`, almacen_id: input.almacenId,
       codigo: input.codigo, nombre: input.nombre, descripcion: input.descripcion || '' }, mapEstanteria);
-    await refresh('estanterias'); return value;
+    client.setQueryData<Estanteria[]>(['fulgor', user?.email || '', 'estanterias'], previous =>
+      [value, ...(previous || []).filter(rack => rack.id !== value.id)]);
+    await syncAfterWrite(refresh('estanterias')); return value;
   };
   const updateEstanteria = async (id: string, updates: Partial<Estanteria>) => {
     requireAdmin();

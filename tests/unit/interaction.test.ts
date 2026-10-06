@@ -19,8 +19,9 @@ const { DispatchQuantityModal } = await import('../../src/components/dispatch/Di
 const { mapElemento } = await import('../../src/data/mappers');
 const { ItemBoxSelector } = await import('../../src/components/item/ItemBoxSelector');
 const { ItemCategorySelector } = await import('../../src/components/item/ItemCategorySelector');
+const { ItemRackSelector } = await import('../../src/components/item/ItemRackSelector');
 
-test('inline category creation is the first option, selects the saved category and guards duplicate submissions', async () => {
+test('inline category creation follows the placeholder, selects the saved category and guards duplicate submissions', async () => {
   let calls = 0;
   let complete!: (category: import('../../src/types').Categoria) => void;
   const saved = new Promise<import('../../src/types').Categoria>(resolve => { complete = resolve; });
@@ -31,7 +32,8 @@ test('inline category creation is the first option, selects the saved category a
     await act(() => root.render(createElement(ItemCategorySelector,{value:'',categories:[],onChange:(id: string)=>selected.push(id),
       onCreate:async (name: string)=>{ calls++; assert.equal(name,'Materiales eléctricos'); return saved; } })));
     const select=host.querySelector('select')!;
-    assert.equal(select.options[0].value,'__NEW_CATEGORY__');
+    assert.equal(select.options[0].value,'');
+    assert.equal(select.options[1].value,'__NEW_CATEGORY__');
     await act(() => { select.value='__NEW_CATEGORY__'; select.dispatchEvent(new dom.window.Event('change',{bubbles:true})); });
     const setValue=Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
     await act(() => { const input=host.querySelector('input')!; setValue.call(input,'Materiales eléctricos'); input.dispatchEvent(new dom.window.Event('input',{bubbles:true})); });
@@ -57,7 +59,8 @@ test('inline box selection saves in the selected rack, blocks double creation an
         calls++; assert.equal(input.estanteriaId,'RACK-1'); assert.equal(input.codigoCaja,'CAJ-025'); return saved;
       } })));
     const select = host.querySelector('select')!;
-    assert.equal(select.options[0].value,'__NEW_BOX__');
+    assert.equal(select.options[0].value,'');
+    assert.equal(select.options[1].value,'__NEW_BOX__');
     await act(() => { select.value='__NEW_BOX__'; select.dispatchEvent(new dom.window.Event('change',{ bubbles:true })); });
     const input = host.querySelector('input')!;
     const setValue = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
@@ -93,6 +96,39 @@ test('box creation failures keep the draft and an existing box is selected witho
     await act(() => root.render(createElement(ItemBoxSelector,{ ...props,boxes:[{id:'EXISTING',estanteriaId:'RACK-1',codigoCaja:'CAJ-025',estado:'Parcial' as const}] })));
     await act(async () => host.querySelector('button')!.click());
     assert.deepEqual(selected,['EXISTING']); assert.equal(calls,1);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
+
+test('inline racks require a warehouse, keep failed drafts and select a confirmed rack without double creation', async () => {
+  let fail = true, calls = 0;
+  const selected: string[] = [];
+  const host = document.body.appendChild(document.createElement('div'));
+  const root = createRoot(host);
+  const props = { warehouseId:'',rackId:'',racks:[],onRack:(id: string)=>selected.push(id),
+    onCreate:async (input: Omit<import('../../src/types').Estanteria,'id'>) => {
+      calls++; assert.equal(input.almacenId,'WAREHOUSE-1'); assert.equal(input.codigo,'EST-025'); assert.equal(input.nombre,'Zona eléctrica');
+      if (fail) throw new Error('No se pudo guardar'); return { ...input,id:'RACK-SERVER' };
+    } };
+  try {
+    await act(() => root.render(createElement(ItemRackSelector,props)));
+    assert.equal(host.querySelector('select')!.disabled,true);
+    assert.equal(host.querySelector('select')!.options[0].value,'');
+    assert.equal(host.querySelector('select')!.options[1].value,'__NEW_RACK__');
+    await act(() => root.render(createElement(ItemRackSelector,{ ...props,warehouseId:'WAREHOUSE-1' })));
+    await act(() => { const select=host.querySelector('select')!; select.value='__NEW_RACK__'; select.dispatchEvent(new dom.window.Event('change',{bubbles:true})); });
+    const setValue=Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
+    await act(() => {
+      const inputs=host.querySelectorAll('input');
+      setValue.call(inputs[0],' est-025 '); inputs[0].dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+      setValue.call(inputs[1],'Zona eléctrica'); inputs[1].dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+    });
+    await act(async () => host.querySelector('button')!.click());
+    assert.deepEqual(selected,[]); assert.match(host.querySelector('[role="alert"]')!.textContent!,/No se pudo guardar/);
+    assert.equal(host.querySelectorAll('input')[1].value,'Zona eléctrica');
+    fail=false;
+    await act(async () => { host.querySelector('button')!.click(); host.querySelector('button')!.click(); });
+    assert.equal(calls,2); assert.deepEqual(selected,['RACK-SERVER']); assert.equal(host.querySelector('input'),null);
+    assert.match(host.querySelector('[role="status"]')!.textContent!,/creada en Supabase y seleccionada/);
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 

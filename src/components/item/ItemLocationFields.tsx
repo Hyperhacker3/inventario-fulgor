@@ -1,14 +1,19 @@
 import { useInventory } from '../../context/InventoryContext';
 import { ItemBoxSelector } from './ItemBoxSelector';
+import { ItemRackSelector } from './ItemRackSelector';
 
 interface Props {
   warehouseId: string; rackId: string; boxId: string;
   onWarehouse: (id: string) => void; onRack: (id: string) => void; onBox: (id: string) => void;
   onBoxBusyChange?: (busy: boolean) => void;
   onBoxDraftChange?: (unfinished: boolean) => void;
+  rackDraftPending?: boolean;
+  onRackBusyChange?: (busy: boolean) => void;
+  onRackDraftChange?: (unfinished: boolean) => void;
 }
-export function ItemLocationFields({ warehouseId, rackId, boxId, onWarehouse, onRack, onBox, onBoxBusyChange, onBoxDraftChange }: Props) {
-  const { almacenes, estanterias, cajas, addCaja } = useInventory();
+export function ItemLocationFields({ warehouseId, rackId, boxId, onWarehouse, onRack, onBox, onBoxBusyChange, onBoxDraftChange,
+  rackDraftPending = false, onRackBusyChange, onRackDraftChange }: Props) {
+  const { almacenes, estanterias, cajas, addCaja, addEstanteria } = useInventory();
   const racks = estanterias.filter(rack => rack.almacenId === warehouseId);
   const boxes = cajas.filter(box => box.estanteriaId === rackId);
   return <section className="p-4 bg-[#f8fafc] border rounded-xl">
@@ -20,14 +25,10 @@ export function ItemLocationFields({ warehouseId, rackId, boxId, onWarehouse, on
           {almacenes.map(warehouse => <option key={warehouse.id} value={warehouse.id}>{warehouse.nombre} ({warehouse.codigo})</option>)}
         </select>
       </label>
-      <label className="text-xs font-semibold text-[#454651]">Estantería
-        <select id="select-estanteria-form" value={rackId} onChange={event => { onRack(event.target.value); onBox(''); }}
-          disabled={!warehouseId} className="block w-full mt-1.5 px-3 py-2 rounded-lg border bg-white">
-          <option value="">Sin estantería</option>
-          {racks.map(rack => <option key={rack.id} value={rack.id}>{rack.codigo} - {rack.nombre}</option>)}
-        </select>
-      </label>
-      <ItemBoxSelector key={rackId} rackId={rackId} boxId={boxId} boxes={boxes} onBox={onBox} onCreate={addCaja} onBusyChange={onBoxBusyChange} onDraftChange={onBoxDraftChange} />
+      <ItemRackSelector key={warehouseId} warehouseId={warehouseId} rackId={rackId} racks={racks}
+        onRack={id => { onRack(id); onBox(''); }} onCreate={addEstanteria} onBusyChange={onRackBusyChange} onDraftChange={onRackDraftChange} />
+      <ItemBoxSelector key={rackDraftPending ? 'pending-rack' : rackId} rackId={rackDraftPending ? '' : rackId} boxId={rackDraftPending ? '' : boxId} boxes={rackDraftPending ? [] : boxes}
+        onBox={onBox} onCreate={addCaja} onBusyChange={onBoxBusyChange} onDraftChange={onBoxDraftChange} />
     </div>
   </section>;
 }
