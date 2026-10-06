@@ -20,6 +20,7 @@ export function DataAdministrationView({ initialTab = 'codes' }: { initialTab?: 
         <button onClick={() => { void refreshCatalog(); }} className="text-[#253685] underline">Comprobar de nuevo</button>
       </div> : <CatalogEditor key={tab} kind={tab === 'codes' ? 'prefijo' : 'categoria'} />)}
       {tab === 'racks' && <LocationsManager key={tab} kind="estanteria" />}
+      {tab === 'levels' && <LocationsManager key={tab} kind="nivel" />}
       {tab === 'boxes' && <LocationsManager key={tab} kind="caja" />}
       {tab === 'projects' && <ProjectsView embedded />}
       {tab === 'archived' && <ArchivedItems />}

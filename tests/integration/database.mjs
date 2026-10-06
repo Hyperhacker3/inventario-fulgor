@@ -14,6 +14,7 @@ const archivedMigration = fs.readFileSync(new URL('../../supabase/migrations/202
 const outgoingPhotoMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000300_outgoing_photos.sql', import.meta.url), 'utf8');
 const locationMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000400_item_locations.sql', import.meta.url), 'utf8');
 const valueMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000500_inventory_values.sql', import.meta.url), 'utf8');
+const levelsMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000600_storage_levels_and_brands.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 const warehouseProfile = fs.readFileSync(new URL('../../supabase/configure_warehouse_profile.sql', import.meta.url), 'utf8');
@@ -43,6 +44,7 @@ async function database() {
   await db.exec(outgoingPhotoMigration);
   await db.exec(locationMigration);
   await db.exec(valueMigration);
+  await db.exec(levelsMigration);
   return db;
 }
 
@@ -141,7 +143,7 @@ test('project spending includes more than 100 outputs, rounds fractional quantit
 test('legacy documents without item IDs are initialized to zero without revaluing them at current product prices', async () => {
   const db = await database();
   try {
-    await db.exec('DROP TRIGGER snapshot_inventory_line_values ON public.remisiones');
+    await db.exec('DROP TRIGGER snapshot_inventory_line_values ON public.remisiones; DROP TRIGGER snapshot_inventory_line_brand ON public.remisiones');
     await db.query("INSERT INTO public.remisiones(id,numero_remision,fecha,proyecto_id,proyecto_nombre,cliente,entregado_por,cargo_entregado,recibido_por,cargo_recibido,items) VALUES ('OLD','OLD','2026-10-01','PROY-001','Anterior','Cliente','Entrega','Admin','Recibe','',$1::jsonb)",[JSON.stringify([{codigo:'PAN550',cantidad:4}])]);
     await db.query("UPDATE public.elementos SET especificaciones=especificaciones||'{\"valor_unitario_cop\":1000}'::jsonb WHERE id='ELM-001'");
     await db.exec(valueMigration);
@@ -629,4 +631,77 @@ test('movement is idempotent; admin item creation records opening balance', asyn
     const badLocation = JSON.stringify({ ...JSON.parse(input), codigo: 'NUE002', almacen_id: 'ALM-MED-02' });
     await assert.rejects(() => db.query('SELECT public.create_inventory_item($1::jsonb)', [badLocation]), /Estantería fuera del almacén/);
   } finally { await db.close(); }
+});
+
+
+test('storage levels preserve legacy boxes, enforce roles and reject mismatched parents without changing stock', async () => {
+  const db=await database();
+  try {
+    assert.equal((await db.query('SELECT * FROM public.niveles_estanteria')).rows.length,0);
+    assert.equal((await db.query('SELECT * FROM public.cajas WHERE nivel_id IS NOT NULL')).rows.length,0);
+    const stock=await itemStock(db);
+    await role(db,'consulta');
+    await assert.rejects(()=>db.query("INSERT INTO public.niveles_estanteria VALUES('N1','EST-A01','N1','Superior','',now())"),/row-level security/);
+    await asOwner(db);await role(db,'admin');
+    await db.exec("INSERT INTO public.niveles_estanteria(id,estanteria_id,codigo,nombre) VALUES('N1','EST-A01','N1','Superior'),('N2','EST-C03','N1','Inferior')");
+    await assert.rejects(()=>db.exec("INSERT INTO public.niveles_estanteria(id,estanteria_id,codigo,nombre) VALUES('DUP','EST-A01','N1','Duplicado')"),/unique/);
+    await assert.rejects(()=>db.exec("INSERT INTO public.cajas(id,estanteria_id,codigo,nombre) VALUES('BOX','EST-A01','BOX','Caja')"),/nivel/);
+    await assert.rejects(()=>db.exec("INSERT INTO public.cajas(id,estanteria_id,nivel_id,codigo,nombre) VALUES('BOX','EST-A01','N2','BOX','Caja')"),/no pertenece/);
+    await db.exec("INSERT INTO public.cajas(id,estanteria_id,nivel_id,codigo,nombre) VALUES('BOX','EST-A01','N1','BOX','Caja')");
+    await assert.rejects(()=>db.exec("UPDATE public.elementos SET nivel_id='N2' WHERE id='ELM-001'"),/no pertenece/);
+    await assert.rejects(()=>db.exec("UPDATE public.elementos SET caja_id='BOX' WHERE id='ELM-001'"),/no pertenece/);
+    assert.equal(await itemStock(db),stock);
+    assert.equal((await db.query("SELECT * FROM public.historial WHERE elemento_id='ELM-001' AND tipo='REUBICACION'")).rows.length,0);
+    await db.exec("UPDATE public.elementos SET nivel_id='N1',caja_id='BOX' WHERE id='ELM-001'");
+    const movement=(await db.query("SELECT * FROM public.historial WHERE elemento_id='ELM-001' AND tipo='REUBICACION'")).rows[0];
+    assert.match(movement.destino_ubicacion,/Nivel Superior/);assert.equal(Number(movement.stock_anterior),stock);assert.equal(Number(movement.stock_nuevo),stock);
+    await asOwner(db);await role(db,'operador');
+    assert.equal((await db.query('SELECT * FROM public.niveles_estanteria')).rows.length,2);
+    assert.equal((await db.query("UPDATE public.niveles_estanteria SET nombre='Otro' WHERE id='N1' RETURNING *")).rows.length,0);
+    await asOwner(db);await db.exec('SET ROLE anon');await assert.rejects(()=>db.query('SELECT * FROM public.niveles_estanteria'),/permission denied/);
+  } finally {await db.close();}
+});
+
+test('assigning a level to an existing box moves active and archived contents atomically and migration reruns preserve them', async () => {
+  const db=await database();
+  try {
+    await role(db,'admin');
+    await db.exec("INSERT INTO public.niveles_estanteria(id,estanteria_id,codigo,nombre) VALUES('N1','EST-C03','N1','Inferior'),('N2','EST-C03','N2','Superior')");
+    const contents=(await db.query("SELECT id,cantidad FROM public.elementos WHERE caja_id='CAJ-A01-01'")).rows;
+    assert.ok(contents.length>0);
+    await db.query("UPDATE public.elementos SET archived=true WHERE id=$1",[contents[0].id]);
+    await db.exec("UPDATE public.cajas SET nivel_id='N1' WHERE id='CAJ-A01-01'");
+    const after=(await db.query("SELECT id,cantidad,nivel_id FROM public.elementos WHERE caja_id='CAJ-A01-01'")).rows;
+    assert.deepEqual(after.map(row=>({id:row.id,cantidad:row.cantidad})),contents);
+    assert.ok(after.every(row=>row.nivel_id==='N1'));
+    assert.equal((await db.query("SELECT * FROM public.historial WHERE tipo='REUBICACION' AND elemento_id=$1",[contents[0].id])).rows.length,1);
+    await assert.rejects(()=>db.query("UPDATE public.elementos SET nivel_id='N2',caja_id=null WHERE id=$1",[contents[0].id]),/archivado/);
+    await db.exec("UPDATE public.cajas SET nivel_id='N2' WHERE id='CAJ-A01-01'");
+    await asOwner(db);await db.exec(levelsMigration);
+    assert.ok((await db.query("SELECT nivel_id FROM public.elementos WHERE caja_id='CAJ-A01-01'")).rows.every(row=>row.nivel_id==='N2'));
+    assert.equal((await db.query("SELECT archived FROM public.elementos WHERE id=$1",[contents[0].id])).rows[0].archived,true);
+  } finally {await db.close();}
+});
+
+test('automatic item creation saves its full location and brand, and remissions retain the first brand after edits and retries', async () => {
+  const db=await database();
+  try {
+    await role(db,'admin');
+    await db.exec("INSERT INTO public.niveles_estanteria(id,estanteria_id,codigo,nombre) VALUES('N1','EST-A01','N1','Superior'); INSERT INTO public.cajas(id,estanteria_id,nivel_id,codigo,nombre) VALUES('BOX','EST-A01','N1','BOX','Caja')");
+    const prefix=(await db.query('SELECT public.inventory_data_catalog() AS data')).rows[0].data.prefijos.find(row=>row.prefijo==='PAN').id;
+    const input={nombre:'Material de prueba',categoria:'PANELES',cantidad:4,stock_minimo:0,unidad:'UND',almacen_id:'ALM-BOG-01',estanteria_id:'EST-A01',nivel_id:'N1',caja_id:'BOX',especificaciones:{marca:'Marca original',valor_unitario_cop:50,peso_unitario:{valor:40,unidad:'g'}}};
+    const sql='SELECT public.create_inventory_item_auto($1,$2::uuid,$3::jsonb) AS item';
+    const args=[prefix,'c6a1ba86-01b2-4a5a-a2b2-8ad2c409bb2f',JSON.stringify(input)];
+    const created=(await db.query(sql,args)).rows[0].item;
+    assert.equal(created.nivel_id,'N1');assert.equal(created.caja_id,'BOX');assert.equal(created.especificaciones.marca,'Marca original');
+    assert.deepEqual((await db.query(sql,args)).rows[0].item,created);
+    const dispatch='SELECT public.dispatch_inventory_with_photos($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb) AS remission';
+    const values=['7d37fc13-c4cf-4bc8-b35a-5fec79dc379b','PROY-001','Entrega','Almacenista','Recibe','','',JSON.stringify([{elementoId:created.id,cantidad:1,marca:'Falsa'}]),'{}','[]'];
+    const first=(await db.query(dispatch,values)).rows[0].remission;
+    assert.equal(first.items[0].marca,'Marca original');assert.equal(first.items[0].valorTotalCOP,50);assert.equal(first.items[0].pesoTotalKg,0.04);
+    await db.query("UPDATE public.elementos SET especificaciones=especificaciones||$1::jsonb WHERE id=$2",[JSON.stringify({marca:'Marca nueva'}),created.id]);
+    assert.deepEqual((await db.query(dispatch,values)).rows[0].remission,first);
+    assert.equal((await db.query('SELECT items FROM public.remisiones WHERE id=$1',[first.id])).rows[0].items[0].marca,'Marca original');
+    for(const marca of [123,'X'.repeat(101)]) await assert.rejects(()=>db.query("UPDATE public.elementos SET especificaciones=especificaciones||$1::jsonb WHERE id=$2",[JSON.stringify({marca}),created.id]),/marca/);
+  } finally {await db.close();}
 });

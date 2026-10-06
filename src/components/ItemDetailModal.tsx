@@ -26,12 +26,13 @@ export function ItemDetailModal(props: Props) {
   return <ItemDetailContent {...props} inventory={inventory} history={props.item && <ItemHistory itemId={props.item.id} />} />;
 }
 type DetailInventory = Pick<ReturnType<typeof useInventory>, 'user' | 'getLocationString' | 'openQuickMovement' | 'addToDispatchCart'
-  | 'updateElemento' | 'deleteElemento' | 'categoryLabel' | 'almacenes' | 'estanterias' | 'cajas'>;
+  | 'updateElemento' | 'deleteElemento' | 'categoryLabel' | 'almacenes' | 'estanterias' | 'cajas' | 'niveles'>;
 export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore, inventory, history }: Props & { inventory: DetailInventory; history?: ReactNode }) {
   const { user, getLocationString, openQuickMovement, addToDispatchCart,
-    updateElemento, deleteElemento, categoryLabel, almacenes, estanterias, cajas } = inventory;
+    updateElemento, deleteElemento, categoryLabel, almacenes, estanterias, cajas, niveles } = inventory;
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(item?.nombre || '');
+  const [brand, setBrand] = useState(item?.marca || '');
   const [description, setDescription] = useState(item?.descripcion || '');
   const [minimum, setMinimum] = useState(item?.stockMinimo ?? 0);
   const [photo, setPhoto] = useState(item?.fotoUrl || '');
@@ -53,7 +54,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   if (!item) return null;
 
   const startEdit = () => {
-    setName(item.nombre); setDescription(item.descripcion); setMinimum(item.stockMinimo);
+    setName(item.nombre); setBrand(item.marca || ''); setDescription(item.descripcion); setMinimum(item.stockMinimo);
     setPhoto(item.fotoUrl || ''); setCondition(item.estado || 'BUENO'); setDamaged(item.cantidadDanados ?? 0);
     setAdditionalPhotos(item.fotosAdicionales || []);
     setWeight(weightDraft(item.pesoUnitario));
@@ -67,7 +68,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
     saving.current = true;
     setError(''); setPending(true);
     try {
-      await updateElemento(item.id, { nombre: name.trim(), descripcion: description.trim(), stockMinimo: minimum,
+      await updateElemento(item.id, { nombre: name.trim(), marca: brand.trim(), descripcion: description.trim(), stockMinimo: minimum,
         fotoUrl: photo.trim(), fotosAdicionales: additionalPhotos, estado: condition, cantidadDanados: damaged, pesoUnitario: parseWeightDraft(weight),
         valorUnitario, ...changedItemLocation(location, item) });
       setEditing(false);
@@ -101,10 +102,13 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
           <label className="block text-sm font-semibold">Nombre
             <input autoComplete="off" autoCorrect="off" spellCheck={false} required value={name} onChange={event => setName(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg" />
           </label>
+          <label className="block text-sm font-semibold">Marca
+            <input autoComplete="off" autoCorrect="off" spellCheck={false} maxLength={100} value={brand} onChange={event => setBrand(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg" />
+          </label>
           <label className="block text-sm font-semibold">Descripción
             <textarea autoComplete="off" autoCorrect="off" spellCheck={false} value={description} onChange={event => setDescription(event.target.value)} rows={3} className="block w-full mt-1 p-2.5 border rounded-lg" />
           </label>
-          <ItemExistingLocationFields value={location} onChange={setLocation} warehouses={almacenes} racks={estanterias} boxes={cajas} disabled={pending || photoBusy} />
+          <ItemExistingLocationFields value={location} onChange={setLocation} warehouses={almacenes} racks={estanterias} levels={niveles} boxes={cajas} disabled={pending || photoBusy} />
           <div className="grid grid-cols-2 gap-4">
             <label className="text-sm font-semibold">Stock mínimo
               <NumberInput min="0" step="0.001" required value={minimum} onValueChange={setMinimum} className="block w-full mt-1 p-2.5 border rounded-lg" />
@@ -127,6 +131,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
             <div className="min-w-0">
               <h2 id="item-detail-heading" className="text-xl font-bold text-[#131b2e]">{item.nombre}</h2>
               <p className="text-sm text-[#454651] mt-2">{item.descripcion}</p>
+              <p className="text-sm text-slate-600 mt-2">Marca: {item.marca || 'Sin declarar'}</p>
               <p className="text-xs text-[#64748b] mt-3">Ubicación: {getLocationString(item)}</p>
               <p className="text-xs text-[#64748b] mt-1">Estado: {item.estado || 'BUENO'}</p>
               <p className={`text-sm mt-2 ${item.pesoUnitario ? 'text-[#253685]' : 'text-amber-700'}`}>Peso por 1 {item.unidad.toUpperCase()}: {formatUnitWeight(item.pesoUnitario)}</p>

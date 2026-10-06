@@ -1,25 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isDemo, supabase } from '../lib/supabase';
-import { readAlmacenes, readCajas, readElementos, readElementosByIds, readEstanterias, readHistory, readProyectos, readRecentHistory, readRecentRemisiones } from '../data/repository';
+import { readAlmacenes, readNiveles, readCajas, readElementos, readElementosByIds, readEstanterias, readHistory, readProyectos, readRecentHistory, readRecentRemisiones } from '../data/repository';
 import { mapElemento, mapRemision, type DbRow } from '../data/mappers';
 import { INITIAL_ALMACENES, INITIAL_CAJAS, INITIAL_ELEMENTOS, INITIAL_ESTANTERIAS, INITIAL_HISTORIAL, INITIAL_PROYECTOS, INITIAL_REMISIONES } from '../data/initialData';
-import type { Almacen, Caja, Elemento, Estanteria, HistorialMovimiento, Proyecto, Remision } from '../types';
+import type { Almacen, NivelEstanteria, Caja, Elemento, Estanteria, HistorialMovimiento, Proyecto, Remision } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { initialQueryStatus } from '../domain/initialLoad';
 
 export interface DemoData {
-  elementos: Elemento[]; almacenes: Almacen[]; estanterias: Estanteria[]; cajas: Caja[];
+  elementos: Elemento[]; almacenes: Almacen[]; estanterias: Estanteria[]; niveles: NivelEstanteria[]; cajas: Caja[];
   proyectos: Proyecto[]; remisiones: Remision[]; historial: HistorialMovimiento[];
 }
 const defaults = (): DemoData => ({
   elementos: INITIAL_ELEMENTOS, almacenes: INITIAL_ALMACENES, estanterias: INITIAL_ESTANTERIAS,
-  cajas: INITIAL_CAJAS, proyectos: INITIAL_PROYECTOS, remisiones: INITIAL_REMISIONES, historial: INITIAL_HISTORIAL,
+  niveles: [], cajas: INITIAL_CAJAS, proyectos: INITIAL_PROYECTOS, remisiones: INITIAL_REMISIONES, historial: INITIAL_HISTORIAL,
 });
 const loaded = (key: string): DemoData => {
   try {
     const value = JSON.parse(localStorage.getItem(key) || 'null');
-    if (value && Array.isArray(value.elementos) && Array.isArray(value.historial)) return value;
+    if (value && Array.isArray(value.elementos) && Array.isArray(value.historial)) return { ...value, niveles: Array.isArray(value.niveles) ? value.niveles : [] };
   } catch { /* invalid legacy data: keep demo defaults */ }
   return defaults();
 };
@@ -47,11 +47,12 @@ export function useInventoryData() {
   const items = useTableQuery(key('elementos'), readElementos, enabled);
   const warehouses = useTableQuery(key('almacenes'), readAlmacenes, enabled);
   const racks = useTableQuery(key('estanterias'), readEstanterias, enabled);
+  const levels = useTableQuery(key('niveles_estanteria'), readNiveles, enabled);
   const boxes = useTableQuery(key('cajas'), readCajas, enabled);
   const projects = useTableQuery(key('proyectos'), readProyectos, enabled);
   const remissions = useTableQuery(key('remisiones'), readRecentRemisiones, enabled);
   const movements = useTableQuery(key('historial'), readRecentHistory, enabled);
-  const queries = [items, warehouses, racks, boxes, projects, remissions, movements];
+  const queries = [items, warehouses, racks, levels, boxes, projects, remissions, movements];
   const initialLoadStatus = isDemo ? 'ready' : initialQueryStatus(queries);
   const syncStatus = !enabled || !connected || queries.some(q => q.isError) ? 'offline'
     : queries.some(q => q.isPending || q.isFetching) ? 'syncing' : 'synced';
@@ -63,7 +64,7 @@ export function useInventoryData() {
     const channel = db.channel('fulgor_inventory')
       .on('postgres_changes', { event: '*', schema: 'public' }, event => {
         const table = event.table;
-        if (!['elementos', 'almacenes', 'estanterias', 'cajas', 'proyectos', 'remisiones', 'historial'].includes(table)) return;
+        if (!['elementos', 'almacenes', 'estanterias', 'niveles_estanteria', 'cajas', 'proyectos', 'remisiones', 'historial'].includes(table)) return;
         if (table === 'elementos') {
           void client.invalidateQueries({ queryKey: ['fulgor', email, 'archived-items'] });
           const newRow = event.new as DbRow;
@@ -104,9 +105,9 @@ export function useInventoryData() {
   }, [client, email]);
 
   const data = useMemo<DemoData>(() => isDemo ? demoData : {
-    elementos: items.data || [], almacenes: warehouses.data || [], estanterias: racks.data || [], cajas: boxes.data || [],
+    elementos: items.data || [], almacenes: warehouses.data || [], estanterias: racks.data || [], niveles: levels.data || [], cajas: boxes.data || [],
     proyectos: projects.data || [], remisiones: remissions.data || [], historial: movements.data || [],
-  }, [demoData, items.data, warehouses.data, racks.data, boxes.data, projects.data, remissions.data, movements.data]);
+  }, [demoData, items.data, warehouses.data, racks.data, levels.data, boxes.data, projects.data, remissions.data, movements.data]);
 
   const refresh = async (...tables: string[]) => {
     if (isDemo) return;

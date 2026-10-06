@@ -13,7 +13,7 @@ export function AvailableInventory() {
   const filtered = useMemo(() => {
     if (!query) return [];
     return elementos.filter(item => available(item) > 0
-      && [item.codigo, item.nombre, getLocationString(item)].some(value => value.toLowerCase().includes(query)));
+      && [item.codigo, item.nombre, item.marca || '', getLocationString(item)].some(value => value.toLowerCase().includes(query)));
   }, [elementos, query, getLocationString]);
   const pages = Math.max(1, Math.ceil(filtered.length / 5));
   const currentPage = Math.min(pageKey === query ? page : 1, pages);
@@ -22,7 +22,7 @@ export function AvailableInventory() {
     <div className="relative">
       <span aria-hidden="true" className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 text-xl">search</span>
       <input autoComplete="off" autoCorrect="off" spellCheck={false} id="dispatch-search-available" type="search" value={search} onChange={event => setSearch(event.target.value)}
-        placeholder="Buscar material por código, nombre o ubicación" aria-label="Buscar inventario para salida"
+        placeholder="Buscar material por código, nombre, marca o ubicación" aria-label="Buscar inventario para salida"
         aria-controls={query ? 'dispatch-search-results' : undefined}
         className="w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm" />
     </div>
@@ -35,7 +35,7 @@ export function AvailableInventory() {
             <ItemImage source={item.fotoUrl} category={item.categoria} compact alt={item.nombre} className="w-10 h-10 rounded-lg object-cover" />
           </button>
           <div className="min-w-0"><button type="button" onClick={() => openItemDetail(item)} title={item.nombre} className="block max-w-full text-left font-bold text-sm break-words hover:text-[#3e4e9e] hover:underline">{item.nombre}</button>
-            <span className="block text-xs text-[#64748b] break-words">{item.codigo} · {getLocationString(item)}</span></div>
+            <span className="block text-xs text-[#64748b] break-words">{item.codigo}{item.marca ? ` · ${item.marca}` : ''} · {getLocationString(item)}</span></div>
         </div>
         <div className="flex items-center justify-between gap-3 sm:block sm:text-right shrink-0"><span className="block text-xs">{available(item)} {item.unidad}</span>
           <button id={`btn-add-cart-${item.codigo}`} type="button" onClick={() => addToDispatchCart(item)}

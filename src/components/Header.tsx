@@ -1,3 +1,4 @@
+import { StockAlerts } from './StockAlerts';
 import { Presence } from './ui/Motion';
 import React, { useEffect, useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
@@ -160,49 +161,7 @@ export const Header: React.FC = () => {
                     Cerrar
                   </button>
                 </div>
-                <div className="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1">
-                  {stockAlerts.length === 0 ? (
-                    <div className="p-4 text-center text-xs text-[#137333] bg-[#e6f4ea] rounded-xl font-medium">
-                      Todo el inventario cuenta con stock óptimo.
-                    </div>
-                  ) : (
-                    stockAlerts.slice(0, 10).map((alertItem) => {
-                      const isOut = alertItem.cantidad === 0;
-                      return (
-                        <div
-                          key={alertItem.id}
-                          onClick={() => {
-                            openItemDetail(alertItem);
-                            setShowNotifications(false);
-                          }}
-                          className={`p-2.5 rounded-xl border text-xs cursor-pointer hover:scale-[1.01] transition-all ${
-                            isOut
-                              ? 'bg-[#fce8e6] border-[#ffdad6]'
-                              : 'bg-[#fef7e0] border-[#ffdf90]'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <p className={`font-bold ${isOut ? 'text-[#ba1a1a]' : 'text-[#755b00]'}`}>
-                              {isOut ? 'Stock Agotado' : 'Stock Bajo'}: {alertItem.codigo}
-                            </p>
-                            <span className="font-mono-code font-bold text-[11px] text-[#131b2e]">
-                              {alertItem.cantidad} {alertItem.unidad}
-                            </span>
-                          </div>
-                          <p className="text-[#454651] text-[11px] truncate mt-0.5">{alertItem.nombre}</p>
-                          <p className="text-[#767682] text-[10px] mt-0.5">
-                            Mínimo configurado: {alertItem.stockMinimo} {alertItem.unidad}
-                          </p>
-                        </div>
-                      );
-                    })
-                  )}
-                  {stockAlerts.length > 10 && (
-                    <p className="text-center text-[10px] text-[#767682] pt-1">
-                      +{stockAlerts.length - 10} elementos más con bajo stock
-                    </p>
-                  )}
-                </div>
+                <StockAlerts alerts={stockAlerts} onItem={item => { openItemDetail(item); setShowNotifications(false); }} />
               </div>
             )}</Presence>
           </div>

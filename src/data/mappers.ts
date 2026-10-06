@@ -1,6 +1,6 @@
 import { mapTransport } from '../domain/remissionTransport';
 import { mapWeight } from '../domain/weight';
-import type { Almacen, Caja, Elemento, Estanteria, HistorialMovimiento, Proyecto, Remision, DetalleRemision, TipoMovimiento } from '../types';
+import type { Almacen, NivelEstanteria, Caja, Elemento, Estanteria, HistorialMovimiento, Proyecto, Remision, DetalleRemision, TipoMovimiento } from '../types';
 import { normalizeUnit } from '../domain/catalogs';
 import { displayDate, displayTime } from '../shared/dates';
 import { uniquePhotos } from '../domain/photos';
@@ -22,8 +22,11 @@ export const mapAlmacen = (row: DbRow): Almacen => ({
 export const mapEstanteria = (row: DbRow): Estanteria => ({
   id: str(row.id), almacenId: id(row.almacen_id), codigo: str(row.codigo), nombre: str(row.nombre), descripcion: str(row.descripcion),
 });
+export const mapNivel = (row: DbRow): NivelEstanteria => ({
+  id: str(row.id), estanteriaId: str(row.estanteria_id), codigo: str(row.codigo), nombre: str(row.nombre), descripcion: str(row.descripcion),
+});
 export const mapCaja = (row: DbRow): Caja => ({
-  id: str(row.id), estanteriaId: id(row.estanteria_id), codigoCaja: str(row.codigo),
+  id: str(row.id), estanteriaId: id(row.estanteria_id), nivelId: id(row.nivel_id), codigoCaja: str(row.codigo),
   estado: /COMP/i.test(str(row.estado)) ? 'Completa' : /VAC/i.test(str(row.estado)) ? 'Vacia' : 'Parcial',
   descripcion: str(row.descripcion),
 });
@@ -35,11 +38,12 @@ export const mapElemento = (row: DbRow): Elemento => {
   const specs = object(row.especificaciones);
   return {
     id: str(row.id), codigo: str(row.codigo), nombre: str(row.nombre), descripcion: str(row.descripcion),
+    marca: str(specs.marca).trim(),
     categoria: String(row.categoria || 'OTROS'),
     cantidad: numeric(row.cantidad), unidad: normalizeUnit(str(row.unidad, 'und')),
     pesoUnitario: mapWeight(specs.peso_unitario),
     valorUnitario: mapUnitValue(specs.valor_unitario_cop),
-    fotoUrl: str(row.foto_url), almacenId: id(row.almacen_id), estanteriaId: id(row.estanteria_id), cajaId: id(row.caja_id),
+    fotoUrl: str(row.foto_url), almacenId: id(row.almacen_id), estanteriaId: id(row.estanteria_id), nivelId: id(row.nivel_id), cajaId: id(row.caja_id),
     fotosAdicionales: uniquePhotos(specs.fotos_adicionales).filter(photo => photo !== str(row.foto_url)),
     stockMinimo: numeric(row.stock_minimo, 10), estado: str(row.estado || specs.estado_material, 'BUENO'),
     cantidadDanados: numeric(row.cantidad_danados ?? specs.cantidad_danados),
@@ -58,7 +62,7 @@ export const mapRemision = (row: DbRow, itemsByCode?: Map<string, Elemento>): Re
   items: (Array.isArray(row.items) ? row.items : []).map((raw: unknown): DetalleRemision => {
     const item = object(raw);
     return { elementoId: str(item.elementoId ?? item.elemento_id ?? itemsByCode?.get(str(item.codigo))?.id),
-      codigo: str(item.codigo), nombre: str(item.nombre), cantidad: numeric(item.cantidad),
+      codigo: str(item.codigo), nombre: str(item.nombre), marca: str(item.marca), cantidad: numeric(item.cantidad),
       unidad: normalizeUnit(str(item.unidad, 'und')),
       ...(item.pesoTotalKg != null && { pesoTotalKg: numeric(item.pesoTotalKg) }),
       pesoUnitario: mapWeight(item.pesoUnitario), valorUnitarioCOP: mapUnitValue(item.valorUnitarioCOP), valorTotalCOP: mapUnitValue(item.valorTotalCOP) };

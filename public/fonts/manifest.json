@@ -17,7 +17,6 @@
     "electric_bolt",
     "engineering",
     "error",
-    "expand_more",
     "extension",
     "filter_list",
     "folder_open",
@@ -26,10 +25,10 @@
     "history",
     "input",
     "inventory_2",
+    "layers",
     "local_shipping",
     "location_on",
     "logout",
-    "menu",
     "notifications",
     "output",
     "photo_library",
@@ -73,9 +72,9 @@
     },
     {
       "file": "material-symbols.woff2",
-      "bytes": 19348,
-      "source": "https://fonts.gstatic.com/l/font?kit=kJEPBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMPdY40KH8nGzv3fzfVJO1Vy3zATewkbbs1mPreFIutwx9OV-30QSKbDePqAR6wHkhiKHjt3lhUbsdsZKcEeX801kvNIFKusPwOwnpa-aV8d_tPm00YjfwPSPkvgP2oeFHC1biE2rnko5ZcR5ik7YYEhSspcs&skey=b8dc2088854b122f&v=v375",
-      "cssUrl": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&icon_names=add,add_box,add_shopping_cart,archive,assignment_turned_in,battery_full,cable,category,check_circle,close,construction,dashboard,delete,download,electric_bolt,engineering,error,expand_more,extension,filter_list,folder_open,grid_view,help,history,input,inventory_2,local_shipping,location_on,logout,menu,notifications,output,photo_library,picture_as_pdf,power,print,save,search,search_off,settings,settings_input_component,shelves,shield,shopping_cart_checkout,solar_power,success,swap_horiz,tag,timeline,tune,verified,view_list,view_module,visibility,warehouse&display=block",
+      "bytes": 20280,
+      "source": "https://fonts.gstatic.com/l/font?kit=kJEPBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMPdY40KH8nGzv3fzfVJO1Vy3zATewkbbs1mPreFIutwx9OV-30QSKbDePqAR5AHkhiKHjt3lhEbsdsZKcEe3ai1ldx4VGIdZ5etV0s-m93dDI4cX-kx-RvCFomF_voGGtR3ivU3-eeoKM8Tg2htNG02X65d5xQ&skey=b8dc2088854b122f&v=v375",
+      "cssUrl": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&icon_names=add,add_box,add_shopping_cart,archive,assignment_turned_in,battery_full,cable,category,check_circle,close,construction,dashboard,delete,download,electric_bolt,engineering,error,extension,filter_list,folder_open,grid_view,help,history,input,inventory_2,layers,local_shipping,location_on,logout,notifications,output,photo_library,picture_as_pdf,power,print,save,search,search_off,settings,settings_input_component,shelves,shield,shopping_cart_checkout,solar_power,success,swap_horiz,tag,timeline,tune,verified,view_list,view_module,visibility,warehouse&display=block",
       "license": "https://raw.githubusercontent.com/google/material-design-icons/master/LICENSE"
     }
   ]

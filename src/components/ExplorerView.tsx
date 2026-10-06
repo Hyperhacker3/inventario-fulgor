@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useInventory } from '../context/InventoryContext';
-import { ALL_LOCATIONS, emptyInventoryFilters, changeWarehouse, changeRack, filterInventory, type InventoryFilters } from '../domain/explorer';
+import { ALL_LOCATIONS, emptyInventoryFilters, changeWarehouse, changeRack, changeLevel, filterInventory, type InventoryFilters } from '../domain/explorer';
 import { ExplorerResults } from './explorer/ExplorerResults';
 import { ExplorerFilters } from './explorer/ExplorerFilters';
 import { useInventoryViewMode } from '../state/useInventoryViewMode';
 
 export const ExplorerView: React.FC = () => {
   const {
-    elementos, almacenes, estanterias, cajas, categoryOptions, categoryLabel, setGlobalSearch,
+    elementos, almacenes, estanterias, niveles, cajas, categoryOptions, categoryLabel, setGlobalSearch,
     getLocationString,
     globalSearch
   } = useInventory();
@@ -26,7 +26,7 @@ export const ExplorerView: React.FC = () => {
   };
   const activeFiltersCount = Number(filters.categories.length > 0) + Number(filters.stock !== 'todos')
     + Number(filters.warehouseId !== ALL_LOCATIONS) + Number(filters.rackId !== ALL_LOCATIONS)
-    + Number(filters.boxId !== ALL_LOCATIONS) + Number(!!effectiveSearch.trim());
+    + Number(filters.levelId !== ALL_LOCATIONS) + Number(filters.boxId !== ALL_LOCATIONS) + Number(!!effectiveSearch.trim());
   const filteredItems = useMemo(() => filterInventory(elementos, filters, effectiveSearch, getLocationString),
     [elementos, filters, effectiveSearch, getLocationString]);
   const pageCount = Math.max(1, Math.ceil(filteredItems.length / 24));
@@ -111,11 +111,12 @@ export const ExplorerView: React.FC = () => {
       {/* Main Two-Column Layout (Filters + Bento Grid) */}
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 w-full flex-1 items-start">
         <ExplorerFilters visible={mobileFiltersOpen} filters={filters}
-          warehouses={almacenes} racks={estanterias} boxes={cajas} categories={categoryOptions} categoryLabel={categoryLabel}
+          warehouses={almacenes} racks={estanterias} levels={niveles} boxes={cajas} categories={categoryOptions} categoryLabel={categoryLabel}
           onCategories={categories => changeFilters({ ...filters, categories })}
           onStock={stock => changeFilters({ ...filters, stock })}
           onWarehouse={id => changeFilters(changeWarehouse(filters, id))}
           onRack={id => changeFilters(changeRack(filters, id))}
+          onLevel={id => changeFilters(changeLevel(filters, id))}
           onBox={boxId => changeFilters({ ...filters, boxId })} onClear={handleClearFilters} />
 
         {/* Results Area */}

@@ -22,17 +22,17 @@ function itemValues(item: Elemento): LocationValues | null {
 }
 /** Each product contributes once to every assigned level, including stock without a rack or box. */
 export function inventoryLocationValues(items: Elemento[]) {
-  const warehouses = new Map<string, LocationValues>(), racks = new Map<string, LocationValues>(), boxes = new Map<string, LocationValues>();
+  const warehouses = new Map<string, LocationValues>(), racks = new Map<string, LocationValues>(), levels = new Map<string, LocationValues>(), boxes = new Map<string, LocationValues>();
   for (const item of items) {
     const value = itemValues(item);
     if (!value) continue;
-    for (const [id, index] of [[item.almacenId, warehouses], [item.estanteriaId, racks], [item.cajaId, boxes]] as const) {
+    for (const [id, index] of [[item.almacenId, warehouses], [item.estanteriaId, racks], [item.nivelId, levels], [item.cajaId, boxes]] as const) {
       if (!id) continue;
       const previous = index.get(id) || EMPTY_LOCATION_VALUES;
       index.set(id, { total: roundCOP(previous.total + value.total), damaged: roundCOP(previous.damaged + value.damaged) });
     }
   }
-  return { warehouses, racks, boxes };
+  return { warehouses, racks, levels, boxes };
 }
 export function inventoryValues(items: Elemento[]) {
   let total = 0, damaged = 0;

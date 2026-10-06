@@ -1,44 +1,47 @@
 import { useMemo } from 'react';
-import type { Almacen, Estanteria, Caja, Elemento } from '../../types';
+import type { Almacen, Estanteria, NivelEstanteria, Caja, Elemento } from '../../types';
 import { useInventory } from '../../context/InventoryContext';
 import { inventoryLocationValues } from '../../domain/money';
 import { LocationValueSummary, locationValueHint } from './LocationValueSummary';
 
 interface Props {
-  almacen: Almacen; estanterias: Estanteria[]; cajas: Caja[]; elementos: Elemento[];
+  almacen: Almacen; estanterias: Estanteria[]; niveles: NivelEstanteria[]; cajas: Caja[]; elementos: Elemento[];
   canAdmin: boolean;
   onEditWarehouse: () => void; onNewRack: () => void; onEditRack: (id: string) => void;
-  onNewBox: (rackId: string) => void; onEditBox: (id: string) => void;
+  onNewLevel: (rackId: string) => void; onEditLevel: (id: string) => void;
+  onNewBox: (levelId: string) => void; onEditBox: (id: string) => void;
 }
 export function WarehouseTree(props: Props) {
   const { openItemDetail } = useInventory();
   return <WarehouseTreeContent {...props} openItemDetail={openItemDetail} />;
 }
-export function WarehouseTreeContent({ almacen, estanterias, cajas, elementos, canAdmin, onEditWarehouse, onNewRack, onEditRack, onNewBox, onEditBox, openItemDetail }: Props & { openItemDetail: (item: Elemento) => void }) {
+export function WarehouseTreeContent({ almacen, estanterias, niveles, cajas, elementos, canAdmin, onEditWarehouse, onNewRack,
+  onEditRack, onNewLevel, onEditLevel, onNewBox, onEditBox, openItemDetail }: Props & { openItemDetail: (item: Elemento) => void }) {
   const values = useMemo(() => inventoryLocationValues(elementos), [elementos]);
-  const rackItems = useMemo(() => {
-    const result = new Map<string, Elemento[]>();
-    for (const item of elementos) if (item.almacenId === almacen.id && item.estanteriaId) {
-      const list = result.get(item.estanteriaId) || []; list.push(item); result.set(item.estanteriaId, list);
+  const indexes = useMemo(() => {
+    const rackItems = new Map<string, Elemento[]>(), byBox = new Map<string, Elemento[]>();
+    const boxesByRack = new Map<string, Caja[]>(), levelsByRack = new Map<string, NivelEstanteria[]>();
+    for (const item of elementos) if (item.almacenId === almacen.id) {
+      if (item.estanteriaId) { const list = rackItems.get(item.estanteriaId) || []; list.push(item); rackItems.set(item.estanteriaId, list); }
+      if (item.cajaId) { const list = byBox.get(item.cajaId) || []; list.push(item); byBox.set(item.cajaId, list); }
     }
-    return result;
-  }, [elementos, almacen.id]);
-  const boxesByRack = useMemo(() => {
-    const result = new Map<string, Caja[]>();
-    for (const box of cajas) if (box.estanteriaId) {
-      const list = result.get(box.estanteriaId) || []; list.push(box); result.set(box.estanteriaId, list);
-    }
-    return result;
-  }, [cajas]);
+    for (const box of cajas) if (box.estanteriaId) { const list = boxesByRack.get(box.estanteriaId) || []; list.push(box); boxesByRack.set(box.estanteriaId, list); }
+    for (const level of niveles) { const list = levelsByRack.get(level.estanteriaId) || []; list.push(level); levelsByRack.set(level.estanteriaId, list); }
+    return { rackItems, byBox, boxesByRack, levelsByRack };
+  }, [elementos, almacen.id, cajas, niveles]);
   const racks = estanterias.filter(rack => rack.almacenId === almacen.id);
   const unassigned = elementos.filter(item => item.almacenId === almacen.id && !item.estanteriaId);
-  const byBox = useMemo(() => {
-    const result = new Map<string, Elemento[]>();
-    for (const item of elementos) if (item.almacenId === almacen.id && item.cajaId) {
-      const list = result.get(item.cajaId) || []; list.push(item); result.set(item.cajaId, list);
-    }
-    return result;
-  }, [elementos, almacen.id]);
+  const itemLink = (item: Elemento, label = 'Sin caja') => <button key={item.id} onClick={() => openItemDetail(item)}
+    className="min-w-0 break-words border rounded-xl p-3 text-left text-sm hover:border-[#3e4e9e]">{item.codigo} · {item.nombre}
+    <span className="block text-xs text-[#767682]">{label} · {item.cantidad} {item.unidad}{item.marca ? ` · ${item.marca}` : ''}</span></button>;
+  const boxCard = (box: Caja) => <div key={box.id} className="min-w-0 border rounded-xl p-3 bg-[#f8fafc]">
+    <div className="flex flex-wrap justify-between gap-2"><div className="font-bold text-sm">{box.codigoCaja}</div>
+      {canAdmin && <button onClick={() => onEditBox(box.id)} className="text-xs text-[#253685]">Editar</button>}</div>
+    <p className="text-xs text-[#767682]">{box.estado}</p>
+    <LocationValueSummary values={values.boxes.get(box.id)} />
+    {(indexes.byBox.get(box.id) || []).map(item => <button key={item.id} onClick={() => openItemDetail(item)}
+      className="block break-words text-left text-xs mt-2 hover:underline">{item.codigo} · {item.nombre} ({item.cantidad} {item.unidad})</button>)}
+  </div>;
   return <section className="space-y-4">
     <div className="bg-white border rounded-2xl p-5 flex flex-wrap justify-between gap-3">
       <div><h3 className="text-xl font-bold">{almacen.nombre}</h3><p className="text-sm text-[#767682]">{almacen.codigo} · {almacen.ciudad} · {almacen.estado}</p></div>
@@ -48,26 +51,28 @@ export function WarehouseTreeContent({ almacen, estanterias, cajas, elementos, c
       <p className="text-xs text-slate-500 w-full">{locationValueHint}</p>
     </div>
     {racks.map(rack => {
-      const rackBoxes = boxesByRack.get(rack.id) || [];
-      const items = rackItems.get(rack.id) || [];
+      const rackBoxes = indexes.boxesByRack.get(rack.id) || [], rackLevels = indexes.levelsByRack.get(rack.id) || [];
+      const items = indexes.rackItems.get(rack.id) || [];
+      const legacyBoxes = rackBoxes.filter(box => !box.nivelId), looseItems = items.filter(item => !item.nivelId && !item.cajaId);
       return <article key={rack.id} className="bg-white border rounded-2xl p-4 space-y-3">
         <div className="flex flex-col sm:flex-row justify-between gap-3"><div className="min-w-0 break-words"><h4 className="font-bold">{rack.nombre}</h4>
-          <p className="text-xs text-[#767682]">{rack.codigo} · {items.length} artículos · {rackBoxes.length} cajas</p></div>
+          <p className="text-xs text-[#767682]">{rack.codigo} · {items.length} artículos · {rackLevels.length} niveles · {rackBoxes.length} cajas</p></div>
           {canAdmin && <div className="responsive-actions w-full sm:w-auto"><button onClick={() => onEditRack(rack.id)} className="border rounded-lg px-2 py-1 text-xs">Editar</button>
-            <button onClick={() => onNewBox(rack.id)} className="border rounded-lg px-2 py-1 text-xs">Añadir caja</button></div>}</div>
+            <button onClick={() => onNewLevel(rack.id)} className="border rounded-lg px-2 py-1 text-xs">Añadir nivel</button></div>}</div>
         <LocationValueSummary values={values.racks.get(rack.id)} />
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
-          {rackBoxes.map(box => <div key={box.id} className="min-w-0 border rounded-xl p-3 bg-[#f8fafc]">
-            <div className="flex flex-wrap justify-between gap-2"><div className="font-bold text-sm">{box.codigoCaja}</div>
-              {canAdmin && <button onClick={() => onEditBox(box.id)} className="text-xs text-[#253685]">Editar</button>}</div>
-            <p className="text-xs text-[#767682]">{box.estado}</p>
-            <LocationValueSummary values={values.boxes.get(box.id)} />
-            {(byBox.get(box.id) || []).map(item => <button key={item.id} onClick={() => openItemDetail(item)}
-              className="block break-words text-left text-xs mt-2 hover:underline">{item.codigo} · {item.nombre} ({item.cantidad} {item.unidad})</button>)}
-          </div>)}
-          {items.filter(item => !item.cajaId).map(item => <button key={item.id} onClick={() => openItemDetail(item)}
-            className="min-w-0 break-words border rounded-xl p-3 text-left text-sm hover:border-[#3e4e9e]">{item.codigo} · {item.nombre}<span className="block text-xs text-[#767682]">Sin caja · {item.cantidad} {item.unidad}</span></button>)}
-        </div>
+        {rackLevels.map(level => <section key={level.id} data-level={level.id} className="border rounded-xl p-3 space-y-3">
+          <div className="flex flex-col sm:flex-row justify-between gap-3"><div><h5 className="font-semibold">Nivel {level.nombre}</h5><p className="text-xs text-slate-500">{level.codigo} · {level.descripcion}</p></div>
+            {canAdmin && <div className="responsive-actions w-full sm:w-auto"><button onClick={() => onEditLevel(level.id)} className="border rounded-lg px-2 py-1 text-xs">Editar nivel</button>
+              <button onClick={() => onNewBox(level.id)} className="border rounded-lg px-2 py-1 text-xs">Añadir caja</button></div>}</div>
+          <LocationValueSummary values={values.levels.get(level.id)} />
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            {rackBoxes.filter(box => box.nivelId === level.id).map(boxCard)}
+            {items.filter(item => item.nivelId === level.id && !item.cajaId).map(item => itemLink(item))}
+          </div>
+        </section>)}
+        {(legacyBoxes.length > 0 || looseItems.length > 0) && <h5 className="text-sm font-semibold text-slate-600">Sin nivel asignado</h5>}
+        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">{legacyBoxes.map(boxCard)}{looseItems.map(item => itemLink(item, 'Sin nivel ni caja'))}</div>
+        {!rackLevels.length && canAdmin && <p className="text-xs text-slate-500">Cree un nivel para añadir nuevas cajas. Puede asignar las cajas anteriores a un nivel al editarlas.</p>}
       </article>;
     })}
     {unassigned.length > 0 && <div className="bg-white border rounded-2xl p-4"><h4 className="font-bold">Sin estantería</h4>

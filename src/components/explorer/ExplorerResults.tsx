@@ -7,7 +7,7 @@ import { itemPhotos } from '../../domain/photos';
 import { formatUnitWeight } from '../../domain/weight';
 
 export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'grid' | 'list' }) {
-  const { getAlmacenById, getEstanteriaById, getLocationString, openItemDetail, addToDispatchCart, user, categoryLabel } = useInventory();
+  const { getLocationString, openItemDetail, addToDispatchCart, user, categoryLabel } = useInventory();
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
   // Stock Badge renderer
   const renderStockBadge = (item: Elemento) => {
@@ -46,8 +46,6 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
           ) : mode === 'grid' ? (
             <div className="inventory-card-grid grid gap-4 sm:gap-5">
               {items.map((item) => {
-                const alm = getAlmacenById(item.almacenId);
-                const est = getEstanteriaById(item.estanteriaId);
                 const photoCount = itemPhotos(item).length;
 
                 return (
@@ -82,6 +80,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                         {item.nombre}
                       </h3>
 
+                      {item.marca && <p className="text-xs text-slate-500 truncate">Marca: {item.marca}</p>}
                       <p className={`text-[11px] ${item.pesoUnitario ? 'text-slate-500' : 'text-amber-700'}`}>{formatUnitWeight(item.pesoUnitario)}{item.pesoUnitario ? ` / ${item.unidad}` : ''}</p>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-mono-code text-xs font-semibold text-[#3e4e9e] bg-[#eaedff] px-2 py-0.5 rounded-md w-fit">
@@ -103,7 +102,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                         <div className="flex items-center gap-1.5">
                           <span className="material-symbols-outlined text-[15px] text-[#767682] shrink-0">location_on</span>
                           <span className="truncate">
-                            {alm?.nombre || 'Bodega'} • {est?.nombre || 'Estante'}
+                            {getLocationString(item)}
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -173,6 +172,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                             </button>
                             <div className="min-w-0">
                               <button type="button" onClick={() => openItemDetail(item)} title={item.nombre} className="block max-w-full text-left font-semibold text-[#131b2e] leading-snug truncate hover:text-[#3e4e9e] hover:underline">{item.nombre}</button>
+                              {item.marca && <p className="text-xs text-slate-500 truncate">{item.marca}</p>}
                               <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-[#767682]">
                                 <span>{categoryLabel(item.categoria)}</span>
                                 <span className={item.pesoUnitario ? 'text-slate-500' : 'text-amber-700'}>{formatUnitWeight(item.pesoUnitario)}{item.pesoUnitario ? ` / ${item.unidad}` : ''}</span>

@@ -1,11 +1,11 @@
-import type { DatosTransporte, DispatchCartItem, Elemento, Almacen, Estanteria, Caja, HistorialMovimiento, Remision, TipoMovimiento } from '../types';
+import type { DatosTransporte, DispatchCartItem, Elemento, Almacen, Estanteria, NivelEstanteria, Caja, HistorialMovimiento, Remision, TipoMovimiento } from '../types';
 import type { Dispatch, SetStateAction } from 'react';
 import { useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { DemoData } from './useInventoryData';
 import { insertRow, updateRow, rpc } from '../data/repository';
 import { isDatabaseRejection } from '../data/databaseErrors';
-import { mapAlmacen, mapCaja, mapElemento, mapEstanteria, mapRemision, mapHistory } from '../data/mappers';
+import { mapAlmacen, mapNivel, mapCaja, mapElemento, mapEstanteria, mapRemision, mapHistory } from '../data/mappers';
 import { isDemo } from '../lib/supabase';
 import { validateItem } from '../domain/inventory';
 import { validateDispatch } from '../domain/dispatch';
@@ -51,7 +51,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     assignment: { prefixId: string; requestId: string }) => {
     requireAdmin();
     const item = { ...input, codigo: input.codigo.trim().toUpperCase() };
-    validateItem(item, data.almacenes, data.estanterias, data.cajas);
+    validateItem(item, data.almacenes, data.estanterias, data.cajas, data.niveles);
     const signature = JSON.stringify({ item: { ...item, codigo: '' }, prefix: assignment.prefixId });
     const persist = async (payload: Record<string, unknown>) => {
       createRequests.current.set(assignment.requestId, { signature, payload });
@@ -78,9 +78,9 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       return persist({
         nombre: item.nombre, descripcion: item.descripcion, categoria: item.categoria,
         cantidad: item.cantidad, stock_minimo: item.stockMinimo, unidad: item.unidad,
-        almacen_id: item.almacenId, estanteria_id: item.estanteriaId, caja_id: item.cajaId,
+        almacen_id: item.almacenId, estanteria_id: item.estanteriaId, nivel_id: item.nivelId || null, caja_id: item.cajaId,
         foto_url: photo, estado: item.estado || 'BUENO', cantidad_danados: item.cantidadDanados || 0,
-        especificaciones: { ...item.especificaciones, peso_unitario: item.pesoUnitario ?? null, valor_unitario_cop: item.valorUnitario ?? 0, fotos_adicionales: gallery.additional },
+        especificaciones: { ...item.especificaciones, marca: (item.marca || '').trim(), peso_unitario: item.pesoUnitario ?? null, valor_unitario_cop: item.valorUnitario ?? 0, fotos_adicionales: gallery.additional },
       });
     });
   };
@@ -91,7 +91,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     if (!before) throw new Error('Componente no encontrado.');
     if (updates.cantidad !== undefined && !isDemo) throw new Error('Use una entrada o ajuste para cambiar existencias.');
     const next = { ...before, ...updates };
-    validateItem(next, data.almacenes, data.estanterias, data.cajas);
+    validateItem(next, data.almacenes, data.estanterias, data.cajas, data.niveles);
     return saveGallery(next, before, { save: saveImage, remove: removeImage }, async gallery => {
       const photo = gallery.main;
       if (isDemo) {
@@ -102,7 +102,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
         nombre: next.nombre, descripcion: next.descripcion, stock_minimo: next.stockMinimo,
         ...itemLocationColumns(updates),
         foto_url: photo, estado: next.estado, cantidad_danados: next.cantidadDanados ?? 0,
-        especificaciones: { ...next.especificaciones, peso_unitario: next.pesoUnitario ?? null, valor_unitario_cop: next.valorUnitario ?? 0, fotos_adicionales: gallery.additional }, updated_at: isoNow(),
+        especificaciones: { ...next.especificaciones, marca: (next.marca || '').trim(), peso_unitario: next.pesoUnitario ?? null, valor_unitario_cop: next.valorUnitario ?? 0, fotos_adicionales: gallery.additional }, updated_at: isoNow(),
       }, mapElemento);
       applyItemChange(id, saved);
       await syncAfterWrite(refreshItemIds([id]), ...(Object.keys(itemLocationColumns(updates)).length
@@ -151,7 +151,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       entregadoPor: payload.entregadoPor || user?.name || '', cargoEntregado: payload.cargoEntregado || displayCargo(user),
       recibidoPor: payload.recibidoPor, cargoRecibido: payload.cargoRecibido || '', observaciones: payload.observaciones || '',
       fecha: displayDate(now), items: cart.map(line => ({ elementoId: line.elemento.id, codigo: line.elemento.codigo,
-        nombre: line.elemento.nombre, cantidad: line.cantidad, unidad: line.elemento.unidad,
+        nombre: line.elemento.nombre, marca: line.elemento.marca || '', cantidad: line.cantidad, unidad: line.elemento.unidad,
         pesoUnitario: line.elemento.pesoUnitario,
         valorUnitarioCOP: line.elemento.valorUnitario || 0, valorTotalCOP: roundCOP(line.cantidad * (line.elemento.valorUnitario || 0)),
         ...(line.elemento.pesoUnitario && { pesoTotalKg: lineWeightKg(line.elemento.pesoUnitario, line.cantidad)! }) })),
@@ -239,10 +239,27 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       ...(updates.nombre !== undefined && { nombre: updates.nombre }), ...(updates.descripcion !== undefined && { descripcion: updates.descripcion }) }, mapEstanteria);
     await refresh('estanterias');
   };
+  const addNivel = async (input: Omit<NivelEstanteria, 'id'>) => {
+    requireAdmin();
+    if (!data.estanterias.some(rack => rack.id === input.estanteriaId)) throw new Error('Seleccione una estantería existente.');
+    if (isDemo) { const value = { ...input, id: newId('NIV') }; setDemoData(prev => ({ ...prev, niveles: [...prev.niveles, value] })); return value; }
+    const value = await insertRow('niveles_estanteria', { id: `NIV-${crypto.randomUUID()}`, estanteria_id: input.estanteriaId,
+      codigo: input.codigo.trim().toUpperCase(), nombre: input.nombre.trim(), descripcion: input.descripcion || '' }, mapNivel);
+    client.setQueryData<NivelEstanteria[]>(['fulgor', user?.email || '', 'niveles_estanteria'], previous =>
+      [value, ...(previous || []).filter(level => level.id !== value.id)]);
+    await syncAfterWrite(refresh('niveles_estanteria')); return value;
+  };
+  const updateNivel = async (id: string, updates: Partial<NivelEstanteria>) => {
+    requireAdmin();
+    if (isDemo) { setDemoData(prev => ({ ...prev, niveles: prev.niveles.map(level => level.id === id ? { ...level, ...updates } : level) })); return; }
+    await updateRow('niveles_estanteria', id, { ...(updates.codigo !== undefined && { codigo: updates.codigo.trim().toUpperCase() }),
+      ...(updates.nombre !== undefined && { nombre: updates.nombre.trim() }), ...(updates.descripcion !== undefined && { descripcion: updates.descripcion }) }, mapNivel);
+    await refresh('niveles_estanteria');
+  };
   const addCaja = async (input: Omit<Caja, 'id'>) => {
     requireAdmin();
     if (isDemo) { const value = { ...input, id: newId('CAJ') }; setDemoData(prev => ({ ...prev, cajas: [...prev.cajas, value] })); return value; }
-    const value = await insertRow('cajas', { id: `CAJ-${crypto.randomUUID()}`, estanteria_id: input.estanteriaId,
+    const value = await insertRow('cajas', { id: `CAJ-${crypto.randomUUID()}`, estanteria_id: input.estanteriaId, nivel_id: input.nivelId || null,
       codigo: input.codigoCaja, nombre: input.codigoCaja, estado: input.estado.toUpperCase(), descripcion: input.descripcion || '' }, mapCaja);
     client.setQueryData<Caja[]>(['fulgor', user?.email || '', 'cajas'], previous =>
       [value, ...(previous || []).filter(box => box.id !== value.id)]);
@@ -250,12 +267,15 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
   };
   const updateCaja = async (id: string, updates: Partial<Caja>) => {
     requireAdmin();
-    if (isDemo) { setDemoData(prev => ({ ...prev, cajas: prev.cajas.map(c => c.id === id ? { ...c, ...updates } : c) })); return; }
+    if (isDemo) { setDemoData(prev => ({ ...prev, cajas: prev.cajas.map(c => c.id === id ? { ...c, ...updates } : c),
+      elementos: updates.nivelId === undefined ? prev.elementos : prev.elementos.map(item => item.cajaId === id ? { ...item, nivelId: updates.nivelId, updatedAt: isoNow() } : item) })); return; }
     await updateRow('cajas', id, { ...(updates.codigoCaja !== undefined && { codigo: updates.codigoCaja, nombre: updates.codigoCaja }),
       ...(updates.estado !== undefined && { estado: updates.estado.toUpperCase() }),
+      ...(updates.nivelId !== undefined && { nivel_id: updates.nivelId }),
       ...(updates.descripcion !== undefined && { descripcion: updates.descripcion }) }, mapCaja);
-    await refresh('cajas');
+    await syncAfterWrite(refresh('cajas', 'elementos', 'historial'));
+    void client.invalidateQueries({ queryKey: ['fulgor', user?.email || '', 'archived-items'] });
   };
   return { addElemento, updateElemento, deleteElemento, processDispatch, addStockMovement,
-    addAlmacen, updateAlmacen, addEstanteria, updateEstanteria, addCaja, updateCaja };
+    addAlmacen, updateAlmacen, addEstanteria, updateEstanteria, addNivel, updateNivel, addCaja, updateCaja };
 }

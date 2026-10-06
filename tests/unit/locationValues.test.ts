@@ -50,8 +50,8 @@ const assertValues = (node: Element, total: number, damaged: number) => {
 };
 
 test('warehouse selection displays the selected total and damaged value plus nested rack/box values', () => {
-  const props = { estanterias, cajas, elementos, canAdmin: false, onEditWarehouse() {}, onNewRack() {}, onEditRack() {},
-    onNewBox() {}, onEditBox() {}, openItemDetail() {} };
+  const props = { estanterias, niveles: [], cajas, elementos, canAdmin: false, onEditWarehouse() {}, onNewRack() {}, onEditRack() {},
+    onNewLevel() {}, onEditLevel() {}, onNewBox() {}, onEditBox() {}, openItemDetail() {} };
   const north = content(renderToStaticMarkup(h(WarehouseTreeContent, { ...props, almacen: almacenes[0] })));
   assertValues(north.querySelector('section > div')!, 1155, 225);
   const rack = north.querySelector('article')!;
@@ -64,7 +64,7 @@ test('warehouse selection displays the selected total and damaged value plus nes
 });
 
 test('administration shows financial values for racks and boxes, including empty boxes', async () => {
-  const props = { almacenes, estanterias, cajas, elementos,
+  const props = { almacenes, estanterias, niveles: [], cajas, elementos,
     user: { name: 'User', email: '', role: 'consulta', avatar: '' },
     getAlmacenById: (id: string | null | undefined) => almacenes.find(row => row.id === id),
     getEstanteriaById: (id: string | null | undefined) => estanterias.find(row => row.id === id) };
@@ -79,7 +79,7 @@ test('administration shows financial values for racks and boxes, including empty
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
-test('compact administration selector retains all six icons and synchronizes section with desktop buttons', async () => {
+test('compact administration selector retains all seven icons and synchronizes section with desktop buttons', async () => {
   function Navigation() { const [value, setValue] = useState<AdministrationTab>('codes'); return h(AdministrationNavigation, { value, onChange: setValue }); }
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
   try {
@@ -90,8 +90,8 @@ test('compact administration selector retains all six icons and synchronizes sec
     assert.ok(host.querySelector('[role="tablist"]')!.classList.contains('hidden'));
     await act(() => trigger.click());
     const list = document.querySelector('[role="listbox"]')!;
-    assert.equal(list.querySelectorAll('[role="option"]').length, 6);
-    assert.deepEqual([...list.querySelectorAll('.material-symbols-outlined')].map(icon => icon.textContent), ['tag', 'category', 'shelves', 'inventory_2', 'folder_open', 'archive']);
+    assert.equal(list.querySelectorAll('[role="option"]').length, 7);
+    assert.deepEqual([...list.querySelectorAll('.material-symbols-outlined')].map(icon => icon.textContent), ['tag', 'category', 'shelves', 'layers', 'inventory_2', 'folder_open', 'archive']);
     await act(() => list.querySelector<HTMLButtonElement>('[data-value="boxes"]')!.click());
     assert.match(trigger.textContent!, /Cajas/);
     assert.equal(trigger.querySelector('[aria-hidden="true"]')!.textContent, 'inventory_2');

@@ -14,9 +14,9 @@ const item = mapElemento({ id: 'MAT-1', codigo: 'MAT001', nombre: 'Material', ca
 test('location edits preserve unchanged columns and explicitly clear dependent database IDs with null', () => {
   assert.deepEqual(changedItemLocation(itemLocationDraft(item), item), {});
   assert.deepEqual(itemLocationColumns({ nombre: 'Otro nombre' }), {});
-  const changed = changedItemLocation({ warehouseId: 'w2', rackId: '', boxId: '' }, item);
-  assert.deepEqual(itemLocationColumns(changed), { almacen_id: 'w2', estanteria_id: null, caja_id: null });
-  assert.deepEqual(itemLocationColumns(changedItemLocation(itemLocationDraft(), item)), { almacen_id: null, estanteria_id: null, caja_id: null });
+  const changed = changedItemLocation({ warehouseId: 'w2', rackId: '', levelId: '', boxId: '' }, item);
+  assert.deepEqual(itemLocationColumns(changed), { almacen_id: 'w2', estanteria_id: null, nivel_id: null, caja_id: null });
+  assert.deepEqual(itemLocationColumns(changedItemLocation(itemLocationDraft(), item)), { almacen_id: null, estanteria_id: null, nivel_id: null, caja_id: null });
 });
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://app.test/' });
@@ -37,7 +37,7 @@ const choose = async (host: HTMLElement, label: string, value: string) => {
   assert.ok(target); await act(() => target.click());
 };
 function inventory(updateElemento: (id: string, updates: Partial<Elemento>) => Promise<void>, role = 'admin') {
-  return { user: { name: 'Admin', email: 'test@app.test', role, avatar: '' }, almacenes: warehouses, estanterias: racks, cajas: boxes,
+  return { user: { name: 'Admin', email: 'test@app.test', role, avatar: '' }, almacenes: warehouses, estanterias: racks, niveles: [], cajas: boxes,
     updateElemento, deleteElemento: async () => {}, getLocationString: () => 'Norte > A > Caja A', categoryLabel: (id: string) => id,
     openQuickMovement: () => {}, addToDispatchCart: () => {} };
 }

@@ -6,7 +6,7 @@ import { WarehouseFormModal, type WarehouseFormTarget } from './warehouses/Wareh
 import { isDemo } from '../lib/supabase';
 
 export function WarehouseView() {
-  const { almacenes, estanterias, cajas, elementos, user } = useInventory();
+  const { almacenes, estanterias, niveles, cajas, elementos, user } = useInventory();
   const canAdmin = isDemo || user.role === 'admin';
   const [selectedId, setSelectedId] = useState(almacenes[0]?.id || '');
   const [form, setForm] = useState<WarehouseFormTarget | null>(null);
@@ -17,7 +17,7 @@ export function WarehouseView() {
   return <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full">
     <header className="flex flex-wrap justify-between gap-3 mb-6">
       <div><h2 className="text-2xl md:text-3xl font-bold text-[#131b2e]">Gestión de Almacenes</h2>
-        <p className="text-sm text-[#454651]">Ubicaciones de material: almacén, estantería y caja.</p></div>
+        <p className="text-sm text-[#454651]">Ubicaciones de material: almacén, estantería, nivel y caja.</p></div>
       {canAdmin && <button id="btn-add-warehouse" onClick={() => setForm({ kind: 'almacen', mode: 'new' })}
         className="px-4 py-2 rounded-lg bg-[#3e4e9e] text-white font-semibold">Añadir almacén</button>}
     </header>
@@ -29,11 +29,13 @@ export function WarehouseView() {
         </button>)}
         {!almacenes.length && <p className="p-3 text-sm">No hay almacenes.</p>}
       </aside>
-      {selected ? <WarehouseTree almacen={selected} estanterias={estanterias} cajas={cajas} elementos={elementos}
+      {selected ? <WarehouseTree almacen={selected} estanterias={estanterias} niveles={niveles} cajas={cajas} elementos={elementos}
         canAdmin={canAdmin}
         onEditWarehouse={() => setForm({ kind: 'almacen', mode: 'edit', id: selected.id })}
         onNewRack={() => setForm({ kind: 'estanteria', mode: 'new', parentId: selected.id })}
         onEditRack={id => setForm({ kind: 'estanteria', mode: 'edit', id })}
+        onNewLevel={id => setForm({ kind: 'nivel', mode: 'new', parentId: id })}
+        onEditLevel={id => setForm({ kind: 'nivel', mode: 'edit', id })}
         onNewBox={id => setForm({ kind: 'caja', mode: 'new', parentId: id })}
         onEditBox={id => setForm({ kind: 'caja', mode: 'edit', id })} />
         : <div className="bg-white rounded-2xl border p-8 text-sm">Seleccione un almacén.</div>}

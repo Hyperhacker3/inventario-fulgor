@@ -69,10 +69,10 @@ const { createRoot } = await import('react-dom/client');
 const categoryLabel = (id: string) => id === 'CABLES' ? 'Cables' : 'Nueva categoría';
 function FilterPanel() {
   const [filters, setFilters] = useState(emptyInventoryFilters);
-  return h(ExplorerFilters, { visible: true, filters, warehouses, racks, boxes, categories: ['CABLES', 'NUEVA_CATEGORIA'], categoryLabel,
+  return h(ExplorerFilters, { visible: true, filters, warehouses, racks, levels: [], boxes, categories: ['CABLES', 'NUEVA_CATEGORIA'], categoryLabel,
     onCategories: categories => setFilters(prev => ({ ...prev, categories })), onStock: stock => setFilters(prev => ({ ...prev, stock })),
     onWarehouse: id => setFilters(prev => changeWarehouse(prev, id)), onRack: id => setFilters(prev => changeRack(prev, id)),
-    onBox: boxId => setFilters(prev => ({ ...prev, boxId })), onClear: () => setFilters(emptyInventoryFilters()) });
+    onLevel: levelId => setFilters({...filters,levelId,boxId: ALL_LOCATIONS}), onBox: boxId => setFilters(prev => ({ ...prev, boxId })), onClear: () => setFilters(emptyInventoryFilters()) });
 }
 const choose = async (id: string, value: string) => {
   await act(() => (document.getElementById(id) as HTMLButtonElement).click());

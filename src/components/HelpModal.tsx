@@ -13,7 +13,8 @@ export function HelpModal() {
         <button type="button" data-dialog-close onClick={() => setIsHelpModalOpen(false)} aria-label="Cerrar ayuda" className="min-w-11 min-h-11 text-xl">×</button></header>
       <p className="text-sm"><strong>Estado:</strong> {isDemo ? 'Demostración local' : syncStatus === 'synced' ? 'Sincronizado' : syncStatus === 'syncing' ? 'Sincronizando…' : 'Sin conexión o con error de consulta'}</p>
       <div className="space-y-3 text-sm text-[#454651]">
-        <p><strong>Inventario:</strong> busque por código o nombre, consulte la ubicación y edite la ficha si tiene permisos.</p>
+        <p><strong>Inventario:</strong> busque por código, nombre o marca, consulte la ubicación y edite la ficha si tiene permisos.</p>
+        <p><strong>Ubicación:</strong> almacén → estantería → nivel → caja. Cree niveles desde Administración de datos, Almacenes o Nuevo ítem. Edite las cajas anteriores para asignarles un nivel.</p>
         <p><strong>Archivados:</strong> administración puede abrir un elemento desde Administración de datos → Archivados y pulsar Desarchivar para devolverlo al inventario activo, o eliminarlo definitivamente con confirmación.</p>
         <p><strong>Movimientos:</strong> entradas y ajustes registran responsable, fecha y stock anterior y nuevo.</p>
         <p><strong>Entradas:</strong> busque un material, indique la cantidad recibida y su motivo. Al confirmar se aumenta el stock y se guarda el movimiento, sin generar una remisión.</p>

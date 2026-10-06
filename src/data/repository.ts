@@ -1,8 +1,8 @@
 import { requireSupabase } from '../lib/supabase';
-import type { Almacen, Caja, Elemento, Estanteria, Proyecto, Remision, HistorialMovimiento, Page, ProjectSpending } from '../types';
-import { mapAlmacen, mapCaja, mapElemento, mapEstanteria, mapProyecto, mapRemision, mapHistory, type DbRow } from './mappers';
+import type { Almacen, NivelEstanteria, Caja, Elemento, Estanteria, Proyecto, Remision, HistorialMovimiento, Page, ProjectSpending } from '../types';
+import { mapAlmacen, mapNivel, mapCaja, mapElemento, mapEstanteria, mapProyecto, mapRemision, mapHistory, type DbRow } from './mappers';
 
-type Table = 'almacenes' | 'estanterias' | 'cajas' | 'proyectos' | 'elementos' | 'remisiones' | 'historial';
+type Table = 'almacenes' | 'estanterias' | 'niveles_estanteria' | 'cajas' | 'proyectos' | 'elementos' | 'remisiones' | 'historial';
 export function unwrap<T>(result: { data: T | null; error: { message: string; code?: string } | null }): T {
   if (result.error) throw Object.assign(new Error(result.error.message), { code: result.error.code });
   if (result.data === null) throw new Error('La base de datos no devolvió un resultado.');
@@ -23,6 +23,15 @@ async function all(table: Table, order = 'created_at', activeOnly = false) {
 }
 export const readAlmacenes = async (): Promise<Almacen[]> => (await all('almacenes')).map(mapAlmacen);
 export const readEstanterias = async (): Promise<Estanteria[]> => (await all('estanterias')).map(mapEstanteria);
+export async function readNiveles(): Promise<NivelEstanteria[]> {
+  try { return (await all('niveles_estanteria')).map(mapNivel); }
+  catch (cause) {
+    // Keep existing inventory accessible while the additive migration is being applied.
+    const code = (cause as { code?: string }).code;
+    if (code === '42P01' || code === 'PGRST205') return [];
+    throw cause;
+  }
+}
 export const readCajas = async (): Promise<Caja[]> => (await all('cajas')).map(mapCaja);
 export const readProyectos = async (): Promise<Proyecto[]> => (await all('proyectos')).map(mapProyecto);
 export const readElementos = async (): Promise<Elemento[]> => (await all('elementos', 'created_at', true)).map(mapElemento);

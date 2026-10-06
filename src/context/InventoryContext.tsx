@@ -60,6 +60,7 @@ function useInventoryValue() {
   const itemIndex = useMemo(() => byId(data.elementos), [data.elementos]);
   const warehouseIndex = useMemo(() => byId(data.almacenes), [data.almacenes]);
   const rackIndex = useMemo(() => byId(data.estanterias), [data.estanterias]);
+  const levelIndex = useMemo(() => byId(data.niveles), [data.niveles]);
   const boxIndex = useMemo(() => byId(data.cajas), [data.cajas]);
   const projectIndex = useMemo(() => byId(data.proyectos), [data.proyectos]);
   const dispatchCart = useMemo<DispatchCartItem[]>(() => cartLines.flatMap(line => {
@@ -109,18 +110,19 @@ function useInventoryValue() {
     data.rememberRemission, dispatchCart, clearDispatchCart, openPdfRemision);
   const getAlmacenById = useCallback((id: string | null) => id ? warehouseIndex.get(id) : undefined, [warehouseIndex]);
   const getEstanteriaById = useCallback((id: string | null) => id ? rackIndex.get(id) : undefined, [rackIndex]);
+  const getNivelById = useCallback((id: string | null) => id ? levelIndex.get(id) : undefined, [levelIndex]);
   const getCajaById = useCallback((id: string | null) => id ? boxIndex.get(id) : undefined, [boxIndex]);
   const getProyectoById = useCallback((id: string) => projectIndex.get(id), [projectIndex]);
   const getLocationString = useCallback((item: Elemento) =>
-    locationLabel(item, warehouseIndex, rackIndex, boxIndex), [warehouseIndex, rackIndex, boxIndex]);
+    locationLabel(item, warehouseIndex, rackIndex, boxIndex, levelIndex), [warehouseIndex, rackIndex, boxIndex, levelIndex]);
   const resetToDefaultData = () => {
     if (!isDemo) throw new Error('El restablecimiento solo existe en el modo de demostración.');
     data.setDemoData({ elementos: INITIAL_ELEMENTOS, almacenes: INITIAL_ALMACENES, estanterias: INITIAL_ESTANTERIAS,
-      cajas: INITIAL_CAJAS, proyectos: INITIAL_PROYECTOS, remisiones: INITIAL_REMISIONES, historial: INITIAL_HISTORIAL });
+      niveles: [], cajas: INITIAL_CAJAS, proyectos: INITIAL_PROYECTOS, remisiones: INITIAL_REMISIONES, historial: INITIAL_HISTORIAL });
     clearDispatchCart();
   };
   return {
-    elementos: data.elementos, almacenes: data.almacenes, estanterias: data.estanterias, cajas: data.cajas,
+    elementos: data.elementos, almacenes: data.almacenes, estanterias: data.estanterias, niveles: data.niveles, cajas: data.cajas,
     proyectos: data.proyectos, remisiones: data.remisiones, historial: data.historial,
     user: user!, activeView, dispatchCart, selectedItemForDetail, selectedRemisionForPdf, quickMovementItem,
     selectedOutgoingPhotosId, openOutgoingPhotos, closeOutgoingPhotos,
@@ -133,7 +135,7 @@ function useInventoryValue() {
     ]),
     openPdfRemision, closePdfRemision, openQuickMovement, closeQuickMovement, setIsHelpModalOpen,
     addToDispatchCart, updateDispatchCartQuantity, removeFromDispatchCart, clearDispatchCart,
-    getAlmacenById, getEstanteriaById, getCajaById, getProyectoById, getLocationString,
+    getAlmacenById, getEstanteriaById, getNivelById, getCajaById, getProyectoById, getLocationString,
     resetToDefaultData, ...actions, ...projectActions, ...catalogs, categoryOptions, categoryLabel,
   };
 }

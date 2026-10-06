@@ -31,9 +31,14 @@ export interface Estanteria {
   descripcion?: string;
 }
 
+export interface NivelEstanteria {
+  id: string; estanteriaId: string; codigo: string; nombre: string; descripcion?: string;
+}
+
 export interface Caja {
   id: string;
   estanteriaId: string | null;
+  nivelId?: string | null;
   codigoCaja: string; // e.g. 'CAJ-1045'
   estado: 'Completa' | 'Parcial' | 'Vacia';
   descripcion?: string;
@@ -44,6 +49,7 @@ export interface Elemento {
   codigo: string; // Prefix plus a consecutive number, e.g. PAN001 or PAN1000.
   nombre: string;
   descripcion: string;
+  marca?: string;
   categoria: CategoriaElemento;
   cantidad: number;
   unidad: 'und' | 'rll' | 'mts' | 'kg' | 'par' | 'jgo' | string;
@@ -52,6 +58,7 @@ export interface Elemento {
   fotosAdicionales?: string[];
   almacenId: string | null;
   estanteriaId: string | null;
+  nivelId?: string | null;
   cajaId: string | null;
   stockMinimo: number;
   valorUnitario?: number;
@@ -67,6 +74,7 @@ export interface Elemento {
 export interface PesoUnitario { valor: number; unidad: 'g' | 'kg' }
 
 export interface DetalleRemision {
+  marca?: string;
   elementoId: string;
   codigo: string;
   nombre: string;
