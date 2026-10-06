@@ -20,6 +20,7 @@ import { OutgoingPhotoSubmission } from '../domain/outgoingPhotos';
 import { saveOutgoingImage, removeOutgoingImage } from '../shared/outgoingImages';
 import { itemLocationColumns } from '../domain/itemLocation';
 import { roundCOP } from '../domain/money';
+import { displayCargo } from '../domain/userProfile';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
 const newId = (prefix: string) => `${prefix}-DEMO-${crypto.randomUUID()}`;
@@ -127,7 +128,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     if (!isDemo) {
       const values = {
         p_request_id: requestId, p_proyecto_id: project.id,
-        p_entregado_por: payload.entregadoPor || user?.name, p_cargo_entregado: payload.cargoEntregado || user?.role,
+        p_entregado_por: payload.entregadoPor || user?.name, p_cargo_entregado: payload.cargoEntregado || displayCargo(user),
         p_recibido_por: payload.recibidoPor, p_cargo_recibido: payload.cargoRecibido || '',
         p_observaciones: payload.observaciones || '',
         p_items: cart.map(line => ({ elementoId: line.elemento.id, cantidad: line.cantidad })),
@@ -147,7 +148,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     const remission: Remision = {
       id: remissionNumber, numeroRemision: remissionNumber, proyectoId: project.id,
       proyectoNombre: project.nombre, cliente: project.cliente, ubicacion: project.ubicacion,
-      entregadoPor: payload.entregadoPor || user?.name || '', cargoEntregado: payload.cargoEntregado || user?.role || '',
+      entregadoPor: payload.entregadoPor || user?.name || '', cargoEntregado: payload.cargoEntregado || displayCargo(user),
       recibidoPor: payload.recibidoPor, cargoRecibido: payload.cargoRecibido || '', observaciones: payload.observaciones || '',
       fecha: displayDate(now), items: cart.map(line => ({ elementoId: line.elemento.id, codigo: line.elemento.codigo,
         nombre: line.elemento.nombre, cantidad: line.cantidad, unidad: line.elemento.unidad,

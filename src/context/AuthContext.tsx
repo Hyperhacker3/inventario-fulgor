@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { clearImageCache } from '../shared/images';
 import { clearOutgoingImageCache } from '../shared/outgoingImages';
 import { sessionIdentity, shouldClearSessionCache } from '../domain/session';
+import { profileForAccount } from '../domain/userProfile';
 
 interface AuthValue {
   user: UserProfile | null;
@@ -22,13 +23,7 @@ function clearUserDrafts() {
 
 function profile(session: Session | null): UserProfile | null {
   if (!session) return null;
-  const account = session.user;
-  return {
-    name: String(account.user_metadata?.name || account.email || 'Operador'),
-    role: String(account.app_metadata?.role || ''),
-    avatar: '',
-    email: account.email || '',
-  };
+  return profileForAccount(session.user);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

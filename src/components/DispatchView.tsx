@@ -10,6 +10,7 @@ import { available } from '../domain/inventory';
 import { AvailableInventory } from './dispatch/AvailableInventory';
 import { NumberInput } from './NumberInput';
 import { OutgoingPhotoPicker } from './dispatch/OutgoingPhotoPicker';
+import { displayCargo } from '../domain/userProfile';
 
 export const DispatchView: React.FC = () => {
   const {
@@ -27,7 +28,7 @@ export const DispatchView: React.FC = () => {
   // Dispatch form state
   const [selectedProyectoId, setSelectedProyectoId] = useState<string>('');
   const [entregadoPor, setEntregadoPor] = useState(user.name);
-  const [cargoEntregado, setCargoEntregado] = useState(user.role);
+  const [cargoEntregado, setCargoEntregado] = useState(displayCargo(user));
   const [recibidoPor, setRecibidoPor] = useState('');
   const [cargoRecibido, setCargoRecibido] = useState('');
   const [observaciones, setObservaciones] = useState('');

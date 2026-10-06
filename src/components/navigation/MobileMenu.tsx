@@ -9,8 +9,9 @@ interface Props {
   onNavigate: (view: ActiveView) => void; search: string; onSearch: (value: string) => void;
   onHelp: () => void; onSignOut: () => void; error?: string;
   themeAction?: ReactNode;
+  identity?: { name: string; cargo: string };
 }
-export function MobileMenu({ open, onClose, items, activeView, onNavigate, search, onSearch, onHelp, onSignOut, error, themeAction }: Props) {
+export function MobileMenu({ open, onClose, items, activeView, onNavigate, search, onSearch, onHelp, onSignOut, error, themeAction, identity }: Props) {
   const panel = useRef<HTMLElement>(null);
   useDialogFocus(panel, onClose, open);
   return createPortal(<div className="mobile-menu-layer xl:hidden" data-open={open} aria-hidden={!open} inert={!open}>
@@ -32,6 +33,7 @@ export function MobileMenu({ open, onClose, items, activeView, onNavigate, searc
         </button>)}
       </nav>
       <div className="shrink-0 border-t mt-2 pt-2 grid grid-cols-2 gap-2">
+        {identity && <div className="col-span-2 px-2 min-w-0"><p className="text-sm font-semibold break-words">{identity.name}</p><p className="text-xs text-slate-500">{identity.cargo}</p></div>}
         {themeAction && <div className="col-span-2">{themeAction}</div>}
         <button type="button" onClick={onHelp} className="flex items-center justify-center gap-2 min-h-12 rounded-xl hover:bg-slate-50 text-sm"><span className="material-symbols-outlined">help</span>Ayuda</button>
         <button type="button" onClick={onSignOut} className="flex items-center justify-center gap-2 min-h-12 rounded-xl hover:bg-red-50 text-sm text-red-700"><span className="material-symbols-outlined">logout</span>Cerrar sesión</button>

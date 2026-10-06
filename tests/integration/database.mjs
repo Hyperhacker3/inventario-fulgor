@@ -16,6 +16,7 @@ const locationMigration = fs.readFileSync(new URL('../../supabase/migrations/202
 const valueMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000500_inventory_values.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
+const warehouseProfile = fs.readFileSync(new URL('../../supabase/configure_warehouse_profile.sql', import.meta.url), 'utf8');
 
 async function database() {
   const db = new PGlite();
@@ -48,6 +49,43 @@ async function database() {
 const role = (db, value) => db.exec(`SELECT set_config('app.test_role','${value}',false); SET ROLE authenticated;`);
 const asOwner = db => db.exec('RESET ROLE;');
 const itemStock = async db => Number((await db.query("SELECT cantidad FROM public.elementos WHERE id = 'ELM-001'")).rows[0].cantidad);
+
+test('warehouse profile corrects only the selected author, preserves permissions and document snapshots, and can be rerun', async () => {
+  const db = await database();
+  try {
+    await db.exec(`CREATE TABLE auth.users(id uuid PRIMARY KEY,email text,raw_app_meta_data jsonb,raw_user_meta_data jsonb,updated_at timestamptz);
+      INSERT INTO auth.users VALUES ('00000000-0000-0000-0000-000000000001','login@example.test','{"role":"admin","provider":"email"}','{"name":"login@example.test","other":"keep"}',now());
+      INSERT INTO auth.users VALUES ('00000000-0000-0000-0000-000000000002','other@example.test','{"role":"operador"}','{"name":"Otra persona"}',now());`);
+    await role(db, 'admin');
+    const remit = (await db.query(`SELECT public.dispatch_inventory_with_photos($1::uuid,'PROY-001',$2,'admin','Recibe','Residente','',
+      '[{"elementoId":"ELM-001","cantidad":1}]'::jsonb,'{}'::jsonb,'[]'::jsonb) AS result`, ['72664845-8c94-4606-97ab-3d944077b6d8', 'login@example.test'])).rows[0].result;
+    await asOwner(db);
+    await db.query("UPDATE public.historial SET responsable='login@example.test' WHERE remision_id=$1", [remit.id]);
+    const stock = await itemStock(db);
+    await db.exec(warehouseProfile);
+    const account = (await db.query("SELECT * FROM auth.users WHERE email='login@example.test'")).rows[0];
+    assert.deepEqual(account.raw_app_meta_data, {role:'admin', provider:'email'});
+    assert.deepEqual(account.raw_user_meta_data, {name:'Andrés Castañeda',cargo:'Almacenista',other:'keep'});
+    assert.equal((await db.query("SELECT raw_user_meta_data->>'name' AS name FROM auth.users WHERE email='other@example.test'")).rows[0].name,'Otra persona');
+    const saved = (await db.query('SELECT * FROM public.remisiones WHERE id=$1',[remit.id])).rows[0];
+    assert.equal(saved.entregado_por,'Andrés Castañeda'); assert.equal(saved.cargo_entregado,'Almacenista');
+    assert.equal(saved.recibido_por,'Recibe'); assert.deepEqual(saved.items,remit.items);
+    assert.equal((await db.query('SELECT responsable FROM public.historial WHERE remision_id=$1',[remit.id])).rows[0].responsable,'Andrés Castañeda');
+    assert.equal(await itemStock(db),stock);
+    await db.exec(warehouseProfile); assert.equal(await itemStock(db),stock);
+  } finally { await db.close(); }
+});
+
+test('warehouse profile refuses ambiguous administrators without changing another account', async () => {
+  const db = new PGlite();
+  try {
+    await db.exec(`CREATE SCHEMA auth; CREATE TABLE auth.users(email text,raw_app_meta_data jsonb,raw_user_meta_data jsonb);
+      INSERT INTO auth.users VALUES ('one@example.test','{"role":"admin"}','{"name":"Uno"}'),('two@example.test','{"role":"admin"}','{"name":"Dos"}');`);
+    await assert.rejects(() => db.exec(warehouseProfile), /única cuenta administradora/);
+    await db.exec('ROLLBACK');
+    assert.deepEqual((await db.query("SELECT raw_user_meta_data->>'name' AS name FROM auth.users ORDER BY email")).rows.map(row=>row.name),['Uno','Dos']);
+  } finally { await db.close(); }
+});
 
 test('unit values start at zero, reject invalid prices, persist in automatic creation and snapshot authoritative COP costs', async () => {
   const db = await database();

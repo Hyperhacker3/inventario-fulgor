@@ -153,6 +153,7 @@ export type ActiveView =
 
 export interface UserProfile {
   name: string;
+  cargo?: string;
   role: string;
   avatar: string;
   email: string;

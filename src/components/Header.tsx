@@ -8,6 +8,7 @@ import { navigationItems } from '../domain/navigation';
 import { MobileMenu } from './navigation/MobileMenu';
 import { errorMessage } from '../shared/errors';
 import { ThemeToggle } from './ThemeToggle';
+import { displayCargo } from '../domain/userProfile';
 
 export const Header: React.FC = () => {
   const {
@@ -222,7 +223,7 @@ export const Header: React.FC = () => {
           <div className="flex items-center gap-2 pl-1">
             <div className="hidden xl:flex flex-col text-right">
               <span className="text-xs font-bold text-[#131b2e] leading-tight">{user.name}</span>
-              <span className="text-[10px] text-[#454651]">{user.role}</span>
+              <span className="text-[10px] text-[#454651]">{displayCargo(user)}</span>
             </div>
             <div className="w-8 h-8 rounded-full overflow-hidden border border-[#cbd5e1] shrink-0 shadow-2xs">
               {user.avatar ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" /> : <span aria-label={user.name} className="w-full h-full grid place-items-center bg-[#eaedff] text-[#253685] text-sm font-bold">{user.name.slice(0, 1).toUpperCase()}</span>}
@@ -236,6 +237,7 @@ export const Header: React.FC = () => {
         onNavigate={navigate} search={globalSearch} onSearch={setGlobalSearch}
         onHelp={() => { setMobileMenuOpen(false); setIsHelpModalOpen(true); }}
         themeAction={<ThemeToggle menu />}
+        identity={{ name: user.name, cargo: displayCargo(user) }}
         onSignOut={() => { void signOut().catch(cause => setMenuError(errorMessage(cause))); }} error={menuError} />
     </header>
   );
