@@ -17,6 +17,59 @@ Object.assign(globalThis, {
 const { createRoot } = await import('react-dom/client');
 const { DispatchQuantityModal } = await import('../../src/components/dispatch/DispatchQuantityModal');
 const { mapElemento } = await import('../../src/data/mappers');
+const { ItemBoxSelector } = await import('../../src/components/item/ItemBoxSelector');
+
+test('inline box selection saves in the selected rack, blocks double creation and selects the returned box', async () => {
+  const selected: string[] = [], busy: boolean[] = [], drafts: boolean[] = [];
+  let calls = 0;
+  let complete!: (box: import('../../src/types').Caja) => void;
+  const saved = new Promise<import('../../src/types').Caja>(resolve => { complete = resolve; });
+  const host = document.body.appendChild(document.createElement('div'));
+  const root = createRoot(host);
+  try {
+    await act(() => root.render(createElement(ItemBoxSelector, { rackId:'RACK-1',boxId:'',boxes:[],
+      onBox:(id: string)=>selected.push(id),onBusyChange:(value: boolean)=>busy.push(value),onDraftChange:(value: boolean)=>drafts.push(value),
+      onCreate:async (input: Omit<import('../../src/types').Caja,'id'>) => {
+        calls++; assert.equal(input.estanteriaId,'RACK-1'); assert.equal(input.codigoCaja,'CAJ-025'); return saved;
+      } })));
+    const select = host.querySelector('select')!;
+    await act(() => { select.value='__NEW_BOX__'; select.dispatchEvent(new dom.window.Event('change',{ bubbles:true })); });
+    const input = host.querySelector('input')!;
+    const setValue = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
+    await act(() => { setValue.call(input,' caj-025 '); input.dispatchEvent(new dom.window.Event('input',{ bubbles:true })); });
+    await act(() => { host.querySelector('button')!.click(); host.querySelector('button')!.click(); });
+    assert.equal(calls,1); assert.deepEqual(selected,[]); assert.equal(select.disabled,true); assert.deepEqual(busy,[true]);
+    await act(async () => complete({ id:'BOX-SERVER',estanteriaId:'RACK-1',codigoCaja:'CAJ-025',estado:'Parcial' }));
+    assert.deepEqual(selected,['BOX-SERVER']); assert.deepEqual(busy,[true,false]); assert.deepEqual(drafts,[true,false]);
+    assert.match(host.querySelector('[role="status"]')!.textContent!,/creada en Supabase/);
+    assert.equal(host.querySelector('input'),null);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
+
+test('box creation failures keep the draft and an existing box is selected without another write', async () => {
+  let fail = true, calls = 0;
+  const selected: string[] = [];
+  const host = document.body.appendChild(document.createElement('div'));
+  const root = createRoot(host);
+  const props = { rackId:'RACK-1',boxId:'',boxes:[],onBox:(id: string)=>selected.push(id),
+    onCreate:async (input: Omit<import('../../src/types').Caja,'id'>) => {
+      calls++; if (fail) throw new Error('No se pudo conectar'); return { ...input,id:'BOX-SERVER' };
+    } };
+  try {
+    await act(() => root.render(createElement(ItemBoxSelector,props)));
+    await act(() => { const select=host.querySelector('select')!; select.value='__NEW_BOX__'; select.dispatchEvent(new dom.window.Event('change',{bubbles:true})); });
+    const setValue = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
+    await act(() => { const input=host.querySelector('input')!; setValue.call(input,'CAJ-025'); input.dispatchEvent(new dom.window.Event('input',{bubbles:true})); });
+    await act(async () => host.querySelector('button')!.click());
+    assert.deepEqual(selected,[]); assert.equal(host.querySelector('input')!.value,'CAJ-025');
+    assert.match(host.querySelector('[role="alert"]')!.textContent!,/No se pudo conectar/);
+    fail=false;
+    // A refresh can reveal that this box already exists; retry selects it without duplication.
+    await act(() => root.render(createElement(ItemBoxSelector,{ ...props,boxes:[{id:'EXISTING',estanteriaId:'RACK-1',codigoCaja:'CAJ-025',estado:'Parcial' as const}] })));
+    await act(async () => host.querySelector('button')!.click());
+    assert.deepEqual(selected,['EXISTING']); assert.equal(calls,1);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
 
 test('quantity dialog asks before adding, accepts typed amounts and confirms only once', async () => {
   const item = mapElemento({ id:'EJE001',codigo:'EJE001',nombre:'Elemento',cantidad:100,unidad:'und',especificaciones:{ peso_unitario:{ valor:40,unidad:'g' } } });

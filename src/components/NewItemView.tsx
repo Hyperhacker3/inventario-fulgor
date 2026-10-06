@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { CategoriaElemento } from '../types';
 import { ItemPhotoPicker } from './ItemPhotoPicker';
@@ -17,7 +17,7 @@ export const NewItemView: React.FC = () => {
     cajas,
     addElemento,
     setActiveView,
-    openItemDetail, prefijos, categorias, elementos, catalogReady, catalogLoading, refreshCatalog, categoryLabel
+    prefijos, categorias, elementos, catalogReady, catalogLoading, refreshCatalog, categoryLabel
   } = useInventory();
 
   // Form State
@@ -42,6 +42,11 @@ export const NewItemView: React.FC = () => {
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [pending, setPending] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [boxBusy, setBoxBusy] = useState(false);
+  const [boxDraftPending, setBoxDraftPending] = useState(false);
+  const [formVersion, setFormVersion] = useState(0);
+  const nameInput = useRef<HTMLInputElement>(null);
+  useEffect(() => { if (formVersion > 0) nameInput.current?.focus(); }, [formVersion]);
 
   const selectedAlmacenId = almacenId || almacenes[0]?.id || '';
 
@@ -59,8 +64,13 @@ export const NewItemView: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pending || photoBusy) return;
+    if (pending || photoBusy || boxBusy) return;
     setFeedback(null);
+
+    if (boxDraftPending) {
+      setFeedback({ type: 'error', message: 'Pulse Crear y elegir caja, o seleccione una caja existente, antes de guardar el componente.' });
+      return;
+    }
 
     if (!catalogReady || !selectedPrefix || !categorias.some(row => row.id === categoria && row.activo)) {
       setFeedback({
@@ -101,13 +111,17 @@ export const NewItemView: React.FC = () => {
 
       setFeedback({
         type: 'success',
-        message: `¡Componente ${created.codigo} registrado exitosamente!`
+        message: `Componente ${created.codigo} registrado. Puede añadir el siguiente.`
       });
 
-      setTimeout(() => {
-        openItemDetail(created);
-        setActiveView('dashboard');
-      }, 1200);
+      // Preserve only the prefix, warehouse and rack for the next registration.
+      setAlmacenId(selectedAlmacenId); setEstanteriaId(selectedEstanteriaId);
+      setNombre(''); setCategoria(''); setDescripcion(''); setCajaId('');
+      setCantidad(0); setUnidad('UND'); setWeight(weightDraft()); setStockMinimo(0);
+      setEstado('BUENO'); setCantidadDanados(0); setFotoUrl(''); setFotosAdicionales([]);
+      request.current = null;
+      // Remount editable numeric/photo/box fields to clear their internal drafts too.
+      setFormVersion(version => version + 1);
     } catch (error) {
       setFeedback({ type: 'error', message: errorMessage(error) });
     } finally {
@@ -127,6 +141,7 @@ export const NewItemView: React.FC = () => {
 
       {feedback && (
         <div
+          role={feedback.type === 'success' ? 'status' : 'alert'}
           className={`p-4 rounded-xl mb-6 text-sm font-medium flex items-center gap-3 ${
             feedback.type === 'success'
               ? 'bg-[#e6f4ea] text-[#137333] border border-[#ceead6]'
@@ -146,7 +161,7 @@ export const NewItemView: React.FC = () => {
         <button type="button" className="text-[#253685] underline" onClick={() => { void refreshCatalog(); }}>Comprobar de nuevo</button>
       </div>}
       <form onSubmit={handleSubmit} className="bg-white border border-[#e2e8f0] rounded-2xl p-6 md:p-8 shadow-xs flex flex-col gap-6">
-        <fieldset disabled={pending || feedback?.type === 'success'} className="contents">
+        <fieldset key={formVersion} disabled={pending || boxBusy} className="contents">
         {/* Row 1: Code and Name */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <div>
@@ -171,6 +186,7 @@ export const NewItemView: React.FC = () => {
             </label>
             <input
               id="input-nombre"
+              ref={nameInput}
               type="text"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
@@ -250,7 +266,7 @@ export const NewItemView: React.FC = () => {
         </div>
 
         <ItemLocationFields warehouseId={selectedAlmacenId} rackId={selectedEstanteriaId} boxId={selectedCajaId}
-          onWarehouse={setAlmacenId} onRack={setEstanteriaId} onBox={setCajaId} />
+          onWarehouse={setAlmacenId} onRack={setEstanteriaId} onBox={setCajaId} onBoxBusyChange={setBoxBusy} onBoxDraftChange={setBoxDraftPending} />
 
         <ItemPhotoPicker value={fotoUrl} additional={fotosAdicionales} category={categoria} onChange={setFotoUrl} onAdditionalChange={setFotosAdicionales} onBusyChange={setPhotoBusy} disabled={pending} />
 
@@ -270,7 +286,7 @@ export const NewItemView: React.FC = () => {
           <button
             type="submit"
             id="btn-submit-component"
-            disabled={pending || photoBusy || !catalogReady || !selectedPrefix}
+            disabled={pending || photoBusy || boxBusy || !catalogReady || !selectedPrefix}
             className="px-6 py-2.5 rounded-lg bg-[#3e4e9e] text-white text-sm font-bold hover:bg-[#323f80] active:scale-[0.98] transition-all shadow-sm flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-[18px]">save</span>

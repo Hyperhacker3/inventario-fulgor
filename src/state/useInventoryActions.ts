@@ -1,6 +1,7 @@
 import type { DatosTransporte, DispatchCartItem, Elemento, Almacen, Estanteria, Caja, HistorialMovimiento, Remision, TipoMovimiento } from '../types';
 import type { Dispatch, SetStateAction } from 'react';
 import { useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { DemoData } from './useInventoryData';
 import { insertRow, updateRow, rpc } from '../data/repository';
 import { mapAlmacen, mapCaja, mapElemento, mapEstanteria, mapRemision } from '../data/mappers';
@@ -25,6 +26,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
   rememberRemission: (remission: Remision) => void, cart: DispatchCartItem[], clearCart: () => void,
   openRemision: (rem: Remision) => void) {
   const { user } = useAuth();
+  const client = useQueryClient();
   const createRequests = useRef(new Map<string, { signature: string; payload: Record<string, unknown> }>());
   const requireAdmin = () => {
     if (!isDemo && user?.role !== 'admin') throw new Error('Esta acción requiere rol de administración.');
@@ -223,7 +225,9 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     if (isDemo) { const value = { ...input, id: newId('CAJ') }; setDemoData(prev => ({ ...prev, cajas: [...prev.cajas, value] })); return value; }
     const value = await insertRow('cajas', { id: `CAJ-${crypto.randomUUID()}`, estanteria_id: input.estanteriaId,
       codigo: input.codigoCaja, nombre: input.codigoCaja, estado: input.estado.toUpperCase(), descripcion: input.descripcion || '' }, mapCaja);
-    await refresh('cajas'); return value;
+    client.setQueryData<Caja[]>(['fulgor', user?.email || '', 'cajas'], previous =>
+      [value, ...(previous || []).filter(box => box.id !== value.id)]);
+    await syncAfterWrite(refresh('cajas')); return value;
   };
   const updateCaja = async (id: string, updates: Partial<Caja>) => {
     requireAdmin();
