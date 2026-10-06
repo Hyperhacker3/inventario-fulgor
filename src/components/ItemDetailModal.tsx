@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import type { Elemento } from '../types';
 import { isDemo } from '../lib/supabase';
@@ -11,6 +11,7 @@ import { NumberInput } from './NumberInput';
 import { ItemWeightFields } from './item/ItemWeightFields';
 import { formatUnitWeight, parseWeightDraft, weightDraft } from '../domain/weight';
 import { ArchivedItemActions } from './administration/ArchivedItemActions';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 
 interface Props { item: Elemento | null; onClose: () => void; onPermanentDelete?: (item: Elemento) => Promise<void>; onRestore?: (item: Elemento) => Promise<void> }
 
@@ -29,18 +30,11 @@ export function ItemDetailModal({ item, onClose, onPermanentDelete, onRestore }:
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
-  const closeButton = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLElement>(null);
   const canAdmin = isDemo || user.role === 'admin';
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
 
-  useEffect(() => {
-    closeButton.current?.focus();
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKeyDown);
-    return () => { document.body.style.overflow = previous; document.removeEventListener('keydown', onKeyDown); };
-  }, [onClose]);
+  useDialogFocus(dialog, onClose);
   if (!item) return null;
 
   const startEdit = () => {
@@ -69,13 +63,13 @@ export function ItemDetailModal({ item, onClose, onPermanentDelete, onRestore }:
     finally { setPending(false); }
   };
 
-  return <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-6" role="presentation">
-    <section role="dialog" aria-modal="true" aria-labelledby="item-detail-heading"
-      className="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] shadow-2xl border flex flex-col overflow-hidden">
+  return <div className="ui-modal-layer fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-6" role="presentation">
+    <section ref={dialog} role="dialog" aria-modal="true" aria-labelledby="item-detail-heading"
+      className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] shadow-2xl border flex flex-col overflow-hidden">
       <header className="px-6 py-4 border-b flex items-center justify-between bg-[#f8fafc]">
         <div><span className="font-mono-code font-bold text-[#253685]">{item.codigo}</span>
           <span className="ml-3 text-xs text-[#64748b]">{categoryLabel(item.categoria)}</span></div>
-        <button ref={closeButton} type="button" onClick={onClose} aria-label="Cerrar detalle" className="text-2xl text-[#64748b]">×</button>
+        <button data-dialog-close type="button" onClick={onClose} aria-label="Cerrar detalle" className="min-w-11 min-h-11 text-2xl text-[#64748b]">×</button>
       </header>
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}

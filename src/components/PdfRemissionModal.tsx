@@ -55,7 +55,7 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
   return createPortal(
     <div className="print-layer fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-1 sm:p-4 overflow-hidden">
       {/* Container Dialog */}
-      <div className="bg-[#1e293b] text-white rounded-2xl max-w-5xl w-full flex flex-col h-[98vh] shadow-2xl border border-slate-700 overflow-hidden">
+      <div className="ui-panel-enter bg-[#1e293b] text-white rounded-2xl max-w-5xl w-full flex flex-col h-[98dvh] shadow-2xl border border-slate-700 overflow-hidden">
         {/* Top Control Bar (Hidden when printing) */}
         <div className="no-print bg-slate-900 px-3 sm:px-6 py-3 border-b border-slate-700 flex flex-wrap items-center justify-between gap-2 sm:gap-4 shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">

@@ -38,7 +38,7 @@ export function ItemCategorySelector({ value, categories, onChange, onCreate, on
       {canCreate && <option value="__NEW_CATEGORY__">+ Crear nueva categoría</option>}
       {categories.filter(category => category.activo).map(category => <option key={category.id} value={category.id}>{category.nombre}</option>)}
     </select>
-    {creating && <div className="space-y-2">
+    {creating && <div className="ui-panel-enter space-y-2">
       <label htmlFor={`${id}-name`} className="block text-xs">Nombre de la nueva categoría</label>
       <input id={`${id}-name`} value={name} maxLength={100} disabled={disabled || busy} onChange={event => { setName(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}

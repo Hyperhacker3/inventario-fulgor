@@ -1,13 +1,17 @@
 import { useInventory } from '../context/InventoryContext';
 import { isDemo } from '../lib/supabase';
+import { useRef } from 'react';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 
 export function HelpModal() {
   const { isHelpModalOpen, setIsHelpModalOpen, resetToDefaultData, syncStatus } = useInventory();
+  const dialog = useRef<HTMLElement>(null);
+  useDialogFocus(dialog, () => setIsHelpModalOpen(false), isHelpModalOpen);
   if (!isHelpModalOpen) return null;
-  return <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-    <section role="dialog" aria-modal="true" aria-label="Ayuda" className="bg-white rounded-2xl shadow-xl border max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-5">
+  return <div className="ui-modal-layer fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+    <section ref={dialog} role="dialog" aria-modal="true" aria-label="Ayuda" className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl shadow-xl border max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-5">
       <header className="flex justify-between items-center"><h2 className="text-xl font-bold text-[#253685]">Ayuda y conexión</h2>
-        <button onClick={() => setIsHelpModalOpen(false)} aria-label="Cerrar ayuda" className="text-xl">×</button></header>
+        <button type="button" data-dialog-close onClick={() => setIsHelpModalOpen(false)} aria-label="Cerrar ayuda" className="min-w-11 min-h-11 text-xl">×</button></header>
       <p className="text-sm"><strong>Estado:</strong> {isDemo ? 'Demostración local' : syncStatus === 'synced' ? 'Sincronizado' : syncStatus === 'syncing' ? 'Sincronizando…' : 'Sin conexión o con error de consulta'}</p>
       <div className="space-y-3 text-sm text-[#454651]">
         <p><strong>Inventario:</strong> busque por código o nombre, consulte la ubicación y edite la ficha si tiene permisos.</p>

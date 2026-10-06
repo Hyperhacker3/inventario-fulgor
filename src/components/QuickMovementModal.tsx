@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { errorMessage } from '../shared/errors';
 import { NumberInput } from './NumberInput';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 
 export const QuickMovementModal: React.FC = () => {
   const {
@@ -22,6 +23,8 @@ export const QuickMovementModal: React.FC = () => {
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
   const [requestId] = useState(() => crypto.randomUUID());
+  const dialog = useRef<HTMLDivElement>(null);
+  useDialogFocus(dialog, closeQuickMovement, !!quickMovementItem);
 
   if (!quickMovementItem) return null;
 
@@ -43,8 +46,8 @@ export const QuickMovementModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#e2e8f0] animate-in fade-in zoom-in-95 duration-150">
+    <div className="ui-modal-layer fixed inset-0 z-50 bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4">
+      <div ref={dialog} role="dialog" aria-modal="true" aria-label={quickMovementType === 'ENTRADA' ? 'Entrada de stock' : 'Ajuste de inventario'} className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#e2e8f0]">
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#e2e8f0]">
           <div className="flex items-center gap-2">
             <span
@@ -69,8 +72,9 @@ export const QuickMovementModal: React.FC = () => {
           </div>
 
           <button
+            type="button" data-dialog-close aria-label="Cerrar movimiento"
             onClick={closeQuickMovement}
-            className="text-[#767682] hover:text-[#131b2e] p-1"
+            className="min-w-11 min-h-11 text-[#767682] hover:text-[#131b2e] p-1"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>

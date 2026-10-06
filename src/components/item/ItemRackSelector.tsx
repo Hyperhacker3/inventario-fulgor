@@ -41,7 +41,7 @@ export function ItemRackSelector({ warehouseId, rackId, racks, onRack, onCreate,
       <option value="__NEW_RACK__">+ Crear nueva estantería</option>
       {racks.map(rack => <option key={rack.id} value={rack.id}>{rack.codigo} - {rack.nombre}</option>)}
     </select>
-    {creating && <div className="space-y-2">
+    {creating && <div className="ui-panel-enter space-y-2">
       <label htmlFor="input-nueva-estanteria-codigo" className="block">Código de la nueva estantería</label>
       <input id="input-nueva-estanteria-codigo" maxLength={100} value={code} disabled={busy} onChange={event => { setCode(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}

@@ -1,3 +1,4 @@
+import { isMobileCameraDevice } from '../shared/cameraDevices';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { CategoriaElemento } from '../types';
@@ -51,7 +52,7 @@ export const NewItemView: React.FC = () => {
   const [rackDraftPending, setRackDraftPending] = useState(false);
   const [formVersion, setFormVersion] = useState(0);
   const nameInput = useRef<HTMLInputElement>(null);
-  useEffect(() => { if (formVersion > 0) nameInput.current?.focus(); }, [formVersion]);
+  useEffect(() => { if (formVersion > 0 && !isMobileCameraDevice(window.navigator)) nameInput.current?.focus({ preventScroll: true }); }, [formVersion]);
 
   const selectedAlmacenId = almacenId || almacenes[0]?.id || '';
 

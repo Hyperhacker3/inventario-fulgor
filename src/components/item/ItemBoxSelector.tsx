@@ -39,7 +39,7 @@ export function ItemBoxSelector({ rackId, boxId, boxes, onBox, onCreate, onBusyC
       <option value="__NEW_BOX__">+ Crear nueva caja</option>
       {boxes.map(box => <option key={box.id} value={box.id}>{box.codigoCaja} ({box.estado})</option>)}
     </select>
-    {creating && <div className="space-y-2">
+    {creating && <div className="ui-panel-enter space-y-2">
       <label className="block" htmlFor="input-nueva-caja">Código de la nueva caja</label>
       <input id="input-nueva-caja" value={code} maxLength={100} disabled={busy} onChange={event => { setCode(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}

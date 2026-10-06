@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { Elemento } from '../../types';
 import { available } from '../../domain/inventory';
 import { MIN_QUANTITY, roundQuantity, validQuantity } from '../../domain/quantity';
 import { formatKg, lineWeightKg } from '../../domain/weight';
 import { NumberInput } from '../NumberInput';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 
 export function DispatchQuantityModal({ item, inCart, onConfirm, onClose }: { item: Elemento; inCart: number; onConfirm: (quantity: number) => void; onClose: () => void }) {
   const maximum = Math.max(0, roundQuantity(available(item) - inCart));
@@ -12,23 +13,7 @@ export function DispatchQuantityModal({ item, inCart, onConfirm, onClose }: { it
   const [error, setError] = useState('');
   const form = useRef<HTMLFormElement>(null);
   const submitting = useRef(false);
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    form.current?.querySelector<HTMLInputElement>('input')?.focus();
-    const keyboard = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); onClose(); }
-      if (event.key === 'Tab') {
-        const controls = [...(form.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled)') || [])];
-        const first = controls[0], last = controls.at(-1);
-        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-      }
-    };
-    document.addEventListener('keydown', keyboard, true);
-    return () => { document.body.style.overflow = overflow; document.removeEventListener('keydown', keyboard, true); if (previous?.isConnected) previous.focus(); };
-  }, [onClose]);
+  useDialogFocus(form, onClose, true, 'input');
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (submitting.current) return;
@@ -38,9 +23,9 @@ export function DispatchQuantityModal({ item, inCart, onConfirm, onClose }: { it
     catch (cause) { submitting.current = false; setError(cause instanceof Error ? cause.message : 'No se pudo agregar.'); }
   };
   const weight = validQuantity(quantity) && quantity >= 0 ? lineWeightKg(item.pesoUnitario, quantity) : null;
-  return createPortal(<div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
-    <form ref={form} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="dispatch-quantity-title" className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-      <div className="flex justify-between gap-4"><h2 id="dispatch-quantity-title" className="font-bold text-xl">Agregar a la salida</h2><button type="button" onClick={onClose} aria-label="Cerrar selección de cantidad">✕</button></div>
+  return createPortal(<div className="ui-modal-layer fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+    <form ref={form} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="dispatch-quantity-title" className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+      <div className="flex justify-between gap-4"><h2 id="dispatch-quantity-title" className="font-bold text-xl">Agregar a la salida</h2><button type="button" onClick={onClose} data-dialog-close aria-label="Cerrar selección de cantidad" className="min-w-11 min-h-11">✕</button></div>
       <p className="text-sm"><strong className="text-[#253685]">{item.codigo}</strong> · {item.nombre}</p>
       <p className="text-xs text-slate-600">En la salida: {inCart} {item.unidad}. Disponible para agregar: {maximum} {item.unidad}.</p>
       <label htmlFor="dispatch-add-quantity" className="block text-sm font-semibold">¿Cuántas {item.unidad.toUpperCase()} quieres agregar?</label>

@@ -1,29 +1,18 @@
 import React from 'react';
 import { useInventory } from '../context/InventoryContext';
-import { ActiveView } from '../types';
+import { navigationItems } from '../domain/navigation';
 import { useAuth } from '../context/AuthContext';
 import { isDemo } from '../lib/supabase';
 
 export const Sidebar: React.FC = () => {
   const { signOut } = useAuth();
   const { activeView, setActiveView, dispatchCart, setIsHelpModalOpen, user } = useInventory();
-  const canAdmin = isDemo || user.role === 'admin';
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
 
-  const navItems: { id: ActiveView; label: string; icon: string; badge?: number }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { id: 'explorer', label: 'Inventario', icon: 'inventory_2' },
-    ...(canAdmin ? [{ id: 'new-item' as ActiveView, label: 'Nuevo Item', icon: 'add_box' }] : []),
-    ...(canOperate ? [{ id: 'entries' as ActiveView, label: 'Entradas', icon: 'input' }] : []),
-    ...(canOperate ? [{ id: 'dispatch' as ActiveView, label: 'Salidas', icon: 'shopping_cart_checkout', badge: dispatchCart.length }] : []),
-    { id: 'history', label: 'Historial', icon: 'history' },
-    { id: 'data-admin', label: 'Administración de datos', icon: 'settings' },
-    { id: 'warehouses', label: 'Almacenes', icon: 'warehouse' },
-    { id: 'remissions', label: 'Remisiones', icon: 'picture_as_pdf' },
-  ];
+  const navItems = navigationItems(user.role, dispatchCart.length, isDemo);
 
   return (
-    <aside className="bg-white border-r border-[#e2e8f0] h-full w-64 fixed left-0 top-0 z-40 flex flex-col py-6 px-4 hidden md:flex select-none">
+    <aside className="bg-white border-r border-[#e2e8f0] h-full w-64 fixed left-0 top-0 z-40 flex flex-col py-6 px-4 hidden xl:flex select-none">
       {/* Brand Header */}
       <button type="button" aria-label="EL TURPIAL — Ir al inicio" className="mb-6 px-2" onClick={() => setActiveView('dashboard')}>
         <img src="/logo-completo.png" alt="EL TURPIAL" width="303" height="131" className="w-full h-auto object-contain" />

@@ -44,8 +44,8 @@ export function OutgoingPhotoModal({ remissionId, onClose }: { remissionId: stri
   }, [onClose]);
   const photos = query.data?.fotosSalida || [];
   const index = Math.min(current,Math.max(0,photos.length-1));
-  return createPortal(<div className="no-print fixed inset-0 z-[70] bg-black/70 grid place-items-center p-3 sm:p-6">
-    <section ref={dialog} role="dialog" aria-modal="true" aria-labelledby="outgoing-record-title" className="bg-white rounded-2xl max-w-3xl w-full max-h-[92vh] overflow-y-auto p-5 space-y-4">
+  return createPortal(<div className="no-print ui-modal-layer fixed inset-0 z-[70] bg-black/70 grid place-items-center p-3 sm:p-6">
+    <section ref={dialog} role="dialog" aria-modal="true" aria-labelledby="outgoing-record-title" className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl max-w-3xl w-full max-h-[92vh] overflow-y-auto p-5 space-y-4">
       <header className="flex gap-4 justify-between items-start"><div><h2 id="outgoing-record-title" className="font-bold text-xl">Registro fotográfico de la salida</h2><p className="text-sm text-slate-600">{query.data?.numeroRemision} · {query.data?.proyectoNombre}</p></div><button ref={close} type="button" aria-label="Cerrar fotografías" onClick={onClose} className="text-2xl">×</button></header>
       {query.isPending ? <p role="status">Cargando registro…</p> : query.isError ? <div><p role="alert" className="text-red-700">{errorMessage(query.error)}</p><button type="button" onClick={() => { void query.refetch(); }} className="underline mt-2">Reintentar</button></div> : photos.length ? <>
         <div className="bg-slate-50 rounded-xl p-2 min-h-40 grid place-items-center"><EvidencePhoto key={photos[index]} source={photos[index]} index={index} /></div>

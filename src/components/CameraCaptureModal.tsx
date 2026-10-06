@@ -3,6 +3,7 @@ import { useCamera } from '../shared/useCamera';
 import { squareCanvas } from '../shared/squareImage';
 import { nextCameraId } from '../shared/cameraDevices';
 import { evidenceCanvas } from '../shared/evidenceCanvas';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 
 interface Props { isOpen: boolean; onClose: () => void; onPhotoCaptured: (photoDataUrl: string) => void; title?: string; square?: boolean }
 export function CameraCaptureModal({ isOpen, onClose, onPhotoCaptured, title = 'Tomar foto', square = true }: Props) {
@@ -10,7 +11,9 @@ export function CameraCaptureModal({ isOpen, onClose, onPhotoCaptured, title = '
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
   const { videoRef, loading, error, ready, cameras, currentDeviceId, rearOnly } = useCamera(isOpen && !photo, selectedDeviceId, square ? 1 : 4 / 3);
   const fileRef = useRef<HTMLInputElement>(null);
+  const dialog = useRef<HTMLElement>(null);
   const close = () => { setPhoto(null); setSelectedDeviceId(''); onClose(); };
+  useDialogFocus(dialog, close, isOpen);
   const snap = () => {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
@@ -26,9 +29,9 @@ export function CameraCaptureModal({ isOpen, onClose, onPhotoCaptured, title = '
     reader.readAsDataURL(file);
   };
   if (!isOpen) return null;
-  return <div className="fixed inset-0 z-60 bg-black/80 flex items-center justify-center p-4">
-    <section role="dialog" aria-modal="true" aria-label={title} className="bg-white rounded-2xl w-full max-w-lg p-5 space-y-4">
-      <div className="flex justify-between"><h2 className="font-bold">{title}</h2><button type="button" aria-label="Cerrar cámara" onClick={close}>×</button></div>
+  return <div className="ui-modal-layer fixed inset-0 z-60 bg-black/80 flex items-center justify-center p-4">
+    <section ref={dialog} role="dialog" aria-modal="true" aria-label={title} className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl w-full max-w-lg p-5 space-y-4">
+      <div className="flex justify-between"><h2 className="font-bold">{title}</h2><button type="button" data-dialog-close aria-label="Cerrar cámara" className="min-w-11 min-h-11" onClick={close}>×</button></div>
       <div className={`relative w-full max-w-[min(100%,45vh)] mx-auto ${square ? 'aspect-square' : 'aspect-[4/3]'} overflow-hidden rounded-lg bg-black`}>
         {photo ? <img src={photo} alt="Vista previa" className={`absolute inset-0 w-full h-full ${square ? 'object-cover' : 'object-contain'} object-center`} />
           : <video ref={videoRef} muted playsInline autoPlay className={`absolute inset-0 w-full h-full ${square ? 'object-cover' : 'object-contain'} object-center`} />}

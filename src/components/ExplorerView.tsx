@@ -112,9 +112,9 @@ export const ExplorerView: React.FC = () => {
   const visibleItems = filteredItems.slice((currentPage - 1) * 24, currentPage * 24);
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto p-3 sm:p-4 md:p-8 max-w-[1400px] mx-auto w-full gap-4 sm:gap-6">
+    <div className="flex-1 flex flex-col h-full overflow-y-auto p-3 sm:p-4 lg:p-8 max-w-[1400px] mx-auto w-full gap-4 sm:gap-6">
       {/* Prominent Search Header Section (Matching Mockup Image 9) */}
-      <div className="w-full bg-white border border-[#e2e8f0] rounded-2xl p-4 sm:p-6 md:p-8 shadow-xs">
+      <div className="w-full bg-white border border-[#e2e8f0] rounded-2xl p-4 sm:p-6 lg:p-8 shadow-xs">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#131b2e] mb-1 tracking-tight">
           Explorador de Componentes
         </h2>
@@ -161,8 +161,9 @@ export const ExplorerView: React.FC = () => {
       </div>
 
       {/* Mobile Filter Toggle Button */}
-      <div className="md:hidden flex items-center justify-between bg-white p-3 rounded-xl border border-[#e2e8f0]">
+      <div className="lg:hidden flex items-center justify-between bg-white p-3 rounded-xl border border-[#e2e8f0]">
         <button
+          aria-expanded={mobileFiltersOpen} aria-controls="inventory-filters"
           onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
           className="flex items-center gap-2 text-xs font-bold text-[#253685]"
         >
@@ -186,13 +187,13 @@ export const ExplorerView: React.FC = () => {
       </div>
 
       {/* Main Two-Column Layout (Filters + Bento Grid) */}
-      <div className="flex flex-col md:flex-row gap-4 sm:gap-6 w-full flex-1 items-start">
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 w-full flex-1 items-start">
         <ExplorerFilters visible={mobileFiltersOpen} selectedCategories={selectedCategories}
           onCategory={handleCategoryToggle} stock={stockStatusFilter} onStock={setStockStatusFilter}
           warehouseId={selectedWarehouseId} onWarehouse={setSelectedWarehouseId} onClear={handleClearFilters} />
 
         {/* Results Area */}
-        <section className="flex-1 flex flex-col gap-4 w-full">
+        <section className="flex-1 min-w-0 flex flex-col gap-4 w-full">
           {/* Results Top Header */}
           <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-[#e2e8f0] shadow-xs">
             <span className="text-xs sm:text-sm text-[#454651] px-1 sm:px-2">

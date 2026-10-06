@@ -96,13 +96,13 @@ function useInventoryValue() {
   const removeFromDispatchCart = (itemId: string) => setCartLines(prev => prev.filter(line => line.elementoId !== itemId));
   const clearDispatchCart = useCallback(() => setCartLines([]), []);
   const openItemDetail = (item: Elemento) => setSelectedItemId(item.id);
-  const closeItemDetail = () => setSelectedItemId(null);
+  const closeItemDetail = useCallback(() => setSelectedItemId(null), []);
   const openPdfRemision = useCallback((remission: Remision) => setSelectedRemisionForPdf(remission), []);
-  const closePdfRemision = () => setSelectedRemisionForPdf(null);
+  const closePdfRemision = useCallback(() => setSelectedRemisionForPdf(null), []);
   const openOutgoingPhotos = useCallback((id: string) => setSelectedOutgoingPhotosId(id), []);
   const closeOutgoingPhotos = useCallback(() => setSelectedOutgoingPhotosId(null), []);
   const openQuickMovement = (item: Elemento, type: 'ENTRADA' | 'AJUSTE') => { setQuickMovementId(item.id); setQuickMovementType(type); };
-  const closeQuickMovement = () => setQuickMovementId(null);
+  const closeQuickMovement = useCallback(() => setQuickMovementId(null), []);
 
   const projectActions = useProjectActions();
   const actions = useInventoryActions(data, data.setDemoData, data.refresh, data.refreshItemIds, data.applyItemChange,

@@ -44,7 +44,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
               <p className="text-xs text-[#454651] mt-1">Pruebe ajustando los filtros o el término de búsqueda.</p>
             </div>
           ) : mode === 'grid' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+            <div className="inventory-card-grid grid gap-4 sm:gap-5">
               {items.map((item) => {
                 const alm = getAlmacenById(item.almacenId);
                 const est = getEstanteriaById(item.estanteriaId);
