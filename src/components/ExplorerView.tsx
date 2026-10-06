@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useInventory } from '../context/InventoryContext';
-import { CategoriaElemento } from '../types';
+import { ALL_LOCATIONS, emptyInventoryFilters, changeWarehouse, changeRack, filterInventory, type InventoryFilters } from '../domain/explorer';
 import { ExplorerResults } from './explorer/ExplorerResults';
 import { ExplorerFilters } from './explorer/ExplorerFilters';
 import { useInventoryViewMode } from '../state/useInventoryViewMode';
 
 export const ExplorerView: React.FC = () => {
   const {
-    elementos,
+    elementos, almacenes, estanterias, cajas, categoryOptions, categoryLabel, setGlobalSearch,
     getLocationString,
     globalSearch
   } = useInventory();
@@ -17,96 +17,18 @@ export const ExplorerView: React.FC = () => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
 
-  // Filters State
-  const [selectedCategories, setSelectedCategories] = useState<Record<CategoriaElemento, boolean>>({
-    PANELES: true,
-    INVERSORES: true,
-    ESTRUCTURAS: true,
-    CABLES: true,
-    CONECTORES: true,
-    PROTECCIONES: true,
-    BATERIAS: true,
-    CONTROLADORES: true,
-    ACCESORIOS: true,
-    HERRAMIENTAS: true,
-    SEGURIDAD_EPP: true,
-    OTROS: true
-  });
-
-  const [stockStatusFilter, setStockStatusFilter] = useState<'todos' | 'disponible' | 'bajo' | 'agotado'>('todos');
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('ALL');
-
-  const effectiveSearch = (globalSearch || searchQuery).toLowerCase().trim();
-
-  // Reset filters
+  const [filters, setFilters] = useState(emptyInventoryFilters);
+  const effectiveSearch = globalSearch || searchQuery;
+  const changeFilters = (next: InventoryFilters) => { setFilters(next); setPage(1); };
   const handleClearFilters = () => {
-    setSelectedCategories({
-      PANELES: true,
-      INVERSORES: true,
-      ESTRUCTURAS: true,
-      CABLES: true,
-      CONECTORES: true,
-      PROTECCIONES: true,
-      BATERIAS: true,
-      CONTROLADORES: true,
-      ACCESORIOS: true,
-      HERRAMIENTAS: true,
-      SEGURIDAD_EPP: true,
-      OTROS: true
-    });
-    setStockStatusFilter('todos');
-    setSelectedWarehouseId('ALL');
-    setSearchQuery('');
+    changeFilters(emptyInventoryFilters());
+    setSearchQuery(''); setGlobalSearch('');
   };
-
-  const handleCategoryToggle = (cat: CategoriaElemento) => {
-    setSelectedCategories((prev) => ({
-      ...prev,
-      [cat]: prev[cat] === false
-    }));
-  };
-
-  // Count active non-default filters
-  const activeFiltersCount = useMemo(() => {
-    let count = 0;
-    const deactivatedCats = Object.values(selectedCategories).filter((v) => !v).length;
-    if (deactivatedCats > 0) count += 1;
-    if (stockStatusFilter !== 'todos') count += 1;
-    if (selectedWarehouseId !== 'ALL') count += 1;
-    if (searchQuery.trim()) count += 1;
-    return count;
-  }, [selectedCategories, stockStatusFilter, selectedWarehouseId, searchQuery]);
-
-  // Filter items
-  const filteredItems = useMemo(() => {
-    return elementos.filter((item) => {
-      // Search
-      if (effectiveSearch) {
-        const matchCode = item.codigo.toLowerCase().includes(effectiveSearch);
-        const matchName = item.nombre.toLowerCase().includes(effectiveSearch);
-        const matchDesc = item.descripcion.toLowerCase().includes(effectiveSearch);
-        const matchLoc = getLocationString(item).toLowerCase().includes(effectiveSearch);
-        if (!matchCode && !matchName && !matchDesc && !matchLoc) return false;
-      }
-
-      // Category
-      if (selectedCategories[item.categoria] === false) {
-        return false;
-      }
-
-      // Stock status
-      if (stockStatusFilter === 'disponible' && item.cantidad <= 0) return false;
-      if (stockStatusFilter === 'bajo' && (item.cantidad > item.stockMinimo || item.cantidad === 0)) return false;
-      if (stockStatusFilter === 'agotado' && item.cantidad > 0) return false;
-
-      // Warehouse
-      if (selectedWarehouseId !== 'ALL' && item.almacenId !== selectedWarehouseId) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [elementos, effectiveSearch, selectedCategories, stockStatusFilter, selectedWarehouseId, getLocationString]);
+  const activeFiltersCount = Number(filters.categories.length > 0) + Number(filters.stock !== 'todos')
+    + Number(filters.warehouseId !== ALL_LOCATIONS) + Number(filters.rackId !== ALL_LOCATIONS)
+    + Number(filters.boxId !== ALL_LOCATIONS) + Number(!!effectiveSearch.trim());
+  const filteredItems = useMemo(() => filterInventory(elementos, filters, effectiveSearch, getLocationString),
+    [elementos, filters, effectiveSearch, getLocationString]);
   const pageCount = Math.max(1, Math.ceil(filteredItems.length / 24));
   const currentPage = Math.min(page, pageCount);
   const visibleItems = filteredItems.slice((currentPage - 1) * 24, currentPage * 24);
@@ -130,16 +52,16 @@ export const ExplorerView: React.FC = () => {
           <input
             id="explorer-prominent-search"
             type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={effectiveSearch}
+            onChange={(e) => { setSearchQuery(e.target.value); setGlobalSearch(''); setPage(1); }}
             placeholder="Buscar código (ej. PAN550) o nombre..."
             className="w-full pl-10 sm:pl-12 pr-20 sm:pr-28 py-2.5 sm:py-3.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-xs sm:text-base text-[#131b2e] focus:outline-hidden focus:ring-2 focus:ring-[#3e4e9e] focus:border-transparent focus:bg-white transition-all shadow-inner"
           />
           <div className="absolute inset-y-0 right-0 pr-1.5 sm:pr-2 flex items-center">
-            {searchQuery ? (
+            {effectiveSearch ? (
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
+                onClick={() => { setSearchQuery(''); setGlobalSearch(''); setPage(1); }}
                 className="text-[#767682] hover:text-[#131b2e] px-2.5 py-1.5 text-xs font-semibold"
                 title="Limpiar búsqueda"
               >
@@ -188,9 +110,13 @@ export const ExplorerView: React.FC = () => {
 
       {/* Main Two-Column Layout (Filters + Bento Grid) */}
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 w-full flex-1 items-start">
-        <ExplorerFilters visible={mobileFiltersOpen} selectedCategories={selectedCategories}
-          onCategory={handleCategoryToggle} stock={stockStatusFilter} onStock={setStockStatusFilter}
-          warehouseId={selectedWarehouseId} onWarehouse={setSelectedWarehouseId} onClear={handleClearFilters} />
+        <ExplorerFilters visible={mobileFiltersOpen} filters={filters}
+          warehouses={almacenes} racks={estanterias} boxes={cajas} categories={categoryOptions} categoryLabel={categoryLabel}
+          onCategories={categories => changeFilters({ ...filters, categories })}
+          onStock={stock => changeFilters({ ...filters, stock })}
+          onWarehouse={id => changeFilters(changeWarehouse(filters, id))}
+          onRack={id => changeFilters(changeRack(filters, id))}
+          onBox={boxId => changeFilters({ ...filters, boxId })} onClear={handleClearFilters} />
 
         {/* Results Area */}
         <section className="flex-1 min-w-0 flex flex-col gap-4 w-full">

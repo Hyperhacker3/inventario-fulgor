@@ -1,42 +1,55 @@
 import { Select } from '../ui/Select';
-import type { CategoriaElemento } from '../../types';
-import { useInventory } from '../../context/InventoryContext';
+import { CategoryFilter } from './CategoryFilter';
+import { ALL_LOCATIONS, NO_LOCATION, locationChoices, type InventoryFilters, type StockFilter } from '../../domain/explorer';
+import type { Almacen, Estanteria, Caja } from '../../types';
 
-type StockFilter = 'todos' | 'disponible' | 'bajo' | 'agotado';
 interface Props {
   visible: boolean;
-  selectedCategories: Record<CategoriaElemento, boolean>;
-  onCategory: (category: CategoriaElemento) => void;
-  stock: StockFilter; onStock: (value: StockFilter) => void;
-  warehouseId: string; onWarehouse: (id: string) => void;
+  filters: InventoryFilters;
+  warehouses: Almacen[]; racks: Estanteria[]; boxes: Caja[];
+  categories: string[]; categoryLabel: (id: string) => string;
+  onCategories: (categories: string[]) => void;
+  onStock: (value: StockFilter) => void;
+  onWarehouse: (id: string) => void;
+  onRack: (id: string) => void;
+  onBox: (id: string) => void;
   onClear: () => void;
 }
-export function ExplorerFilters({ visible, selectedCategories, onCategory, stock, onStock,
-  warehouseId, onWarehouse, onClear }: Props) {
-  const { almacenes, categoryOptions, categoryLabel } = useInventory();
-  return <aside id="inventory-filters" data-expanded={visible} className="filter-panel w-full lg:w-56 shrink-0">
+export function ExplorerFilters({ visible, filters, warehouses, racks, boxes, categories, categoryLabel,
+  onCategories, onStock, onWarehouse, onRack, onBox, onClear }: Props) {
+  const locations = locationChoices(racks, boxes, filters.warehouseId, filters.rackId);
+  const warehouseNames = new Map(warehouses.map(warehouse => [warehouse.id, warehouse.nombre]));
+  const rackNames = new Map(racks.map(rack => [rack.id, `${warehouseNames.get(rack.almacenId || '') || 'Sin almacén'} > ${rack.nombre || rack.codigo}`]));
+  return <aside id="inventory-filters" data-expanded={visible} className="filter-panel w-full lg:w-64 shrink-0">
     <div className="filter-panel-inner"><div className="bg-white border rounded-xl p-4 sm:p-5 shadow-xs space-y-5">
       <div className="flex justify-between items-center border-b pb-2"><h3 className="font-bold">Filtros</h3>
         <button id="btn-clear-filters" type="button" onClick={onClear} className="text-[#3e4e9e] text-xs font-semibold">Limpiar</button></div>
-      <fieldset><legend className="text-xs font-bold text-[#454651] uppercase mb-2">Categoría</legend>
-        <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
-          {categoryOptions.map(category => <label key={category} className="flex items-center gap-2 text-xs cursor-pointer">
-            <input type="checkbox" checked={selectedCategories[category] !== false} onChange={() => onCategory(category)} />
-            {categoryLabel(category)}
-          </label>)}
-        </div>
-      </fieldset>
+      <CategoryFilter options={categories} selected={filters.categories} label={categoryLabel} onChange={onCategories} />
       <fieldset><legend className="text-xs font-bold text-[#454651] uppercase mb-2">Estado de stock</legend>
         <div className="flex flex-wrap gap-1.5">
           {(['todos', 'disponible', 'bajo', 'agotado'] as StockFilter[]).map(value =>
             <button key={value} type="button" onClick={() => onStock(value)}
-              className={`min-h-10 px-2.5 py-1 rounded-full text-xs capitalize ${stock === value ? 'bg-[#3e4e9e] text-white' : 'bg-[#f8fafc] border'}`}>{value}</button>)}
+              className={`min-h-10 px-2.5 py-1 rounded-full text-xs capitalize ${filters.stock === value ? 'bg-[#3e4e9e] text-white' : 'bg-[#f8fafc] border'}`}>{value}</button>)}
         </div>
       </fieldset>
       <label className="block text-xs font-bold text-[#454651] uppercase">Almacén
-        <Select value={warehouseId} onChange={event => onWarehouse(event.target.value)} className="block w-full mt-2 p-2 border rounded-lg bg-white">
-          <option value="ALL">Todos los almacenes</option>
-          {almacenes.map(warehouse => <option key={warehouse.id} value={warehouse.id}>{warehouse.nombre}</option>)}
+        <Select id="inventory-warehouse-filter" value={filters.warehouseId} onChange={event => onWarehouse(event.target.value)} className="block w-full mt-2 p-2 border rounded-lg bg-white">
+          <option value={ALL_LOCATIONS}>Todos los almacenes</option>
+          {warehouses.map(warehouse => <option key={warehouse.id} value={warehouse.id}>{warehouse.nombre}</option>)}
+        </Select>
+      </label>
+      <label className="block text-xs font-bold text-[#454651] uppercase">Estantería
+        <Select id="inventory-rack-filter" value={filters.rackId} onChange={event => onRack(event.target.value)} className="block w-full mt-2 p-2 border rounded-lg bg-white">
+          <option value={ALL_LOCATIONS}>Todas las estanterías</option>
+          <option value={NO_LOCATION}>Sin estantería</option>
+          {locations.racks.map(rack => <option key={rack.id} value={rack.id}>{filters.warehouseId === ALL_LOCATIONS ? rackNames.get(rack.id) : rack.nombre || rack.codigo}</option>)}
+        </Select>
+      </label>
+      <label className="block text-xs font-bold text-[#454651] uppercase">Caja
+        <Select id="inventory-box-filter" value={filters.boxId} onChange={event => onBox(event.target.value)} className="block w-full mt-2 p-2 border rounded-lg bg-white">
+          <option value={ALL_LOCATIONS}>Todas las cajas</option>
+          <option value={NO_LOCATION}>Sin caja</option>
+          {locations.boxes.map(box => <option key={box.id} value={box.id}>{filters.rackId === ALL_LOCATIONS ? `${rackNames.get(box.estanteriaId || '') || 'Sin estantería'} > ${box.codigoCaja}` : box.codigoCaja}</option>)}
         </Select>
       </label>
     </div></div>
