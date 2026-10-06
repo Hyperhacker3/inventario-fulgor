@@ -42,6 +42,7 @@ test('the full screen stays behind a spinner until data and the lazy screen are 
   try {
     await act(()=>root.render(render('loading')));
     assert.equal(host.querySelector('input'),null);assert.equal(host.querySelector('[role="status"]')?.getAttribute('aria-busy'),'true');
+    assert.equal(host.querySelector('h1'),null);assert.ok(host.querySelector('.app-spinner'));
     await act(()=>root.render(render('ready')));
     assert.equal(host.querySelector('input'),null);assert.match(host.textContent!,/Preparando pantalla/);
     await act(async()=>pendingView.resolve({default:Screen}));
@@ -76,6 +77,7 @@ test('first HTML has an independent spinner and module error recovery; fonts are
   const shell=new JSDOM(html,{runScripts:'dangerously'}),initial=shell.window.document;
   await new Promise<void>(resolve=>initial.addEventListener('DOMContentLoaded',()=>resolve(),{once:true}));
   assert.ok(initial.querySelector('#root .app-spinner'));assert.ok(initial.querySelector('#root [role="status"]'));
+  assert.equal(initial.querySelector('#root h1'),null);
   assert.match(initial.querySelector('style')!.textContent!,/@keyframes app-spin/);
   initial.querySelector('script[type="module"]')!.dispatchEvent(new shell.window.Event('error'));
   assert.equal(initial.querySelector('#root main')?.getAttribute('aria-busy'),'false');

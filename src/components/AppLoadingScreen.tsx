@@ -3,7 +3,7 @@ import type { InitialLoadStatus } from '../domain/initialLoad';
 
 export function AppLoadingScreen({ message = 'Cargando inventario…' }: { message?: string }) {
   return <main className="app-loading" role="status" aria-live="polite" aria-busy="true">
-    <div className="app-loading-content"><h1>Inventario turpial</h1>
+    <div className="app-loading-content">
       <div className="app-spinner" aria-hidden="true" /><p>{message}</p>
     </div>
   </main>;

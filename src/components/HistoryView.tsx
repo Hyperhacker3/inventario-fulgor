@@ -87,7 +87,7 @@ export const HistoryView: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 md:p-8 max-w-[1400px] mx-auto w-full">
+    <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full">
       {/* Top Header matching Mockup Image 5 */}
       <div className="mb-4 sm:mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 sm:gap-4">
         <div>

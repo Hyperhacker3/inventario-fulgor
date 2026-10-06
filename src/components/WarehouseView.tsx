@@ -14,7 +14,7 @@ export function WarehouseView() {
   const selected = almacenes.find(a => a.id === effectiveId);
   const counts = new Map<string, number>();
   for (const item of elementos) if (item.almacenId) counts.set(item.almacenId, (counts.get(item.almacenId) || 0) + 1);
-  return <div className="flex-1 overflow-y-auto p-4 md:p-8 max-w-[1400px] mx-auto w-full">
+  return <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full">
     <header className="flex flex-wrap justify-between gap-3 mb-6">
       <div><h2 className="text-2xl md:text-3xl font-bold text-[#131b2e]">Gestión de Almacenes</h2>
         <p className="text-sm text-[#454651]">Ubicaciones de material: almacén, estantería y caja.</p></div>

@@ -101,7 +101,7 @@ export const DispatchView: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 md:p-8 max-w-[1000px] mx-auto w-full">
+    <div className="p-4 md:p-8 max-w-[1000px] mx-auto w-full">
       {/* Page Title from Mockup Image 1 */}
       <div className="mb-6">
         <h2 className="text-2xl md:text-3xl font-bold text-[#131b2e] tracking-tight">Salidas</h2>

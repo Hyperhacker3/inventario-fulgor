@@ -112,7 +112,7 @@ export const ExplorerView: React.FC = () => {
   const visibleItems = filteredItems.slice((currentPage - 1) * 24, currentPage * 24);
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto p-3 sm:p-4 lg:p-8 max-w-[1400px] mx-auto w-full gap-4 sm:gap-6">
+    <div className="flex flex-col p-3 sm:p-4 lg:p-8 max-w-[1400px] mx-auto w-full gap-4 sm:gap-6">
       {/* Prominent Search Header Section (Matching Mockup Image 9) */}
       <div className="w-full bg-white border border-[#e2e8f0] rounded-2xl p-4 sm:p-6 lg:p-8 shadow-xs">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#131b2e] mb-1 tracking-tight">

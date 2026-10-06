@@ -75,7 +75,7 @@
 html:not([data-icons-ready='true']) .material-symbols-outlined { visibility: hidden; }
 
 /* Compact navigation is shared by phones and tablets below the desktop layout. */
-.app-viewport { height: 100vh; height: var(--app-viewport-height, 100dvh); }
+.app-viewport { position: fixed; inset: 0; height: 100vh; height: var(--app-viewport-height, 100dvh); }
 .app-header { padding-top: env(safe-area-inset-top, 0px); }
 .ui-modal-layer { bottom: auto; height: var(--app-viewport-height, 100dvh); }
 .ui-modal-layer, .print-layer { animation: ui-backdrop-open var(--ui-motion-duration) ease; }
@@ -91,7 +91,8 @@ html:not([data-icons-ready='true']) .material-symbols-outlined { visibility: hid
   .entry-result-row { grid-template-columns: 48px minmax(0, 1fr) auto; }
   .entry-result-select { grid-column: 3; grid-row: 1; }
 }
-.app-main { padding-bottom: 0; }
+.app-main { padding-bottom: 0; overscroll-behavior-y: contain; overflow-anchor: none; }
+.app-screen > .ui-screen-current { display: block; }
 .mobile-bottom-nav {
   position: relative; flex-shrink: 0; z-index: 30;
   display: flex; gap: 4px; padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px));
@@ -135,7 +136,7 @@ html:not([data-icons-ready='true']) .material-symbols-outlined { visibility: hid
 @media (min-width: 1024px) { .filter-panel { grid-template-rows: 1fr; opacity: 1; transform: none; visibility: visible; } }
 .ui-screen-transition { position: relative; }
 .ui-screen-current { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.ui-screen-previous { position: absolute; inset: 0; pointer-events: none; }
+.ui-screen-previous { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 @keyframes ui-open { from { opacity: 0; transform: translateY(-12px) scale(.97); } to { opacity: 1; transform: none; } }
 @keyframes ui-backdrop-close { to { opacity: 0; } }
 @keyframes ui-backdrop-open { from { opacity: 0; } to { opacity: 1; } }

@@ -3,9 +3,10 @@ import { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { ItemImage } from './ItemImage';
 import { EntryForm } from './entry/EntryForm';
+import { isDemo } from '../lib/supabase';
 
 export function EntryView() {
-  const { elementos, addStockMovement, user, getLocationString, openItemDetail, syncStatus } = useInventory();
+  const { elementos, addStockMovement, user, getLocationString, openItemDetail, syncStatus, setActiveView } = useInventory();
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState('');
   const [page, setPage] = useState(1);
@@ -16,7 +17,11 @@ export function EntryView() {
   const currentPage = Math.min(page, pages);
   const item = elementos.find(value => value.id === selectedId);
   return <div className="p-4 md:p-8 max-w-4xl w-full mx-auto space-y-6">
-    <div><h2 className="text-2xl md:text-3xl font-bold">Entradas</h2><p className="mt-2 text-slate-600">Registre la recepción de material para aumentar sus existencias. Cada entrada se guarda en el historial.</p></div>
+    <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+      <div><h2 className="text-2xl md:text-3xl font-bold">Entradas</h2><p className="mt-2 text-slate-600">Registre la recepción de material para aumentar sus existencias. Cada entrada se guarda en el historial.</p></div>
+      {(isDemo || user.role === 'admin') && <button type="button" disabled={busy} onClick={() => setActiveView('new-item')}
+        className="shrink-0 min-h-11 rounded-lg bg-[#253685] text-white px-4 py-3 text-sm font-semibold disabled:opacity-50">Agregar nuevo ítem</button>}
+    </header>
     <section className="bg-white border rounded-2xl p-4 space-y-3">
       <label className="block text-sm font-semibold">Buscar material<input type="search" disabled={busy} value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Código, nombre o ubicación" className="block w-full mt-2 p-3 rounded-xl border" /></label>
       <Presence open={!!query}><div className="ui-panel-enter space-y-3">

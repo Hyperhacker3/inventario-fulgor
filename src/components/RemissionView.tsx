@@ -33,7 +33,7 @@ export const RemissionView: React.FC = () => {
   const visibleRemisiones = isDemo ? filteredRemisiones.slice((page - 1) * pageSize, page * pageSize) : cloudPage.data?.rows ?? [];
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 md:p-8 max-w-[1400px] mx-auto w-full">
+    <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full">
       {/* Top Header */}
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>

@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { Presence, ScreenTransition } from './components/ui/Motion';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useLayoutEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AuthScreen } from './components/AuthScreen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -84,6 +84,8 @@ const MainLayout: React.FC = () => {
 
   const mobileNavItems = quickNavigationItems(user.role, dispatchCart.length, isDemo);
   const keyboardOpen = useMobileKeyboard();
+  const pageScroll = useRef<HTMLElement>(null);
+  useLayoutEffect(() => { if (pageScroll.current) pageScroll.current.scrollTop = 0; }, [activeView]);
 
   return (
     <div className="app-viewport flex w-full overflow-hidden bg-[#faf8ff] text-[#131b2e]">
@@ -93,8 +95,8 @@ const MainLayout: React.FC = () => {
       {/* Main content leaves room for the sidebar on desktop. */}
       <div className="flex-1 flex flex-col h-full xl:pl-64 overflow-hidden">
         <Header />
-        <main className={`app-main flex-1 min-h-0 overflow-y-auto relative flex flex-col ${keyboardOpen ? 'keyboard-open' : ''}`}>
-          <ScreenTransition screen={activeView} className="flex flex-col flex-1 min-h-0">{renderActiveView()}</ScreenTransition>
+        <main ref={pageScroll} className={`app-main flex-1 min-h-0 overflow-y-auto relative ${keyboardOpen ? 'keyboard-open' : ''}`}>
+          <ScreenTransition screen={activeView} className="app-screen min-h-full">{renderActiveView()}</ScreenTransition>
         </main>
         <MobileBottomNav items={mobileNavItems} activeView={activeView} keyboardOpen={keyboardOpen} onNavigate={setActiveView} />
       </div>
