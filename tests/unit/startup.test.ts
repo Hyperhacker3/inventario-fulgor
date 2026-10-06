@@ -6,6 +6,8 @@ import { act, createElement, lazy, useState } from 'react';
 import { AppInitialContent } from '../../src/components/AppLoadingScreen';
 import { combinedInitialStatus, initialQueryStatus } from '../../src/domain/initialLoad';
 import { loadStartupFonts } from '../../src/shared/startupAssets';
+import { useViewNavigation } from '../../src/state/useViewNavigation';
+import { ScreenTransition } from '../../src/components/ui/Motion';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -52,11 +54,56 @@ test('the full screen stays behind a spinner until data and the lazy screen are 
     await act(()=>{set.call(input,'42');input.dispatchEvent(new dom.window.Event('input',{bubbles:true}));});
     await act(()=>root.render(render(initialQueryStatus([{data:[],isError:false,fetchStatus:'fetching'}]))));
     assert.equal(host.querySelector('input'),input);assert.equal(input.value,'42');
+    await act(()=>root.render(render('loading')));
+    assert.equal(host.querySelector('.app-spinner'),null);assert.equal(host.querySelector('input'),input);assert.equal(input.value,'42');
     await act(()=>root.render(render('error')));
     assert.equal(host.querySelector('input'),null);assert.ok(host.querySelector('[role="alert"]'));
     await act(()=>host.querySelector('button')!.click());assert.equal(retries,1);
     await act(()=>root.render(render('ready')));assert.ok(host.querySelector('input'));
   } finally {await act(()=>root.unmount());host.remove();}
+});
+
+test('navigation retains the visible screen while lazy views load, handles rapid choices and browser back without another spinner', async () => {
+  window.history.replaceState(null, '', '#/dashboard');
+  const explorer = deferred<{ default: () => ReturnType<typeof createElement> }>();
+  const history = deferred<{ default: () => ReturnType<typeof createElement> }>();
+  const newItem = deferred<{ default: () => ReturnType<typeof createElement> }>();
+  const Explorer = lazy(() => explorer.promise), History = lazy(() => history.promise), NewItem = lazy(() => newItem.promise);
+  const screen = (name: string) => () => createElement('h2', null, name);
+  function Navigation() {
+    const { activeView, setActiveView } = useViewNavigation();
+    const [draft, setDraft] = useState('');
+    const view = activeView === 'explorer' ? createElement(Explorer) : activeView === 'history' ? createElement(History)
+      : activeView === 'new-item' ? createElement(NewItem) : createElement('section', null,
+        createElement('h2', null, 'Inicio'), createElement('input', { value: draft, onChange: event => setDraft(event.currentTarget.value) }));
+    return createElement('main', null,
+      createElement('button', { onClick: () => setActiveView('explorer'), id: 'go-explorer' }, 'Inventario'),
+      createElement('button', { onClick: () => setActiveView('history'), id: 'go-history' }, 'Historial'),
+      createElement(ScreenTransition, { screen: activeView, children: view }));
+  }
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  const current = () => host.querySelector('.ui-screen-current')!;
+  const navigate = (id: string) => act(() => host.querySelector<HTMLButtonElement>(`#${id}`)!.click());
+  try {
+    await act(() => root.render(createElement(AppInitialContent, { status: 'ready', onRetry: () => {}, children: createElement(Navigation) })));
+    const input = host.querySelector('input')!;
+    await act(() => { Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value')!.set!.call(input, '42');
+      input.dispatchEvent(new dom.window.Event('input', { bubbles: true })); });
+    await navigate('go-explorer');
+    assert.equal(window.location.hash, '#/explorer'); assert.match(current().textContent!, /Inicio/);
+    assert.equal(input.value, '42'); assert.equal(host.querySelector('.app-spinner'), null);
+    assert.equal(host.querySelector('main')!.style.display, '');
+    await navigate('go-history');
+    await act(async () => explorer.resolve({ default: screen('Inventario listo') }));
+    assert.match(current().textContent!, /Inicio/); assert.equal(host.querySelector('.app-spinner'), null);
+    await act(async () => history.resolve({ default: screen('Historial listo') }));
+    assert.match(current().textContent!, /Historial listo/); assert.equal(host.querySelector('.app-spinner'), null);
+    await navigate('go-explorer'); assert.match(current().textContent!, /Inventario listo/);
+    await act(() => { window.history.replaceState(null, '', '#/new-item'); window.dispatchEvent(new dom.window.PopStateEvent('popstate')); });
+    assert.match(current().textContent!, /Inventario listo/); assert.equal(host.querySelector('.app-spinner'), null);
+    await act(async () => newItem.resolve({ default: screen('Nuevo ítem listo') }));
+    assert.match(current().textContent!, /Nuevo ítem listo/); assert.equal(host.querySelector('.app-spinner'), null);
+  } finally { await act(() => root.unmount()); host.remove(); window.history.replaceState(null, '', '/'); }
 });
 
 test('font preparation waits for all local faces and layout, and rejects missing or failed fonts', async () => {

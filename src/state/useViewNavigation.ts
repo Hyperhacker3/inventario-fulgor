@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { startTransition, useCallback, useEffect, useState } from 'react';
 import type { ActiveView } from '../types';
 
 const views: ActiveView[] = ['dashboard', 'explorer', 'new-item', 'dispatch', 'entries', 'history', 'warehouses', 'remissions', 'data-admin', 'projects'];
@@ -12,7 +12,7 @@ export function useViewNavigation(onRestore?: () => void) {
   useEffect(() => {
     if (!window.location.hash) window.history.replaceState(null, '', '#/dashboard');
     const restore = () => {
-      setView(viewFromHash(window.location.hash));
+      startTransition(() => setView(viewFromHash(window.location.hash)));
       onRestore?.();
     };
     window.addEventListener('popstate', restore);
@@ -24,7 +24,7 @@ export function useViewNavigation(onRestore?: () => void) {
   }, [onRestore]);
   const setActiveView = useCallback((view: ActiveView) => {
     if (viewFromHash(window.location.hash) !== view) window.history.pushState(null, '', `#/${view}`);
-    setView(view);
+    startTransition(() => setView(view));
   }, []);
   return { activeView, setActiveView };
 }

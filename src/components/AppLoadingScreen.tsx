@@ -1,4 +1,4 @@
-import { Component, Suspense, type ReactNode } from 'react';
+import { Component, Suspense, useCallback, useLayoutEffect, useState, type ReactNode } from 'react';
 import type { InitialLoadStatus } from '../domain/initialLoad';
 
 export function AppLoadingScreen({ message = 'Cargando inventario…' }: { message?: string }) {
@@ -17,12 +17,21 @@ export function AppLoadingError({ onRetry, onSignOut }: { onRetry: () => void; o
     </div>
   </main>;
 }
+function InitialContentReady({ onReady, children }: { onReady: () => void; children: ReactNode }) {
+  // This commits only after the initial screen and its lazy modules are ready.
+  useLayoutEffect(onReady, [onReady]);
+  return <>{children}</>;
+}
 export function AppInitialContent({ status, onRetry, onSignOut, children }: {
   status: InitialLoadStatus; onRetry: () => void; onSignOut?: () => void; children: ReactNode;
 }) {
-  if (status === 'loading') return <AppLoadingScreen />;
+  const [hasShownContent, setHasShownContent] = useState(false);
+  const markReady = useCallback(() => setHasShownContent(true), []);
+  if (status === 'loading' && !hasShownContent) return <AppLoadingScreen />;
   if (status === 'error') return <AppLoadingError onRetry={onRetry} onSignOut={onSignOut} />;
-  return <Suspense fallback={<AppLoadingScreen message="Preparando pantalla…" />}>{children}</Suspense>;
+  return <Suspense fallback={hasShownContent ? null : <AppLoadingScreen message="Preparando pantalla…" />}>
+    <InitialContentReady onReady={markReady}>{children}</InitialContentReady>
+  </Suspense>;
 }
 export class AppErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
