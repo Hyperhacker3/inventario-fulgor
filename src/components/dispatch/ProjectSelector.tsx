@@ -36,6 +36,6 @@ export function ProjectSelector({ value, onChange, disabled }: { value: string; 
       ? <button type="button" onClick={() => { void create(); }} className="text-sm font-semibold text-[#253685]">{busy ? 'Guardando…' : `Crear y seleccionar «${name.trim()}»`}</button>
       : <p className="text-xs text-slate-600">Seleccione un proyecto existente o solicite a administración que lo cree.</p>)}
     {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-    <button type="button" onClick={() => setActiveView('projects')} className="block text-sm text-[#253685] underline">Administrar proyectos</button>
+    <button type="button" onClick={() => setActiveView('projects')} className="block text-sm text-[#253685] underline">Administrar proyectos y datos</button>
   </fieldset>;
 }

@@ -1,5 +1,6 @@
 import type { DatosTransporte, DispatchCartItem, Elemento, Almacen, Estanteria, Caja, HistorialMovimiento, Remision, TipoMovimiento } from '../types';
 import type { Dispatch, SetStateAction } from 'react';
+import { useRef } from 'react';
 import type { DemoData } from './useInventoryData';
 import { insertRow, updateRow, rpc } from '../data/repository';
 import { mapAlmacen, mapCaja, mapElemento, mapEstanteria, mapRemision } from '../data/mappers';
@@ -24,6 +25,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
   rememberRemission: (remission: Remision) => void, cart: DispatchCartItem[], clearCart: () => void,
   openRemision: (rem: Remision) => void) {
   const { user } = useAuth();
+  const createRequests = useRef(new Map<string, { signature: string; payload: Record<string, unknown> }>());
   const requireAdmin = () => {
     if (!isDemo && user?.role !== 'admin') throw new Error('Esta acción requiere rol de administración.');
   };
@@ -36,11 +38,27 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       console.warn('La escritura se guardó, pero la actualización de datos en pantalla quedó pendiente.');
   };
 
-  const addElemento = async (input: Omit<Elemento, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addElemento = async (input: Omit<Elemento, 'id' | 'createdAt' | 'updatedAt'>,
+    assignment: { prefixId: string; requestId: string }) => {
     requireAdmin();
     const item = { ...input, codigo: input.codigo.trim().toUpperCase() };
     validateItem(item, data.almacenes, data.estanterias, data.cajas);
-    if (data.elementos.some(el => el.codigo === item.codigo)) throw new Error('Este código ya existe.');
+    const signature = JSON.stringify({ item: { ...item, codigo: '' }, prefix: assignment.prefixId });
+    const persist = async (payload: Record<string, unknown>) => {
+      createRequests.current.set(assignment.requestId, { signature, payload });
+      const created = mapElemento(await rpc<Record<string, unknown>>('create_inventory_item_auto', {
+        p_prefix_id: assignment.prefixId, p_request_id: assignment.requestId, p_item: payload,
+      }));
+      createRequests.current.delete(assignment.requestId);
+      applyItemChange(created.id, created);
+      await syncAfterWrite(refreshItemIds([created.id]), refresh('historial', 'data-catalog'));
+      return created;
+    };
+    const previous = createRequests.current.get(assignment.requestId);
+    if (previous) {
+      if (previous.signature !== signature) throw new Error('La solicitud cambió. Vuelva a guardar los nuevos datos.');
+      return persist(previous.payload);
+    }
     return saveGallery(item, { fotoUrl: '' }, { save: saveImage, remove: removeImage }, async gallery => {
       const photo = gallery.main;
       if (isDemo) {
@@ -48,16 +66,13 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
         setDemoData(prev => ({ ...prev, elementos: [created, ...prev.elementos] }));
         return created;
       }
-      const created = mapElemento(await rpc<Record<string, unknown>>('create_inventory_item', { p_item: {
-        codigo: item.codigo, nombre: item.nombre, descripcion: item.descripcion, categoria: item.categoria,
+      return persist({
+        nombre: item.nombre, descripcion: item.descripcion, categoria: item.categoria,
         cantidad: item.cantidad, stock_minimo: item.stockMinimo, unidad: item.unidad,
         almacen_id: item.almacenId, estanteria_id: item.estanteriaId, caja_id: item.cajaId,
         foto_url: photo, estado: item.estado || 'BUENO', cantidad_danados: item.cantidadDanados || 0,
         especificaciones: { ...item.especificaciones, peso_unitario: item.pesoUnitario ?? null, fotos_adicionales: gallery.additional },
-      } }));
-      applyItemChange(created.id, created);
-      await syncAfterWrite(refreshItemIds([created.id]), refresh('historial'));
-      return created;
+      });
     });
   };
 

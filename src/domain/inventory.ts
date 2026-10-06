@@ -1,5 +1,4 @@
 import type { Elemento, Almacen, Estanteria, Caja } from '../types';
-import { categories } from './catalogs';
 import { validQuantity } from './quantity';
 import { validateWeight } from './weight';
 export const available = (item: Elemento) => item.stockPendiente ? 0 : Math.max(0, item.cantidad - (item.cantidadDanados ?? 0));
@@ -14,7 +13,7 @@ export function validateItem(item: Omit<Elemento, 'id' | 'createdAt' | 'updatedA
   almacenes: Almacen[], estanterias: Estanteria[], cajas: Caja[]) {
   if (!/^[A-Z0-9-]{3,30}$/.test(item.codigo.toUpperCase())) throw new Error('Código inválido.');
   if (!item.nombre.trim()) throw new Error('Ingrese un nombre.');
-  if (!categories.includes(item.categoria)) throw new Error('Categoría inválida.');
+  if (!item.categoria.trim()) throw new Error('Categoría inválida.');
   if (!item.unidad.trim()) throw new Error('Unidad inválida.');
   if (item.pesoUnitario) validateWeight(item.pesoUnitario);
   for (const [value, name] of [[item.cantidad, 'Stock'], [item.stockMinimo, 'Stock mínimo'], [item.cantidadDanados ?? 0, 'Material dañado']] as const) {

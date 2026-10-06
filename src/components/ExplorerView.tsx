@@ -62,7 +62,7 @@ export const ExplorerView: React.FC = () => {
   const handleCategoryToggle = (cat: CategoriaElemento) => {
     setSelectedCategories((prev) => ({
       ...prev,
-      [cat]: !prev[cat]
+      [cat]: prev[cat] === false
     }));
   };
 
@@ -90,7 +90,7 @@ export const ExplorerView: React.FC = () => {
       }
 
       // Category
-      if (!selectedCategories[item.categoria]) {
+      if (selectedCategories[item.categoria] === false) {
         return false;
       }
 

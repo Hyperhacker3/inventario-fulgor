@@ -1,20 +1,19 @@
 import { useMemo, useState } from 'react';
 import { useInventory } from '../../context/InventoryContext';
-import { categories } from '../../domain/catalogs';
 import { available } from '../../domain/inventory';
 import { ItemImage } from '../ItemImage';
 
 export function AvailableInventory() {
-  const { elementos, dispatchCart, addToDispatchCart, getLocationString, openItemDetail } = useInventory();
+  const { elementos, dispatchCart, addToDispatchCart, getLocationString, openItemDetail, categoryOptions, categoryLabel } = useInventory();
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('TODOS');
+  const [category, setCategory] = useState('__ALL__');
   const [page, setPage] = useState(1);
   const filterKey = `${search}|${category}`;
   const [pageKey, setPageKey] = useState('');
   const currentPage = pageKey === filterKey ? page : 1;
   const filtered = useMemo(() => {
     const query = search.toLowerCase().trim();
-    return elementos.filter(item => available(item) > 0 && (category === 'TODOS' || item.categoria === category)
+    return elementos.filter(item => available(item) > 0 && (category === '__ALL__' || item.categoria === category)
       && (!query || [item.codigo, item.nombre, getLocationString(item)].some(value => value.toLowerCase().includes(query))));
   }, [elementos, search, category, getLocationString]);
   const pages = Math.max(1, Math.ceil(filtered.length / 25));
@@ -26,9 +25,9 @@ export function AvailableInventory() {
       placeholder="Buscar por código, nombre o ubicación" aria-label="Buscar inventario para despacho"
       className="w-full p-2.5 rounded-lg border text-sm" />
     <div className="flex gap-2 overflow-x-auto pb-1">
-      {['TODOS', ...categories].map(value => <button key={value} type="button" onClick={() => setCategory(value)}
+      {['__ALL__', ...categoryOptions].map(value => <button key={value} type="button" onClick={() => setCategory(value)}
         className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${category === value ? 'bg-[#3e4e9e] text-white' : 'bg-[#f8fafc] border'}`}>
-        {value === 'TODOS' ? 'Todos' : value.replaceAll('_', ' ')}
+        {value === '__ALL__' ? 'Todos' : categoryLabel(value)}
       </button>)}
     </div>
     <div className="flex flex-col gap-3 max-h-[560px] overflow-y-auto">

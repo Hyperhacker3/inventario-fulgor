@@ -10,6 +10,9 @@ export interface Proyecto {
   createdAt: string;
 }
 
+export interface Categoria { id: string; nombre: string; activo: boolean }
+export interface PrefijoCodigo { id: string; prefijo: string; nombre: string; activo: boolean; ultimo: number }
+
 export interface Almacen {
   id: string;
   codigo: string; // e.g. 'BOG-01', 'MED-02'
@@ -38,7 +41,7 @@ export interface Caja {
 
 export interface Elemento {
   id: string;
-  codigo: string; // Strict AAA000 e.g. PAN001
+  codigo: string; // Prefix plus a consecutive number, e.g. PAN001 or PAN1000.
   nombre: string;
   descripcion: string;
   categoria: CategoriaElemento;
@@ -139,7 +142,8 @@ export type ActiveView =
   | 'history' 
   | 'warehouses' 
   | 'remissions'
-  | 'projects';
+  | 'projects'
+  | 'data-admin';
 
 export interface UserProfile {
   name: string;

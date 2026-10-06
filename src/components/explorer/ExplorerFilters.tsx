@@ -1,5 +1,4 @@
 import type { CategoriaElemento } from '../../types';
-import { categories } from '../../domain/catalogs';
 import { useInventory } from '../../context/InventoryContext';
 
 type StockFilter = 'todos' | 'disponible' | 'bajo' | 'agotado';
@@ -13,16 +12,16 @@ interface Props {
 }
 export function ExplorerFilters({ visible, selectedCategories, onCategory, stock, onStock,
   warehouseId, onWarehouse, onClear }: Props) {
-  const { almacenes } = useInventory();
+  const { almacenes, categoryOptions, categoryLabel } = useInventory();
   return <aside className={`w-full md:w-64 shrink-0 ${visible ? 'block' : 'hidden md:block'}`}>
     <div className="bg-white border rounded-xl p-4 sm:p-5 shadow-xs space-y-5">
       <div className="flex justify-between items-center border-b pb-2"><h3 className="font-bold">Filtros</h3>
         <button id="btn-clear-filters" type="button" onClick={onClear} className="text-[#3e4e9e] text-xs font-semibold">Limpiar</button></div>
       <fieldset><legend className="text-xs font-bold text-[#454651] uppercase mb-2">Categoría</legend>
         <div className="grid grid-cols-2 md:grid-cols-1 gap-2">
-          {categories.map(category => <label key={category} className="flex items-center gap-2 text-xs cursor-pointer">
-            <input type="checkbox" checked={selectedCategories[category]} onChange={() => onCategory(category)} />
-            {category.replaceAll('_', ' ')}
+          {categoryOptions.map(category => <label key={category} className="flex items-center gap-2 text-xs cursor-pointer">
+            <input type="checkbox" checked={selectedCategories[category] !== false} onChange={() => onCategory(category)} />
+            {categoryLabel(category)}
           </label>)}
         </div>
       </fieldset>

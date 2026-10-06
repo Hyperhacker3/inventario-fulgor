@@ -13,7 +13,7 @@ import { ActiveView } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { isDemo } from './lib/supabase';
-const ProjectsView = lazy(() => import('./components/ProjectsView').then(m => ({ default: m.ProjectsView })));
+const DataAdministrationView = lazy(() => import('./components/DataAdministrationView').then(m => ({ default: m.DataAdministrationView })));
 const DispatchQuantityModal = lazy(() => import('./components/dispatch/DispatchQuantityModal').then(m => ({ default: m.DispatchQuantityModal })));
 const DashboardView = lazy(() => import('./components/DashboardView').then(m => ({ default: m.DashboardView })));
 const ExplorerView = lazy(() => import('./components/ExplorerView').then(m => ({ default: m.ExplorerView })));
@@ -62,7 +62,9 @@ const MainLayout: React.FC = () => {
       case 'warehouses':
         return <WarehouseView />;
       case 'projects':
-        return <ProjectsView />;
+        return <DataAdministrationView initialTab="projects" />;
+      case 'data-admin':
+        return <DataAdministrationView />;
       case 'remissions':
         return <RemissionView />;
       default:

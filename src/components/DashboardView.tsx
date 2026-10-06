@@ -6,7 +6,7 @@ import { InventoryBars, StockChart } from './dashboard/InventoryCharts';
 
 const number = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 3 });
 export function DashboardView() {
-  const { elementos, almacenes, historial, setActiveView, openItemDetail, getLocationString, syncStatus } = useInventory();
+  const { elementos, almacenes, historial, setActiveView, openItemDetail, getLocationString, syncStatus, categoryLabel } = useInventory();
   const [warehouse, setWarehouse] = useState('ALL');
   const items = useMemo(() => elementos.filter(item => warehouse === 'ALL' || (warehouse === 'NONE' ? !item.almacenId : item.almacenId === warehouse)), [elementos, warehouse]);
   const summary = useMemo(() => summarizeInventory(items, almacenes), [items, almacenes]);
@@ -35,7 +35,7 @@ export function DashboardView() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{metrics.map(metric => <section key={metric.label} className="bg-white border border-[#e2e8f0] rounded-xl p-4">
         <h3 className="text-xs font-semibold text-slate-600">{metric.label}</h3><p className={`text-3xl font-bold mt-2 ${metric.color}`}>{number.format(metric.value)}</p><p className="text-[11px] text-slate-500 mt-2">{metric.hint}</p>
       </section>)}</div>
-      <div className="grid lg:grid-cols-2 gap-5"><StockChart statuses={summary.statuses} total={summary.total} /><InventoryBars title="Productos por categoría" description="Cantidad de referencias distintas, independientemente de sus unidades." rows={summary.categories} /></div>
+      <div className="grid lg:grid-cols-2 gap-5"><StockChart statuses={summary.statuses} total={summary.total} /><InventoryBars title="Productos por categoría" description="Cantidad de referencias distintas, independientemente de sus unidades." rows={summary.categories.map(row => ({ ...row, label: categoryLabel(row.id) }))} /></div>
       <div className="grid lg:grid-cols-2 gap-5">
         <InventoryBars title="Distribución por almacén" description="Productos asignados a cada almacén dentro del alcance seleccionado." rows={summary.warehouses} />
         <section className="bg-white border border-[#e2e8f0] rounded-2xl p-5">

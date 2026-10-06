@@ -4,7 +4,7 @@ import type { Proyecto } from '../types';
 import type { ProjectInput } from '../state/useProjectActions';
 
 const empty: ProjectInput = { nombre: '', cliente: '', ubicacion: '', estado: 'ACTIVO' };
-export function ProjectsView() {
+export function ProjectsView({ embedded = false }: { embedded?: boolean }) {
   const { proyectos, user, addProyecto, updateProyecto, addExampleProjects, syncStatus } = useInventory();
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState<ProjectInput>(empty);
@@ -26,7 +26,7 @@ export function ProjectsView() {
     }, 'Proyecto guardado en Supabase.');
   };
   const edit = (project: Proyecto) => { setEditing(project.id); setForm(project); setError(''); setMessage(''); };
-  return <div className="p-4 md:p-8 w-full max-w-6xl mx-auto space-y-6">
+  return <div className={embedded ? 'space-y-6' : 'p-4 md:p-8 w-full max-w-6xl mx-auto space-y-6'}>
     <div><h2 className="text-3xl font-bold">Proyectos</h2><p className="text-slate-600 mt-2">Destinos para los despachos. Al quitar un proyecto, se conserva el historial y puede reactivarse.</p></div>
     {error && <p role="alert" className="text-red-700">{error}</p>}
     {message && <p role="status" className="text-green-700">{message}</p>}

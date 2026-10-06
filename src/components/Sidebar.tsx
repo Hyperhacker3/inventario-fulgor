@@ -16,7 +16,7 @@ export const Sidebar: React.FC = () => {
     ...(canAdmin ? [{ id: 'new-item' as ActiveView, label: 'Nuevo Item', icon: 'add_box' }] : []),
     ...(canOperate ? [{ id: 'dispatch' as ActiveView, label: 'Despacho', icon: 'shopping_cart_checkout', badge: dispatchCart.length }] : []),
     { id: 'history', label: 'Historial', icon: 'history' },
-    { id: 'projects', label: 'Proyectos', icon: 'folder_open' },
+    { id: 'data-admin', label: 'Administración de datos', icon: 'settings' },
     { id: 'warehouses', label: 'Almacenes', icon: 'warehouse' },
     { id: 'remissions', label: 'Remisiones', icon: 'picture_as_pdf' },
   ];
@@ -41,7 +41,7 @@ export const Sidebar: React.FC = () => {
       {/* Navigation Links */}
       <nav className="flex-1 flex flex-col gap-1 overflow-y-auto pr-1">
         {navItems.map((item) => {
-          const isActive = activeView === item.id;
+          const isActive = activeView === item.id || item.id === 'data-admin' && activeView === 'projects';
           return (
             <button
               key={item.id}

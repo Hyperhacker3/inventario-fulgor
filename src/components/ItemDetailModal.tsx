@@ -15,7 +15,7 @@ interface Props { item: Elemento | null; onClose: () => void }
 
 export function ItemDetailModal({ item, onClose }: Props) {
   const { user, getLocationString, openQuickMovement, addToDispatchCart,
-    updateElemento, deleteElemento } = useInventory();
+    updateElemento, deleteElemento, categoryLabel } = useInventory();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(item?.nombre || '');
   const [description, setDescription] = useState(item?.descripcion || '');
@@ -73,7 +73,7 @@ export function ItemDetailModal({ item, onClose }: Props) {
       className="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] shadow-2xl border flex flex-col overflow-hidden">
       <header className="px-6 py-4 border-b flex items-center justify-between bg-[#f8fafc]">
         <div><span className="font-mono-code font-bold text-[#253685]">{item.codigo}</span>
-          <span className="ml-3 text-xs text-[#64748b]">{item.categoria}</span></div>
+          <span className="ml-3 text-xs text-[#64748b]">{categoryLabel(item.categoria)}</span></div>
         <button ref={closeButton} type="button" onClick={onClose} aria-label="Cerrar detalle" className="text-2xl text-[#64748b]">×</button>
       </header>
       <div className="flex-1 overflow-y-auto p-6 space-y-6">

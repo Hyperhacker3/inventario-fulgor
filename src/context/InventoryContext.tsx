@@ -1,4 +1,7 @@
 import { useProjectActions } from '../state/useProjectActions';
+import { useDataAdministration } from '../state/useDataAdministration';
+import { categoryChoices } from '../domain/dataAdministration';
+import { categories } from '../domain/catalogs';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useInventoryData } from '../state/useInventoryData';
@@ -22,6 +25,10 @@ function loadCart(key: string): CartLine[] {
 function useInventoryValue() {
   const { user } = useAuth();
   const data = useInventoryData();
+  const catalogs = useDataAdministration();
+  const categoryOptions = useMemo(() => categoryChoices(catalogs.categorias,
+    [...categories, ...data.elementos.map(item => item.categoria)]), [catalogs.categorias, data.elementos]);
+  const categoryLabel = (id: string) => catalogs.categorias.find(category => category.id === id)?.nombre || id.replaceAll('_', ' ');
   const [globalSearch, setGlobalSearch] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [selectedRemisionForPdf, setSelectedRemisionForPdf] = useState<Remision | null>(null);
@@ -117,7 +124,7 @@ function useInventoryValue() {
     openPdfRemision, closePdfRemision, openQuickMovement, closeQuickMovement, setIsHelpModalOpen,
     addToDispatchCart, updateDispatchCartQuantity, removeFromDispatchCart, clearDispatchCart,
     getAlmacenById, getEstanteriaById, getCajaById, getProyectoById, getLocationString,
-    resetToDefaultData, ...actions, ...projectActions,
+    resetToDefaultData, ...actions, ...projectActions, ...catalogs, categoryOptions, categoryLabel,
   };
 }
 

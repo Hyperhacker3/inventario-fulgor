@@ -9,6 +9,7 @@ const baseSql = fs.readFileSync(new URL('../../supabase_schema.sql', import.meta
 const migration = fs.readFileSync(new URL('../../supabase/migrations/20261001_secure_inventory.sql', import.meta.url), 'utf8');
 const transportMigration = fs.readFileSync(new URL('../../supabase/migrations/20261005_remission_transport.sql', import.meta.url), 'utf8');
 const unitWeightMigration = fs.readFileSync(new URL('../../supabase/migrations/20261005000100_unit_weights.sql', import.meta.url), 'utf8');
+const catalogMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000100_data_administration.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 
@@ -26,12 +27,91 @@ async function database() {
   await db.exec(transportMigration);
   await db.exec(unitWeightMigration);
   await db.exec(demoSeed);
+  await db.exec(catalogMigration);
   return db;
 }
 
 const role = (db, value) => db.exec(`SELECT set_config('app.test_role','${value}',false); SET ROLE authenticated;`);
 const asOwner = db => db.exec('RESET ROLE;');
 const itemStock = async db => Number((await db.query("SELECT cantidad FROM public.elementos WHERE id = 'ELM-001'")).rows[0].cantidad);
+
+test('data catalogs preserve inventory, enforce permissions and support editable names and prefixes', async () => {
+  const db = await database();
+  try {
+    const before = (await db.query('SELECT id,codigo,categoria,cantidad FROM public.elementos ORDER BY id')).rows;
+    await db.exec(catalogMigration);
+    assert.deepEqual((await db.query('SELECT id,codigo,categoria,cantidad FROM public.elementos ORDER BY id')).rows, before);
+    await role(db, 'consulta');
+    const catalog = (await db.query('SELECT public.inventory_data_catalog() AS data')).rows[0].data;
+    assert.equal(catalog.prefijos.find(row => row.prefijo === 'PAN').ultimo, 550);
+    const save = 'SELECT public.save_inventory_catalog_entry($1,$2::jsonb) AS data';
+    const category = { clave:'FERRETERIA',nombre:'Ferretería',activo:true };
+    await assert.rejects(() => db.query(save,['categoria',JSON.stringify(category)]), /No autorizado/);
+    await assert.rejects(() => db.query('SELECT * FROM public.inventario_altas'), /permission denied/);
+    await asOwner(db); await role(db,'admin');
+    const created = (await db.query(save,['categoria',JSON.stringify(category)])).rows[0].data;
+    assert.equal(created.categorias.find(row => row.id === 'FERRETERIA').nombre,'Ferretería');
+    await db.query(save,['categoria',JSON.stringify({id:'FERRETERIA',nombre:'Material de ferretería',activo:false})]);
+    await db.query(save,['prefijo',JSON.stringify({prefijo:'ABC',nombre:'Accesorios',activo:true})]);
+    const id = (await db.query('SELECT public.inventory_data_catalog() AS data')).rows[0].data.prefijos.find(row => row.prefijo === 'ABC').id;
+    await db.query(save,['prefijo',JSON.stringify({id,prefijo:'XYZ',nombre:'Accesorios varios',activo:false})]);
+    await assert.rejects(() => db.query(save,['prefijo',JSON.stringify({prefijo:'AB',nombre:'Inválido'})]), /tres letras/);
+    await asOwner(db); await db.exec(catalogMigration); await role(db,'admin');
+    const updated = (await db.query('SELECT public.inventory_data_catalog() AS data')).rows[0].data;
+    assert.equal(updated.categorias.find(row => row.id === 'FERRETERIA').activo,false);
+    assert.equal(updated.prefijos.find(row => row.id === id).prefijo,'XYZ');
+    assert.deepEqual((await db.query('SELECT id,codigo,categoria,cantidad FROM public.elementos ORDER BY id')).rows, before);
+    await asOwner(db); await db.exec('SET ROLE anon');
+    await assert.rejects(() => db.query('SELECT public.inventory_data_catalog()'), /permission denied/);
+  } finally { await db.close(); }
+});
+
+test('automatic item codes include archived numbers, grow past 999 and retry without duplicating stock', async () => {
+  const db = await database();
+  try {
+    await role(db,'admin');
+    const save = 'SELECT public.save_inventory_catalog_entry($1,$2::jsonb) AS data';
+    const catalog = (await db.query('SELECT public.inventory_data_catalog() AS data')).rows[0].data;
+    const prefix = catalog.prefijos.find(row => row.prefijo === 'PAN');
+    const item = { codigo:'FORGED999',nombre:'Elemento de prueba',categoria:'PANELES',cantidad:4,stock_minimo:0,unidad:'UND' };
+    const sql = 'SELECT public.create_inventory_item_auto($1,$2::uuid,$3::jsonb) AS item';
+    const args = [prefix.id,'11000000-0000-0000-0000-000000000001',JSON.stringify(item)];
+    const first = (await db.query(sql,args)).rows[0].item;
+    assert.equal(first.codigo,'PAN551');
+    assert.equal((await db.query(sql,args)).rows[0].item.id,first.id);
+    assert.equal(Number((await db.query('SELECT count(*) AS n FROM public.historial WHERE elemento_id=$1',[first.id])).rows[0].n),1);
+    await db.query('UPDATE public.elementos SET archived=true WHERE id=$1',[first.id]);
+    args[1]='11000000-0000-0000-0000-000000000002';
+    assert.equal((await db.query(sql,args)).rows[0].item.codigo,'PAN552');
+    args[2]=JSON.stringify({...item,nombre:'Otro contenido'});
+    await assert.rejects(() => db.query(sql,args), /otro contenido o usuario/);
+    // A legacy client can insert a higher number; automatic creation still reads that maximum.
+    await db.query('SELECT public.create_inventory_item($1::jsonb)',[JSON.stringify({...item,codigo:'PAN999'})]);
+    args[1]='11000000-0000-0000-0000-000000000003'; args[2]=JSON.stringify(item);
+    assert.equal((await db.query(sql,args)).rows[0].item.codigo,'PAN1000');
+    args[1]='11000000-0000-0000-0000-000000000004'; args[2]=JSON.stringify({...item,categoria:'NO_REGISTRADA'});
+    await assert.rejects(() => db.query(sql,args), /incompletos/);
+    assert.equal((await db.query('SELECT public.inventory_data_catalog() AS data')).rows[0].data.prefijos.find(row=>row.id===prefix.id).ultimo,1000);
+    await db.query(save,['categoria',JSON.stringify({clave:'FERRETERIA',nombre:'Ferretería'})]);
+    args[2]=JSON.stringify({...item,categoria:'FERRETERIA'});
+    const custom = (await db.query(sql,args)).rows[0].item;
+    assert.equal(custom.codigo,'PAN1001'); assert.equal(custom.categoria,'FERRETERIA');
+    await db.query(save,['prefijo',JSON.stringify({id:prefix.id,prefijo:'NUE',nombre:'Nuevo',activo:true})]);
+    args[1]='11000000-0000-0000-0000-000000000005';
+    assert.equal((await db.query(sql,args)).rows[0].item.codigo,'NUE1002');
+    assert.equal((await db.query('SELECT codigo FROM public.elementos WHERE id=$1',[first.id])).rows[0].codigo,'PAN551');
+    const parallel = await Promise.all([
+      db.query(sql,[prefix.id,'11000000-0000-0000-0000-000000000006',args[2]]),
+      db.query(sql,[prefix.id,'11000000-0000-0000-0000-000000000007',args[2]]),
+    ]);
+    assert.deepEqual(parallel.map(result=>result.rows[0].item.codigo).sort(),['NUE1003','NUE1004']);
+    await db.query(save,['prefijo',JSON.stringify({id:prefix.id,prefijo:'NUE',nombre:'Nuevo',activo:false})]);
+    args[1]='11000000-0000-0000-0000-000000000008';
+    await assert.rejects(() => db.query(sql,args),/prefijo activo/);
+    await asOwner(db); await role(db,'operador');
+    await assert.rejects(() => db.query(sql,args),/No autorizado/);
+  } finally { await db.close(); }
+});
 
 test('unit weights calculate from the locked catalog, preserve snapshots and ignore forged totals', async () => {
   const db = await database();

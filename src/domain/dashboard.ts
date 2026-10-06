@@ -39,7 +39,7 @@ export function summarizeInventory(items: Elemento[], warehouses: Almacen[]) {
   const rank: Record<StockStatus, number> = { 'Pendiente de conteo': 0, 'Sin disponibilidad': 1, 'Stock bajo': 2, Disponible: 3 };
   return {
     total: active.length, statuses, damagedProducts, withoutMinimum, withoutRack, withoutBox,
-    categories: sorted(categories).map(([label, value]) => ({ label: label.replaceAll('_', ' '), value })),
+    categories: sorted(categories).map(([label, value]) => ({ id: label, label: label.replaceAll('_', ' '), value })),
     warehouses: sorted(locations).map(([id, value]) => ({ label: id ? names.get(id) || 'Almacén no identificado' : 'Sin almacén', value })),
     units: [...units].sort(([a], [b]) => a.localeCompare(b)).map(([unit, balance]) => ({ unit,
       recorded: roundQuantity(balance.recorded), available: roundQuantity(balance.available), damaged: roundQuantity(balance.damaged) })),

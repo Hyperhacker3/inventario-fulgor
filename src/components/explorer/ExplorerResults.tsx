@@ -7,7 +7,7 @@ import { itemPhotos } from '../../domain/photos';
 import { formatUnitWeight } from '../../domain/weight';
 
 export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'grid' | 'list' }) {
-  const { getAlmacenById, getEstanteriaById, getLocationString, openItemDetail, addToDispatchCart, user } = useInventory();
+  const { getAlmacenById, getEstanteriaById, getLocationString, openItemDetail, addToDispatchCart, user, categoryLabel } = useInventory();
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
   // Stock Badge renderer
   const renderStockBadge = (item: Elemento) => {
@@ -108,7 +108,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className="material-symbols-outlined text-[15px] text-[#767682] shrink-0">category</span>
-                          <span>{item.categoria}</span>
+                          <span>{categoryLabel(item.categoria)}</span>
                         </div>
                       </div>
 
@@ -174,7 +174,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                             <div className="min-w-0">
                               <button type="button" onClick={() => openItemDetail(item)} title={item.nombre} className="block max-w-full text-left font-semibold text-[#131b2e] leading-snug truncate hover:text-[#3e4e9e] hover:underline">{item.nombre}</button>
                               <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-[#767682]">
-                                <span>{item.categoria}</span>
+                                <span>{categoryLabel(item.categoria)}</span>
                                 <span className={item.pesoUnitario ? 'text-slate-500' : 'text-amber-700'}>{formatUnitWeight(item.pesoUnitario)}{item.pesoUnitario ? ` / ${item.unidad}` : ''}</span>
                                 {(item.cantidadDanados || 0) > 0 && (
                                   <span className="text-[10px] font-bold text-[#c5221f] bg-[#fce8e6] px-1 py-0.2 rounded">
@@ -190,7 +190,7 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                             </div>
                           </div>
                         </td>
-                        <td className="p-2.5 sm:p-3 text-xs text-[#454651] hidden sm:table-cell">{item.categoria}</td>
+                        <td className="p-2.5 sm:p-3 text-xs text-[#454651] hidden sm:table-cell">{categoryLabel(item.categoria)}</td>
                         <td className="p-2.5 sm:p-3 text-xs text-[#454651] hidden md:table-cell">{getLocationString(item)}</td>
                         <td className="p-2.5 sm:p-3 text-right font-mono-code font-bold whitespace-nowrap">
                           <span

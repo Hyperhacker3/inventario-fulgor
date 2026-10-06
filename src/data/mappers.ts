@@ -1,7 +1,7 @@
 import { mapTransport } from '../domain/remissionTransport';
 import { mapWeight } from '../domain/weight';
 import type { Almacen, Caja, Elemento, Estanteria, HistorialMovimiento, Proyecto, Remision, DetalleRemision, TipoMovimiento } from '../types';
-import { categories, normalizeUnit } from '../domain/catalogs';
+import { normalizeUnit } from '../domain/catalogs';
 import { displayDate, displayTime } from '../shared/dates';
 import { uniquePhotos } from '../domain/photos';
 
@@ -34,7 +34,7 @@ export const mapElemento = (row: DbRow): Elemento => {
   const specs = object(row.especificaciones);
   return {
     id: str(row.id), codigo: str(row.codigo), nombre: str(row.nombre), descripcion: str(row.descripcion),
-    categoria: categories.find(category => category === row.categoria) || 'OTROS',
+    categoria: String(row.categoria || 'OTROS'),
     cantidad: numeric(row.cantidad), unidad: normalizeUnit(str(row.unidad, 'und')),
     pesoUnitario: mapWeight(specs.peso_unitario),
     fotoUrl: str(row.foto_url), almacenId: id(row.almacen_id), estanteriaId: id(row.estanteria_id), cajaId: id(row.caja_id),

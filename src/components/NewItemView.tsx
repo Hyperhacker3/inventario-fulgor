@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { CategoriaElemento } from '../types';
 import { ItemPhotoPicker } from './ItemPhotoPicker';
@@ -8,6 +8,7 @@ import { errorMessage } from '../shared/errors';
 import { NumberInput } from './NumberInput';
 import { ItemWeightFields } from './item/ItemWeightFields';
 import { parseWeightDraft, weightDraft } from '../domain/weight';
+import { prefixPreview } from '../domain/dataAdministration';
 
 export const NewItemView: React.FC = () => {
   const {
@@ -16,13 +17,16 @@ export const NewItemView: React.FC = () => {
     cajas,
     addElemento,
     setActiveView,
-    openItemDetail
+    openItemDetail, prefijos, categorias, elementos, catalogReady, catalogLoading, refreshCatalog, categoryLabel
   } = useInventory();
 
   // Form State
-  const [codigo, setCodigo] = useState('');
+  const [prefixId, setPrefixId] = useState('');
+  const request = useRef<{ signature: string; id: string } | null>(null);
+  const selectedPrefix = prefijos.find(prefix => prefix.id === prefixId && prefix.activo);
+  const codigo = selectedPrefix ? prefixPreview(selectedPrefix, elementos.map(item => item.codigo)) : '';
   const [nombre, setNombre] = useState('');
-  const [categoria, setCategoria] = useState<CategoriaElemento>('PANELES');
+  const [categoria, setCategoria] = useState<CategoriaElemento>('');
   const [descripcion, setDescripcion] = useState('');
   const [almacenId, setAlmacenId] = useState<string>(almacenes[0]?.id || '');
   const [estanteriaId, setEstanteriaId] = useState<string>('');
@@ -53,21 +57,15 @@ export const NewItemView: React.FC = () => {
   }, [cajas, selectedEstanteriaId]);
   const selectedCajaId = availableCajas.some(c => c.id === cajaId) ? cajaId : '';
 
-  // Code validation: Alphanumeric standard e.g. PAN550, MC4100, CAB600
-  const isCodeValid = useMemo(() => {
-    const regex = /^[A-Z0-9-]{3,30}$/;
-    return regex.test(codigo.trim().toUpperCase());
-  }, [codigo]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (pending || photoBusy) return;
     setFeedback(null);
 
-    if (!isCodeValid) {
+    if (!catalogReady || !selectedPrefix || !categorias.some(row => row.id === categoria && row.activo)) {
       setFeedback({
         type: 'error',
-        message: 'El código debe tener un formato alfanumérico válido (ej. PAN550, MC4100, CAB600).'
+        message: 'Seleccione un prefijo y una categoría activos en Administración de datos.'
       });
       return;
     }
@@ -79,7 +77,7 @@ export const NewItemView: React.FC = () => {
 
     try {
       setPending(true);
-      const created = await addElemento({
+      const input = {
         codigo: codigo.trim().toUpperCase(),
         nombre: nombre.trim(),
         descripcion: descripcion.trim(),
@@ -95,7 +93,11 @@ export const NewItemView: React.FC = () => {
         stockMinimo: Number(stockMinimo),
         estado,
         cantidadDanados: Number(cantidadDanados)
-      });
+      };
+      // The preview can change after a refresh; it is not part of request identity.
+      const signature = JSON.stringify({ ...input, codigo: '', prefixId });
+      if (request.current?.signature !== signature) request.current = { signature, id: crypto.randomUUID() };
+      const created = await addElemento(input, { prefixId, requestId: request.current.id });
 
       setFeedback({
         type: 'success',
@@ -139,43 +141,28 @@ export const NewItemView: React.FC = () => {
       )}
 
       {/* Main Form */}
+      {!catalogReady && <div className="border bg-white rounded-xl p-4 mb-5 text-sm space-y-2">
+        <p>{catalogLoading ? 'Cargando códigos y categorías…' : 'Active la migración de administración de datos en Supabase para registrar productos con código automático.'}</p>
+        <button type="button" className="text-[#253685] underline" onClick={() => { void refreshCatalog(); }}>Comprobar de nuevo</button>
+      </div>}
       <form onSubmit={handleSubmit} className="bg-white border border-[#e2e8f0] rounded-2xl p-6 md:p-8 shadow-xs flex flex-col gap-6">
+        <fieldset disabled={pending || feedback?.type === 'success'} className="contents">
         {/* Row 1: Code and Name */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <div>
             <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-2">
-              CÓDIGO (FORMATO AAA000) <span className="text-[#dd4c42]">*</span>
+              PREFIJO DEL CÓDIGO <span className="text-[#dd4c42]">*</span>
             </label>
             <div className="relative">
-              <input
-                id="input-codigo"
-                type="text"
-                maxLength={6}
-                value={codigo}
-                onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-                placeholder="ej. PAN001, INV003"
-                className={`w-full px-3.5 py-2.5 rounded-lg border font-mono-code font-bold uppercase tracking-wider text-sm transition-colors focus:outline-hidden ${
-                  codigo.length === 0
-                    ? 'border-[#e2e8f0] focus:border-[#3e4e9e]'
-                    : isCodeValid
-                    ? 'border-[#10b981] bg-[#e6f4ea]/20 text-[#137333]'
-                    : 'border-[#dd4c42] bg-[#fce8e6]/20 text-[#c5221f]'
-                }`}
-                required
-              />
-              {codigo.length > 0 && (
-                <span className="absolute right-3 top-2.5">
-                  {isCodeValid ? (
-                    <span className="material-symbols-outlined text-[#10b981] text-[18px]">check_circle</span>
-                  ) : (
-                    <span className="material-symbols-outlined text-[#dd4c42] text-[18px]">error</span>
-                  )}
-                </span>
-              )}
+              <select id="select-prefijo" required value={prefixId} onChange={event => setPrefixId(event.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-lg border bg-white text-sm">
+                <option value="">Seleccione un prefijo</option>{prefijos.filter(row => row.activo).map(row => <option key={row.id} value={row.id}>{row.prefijo} · {row.nombre}</option>)}
+              </select>
             </div>
             <span className="text-[11px] text-[#767682] mt-1 block">
-              Formato alfanumérico estándar (ej. PAN550, MC4100, CAB600).
+              {codigo ? `Código estimado: ${codigo}. El definitivo se asigna al guardar.` : 'El número se asigna automáticamente en Supabase.'}
             </span>
+            <button type="button" className="text-xs text-[#253685] underline mt-2" onClick={() => setActiveView('data-admin')}>Administrar códigos y categorías</button>
           </div>
 
           <div className="md:col-span-2">
@@ -198,22 +185,17 @@ export const NewItemView: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <div>
             <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-2">
-              CATEGORÍA FOTOVOLTAICA <span className="text-[#dd4c42]">*</span>
+              CATEGORÍA <span className="text-[#dd4c42]">*</span>
             </label>
             <select
               id="select-categoria"
+              required
               value={categoria}
               onChange={(e) => setCategoria(e.target.value as CategoriaElemento)}
               className="w-full px-3.5 py-2.5 rounded-lg border border-[#e2e8f0] bg-white text-sm focus:outline-hidden focus:ring-2 focus:ring-[#3e4e9e] text-[#131b2e] cursor-pointer"
             >
-              <option value="PANELES">Paneles Solares (FV)</option>
-              <option value="INVERSORES">Inversores y Microinversores</option>
-              <option value="ESTRUCTURAS">Estructuras y Rieles de Montaje</option>
-              <option value="CABLES">Cables Solares DC / AC</option>
-              <option value="CONECTORES">Conectores MC4</option>
-              <option value="PROTECCIONES">Protecciones y Fusibles</option>
-              <option value="BATERIAS">Baterías y Almacenamiento</option>
-              <option value="OTROS">Otros Accesorios</option>
+              <option value="">Seleccione una categoría</option>
+              {categorias.filter(row => row.activo).map(row => <option key={row.id} value={row.id}>{categoryLabel(row.id)}</option>)}
             </select>
           </div>
 
@@ -288,13 +270,14 @@ export const NewItemView: React.FC = () => {
           <button
             type="submit"
             id="btn-submit-component"
-            disabled={pending || photoBusy}
+            disabled={pending || photoBusy || !catalogReady || !selectedPrefix}
             className="px-6 py-2.5 rounded-lg bg-[#3e4e9e] text-white text-sm font-bold hover:bg-[#323f80] active:scale-[0.98] transition-all shadow-sm flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-[18px]">save</span>
             <span>{pending ? 'Guardando…' : 'Guardar Componente'}</span>
           </button>
         </div>
+        </fieldset>
       </form>
 
     </div>
