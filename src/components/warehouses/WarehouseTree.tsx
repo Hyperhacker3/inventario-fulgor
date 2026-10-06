@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import type { Almacen, Estanteria, Caja, Elemento } from '../../types';
 import { useInventory } from '../../context/InventoryContext';
+import { inventoryLocationValues } from '../../domain/money';
+import { LocationValueSummary, locationValueHint } from './LocationValueSummary';
 
 interface Props {
   almacen: Almacen; estanterias: Estanteria[]; cajas: Caja[]; elementos: Elemento[];
@@ -8,8 +10,12 @@ interface Props {
   onEditWarehouse: () => void; onNewRack: () => void; onEditRack: (id: string) => void;
   onNewBox: (rackId: string) => void; onEditBox: (id: string) => void;
 }
-export function WarehouseTree({ almacen, estanterias, cajas, elementos, canAdmin, onEditWarehouse, onNewRack, onEditRack, onNewBox, onEditBox }: Props) {
+export function WarehouseTree(props: Props) {
   const { openItemDetail } = useInventory();
+  return <WarehouseTreeContent {...props} openItemDetail={openItemDetail} />;
+}
+export function WarehouseTreeContent({ almacen, estanterias, cajas, elementos, canAdmin, onEditWarehouse, onNewRack, onEditRack, onNewBox, onEditBox, openItemDetail }: Props & { openItemDetail: (item: Elemento) => void }) {
+  const values = useMemo(() => inventoryLocationValues(elementos), [elementos]);
   const rackItems = useMemo(() => {
     const result = new Map<string, Elemento[]>();
     for (const item of elementos) if (item.almacenId === almacen.id && item.estanteriaId) {
@@ -38,6 +44,8 @@ export function WarehouseTree({ almacen, estanterias, cajas, elementos, canAdmin
       <div><h3 className="text-xl font-bold">{almacen.nombre}</h3><p className="text-sm text-[#767682]">{almacen.codigo} · {almacen.ciudad} · {almacen.estado}</p></div>
       {canAdmin && <div className="responsive-actions w-full sm:w-auto"><button className="border rounded-lg px-3 py-2 text-sm" onClick={onEditWarehouse}>Editar almacén</button>
         <button className="bg-[#3e4e9e] text-white rounded-lg px-3 py-2 text-sm" onClick={onNewRack}>Nueva estantería</button></div>}
+      <LocationValueSummary values={values.warehouses.get(almacen.id)} prominent />
+      <p className="text-xs text-slate-500 w-full">{locationValueHint}</p>
     </div>
     {racks.map(rack => {
       const rackBoxes = boxesByRack.get(rack.id) || [];
@@ -47,11 +55,13 @@ export function WarehouseTree({ almacen, estanterias, cajas, elementos, canAdmin
           <p className="text-xs text-[#767682]">{rack.codigo} · {items.length} artículos · {rackBoxes.length} cajas</p></div>
           {canAdmin && <div className="responsive-actions w-full sm:w-auto"><button onClick={() => onEditRack(rack.id)} className="border rounded-lg px-2 py-1 text-xs">Editar</button>
             <button onClick={() => onNewBox(rack.id)} className="border rounded-lg px-2 py-1 text-xs">Añadir caja</button></div>}</div>
+        <LocationValueSummary values={values.racks.get(rack.id)} />
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
-          {rackBoxes.map(box => <div key={box.id} className="border rounded-xl p-3 bg-[#f8fafc]">
+          {rackBoxes.map(box => <div key={box.id} className="min-w-0 border rounded-xl p-3 bg-[#f8fafc]">
             <div className="flex flex-wrap justify-between gap-2"><div className="font-bold text-sm">{box.codigoCaja}</div>
               {canAdmin && <button onClick={() => onEditBox(box.id)} className="text-xs text-[#253685]">Editar</button>}</div>
             <p className="text-xs text-[#767682]">{box.estado}</p>
+            <LocationValueSummary values={values.boxes.get(box.id)} />
             {(byBox.get(box.id) || []).map(item => <button key={item.id} onClick={() => openItemDetail(item)}
               className="block break-words text-left text-xs mt-2 hover:underline">{item.codigo} · {item.nombre} ({item.cantidad} {item.unidad})</button>)}
           </div>)}

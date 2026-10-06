@@ -2,7 +2,9 @@ import { Children, Fragment, isValidElement, useCallback, useEffect, useId, useR
 import { createPortal } from 'react-dom';
 import { Presence, useMotionActive } from './Motion';
 
-type Props = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'multiple' | 'size' | 'defaultValue'>;
+type Props = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'multiple' | 'size' | 'defaultValue'> & {
+  optionIcons?: Readonly<Record<string, string>>;
+};
 interface Choice { value: string; label: string; disabled: boolean }
 function text(node: ReactNode): string {
   return Children.toArray(node).map(child => isValidElement<{ children?: ReactNode }>(child) ? text(child.props.children) : String(child)).join('');
@@ -17,13 +19,14 @@ function choices(node: ReactNode): Choice[] {
 }
 
 /** Styled select-only combobox. The hidden select preserves form validation and change events. */
-export function Select({ children, className = '', id, style, onChange, onInvalid, ...props }: Props) {
+export function Select({ children, className = '', id, style, onChange, onInvalid, optionIcons, ...props }: Props) {
   const generated = useId();
   const controlId = id || `select-${generated}`;
   const listId = `${controlId}-options`;
   const options = choices(children);
   const value = String(props.value ?? '');
   const selected = options.findIndex(option => option.value === value);
+  const selectedOption = options[selected] || options[0];
   const trigger = useRef<HTMLButtonElement>(null);
   const native = useRef<HTMLSelectElement>(null);
   const popup = useRef<HTMLDivElement>(null);
@@ -125,7 +128,10 @@ export function Select({ children, className = '', id, style, onChange, onInvali
       aria-describedby={props['aria-describedby']} aria-required={props.required || undefined} aria-invalid={invalid || props['aria-invalid']}
       disabled={props.disabled} title={props.title} style={style} className={`app-select-trigger ${className}`} onKeyDown={keyboard}
       onBlur={() => setOpen(false)} onClick={() => { if (expanded) setOpen(false); else show(); }}>
-      <span className="app-select-value">{options[selected]?.label || options[0]?.label || 'Seleccione una opción'}</span><span className="app-select-chevron" aria-hidden="true" />
+      <span className="app-select-value inline-flex items-center gap-2 min-w-0">
+        {selectedOption && optionIcons?.[selectedOption.value] && <span className="material-symbols-outlined text-xl shrink-0" aria-hidden="true">{optionIcons[selectedOption.value]}</span>}
+        <span>{selectedOption?.label || 'Seleccione una opción'}</span>
+      </span><span className="app-select-chevron" aria-hidden="true" />
     </button>
     <select {...props} id={`${controlId}-value`} ref={native} tabIndex={-1} aria-hidden="true" className="select-form-value" onChange={onChange}
       onInvalid={event => { event.preventDefault(); setInvalid(true); trigger.current?.focus({ preventScroll: true }); onInvalid?.(event); }}>{children}</select>
@@ -134,7 +140,10 @@ export function Select({ children, className = '', id, style, onChange, onInvali
       {options.map((option, index) => <button type="button" role="option" tabIndex={-1} key={`${index}:${option.value}`} id={`${listId}-${index}`} data-index={index}
         data-value={option.value} data-highlighted={highlight === index} aria-selected={value === option.value} disabled={option.disabled}
         className="app-select-option" onPointerMove={() => { if (!option.disabled) setHighlight(index); }} onClick={() => choose(index)}>
-        <span>{option.label}</span>{value === option.value && <span aria-hidden="true">✓</span>}
+        <span className="inline-flex items-center gap-2 min-w-0">
+          {optionIcons?.[option.value] && <span className="material-symbols-outlined text-xl shrink-0" aria-hidden="true">{optionIcons[option.value]}</span>}
+          <span>{option.label}</span>
+        </span>{value === option.value && <span aria-hidden="true">✓</span>}
       </button>)}
     </div></Presence>, document.body)}
   </>;
