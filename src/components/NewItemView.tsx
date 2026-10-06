@@ -114,9 +114,9 @@ export const NewItemView: React.FC = () => {
         message: `Componente ${created.codigo} registrado. Puede añadir el siguiente.`
       });
 
-      // Preserve only the prefix, warehouse and rack for the next registration.
+      // Preserve the prefix, category, warehouse and rack for the next registration.
       setAlmacenId(selectedAlmacenId); setEstanteriaId(selectedEstanteriaId);
-      setNombre(''); setCategoria(''); setDescripcion(''); setCajaId('');
+      setNombre(''); setDescripcion(''); setCajaId('');
       setCantidad(0); setUnidad('UND'); setWeight(weightDraft()); setStockMinimo(0);
       setEstado('BUENO'); setCantidadDanados(0); setFotoUrl(''); setFotosAdicionales([]);
       request.current = null;

@@ -33,7 +33,7 @@ Solo las cuentas con rol `admin` pueden modificar estos datos. Operadores y cuen
 
 En **Nuevo ítem**, el selector **Caja** permite elegir una existente o **Escribir una caja nueva**. Escriba su código y pulse **Crear y elegir caja**. Se guarda en Supabase dentro de la estantería seleccionada y queda elegida para el componente. Es necesario seleccionar primero una estantería. La caja creada también queda disponible en Administración de datos.
 
-Después de guardar un componente, el formulario permanece abierto. Conserva únicamente el prefijo, almacén y estantería. Reinicia nombre, categoría, descripción, caja, stock, unidad, peso, mínimo, estado, daños y fotografías. El código del siguiente componente sigue asignándose automáticamente al guardar.
+Después de guardar un componente, el formulario permanece abierto. Conserva el prefijo, categoría, almacén y estantería. Reinicia nombre, descripción, caja, stock, unidad, peso, mínimo, estado, daños y fotografías. El código del siguiente componente sigue asignándose automáticamente al guardar.
 
 Este ajuste utiliza las tablas existentes y no requiere ejecutar otro SQL.
 
