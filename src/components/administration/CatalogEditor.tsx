@@ -67,10 +67,18 @@ export function CatalogManager({ kind, prefijos, categorias, elementos, saveCata
           <button disabled={busy} className="bg-[#253685] text-white px-4 py-2 rounded-lg">{busy ? 'Guardando…' : 'Guardar'}</button></div>
       </form></FormDialog>}</Presence>
     {!entries.length && <p className="text-slate-500">Todavía no hay {prefix ? 'prefijos' : 'categorías'} registrados.</p>}
-    <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">{entries.map(row => <article key={row.id} className="border bg-white rounded-2xl p-5 space-y-2">
-      <div className="flex justify-between gap-3"><strong>{row.code}</strong><span className="text-xs text-slate-500">{row.activo ? 'Activo' : 'Inactivo'}</span></div>
-      <p className="font-medium">{row.nombre}</p><p className="text-sm text-slate-600">{row.detail}</p>
-      {admin && <button disabled={busy} className="text-[#253685] text-sm underline" onClick={() => { setId(row.id); setCode(row.code); setName(row.nombre); setActive(row.activo); setError(''); setMessage(''); setFormOpen(true); }}>Editar</button>}
-    </article>)}</div>
+    {entries.length > 0 && <ul aria-label={prefix ? 'Lista de códigos' : 'Lista de categorías'} className="border border-slate-200 bg-white rounded-xl overflow-hidden divide-y divide-slate-100">
+      {entries.map(row => <li key={row.id} className="flex items-center gap-2 sm:gap-4 px-3 sm:px-4 py-2 hover:bg-slate-50">
+        <div className="min-w-0 flex-1 grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_minmax(140px,auto)_auto] items-center gap-x-3 gap-y-1">
+          <div className="min-w-0 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <strong className="text-xs font-mono-code text-[#253685] break-all">{row.code}</strong>
+            <span className="text-sm font-medium text-slate-800 break-words min-w-0">{row.nombre}</span>
+          </div>
+          <p className="col-span-2 sm:col-span-1 sm:col-start-2 sm:row-start-1 text-xs text-slate-500 break-words">{row.detail}</p>
+          <span className={`col-start-2 row-start-1 sm:col-start-3 rounded-md px-2 py-1 text-[10px] font-semibold ${row.activo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{row.activo ? 'Activo' : 'Inactivo'}</span>
+        </div>
+        {admin && <button type="button" disabled={busy} className="shrink-0 min-h-11 px-2 text-[#253685] text-xs font-semibold hover:underline disabled:opacity-50" onClick={() => { setId(row.id); setCode(row.code); setName(row.nombre); setActive(row.activo); setError(''); setMessage(''); setFormOpen(true); }}>Editar</button>}
+      </li>)}
+    </ul>}
   </section>;
 }
