@@ -40,7 +40,7 @@ export const Sidebar: React.FC = () => {
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 text-left ${
                 isActive
                   ? 'bg-[#eaedff] text-[#253685] font-bold shadow-xs'
-                  : 'text-[#454651] hover:bg-[#f2f3ff] hover:text-[#253685] hover:translate-x-0.5'
+                  : 'text-[#454651] hover:bg-[#f2f3ff] hover:text-[#253685]'
               }`}
             >
               <div className="flex items-center gap-3">

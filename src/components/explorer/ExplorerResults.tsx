@@ -5,10 +5,24 @@ import { isDemo } from '../../lib/supabase';
 import { available } from '../../domain/inventory';
 import { itemPhotos } from '../../domain/photos';
 import { formatUnitWeight } from '../../domain/weight';
+import type { MouseEvent } from 'react';
+
+type ResultsInventory = Pick<ReturnType<typeof useInventory>, 'getLocationString' | 'openItemDetail' | 'addToDispatchCart' | 'user' | 'categoryLabel'>;
 
 export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'grid' | 'list' }) {
-  const { getLocationString, openItemDetail, addToDispatchCart, user, categoryLabel } = useInventory();
+  const inventory = useInventory();
+  return <ExplorerResultsContent items={items} mode={mode} inventory={inventory} />;
+}
+
+export function ExplorerResultsContent({ items, mode, inventory }: { items: Elemento[]; mode: 'grid' | 'list'; inventory: ResultsInventory }) {
+  const { getLocationString, openItemDetail, addToDispatchCart, user, categoryLabel } = inventory;
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
+  const openSurface = (event: MouseEvent<HTMLElement>, item: Elemento) => {
+    // Native actions keep their own behavior, including disabled cart buttons.
+    if ((event.target as Element).closest('button, a, input, select, textarea, [role="button"]')) return;
+    if (window.getSelection()?.isCollapsed === false) return;
+    openItemDetail(item);
+  };
   // Stock Badge renderer
   const renderStockBadge = (item: Elemento) => {
     if (item.cantidad === 0) {
@@ -51,12 +65,13 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                 return (
                   <article
                     key={item.id}
-                    className="bg-white border border-[#e2e8f0] rounded-xl overflow-hidden flex flex-col hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                    data-product-id={item.id}
+                    onClick={event => openSurface(event, item)}
+                    className="ui-product ui-product-card bg-white border border-[#e2e8f0] rounded-xl overflow-hidden flex flex-col"
                   >
                     {/* Image Area */}
                     <div
                       className="aspect-square w-full shrink-0 overflow-hidden bg-[#f8fafc] relative border-b border-[#e2e8f0] cursor-pointer"
-                      onClick={() => openItemDetail(item)}
                     >
                         <ItemImage
                           source={item.fotoUrl}
@@ -72,12 +87,9 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
 
                     {/* Card Content */}
                     <div className="p-3.5 sm:p-4 flex flex-col flex-1 gap-2">
-                      <h3
-                        onClick={() => openItemDetail(item)}
-                        className="font-bold text-sm sm:text-base text-[#131b2e] leading-snug line-clamp-1 hover:text-[#3e4e9e] cursor-pointer"
-                        title={item.nombre}
-                      >
-                        {item.nombre}
+                      <h3 className="font-bold text-sm sm:text-base leading-snug line-clamp-1">
+                        <button type="button" className="ui-product-open block w-full text-left" onClick={() => openItemDetail(item)}
+                          aria-label={`Ver detalles de ${item.codigo} · ${item.nombre}`} title={item.nombre}>{item.nombre}</button>
                       </h3>
 
                       {item.marca && <p className="text-xs text-slate-500 truncate">Marca: {item.marca}</p>}
@@ -114,12 +126,14 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                       {/* Card Footer Actions */}
                       <div className="mt-2 pt-2.5 border-t border-[#e2e8f0] flex items-center justify-between gap-2">
                         <button
+                          type="button"
                           onClick={() => openItemDetail(item)}
                           className="flex-1 bg-transparent border border-[#3e4e9e] text-[#3e4e9e] text-xs font-bold py-1.5 rounded-lg hover:bg-[#f2f3ff] transition-colors"
                         >
                           Detalles
                         </button>
                         {canOperate && <button
+                          type="button"
                           onClick={() => addToDispatchCart(item)}
                           disabled={available(item) === 0}
                           className={`flex-1 text-xs font-bold py-1.5 rounded-lg flex items-center justify-center gap-1 transition-all ${
@@ -140,8 +154,8 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
           ) : (
             /* List View */
             <div className="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden shadow-2xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs sm:text-sm">
+              <div className="inventory-list-scroll overflow-x-auto p-3">
+                <table className="inventory-list-table w-full text-left text-xs sm:text-sm">
                   <thead>
                     <tr className="bg-[#f8fafc] border-b border-[#e2e8f0] text-[11px] sm:text-xs font-bold text-[#454651] uppercase tracking-wider">
                       <th className="p-2.5 sm:p-3">Código</th>
@@ -152,15 +166,15 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                       <th className="p-2.5 sm:p-3 text-center">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#e2e8f0]">
+                  <tbody>
                     {items.map((item) => (
-                      <tr key={item.id} className="hover:bg-[#f8fafc] transition-colors">
+                      <tr key={item.id} data-product-id={item.id} onClick={event => openSurface(event, item)} className="ui-product ui-product-row">
                         <td className="p-2.5 sm:p-3 font-mono-code font-bold text-[#3e4e9e] whitespace-nowrap">
                           {item.codigo}
                         </td>
                         <td className="p-2.5 sm:p-3">
                           <div className="flex items-center gap-2 sm:gap-3">
-                            <button type="button" onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${item.nombre}`} className="shrink-0 rounded-md hover:opacity-80">
+                            <div className="shrink-0">
                               <ItemImage
                                 source={item.fotoUrl}
                                 category={item.categoria}
@@ -169,9 +183,9 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                                 className="w-8 h-8 sm:w-10 sm:h-10 rounded-md object-cover border border-[#e2e8f0] shrink-0"
                                 referrerPolicy="no-referrer"
                               />
-                            </button>
+                            </div>
                             <div className="min-w-0">
-                              <button type="button" onClick={() => openItemDetail(item)} title={item.nombre} className="block max-w-full text-left font-semibold text-[#131b2e] leading-snug truncate hover:text-[#3e4e9e] hover:underline">{item.nombre}</button>
+                              <button type="button" onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${item.codigo} · ${item.nombre}`} title={item.nombre} className="ui-product-open block max-w-full text-left font-semibold leading-snug truncate">{item.nombre}</button>
                               {item.marca && <p className="text-xs text-slate-500 truncate">{item.marca}</p>}
                               <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-[#767682]">
                                 <span>{categoryLabel(item.categoria)}</span>
@@ -207,18 +221,20 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
                           <span className="text-[10px] font-normal text-[#767682]">{item.unidad}</span>
                         </td>
                         <td className="p-2.5 sm:p-3 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
+                          <div className="flex items-center justify-center gap-3">
                             <button
                               onClick={() => openItemDetail(item)}
-                              className="p-1 rounded-md text-[#3e4e9e] hover:bg-[#f2f3ff]"
+                              type="button"
+                              className="w-11 h-11 p-1 rounded-md text-[#3e4e9e] hover:bg-[#f2f3ff]"
                               title="Ver detalles"
                             >
                               <span className="material-symbols-outlined text-[18px]">visibility</span>
                             </button>
                             {canOperate && <button
+                              type="button"
                               onClick={() => addToDispatchCart(item)}
                               disabled={available(item) === 0}
-                              className={`p-1 rounded-md ${
+                              className={`w-11 h-11 p-1 rounded-md ${
                                 available(item) > 0
                                   ? 'text-[#dd4c42] hover:bg-[#ffdad6]/50'
                                   : 'text-[#cbd5e1] cursor-not-allowed'

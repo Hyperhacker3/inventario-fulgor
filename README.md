@@ -18,6 +18,8 @@ La revisión de capturas del usuario corrigió el recorte de las sombras en nave
 
 Liquid Glass se ajustó a la referencia del Centro de control aportada por el usuario: superficies más translúcidas, bordes luminosos, reflejos graduados y desenfoque sobre un fondo con variación de color. Es una adaptación web con CSS; la evaluación del parecido, contraste y rendimiento en dispositivos reales se realiza con el usuario.
 
+En PC, los botones y los productos del inventario comparten el desplazamiento suave de 2 px de la barra lateral al pasar el mouse. Toda la fila o tarjeta abre el detalle, sin subrayar el nombre. Las acciones internas de detalle y salida siguen siendo independientes; seleccionar texto para copiarlo no abre la ficha. El nombre conserva un botón accesible con teclado y el foco resalta el producto completo. El hover se limita a dispositivos con mouse y respeta movimiento reducido.
+
 ## Desarrollo local
 
 Requiere Node.js 22 o superior y pnpm. Instale con `pnpm install --frozen-lockfile`, copie `.env.example` a `.env.local`, configure el proyecto Supabase y ejecute `pnpm dev`. La aplicación consulta el inventario exclusivamente desde Supabase y requiere iniciar sesión.

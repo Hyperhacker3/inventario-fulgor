@@ -81,6 +81,14 @@ Comprobar Inicio, Inventario (lista/cuadrícula/filtros), Nuevo ítem, Entradas,
 
 Mantener jerarquía almacén/estantería/nivel/caja, categorías múltiples, datos opcionales, estados importados, valores y pesos. Un cambio de estilo no debe modificar payloads de Supabase ni snapshots de las remisiones.
 
+## Hover y productos clicables
+
+Los botones y los productos de Inventario comparten el desplazamiento horizontal de 2 px de la barra lateral, durante 180 ms. Se aplica cuando el dispositivo admite hover y tiene un puntero preciso; no introduce hover persistente al tocar una pantalla. Movimiento reducido elimina el desplazamiento. Los cambios de estilo y paleta conservan sus 1,5 segundos.
+
+En lista y cuadrícula, toda la fila/tarjeta abre el detalle: código, imagen, ubicación, stock y espacios interiores. El nombre no se subraya ni forma un botón con relieve separado; su botón nativo conserva activación con teclado y el foco visible resalta la superficie completa. Detalles y salida mantienen sus acciones independientes, incluso si se pulsa su icono o una salida deshabilitada. Seleccionar texto para copiarlo evita abrir la ficha. La lista reserva separación entre filas y espacio para sombras, sin contornos en Neumorfismo; Liquid Glass mantiene sus bordes.
+
+La implementación está en `src/interactions.css` y `src/components/explorer/ExplorerResults.tsx`. Ocho pruebas DOM cubren ambos modos, las zonas clicables, apertura única, salidas sin apertura accidental, stock agotado o totalmente dañado, selección de texto y botón nativo accesible. Typecheck, lint, **126 pruebas unitarias y 25 de integración**, y build correctos. El movimiento y su apariencia real siguen pendientes de revisión visual por el usuario.
+
 ## Criterios de aceptación
 
 - Las cuatro combinaciones (dos estilos × claro/oscuro) muestran todos los controles y tienen texto legible.
@@ -103,6 +111,7 @@ La implementación no requiere SQL. La comprobación visual real se realiza con 
 4. Escribir un borrador y añadir cantidades al carrito; alternar el estilo y comprobar que se conservan. Abrir selectores y ventanas superpuestas para revisar su apariencia y el funcionamiento de Escape y del foco.
 5. En teléfono y tablet, llegar al selector al final de Ayuda y comprobar acciones visibles, ausencia de desbordamiento horizontal y comportamiento del teclado. Seguir también `docs/experiencia-movil.md`.
 6. Revisar una remisión en pantalla y en impresión/PDF con ambos estilos, comprobando paginación, logo y contenido. Comprobar Liquid Glass en un navegador sin soporte de desenfoque si se dispone de él.
+7. En PC, pasar el mouse por botones y productos en lista/cuadrícula, y comprobar el mismo movimiento suave sin subrayado. Pulsar código, imagen, ubicación y fondo de un producto; usar también Tab y Enter/Espacio en su nombre. Confirmar que salida abre únicamente su acción, que los controles deshabilitados no hacen nada y que copiar texto no abre el detalle. En pantalla táctil, comprobar el toque completo sin hover persistente.
 
 Esta lista sigue pendiente de evaluación visual; las pruebas de DOM y la compilación no sustituyen la revisión de contraste, impresión y rendimiento en dispositivos reales.
 

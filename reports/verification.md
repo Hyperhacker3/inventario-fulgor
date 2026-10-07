@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Hover común y productos completos clicables (7 de octubre de 2026)
+
+La animación de navegación se comparte con todos los botones y productos mediante `src/interactions.css`: desplazamiento horizontal de 2 px en 180 ms, limitado a hover con puntero preciso y desactivado con movimiento reducido. Se conserva la pulsación de botones y se excluyen fondos de cierre/documentos impresos. Las transiciones de estilo y paleta siguen en 1,5 segundos.
+
+`ExplorerResults` abre el detalle desde toda la fila o tarjeta de Inventario. El nombre deja de subrayarse y conserva un botón nativo con nombre accesible y foco visible alrededor del producto. Las acciones internas se reconocen para evitar aperturas duplicadas o abrir la ficha al registrar una salida; las salidas deshabilitadas permanecen inactivas. Seleccionar texto para copiarlo no abre la ficha. La tabla conserva su semántica, separa las filas y reserva espacio para sombras; Neumorfismo continúa sin contornos y Glass conserva bordes.
+
+Validación: typecheck y lint correctos, **126 pruebas unitarias y 25 de integración**, y build correcto. Ocho pruebas DOM nuevas comprueban las zonas clicables de dos productos por modo, apertura única desde nombre/detalles, acción de salida independiente, stock agotado o totalmente dañado, selección de texto y botón nativo con foco. No se utilizó computer use ni automatización de navegador; el movimiento, la geometría y la apariencia real quedan por revisar con el usuario. Node 24.19.0 / pnpm 11.19.0 disponibles frente a Node 22.x declarado. Sin operaciones sobre Supabase real ni cambios en los archivos privados.
+
 ## Campos uniformes, acciones sin rellenos y revisión de vidrio (7 de octubre de 2026)
 
 La siguiente revisión del usuario pide igualar alturas, separar las acciones de Ver elemento y aplicar a todos los botones el acabado neutro de Anterior/Siguiente, conservando azul o colores semánticos en el texto. `src/controls.css` uniforma campos de una línea/selectores a 44 px, mantiene descripciones multilínea y excluye valores nativos ocultos, archivos, checkboxes y documento imprimible. Los buscadores compuestos no añaden altura. Las acciones neutralizan sus antiguos rellenos y hover, comparten relieve/forma y mantienen rojo/verde/amarillo mediante variables; los fondos de cierre y las opciones siguen cumpliendo su función. Stock inicial usa el campo estándar con −/+ separados. Ver elemento tiene 24 px entre bloques y 16 px entre acciones, con más filas si falta ancho.

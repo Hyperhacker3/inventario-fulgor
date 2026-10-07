@@ -3,6 +3,7 @@
 @import "./theme.css";
 @import "./appearance.css";
 @import "./controls.css";
+@import "./interactions.css";
 
 @layer base {
   :root {

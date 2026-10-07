@@ -12,6 +12,8 @@ Las ventanas y pantallas conservan animaciones de 180 ms y los botones responden
 
 Los campos de una línea y selectores comparten una altura de 44 px. Las descripciones siguen siendo multilínea. Las acciones usan fondo neutro y texto azul o semántico en ambos estilos. Ver elemento tiene 16 px entre botones y una cuadrícula que evita amontonarlos; sus bloques están separados por 24 px. Liquid Glass reduce el desenfoque a 16 px en paneles y 6 px en controles en anchos compactos; debe revisarse su fluidez y contraste en los dispositivos del usuario.
 
+En Inventario se puede tocar toda la fila o tarjeta para abrir el detalle. El nombre no se subraya y conserva acceso con teclado; el foco resalta el producto completo. Detalles y salida mantienen sus acciones separadas y los controles sin stock siguen deshabilitados. El desplazamiento de hover común a botones y productos se limita a dispositivos con puntero preciso y hover; no se activa con el toque y respeta movimiento reducido.
+
 Los controles del producto, almacenes y fotografías usan columnas que permiten ajustar el texto. Las secciones de administración usan una cuadrícula en escritorio y un selector con iconos en móvil. Las filas de búsqueda de Entradas separan la imagen, el texto y Seleccionar, y usan iconos compactos cuando no hay foto. Entradas y Salidas muestran sus cinco resultados por página sin una segunda zona de desplazamiento dentro de la lista.
 
 El selector de fotos adapta las columnas al espacio de su propio contenedor: la principal queda centrada y las adicionales forman una cuadrícula. Quitar aparece sobre cada foto y Hacer principal debajo. Las fotos del registro de salida también se distribuyen según el ancho disponible.

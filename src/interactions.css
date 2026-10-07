@@ -1,0 +1,38 @@
+/* Hover moves the complete action surface, using the sidebar's original 2px shift. */
+@media screen {
+  :root[data-ui-style]:not(:where([data-theme-changing='true'])) :is(button, .ui-product):not(:where(.ui-product-open, .ui-backdrop, .mobile-menu-backdrop, .a4-print-container *, .rm-measure *)) {
+    transition: transform var(--ui-motion-duration) ease, background-color var(--ui-motion-duration) ease,
+      color var(--ui-motion-duration) ease, box-shadow var(--ui-motion-duration) ease, border-color var(--ui-motion-duration) ease;
+  }
+  :root[data-ui-style] .ui-product { cursor: pointer; }
+  :root[data-ui-style] .ui-product:has(.ui-product-open:focus-visible) { outline: 2px solid var(--ui-focus); outline-offset: 3px; }
+  /* A native name button provides keyboard activation; the surrounding product is its surface. */
+  :root[data-ui-style] :is(.ui-product-open, .ui-product-open:hover, .ui-product-open:active, .ui-product-open:focus-visible) {
+    color: var(--ui-action) !important;
+    background-color: transparent !important; background-image: none !important; box-shadow: none !important;
+    border: 0; border-radius: 0; padding: 0; min-height: 0;
+    text-decoration: none !important; transform: none !important; outline: none;
+  }
+  .inventory-list-table { border-collapse: separate; border-spacing: 0 12px; }
+  :root[data-ui-style] .ui-product-row {
+    border-radius: var(--ui-control-radius); background-color: var(--ui-surface); box-shadow: var(--ui-control-shadow);
+  }
+  :root[data-ui-style] .ui-product-row > td { background-color: var(--ui-product-fill, var(--ui-surface)); }
+  :root[data-ui-style]:not(:where([data-theme-changing='true'])) .ui-product-row > td { transition: background-color var(--ui-motion-duration) ease; }
+  :root[data-ui-style] .ui-product-row > td:first-child { border-radius: var(--ui-control-radius) 0 0 var(--ui-control-radius); }
+  :root[data-ui-style] .ui-product-row > td:last-child { border-radius: 0 var(--ui-control-radius) var(--ui-control-radius) 0; }
+  :root[data-ui-style='glass'] .ui-product-row > td { border-block: 1px solid var(--ui-line); }
+  :root[data-ui-style='glass'] .ui-product-row > td:first-child { border-left: 1px solid var(--ui-line); }
+  :root[data-ui-style='glass'] .ui-product-row > td:last-child { border-right: 1px solid var(--ui-line); }
+}
+@media screen and (hover: hover) and (pointer: fine) {
+  :root[data-ui-style] button:not(:where(.ui-product-open, .ui-backdrop, .mobile-menu-backdrop, .a4-print-container *, .rm-measure *)):hover:not(:disabled),
+  :root[data-ui-style] .ui-product:hover { transform: translateX(2px); }
+  :root[data-ui-style] button:not(:where(.ui-product-open, .ui-backdrop, .mobile-menu-backdrop, .a4-print-container *, .rm-measure *)):hover:active:not(:disabled) { transform: translateX(2px) scale(.98); }
+  :root[data-ui-style] .ui-product:hover { --ui-product-fill: var(--ui-button-hover); }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-ui-style] .ui-product { transition: none !important; transform: none !important; }
+  :root[data-ui-style] .ui-product-row > td { transition: none !important; }
+  :root[data-ui-style] button:not(:where(.ui-backdrop, .mobile-menu-backdrop, .a4-print-container *, .rm-measure *)):hover { transform: none !important; }
+}
