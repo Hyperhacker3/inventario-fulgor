@@ -1,6 +1,13 @@
 # Verificación de la refactorización local
 
 
+## Inventario con filtros superiores y barra unificada (7 de octubre de 2026)
+
+ExplorerView reúne búsqueda, contador formateado es-CO y vista lista/cuadrícula en el panel de cabecera. PC los muestra en una fila y móvil/tablet adapta la búsqueda a una fila propia. ExplorerFilters pasa encima del listado, con categorías/stock en la primera fila y almacén/estantería/nivel/caja en cuatro columnas, dos o una según ancho. Se retiran la columna lateral de 256 px, el panel de resultados duplicado y el límite de 1400 px. Lista y cuadrícula aprovechan todo el contenido disponible; se conserva el scroll principal, filtros compactos plegables y categorías múltiples con eliminación/prevención de duplicados.
+
+Verificación: typecheck, lint, **163 unitarias + 34 de integración (197)** y build correctos. Pruebas existentes de categorías/stock/jerarquía, nombres de controles, selección y orden por actividad; sin pruebas nuevas para una redistribución reversible. Revisión del bundle confirma barra, contador dinámico, cuadrícula de filtros y ausencia de ancho lateral/límite anterior. Sin SQL, Supabase real, archivos privados ni navegador automatizado. Geometría física con el usuario; despliegue y recursos públicos se comprueban por separado.
+
+
 ## Relleno coherente de iconos (7 de octubre de 2026)
 
 StateIcon unifica el estado delineado/relleno en Sidebar, MobileMenu, MobileBottomNav y las nueve secciones de Administración, incluido su selector compacto. Los símbolos lineales disponen de variantes SVG y Editar conserva SVG para evitar ligaduras en caché. Sidebar reutiliza navigationIsActive para proyectos/almacenes. Las cinco acciones de la ficha muestran el relleno durante la interacción, sin quedar seleccionadas; disabled, accesibilidad, colores y movimiento reducido se conservan.
