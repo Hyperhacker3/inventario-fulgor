@@ -3,34 +3,42 @@ import type { HistorialMovimiento } from '../../types';
 import { useInventory } from '../../context/InventoryContext';
 import { MovementBadge } from './MovementBadge';
 import { MovementDocuments } from './MovementDocuments';
+import { openProductSurface } from '../../shared/productInteraction';
 
 interface Props {
   rows: HistorialMovimiento[]; total: number; page: number; pages: number; loading: boolean;
   onPage: (page: number) => void; onDocument: (id: string) => void;
 }
-export function HistoryTable({ rows, total, page, pages, loading, onPage, onDocument }: Props) {
-  const { elementos, proyectos, openItemDetail, openOutgoingPhotos } = useInventory();
+type HistoryInventory = Pick<ReturnType<typeof useInventory>, 'elementos' | 'proyectos' | 'openItemDetail' | 'openOutgoingPhotos'>;
+export function HistoryTable(props: Props) {
+  const inventory = useInventory();
+  return <HistoryTableContent {...props} inventory={inventory} />;
+}
+export function HistoryTableContent({ rows, total, page, pages, loading, onPage, onDocument, inventory }: Props & { inventory: HistoryInventory }) {
+  const { elementos, proyectos, openItemDetail, openOutgoingPhotos } = inventory;
   const items = useMemo(() => new Map(elementos.map(item => [item.id, item])), [elementos]);
   const projectNames = useMemo(() => new Map(proyectos.map(project => [project.id, project.nombre])), [proyectos]);
   return <div className="bg-white border rounded-2xl overflow-hidden shadow-xs">
-    <div className="overflow-x-auto"><table className="w-full text-left border-collapse text-sm">
+    <div className="overflow-x-auto p-3"><table className="ui-product-table w-full text-left text-sm">
       <thead><tr className="bg-[#f8fafc] border-b text-xs font-bold uppercase text-[#454651]">
         {['Tipo', 'Fecha y hora', 'Código SKU', 'Componente', 'Proyecto / destino', 'Cantidad', 'Stock final', 'Responsable', 'PDF / fotografías']
           .map(label => <th key={label} className="p-3.5 whitespace-nowrap">{label}</th>)}
       </tr></thead>
-      <tbody className="divide-y">
+      <tbody>
         {rows.length === 0 && <tr><td colSpan={9} className="p-8 text-center text-sm text-[#767682]">
           {loading ? 'Cargando movimientos…' : 'No se encontraron movimientos.'}</td></tr>}
         {rows.map(row => {
           const item = items.get(row.elementoId);
-          return <tr key={row.id} className="hover:bg-[#f8fafc] text-xs">
+          return <tr key={row.id} data-movement-id={row.id} data-product-id={item?.id}
+            onClick={item ? event => openProductSurface(event, () => openItemDetail(item)) : undefined}
+            className={`ui-product-row text-xs ${item ? 'ui-product' : ''}`}>
             <td className="p-3.5"><MovementBadge type={row.tipo} /></td>
             <td className="p-3.5 whitespace-nowrap"><strong className="block">{row.fecha}</strong><span>{row.hora}</span></td>
             <td className="p-3.5 font-mono-code font-bold text-[#3e4e9e]">
-              {item ? <button type="button" onClick={() => openItemDetail(item)} className="hover:underline">{row.itemCode}</button> : row.itemCode}
+              {row.itemCode}
             </td>
             <td className="p-3.5 max-w-xs">{item
-              ? <button type="button" onClick={() => openItemDetail(item)} className="block max-w-full text-left font-bold truncate hover:text-[#3e4e9e] hover:underline" title={row.itemName}>{row.itemName}</button>
+              ? <button type="button" onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${row.itemCode} · ${row.itemName}`} className="ui-product-open block max-w-full text-left font-bold truncate" title={row.itemName}>{row.itemName}</button>
               : <strong className="block truncate" title={row.itemName}>{row.itemName}</strong>}
               <span className="block truncate text-[#767682]" title={row.motivo}>{row.motivo}</span></td>
             <td className="p-3.5">{row.proyectoNombre || projectNames.get(row.proyectoId || '') || 'Bodega Central'}</td>

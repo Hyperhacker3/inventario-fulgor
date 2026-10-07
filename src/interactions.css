@@ -13,7 +13,7 @@
     border: 0; border-radius: 0; padding: 0; min-height: 0;
     text-decoration: none !important; transform: none !important; outline: none;
   }
-  .inventory-list-table { border-collapse: separate; border-spacing: 0 12px; }
+  .inventory-list-table, .ui-product-table { border-collapse: separate; border-spacing: 0 12px; }
   :root[data-ui-style] .ui-product-row {
     border-radius: var(--ui-control-radius); background-color: var(--ui-surface); box-shadow: var(--ui-control-shadow);
   }
@@ -21,6 +21,9 @@
   :root[data-ui-style]:not(:where([data-theme-changing='true'])) .ui-product-row > td { transition: background-color var(--ui-motion-duration) ease; }
   :root[data-ui-style] .ui-product-row > td:first-child { border-radius: var(--ui-control-radius) 0 0 var(--ui-control-radius); }
   :root[data-ui-style] .ui-product-row > td:last-child { border-radius: 0 var(--ui-control-radius) var(--ui-control-radius) 0; }
+  :root[data-ui-style] .ui-product-line {
+    border-radius: var(--ui-control-radius); background-color: var(--ui-product-fill, var(--ui-surface)); box-shadow: var(--ui-control-shadow);
+  }
 }
 @media screen and (hover: hover) and (pointer: fine) {
   :root[data-ui-style] button:not(:where(.ui-product-open, .ui-backdrop, .mobile-menu-backdrop, .a4-print-container *, .rm-measure *)):hover:not(:disabled),

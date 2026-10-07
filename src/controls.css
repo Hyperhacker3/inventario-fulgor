@@ -5,6 +5,7 @@
   --ui-danger: #ba1a1a;
   --ui-success: #137333;
   --ui-warning: #755b00;
+  --ui-field-focus-shadow: inset 4px 4px 9px var(--ui-shadow-low), inset -4px -4px 9px var(--ui-shadow-high);
 }
 :root[data-theme='dark'] {
   --ui-action: #b8c6ff;
@@ -28,6 +29,30 @@
   }
   :root[data-ui-style] .ui-search-field > input { height: 100%; min-height: 0; }
   :root[data-ui-style] .ui-search-field > button { min-height: 32px; height: 32px; flex-shrink: 0; }
+  :root[data-ui-style] :is(input:not(:where([type='hidden'], [type='checkbox'], [type='radio'], [type='file'])), textarea, select:not(.select-form-value), .app-select-trigger):focus:not(:where(.a4-print-container *, .rm-measure *)) {
+    outline: none !important;
+    box-shadow: var(--ui-field-focus-shadow) !important;
+  }
+  :root[data-ui-style] .ui-search-field:focus-within { box-shadow: var(--ui-field-focus-shadow); }
+  :root[data-ui-style] .ui-search-field > input:focus { box-shadow: none !important; }
+  :root[data-ui-style] textarea:not(:where(.a4-print-container *, .rm-measure *)) {
+    box-sizing: border-box;
+    min-height: var(--ui-field-height) !important;
+    max-width: 100%;
+    resize: vertical;
+  }
+  :root[data-ui-style] .ui-header-avatar {
+    background-color: var(--ui-surface);
+    color: var(--ui-action);
+    border-radius: var(--ui-control-radius);
+    box-shadow: var(--ui-control-shadow);
+  }
+  .ui-category-chips { padding: 12px; margin: -12px; }
+  .movement-documents {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 88px), 1fr));
+    gap: 12px; width: 192px; max-width: 100%; margin-inline: auto;
+  }
+  .movement-documents > button { width: 100%; min-width: 0; height: var(--ui-field-height); white-space: nowrap; }
 
   /* Override old colored utility fills, including their hover rules. Color conveys meaning. */
   :root[data-ui-style] button:not(:where(.app-select-trigger, .app-select-option, .ui-backdrop, .mobile-menu-backdrop, .a4-print-container *, .rm-measure *)) {

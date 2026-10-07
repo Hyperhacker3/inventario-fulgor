@@ -83,6 +83,20 @@ const choose = async (id: string, value: string) => {
 const selectedValue = (id: string) => (document.getElementById(`${id}-value`) as HTMLSelectElement).value;
 const optionValues = (id: string) => [...(document.getElementById(`${id}-value`) as HTMLSelectElement).options].map(option => option.value);
 
+test('stock choices expose exactly one persistent pressed state and reset with the other filters', async () => {
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  try {
+    await act(() => root.render(h(FilterPanel)));
+    const selected = () => [...host.querySelectorAll<HTMLButtonElement>('button[aria-pressed="true"]')].map(button => button.textContent);
+    assert.deepEqual(selected(), ['todos']);
+    for (const value of ['disponible', 'bajo', 'agotado']) {
+      const button = [...host.querySelectorAll<HTMLButtonElement>('button.ui-flat-choice')].find(button => button.textContent === value)!;
+      await act(() => button.click()); assert.deepEqual(selected(), [value]);
+    }
+    await act(() => host.querySelector<HTMLButtonElement>('#btn-clear-filters')!.click()); assert.deepEqual(selected(), ['todos']);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
+
 test('the styled category picker adds several categories, prevents duplicates and lets users remove and clear them', async () => {
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
   try {

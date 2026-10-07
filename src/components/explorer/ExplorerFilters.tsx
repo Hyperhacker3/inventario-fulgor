@@ -31,7 +31,7 @@ export function ExplorerFilters({ visible, filters, warehouses, racks, levels, b
         <div className="flex flex-wrap gap-1.5">
           {(['todos', 'disponible', 'bajo', 'agotado'] as StockFilter[]).map(value =>
             <button key={value} type="button" onClick={() => onStock(value)}
-              className={`min-h-10 px-2.5 py-1 rounded-full text-xs capitalize ${filters.stock === value ? 'bg-[#3e4e9e] text-white' : 'bg-[#f8fafc] border'}`}>{value}</button>)}
+              aria-pressed={filters.stock === value} className="ui-flat-choice min-h-11 px-2.5 py-1 rounded-xl text-xs capitalize">{value}</button>)}
         </div>
       </fieldset>
       <label className="block text-xs font-bold text-[#454651] uppercase">Almacén

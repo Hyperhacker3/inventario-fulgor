@@ -48,17 +48,17 @@ for (const mode of ['list', 'grid'] as const) {
     });
   });
 
-  test(`${mode}: nested name/details actions open once, while the cart action only adds to dispatch`, async () => {
+  test(`${mode}: nested name actions open once, while the cart action only adds to dispatch`, async () => {
     await withResults(mode, async (host, opened, dispatched) => {
       const surface = product(host, items[1]);
       await click(surface.querySelector<HTMLButtonElement>('.ui-product-open')!);
       assert.deepEqual(opened, [items[1]]);
-      const details = [...surface.querySelectorAll<HTMLButtonElement>('button')].find(button =>
-        button.textContent?.trim() === 'Detalles' || button.title === 'Ver detalles')!;
-      await click(details.querySelector<HTMLElement>('span') ?? details);
-      assert.deepEqual(opened, [items[1], items[1]]);
+      const details = [...surface.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Detalles');
+      if (mode === 'grid') {
+        assert.ok(details); await click(details); assert.deepEqual(opened, [items[1], items[1]]);
+      } else { assert.equal(details, undefined); assert.equal(surface.querySelector('[title="Ver detalles"]'), null); }
       await click(cart(surface).querySelector<HTMLElement>('span')!);
-      assert.deepEqual(dispatched, [items[1]]); assert.equal(opened.length, 2);
+      assert.deepEqual(dispatched, [items[1]]); assert.equal(opened.length, mode === 'grid' ? 2 : 1);
     });
   });
 

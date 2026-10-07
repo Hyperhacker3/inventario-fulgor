@@ -22,7 +22,7 @@ export const Sidebar: React.FC = () => {
       {canOperate && <button
         id="btn-nueva-remision"
         onClick={() => setActiveView('dispatch')}
-        className="ui-sidebar-action w-full rounded-xl py-2.5 px-4 mb-6 font-semibold text-sm flex items-center justify-center gap-2"
+        className="w-full rounded-xl py-2.5 px-4 mb-6 font-semibold text-sm flex items-center justify-center gap-2"
       >
         <span className="material-symbols-outlined text-[18px]">add</span>
         <span>Nueva Remisión</span>

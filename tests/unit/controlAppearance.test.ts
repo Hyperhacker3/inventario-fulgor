@@ -11,6 +11,10 @@ function fixture(style: string, theme: string) {
     <button id="state" class="app-select-trigger">Bueno / Óptimo</button>
     <select id="native" class="select-form-value" style="height: 1px"><option>Bueno</option></select>
     <textarea id="description" style="height: 96px"></textarea>
+    <div class="ui-search-field"><input id="search" class="bg-transparent"></div>
+    <div id="avatar" class="ui-header-avatar"></div>
+    <ul id="chips" class="ui-category-chips"><li><button>CAF</button></li></ul>
+    <div class="movement-documents"><button id="pdf">PDF</button><button id="photos">Fotos</button></div>
     <button id="page" class="border rounded-lg">Anterior</button>
     <button id="save" class="bg-[#3e4e9e] text-white rounded-lg">Guardar</button>
     <button id="entry" class="bg-[#e6f4ea] text-[#137333] rounded-lg">Entrada</button>
@@ -19,7 +23,7 @@ function fixture(style: string, theme: string) {
     <button id="delete" class="bg-red-700 text-white rounded-lg" disabled>Eliminar</button>
     <button id="option" class="app-select-option">Opción completa</button>
     <button id="backdrop" class="ui-backdrop">Cerrar fuera</button>
-    <div class="a4-print-container"><button id="print" aria-pressed="true" disabled style="color: black; background: white">Documento</button><input id="print-input" style="height: 12px"></div>
+    <div class="a4-print-container"><button id="print" aria-pressed="true" disabled style="color: black; background: white">Documento</button><input id="print-input" style="height: 12px"><textarea id="print-textarea" style="min-height: 12px; resize: none"></textarea></div>
   </body></html>`);
 }
 
@@ -36,6 +40,38 @@ test('single-line quantities, names, dates and comboboxes share a height across 
       assert.equal(computed('native').height, '1px');
       assert.equal(computed('description').height, '96px');
       assert.equal(computed('print-input').height, '12px');
+    } finally { dom.window.close(); }
+  }
+});
+
+test('fields and comboboxes focus without an outline, and textareas cannot shrink below the shared field height', () => {
+  for (const theme of ['light', 'dark']) {
+    const dom = fixture('neumorphism', theme), document = dom.window.document;
+    const computed = (id: string) => dom.window.getComputedStyle(document.getElementById(id)!);
+    try {
+      for (const id of ['quantity', 'name', 'state', 'description', 'search']) {
+        (document.getElementById(id) as HTMLElement).focus();
+        assert.equal(computed(id).outline, 'none');
+        assert.equal(computed(id).boxShadow, id === 'search' ? 'none' : 'var(--ui-field-focus-shadow)');
+      }
+      assert.equal(computed('description').minHeight, computed('name').minHeight);
+      assert.equal(computed('description').boxSizing, 'border-box');
+      assert.equal(computed('description').resize, 'vertical');
+      assert.equal(computed('print-textarea').minHeight, '12px'); assert.equal(computed('print-textarea').resize, 'none');
+    } finally { dom.window.close(); }
+  }
+});
+
+test('document actions share width and height, avatar shares action relief, and category chips reserve shadow space', () => {
+  for (const theme of ['light', 'dark']) {
+    const dom = fixture('neumorphism', theme), document = dom.window.document;
+    const computed = (id: string) => dom.window.getComputedStyle(document.getElementById(id)!);
+    try {
+      assert.equal(computed('pdf').width, '100%'); assert.equal(computed('photos').width, computed('pdf').width);
+      assert.equal(computed('pdf').height, 'var(--ui-field-height)'); assert.equal(computed('photos').height, computed('pdf').height);
+      assert.equal(computed('avatar').boxShadow, computed('page').boxShadow);
+      assert.equal(computed('avatar').borderRadius, computed('page').borderRadius);
+      assert.equal(computed('chips').padding, '12px');
     } finally { dom.window.close(); }
   }
 });

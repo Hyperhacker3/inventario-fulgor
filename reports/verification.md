@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Foco, filtros, cabecera y productos de Historial/Almacenes (7 de octubre de 2026)
+
+La revisión de seis capturas sustituye el contorno azul de campos y selectores por sombra interior, incluyendo buscadores y cantidades. Las descripciones tienen mínimo de 44 px y redimensionamiento vertical. Los chips de categorías reservan espacio para sombras. Stock comparte acabado plano, hover elevado y selección hundida mediante `aria-pressed`; Nueva Remisión conserva el relieve común como acción. La cabecera retira Supabase Activo y el avatar comparte tamaño, radio y sombra de notificaciones y claro/oscuro. El logo compacto reserva espacio en teléfonos pequeños.
+
+Historial y Almacenes comparten superficies completas clicables con Inventario; el nombre mantiene un botón nativo transparente, sin relieve recortado ni subrayado. `src/shared/productInteraction.ts` evita aperturas duplicadas desde controles internos y al copiar texto. Historial conserva los datos del movimiento; los productos eliminados siguen legibles con documentos accesibles. Almacenes conserva jerarquía y valores. PDF/Fotos comparten altura de 44 px y columnas uniformes que se apilan según el ancho. Se retira únicamente el ojo de la lista de Inventario, manteniendo salida y Detalles en cuadrícula.
+
+Validación: typecheck, lint, **134 pruebas unitarias y 25 de integración**, y build correctos. Se añadieron seis pruebas de CSS/DOM y eventos para foco, descripciones, avatar, chips, documentos, stock y productos de Historial/Almacenes; se actualizaron las pruebas de barra lateral e Inventario. Se preservan las comprobaciones de valores por ubicación, permisos, impresión y transición de paleta. JSDOM comprueba cascada y eventos, sin medir geometría, movimiento o contraste reales. Sin computer use, automatización de navegador ni operaciones sobre Supabase real. Los archivos privados permanecen fuera del commit. La publicación está autorizada y se verifica por separado en Vercel y la URL pública. Las secciones siguientes conservan las verificaciones históricas.
+
 ## Barra lateral del laboratorio y retirada de Liquid Glass (7 de octubre de 2026)
 
 El usuario eligió Neumorfismo como único estilo y pidió retirar Glass y su botón de Ayuda. Se eliminaron `UIStyleToggle`, su estado/API en el contexto, reglas de vidrio, fondos ambiente, reflejos registrados y la elección de estilo del arranque. HTML y React fijan Neumorfismo y descartan la antigua preferencia `el_turpial_ui_style`; se conserva la paleta guardada, incluso si otra pestaña transmite una preferencia antigua. El barrido claro/oscuro, su alternativa de 1,5 segundos y movimiento reducido permanecen.

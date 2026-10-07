@@ -5,7 +5,7 @@ import { isDemo } from '../../lib/supabase';
 import { available } from '../../domain/inventory';
 import { itemPhotos } from '../../domain/photos';
 import { formatUnitWeight } from '../../domain/weight';
-import type { MouseEvent } from 'react';
+import { openProductSurface } from '../../shared/productInteraction';
 
 type ResultsInventory = Pick<ReturnType<typeof useInventory>, 'getLocationString' | 'openItemDetail' | 'addToDispatchCart' | 'user' | 'categoryLabel'>;
 
@@ -17,12 +17,6 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
 export function ExplorerResultsContent({ items, mode, inventory }: { items: Elemento[]; mode: 'grid' | 'list'; inventory: ResultsInventory }) {
   const { getLocationString, openItemDetail, addToDispatchCart, user, categoryLabel } = inventory;
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
-  const openSurface = (event: MouseEvent<HTMLElement>, item: Elemento) => {
-    // Native actions keep their own behavior, including disabled cart buttons.
-    if ((event.target as Element).closest('button, a, input, select, textarea, [role="button"]')) return;
-    if (window.getSelection()?.isCollapsed === false) return;
-    openItemDetail(item);
-  };
   // Stock Badge renderer
   const renderStockBadge = (item: Elemento) => {
     if (item.cantidad === 0) {
@@ -66,7 +60,7 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                   <article
                     key={item.id}
                     data-product-id={item.id}
-                    onClick={event => openSurface(event, item)}
+                    onClick={event => openProductSurface(event, () => openItemDetail(item))}
                     className="ui-product ui-product-card bg-white border border-[#e2e8f0] rounded-xl overflow-hidden flex flex-col"
                   >
                     {/* Image Area */}
@@ -168,7 +162,7 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                   </thead>
                   <tbody>
                     {items.map((item) => (
-                      <tr key={item.id} data-product-id={item.id} onClick={event => openSurface(event, item)} className="ui-product ui-product-row">
+                      <tr key={item.id} data-product-id={item.id} onClick={event => openProductSurface(event, () => openItemDetail(item))} className="ui-product ui-product-row">
                         <td className="p-2.5 sm:p-3 font-mono-code font-bold text-[#3e4e9e] whitespace-nowrap">
                           {item.codigo}
                         </td>
@@ -222,14 +216,6 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                         </td>
                         <td className="p-2.5 sm:p-3 text-center">
                           <div className="flex items-center justify-center gap-3">
-                            <button
-                              onClick={() => openItemDetail(item)}
-                              type="button"
-                              className="w-11 h-11 p-1 rounded-md text-[#3e4e9e] hover:bg-[#f2f3ff]"
-                              title="Ver detalles"
-                            >
-                              <span className="material-symbols-outlined text-[18px]">visibility</span>
-                            </button>
                             {canOperate && <button
                               type="button"
                               onClick={() => addToDispatchCart(item)}

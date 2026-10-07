@@ -3,6 +3,7 @@ import type { Almacen, Estanteria, NivelEstanteria, Caja, Elemento } from '../..
 import { useInventory } from '../../context/InventoryContext';
 import { inventoryLocationValues } from '../../domain/money';
 import { LocationValueSummary, locationValueHint } from './LocationValueSummary';
+import { openProductSurface } from '../../shared/productInteraction';
 
 interface Props {
   almacen: Almacen; estanterias: Estanteria[]; niveles: NivelEstanteria[]; cajas: Caja[]; elementos: Elemento[];
@@ -31,16 +32,17 @@ export function WarehouseTreeContent({ almacen, estanterias, niveles, cajas, ele
   }, [elementos, almacen.id, cajas, niveles]);
   const racks = estanterias.filter(rack => rack.almacenId === almacen.id);
   const unassigned = elementos.filter(item => item.almacenId === almacen.id && !item.estanteriaId);
-  const itemLink = (item: Elemento, label = 'Sin caja') => <button key={item.id} onClick={() => openItemDetail(item)}
-    className="min-w-0 break-words border rounded-xl p-3 text-left text-sm hover:border-[#3e4e9e]">{item.codigo} · {item.nombre}
-    <span className="block text-xs text-[#767682]">{label} · {item.cantidad} {item.unidad}{item.marca ? ` · ${item.marca}` : ''}</span></button>;
+  const itemLink = (item: Elemento, label = 'Sin caja') => <div key={item.id} data-product-id={item.id}
+    onClick={event => openProductSurface(event, () => openItemDetail(item))} className="ui-product ui-product-line w-full min-w-0 p-3 text-left text-sm">
+    <button type="button" onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${item.codigo} · ${item.nombre}`}
+      className="ui-product-open block w-full break-words text-left font-semibold">{item.codigo} · {item.nombre}</button>
+    <span className="block text-xs text-[#767682]">{label} · {item.cantidad} {item.unidad}{item.marca ? ` · ${item.marca}` : ''}</span></div>;
   const boxCard = (box: Caja) => <div key={box.id} className="min-w-0 border rounded-xl p-3 bg-[#f8fafc]">
     <div className="flex flex-wrap justify-between gap-2"><div className="font-bold text-sm">{box.codigoCaja}</div>
       {canAdmin && <button onClick={() => onEditBox(box.id)} className="text-xs text-[#253685]">Editar</button>}</div>
     <p className="text-xs text-[#767682]">{box.estado}</p>
     <LocationValueSummary values={values.boxes.get(box.id)} />
-    {(indexes.byBox.get(box.id) || []).map(item => <button key={item.id} onClick={() => openItemDetail(item)}
-      className="block break-words text-left text-xs mt-2 hover:underline">{item.codigo} · {item.nombre} ({item.cantidad} {item.unidad})</button>)}
+    <div className="space-y-3 mt-3">{(indexes.byBox.get(box.id) || []).map(item => itemLink(item, box.codigoCaja))}</div>
   </div>;
   return <section className="space-y-4">
     <div className="bg-white border rounded-2xl p-5 flex flex-wrap justify-between gap-3">
@@ -76,6 +78,6 @@ export function WarehouseTreeContent({ almacen, estanterias, niveles, cajas, ele
       </article>;
     })}
     {unassigned.length > 0 && <div className="bg-white border rounded-2xl p-4"><h4 className="font-bold">Sin estantería</h4>
-      {unassigned.map(item => <button key={item.id} onClick={() => openItemDetail(item)} className="block break-words text-left text-sm py-1 hover:underline">{item.codigo} · {item.nombre}</button>)}</div>}
+      <div className="space-y-3 mt-3">{unassigned.map(item => itemLink(item, 'Sin estantería'))}</div></div>}
   </section>;
 }

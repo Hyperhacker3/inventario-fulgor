@@ -18,7 +18,7 @@ export function CategoryFilter({ options, selected, label, onChange }: Props) {
     </Select>
     {selected.length ? <>
       <p className="text-xs text-slate-500" role="status">{selected.length} categoría(s) seleccionada(s)</p>
-      <ul aria-label="Categorías del filtro" className="flex flex-wrap gap-2 max-h-40 overflow-y-auto overscroll-contain">
+      <ul aria-label="Categorías del filtro" className="ui-category-chips flex flex-wrap gap-3 max-h-40 overflow-y-auto overscroll-contain">
         {selected.map(category => <li key={category} className="max-w-full">
           <button type="button" aria-label={`Quitar categoría ${label(category)}`} onClick={() => onChange(selected.filter(value => value !== category))}
             className="flex items-center gap-2 min-h-11 max-w-full rounded-lg bg-[#eaedff] text-[#253685] px-2.5 py-2 text-xs text-left">

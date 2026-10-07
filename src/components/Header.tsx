@@ -21,8 +21,7 @@ export const Header: React.FC = () => {
     activeView,
     setActiveView,
     setIsHelpModalOpen,
-    dispatchCart,
-    isCloudConnected
+    dispatchCart
   } = useInventory();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -77,11 +76,11 @@ export const Header: React.FC = () => {
             className="ui-brand-button xl:hidden flex items-center shrink-0"
             onClick={() => navigate('dashboard')}
           >
-            <img src="/logo-completo.png" alt="EL TURPIAL" width="303" height="131" className="brand-logo w-28 sm:w-32 h-auto object-contain" />
+            <img src="/logo-completo.png" alt="EL TURPIAL" width="303" height="131" className="brand-logo w-20 min-[380px]:w-28 sm:w-32 h-auto object-contain" />
           </button>
 
           {/* Quick Search bar (Desktop & Tablet) */}
-          <div className="ui-search-field hidden sm:flex items-center bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-3.5 w-48 lg:w-80 focus-within:border-[#3e4e9e] focus-within:ring-1 focus-within:ring-[#3e4e9e] focus-within:bg-white transition-all shadow-2xs">
+          <div className="ui-search-field hidden sm:flex items-center bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-3.5 w-48 lg:w-80 transition-all shadow-2xs">
             <span className="material-symbols-outlined text-[18px] text-[#767682] mr-2">search</span>
             <input autoComplete="off" autoCorrect="off" spellCheck={false}
               id="header-search-input"
@@ -102,31 +101,6 @@ export const Header: React.FC = () => {
 
         {/* Right side controls */}
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-          {/* Cloud Connection Badge */}
-          <button
-            id="btn-cloud-status"
-            onClick={() => setIsHelpModalOpen(true)}
-            className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
-              isCloudConnected
-                ? 'bg-[#e6f4ea] text-[#137333] border-[#ceead6]'
-                : 'bg-[#f8fafc] text-[#5f6368] border-[#dadce0] hover:bg-[#e8eaed]'
-            }`}
-            title={
-              isCloudConnected
-                ? 'Supabase Conectado en Tiempo Real'
-                : 'Sin conexión en tiempo real. Ver ayuda'
-            }
-          >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isCloudConnected ? 'bg-[#10b981] animate-pulse' : 'bg-[#9aa0a6]'
-              }`}
-            />
-            <span className="text-[11px]">
-              {isCloudConnected ? 'Supabase Activo' : 'Sin conexión'}
-            </span>
-          </button>
-
           {/* Notifications button */}
           <ThemeToggle />
           <div className="relative">
@@ -184,8 +158,8 @@ export const Header: React.FC = () => {
               <span className="text-xs font-bold text-[#131b2e] leading-tight">{user.name}</span>
               <span className="text-[10px] text-[#454651]">{displayCargo(user)}</span>
             </div>
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-[#cbd5e1] shrink-0 shadow-2xs">
-              {user.avatar ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" /> : <span aria-label={user.name} className="w-full h-full grid place-items-center bg-[#eaedff] text-[#253685] text-sm font-bold">{user.name.slice(0, 1).toUpperCase()}</span>}
+            <div className="ui-header-avatar w-11 h-11 overflow-hidden shrink-0">
+              {user.avatar ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" /> : <span aria-label={user.name} className="w-full h-full grid place-items-center text-xl font-bold">{user.name.slice(0, 1).toUpperCase()}</span>}
             </div>
           </div>
         </div>

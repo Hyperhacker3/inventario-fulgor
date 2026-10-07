@@ -15,7 +15,9 @@ function fixture(theme: string) {
       <button id="selected" class="ui-sidebar-action rounded-xl" aria-current="page">Inicio</button>
       <button id="help" class="ui-sidebar-action rounded-xl">Ayuda</button>
       <button id="logout" class="ui-sidebar-action ui-sidebar-logout rounded-xl">Cerrar sesión</button>
+      <button id="dispatch" class="rounded-xl">Nueva Remisión</button>
     </aside><button id="save" class="rounded-xl">Guardar</button>
+    <button id="stock" class="ui-flat-choice">Disponible</button><button id="stock-selected" class="ui-flat-choice" aria-pressed="true">Todos</button>
     <button id="mobile-brand" class="ui-brand-button">Logo móvil</button>
   </body></html>`);
 }
@@ -25,12 +27,14 @@ test('sidebar actions are flat at rest, active navigation stays inset, and other
     const dom = fixture(theme), document = dom.window.document;
     const computed = (id: string) => dom.window.getComputedStyle(document.getElementById(id)!);
     try {
-      for (const id of ['nav', 'help', 'logout']) {
+      for (const id of ['nav', 'help', 'logout', 'stock']) {
         assert.equal(computed(id).boxShadow, 'none'); assert.equal(computed(id).backgroundColor, 'rgba(0, 0, 0, 0)');
         assert.equal(computed(id).borderWidth, '0px');
       }
       assert.equal(computed('selected').boxShadow, 'var(--ui-inset-shadow)');
       assert.equal(computed('save').boxShadow, 'var(--ui-control-shadow)');
+      assert.equal(computed('dispatch').boxShadow, computed('save').boxShadow);
+      assert.equal(computed('stock-selected').boxShadow, 'var(--ui-inset-shadow)');
       for (const id of ['brand', 'mobile-brand']) {
         assert.equal(computed(id).boxShadow, 'none'); assert.equal(computed(id).borderWidth, '0px');
         assert.equal(computed(id).backgroundColor, 'rgba(0, 0, 0, 0)');
@@ -47,6 +51,9 @@ test('hover adds relief only to inactive sidebar actions, selection and press st
       for (const button of document.querySelectorAll('button')) button.setAttribute('data-test-hover', '');
       assert.equal(computed('nav').boxShadow, 'var(--ui-control-shadow)');
       assert.equal(computed('help').boxShadow, 'var(--ui-control-shadow)');
+      assert.equal(computed('dispatch').boxShadow, 'var(--ui-control-shadow)');
+      assert.equal(computed('stock').boxShadow, 'var(--ui-control-shadow)');
+      assert.equal(computed('stock-selected').boxShadow, 'var(--ui-inset-shadow)');
       assert.equal(computed('logout').getPropertyValue('--ui-sidebar-ink'), 'var(--ui-danger)');
       assert.equal(computed('selected').boxShadow, 'var(--ui-inset-shadow)');
       document.getElementById('nav')!.setAttribute('data-test-active', '');
