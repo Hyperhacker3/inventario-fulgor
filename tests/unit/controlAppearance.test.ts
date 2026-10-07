@@ -6,7 +6,7 @@ import { JSDOM } from 'jsdom';
 const css = ['appearance.css', 'controls.css'].map(file => fs.readFileSync(new URL(`../../src/${file}`, import.meta.url), 'utf8')).join('\n');
 function fixture(style: string, theme: string) {
   return new JSDOM(`<html data-ui-style="${style}" data-theme="${theme}"><head><style>${css}</style></head><body>
-    <input id="quantity" type="number" style="padding-top: 8px">
+    <input id="quantity" type="number" class="ui-number-input" style="padding-top: 8px">
     <input id="name" type="text"><input id="date" type="date">
     <button id="state" class="app-select-trigger">Bueno / Óptimo</button>
     <select id="native" class="select-form-value" style="height: 1px"><option>Bueno</option></select>
@@ -39,6 +39,8 @@ test('single-line quantities, names, dates and comboboxes share a height across 
       }
       assert.equal(computed('native').height, '1px');
       assert.equal(computed('description').height, '96px');
+      assert.equal(computed('quantity').appearance, 'textfield');
+      assert.match(css, /\.ui-number-input::\-webkit-inner-spin-button,[\s\S]*?\-webkit-appearance:\s*none/);
       assert.equal(computed('print-input').height, '12px');
     } finally { dom.window.close(); }
   }

@@ -6,9 +6,15 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 
 };
 
 // Keep the editable text separate so clearing a field never turns it into zero.
-export function NumberInput({ value, onValueChange, onBlur, ...props }: Props) {
+export function NumberInput({ value, onValueChange, onBlur, onKeyDown, className, ...props }: Props) {
   const [draft, setDraft] = useState<{ text: string; committed: number } | null>(null);
   return <input autoComplete="off" autoCorrect="off" spellCheck={false} {...props} type="number"
+    className={`ui-number-input ${className ?? ''}`}
+    onKeyDown={event => {
+      // Quantity changes use the explicit +/- actions; native stepping uses fractional steps.
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') event.preventDefault();
+      onKeyDown?.(event);
+    }}
     value={draft && draft.committed === value ? draft.text : value}
     onChange={event => {
       const text = event.target.value;

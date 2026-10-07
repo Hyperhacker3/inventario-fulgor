@@ -18,8 +18,8 @@ export function AdministrationNavigation({ value, onChange }: { value: Administr
       </Select>
     </div>
     <div role="tablist" aria-label="Datos del inventario" className="hidden lg:grid grid-cols-7 gap-2">
-      {tabs.map(tab => <button key={tab.id} role="tab" id={`data-tab-${tab.id}`} aria-controls="data-tab-panel" aria-selected={value === tab.id}
-        onClick={() => onChange(tab.id)} className={`flex min-w-0 gap-2 items-center justify-center rounded-xl px-2 py-3 text-sm ${value === tab.id ? 'bg-[#253685] text-white' : 'bg-white border text-slate-600'}`}>
+      {tabs.map(tab => <button key={tab.id} type="button" role="tab" id={`data-tab-${tab.id}`} aria-controls="data-tab-panel" aria-selected={value === tab.id}
+        onClick={() => onChange(tab.id)} className="ui-flat-choice flex min-w-0 gap-2 items-center justify-center rounded-xl px-2 py-3 text-sm">
         <span className="material-symbols-outlined text-lg shrink-0" aria-hidden="true">{tab.icon}</span>{tab.label}
       </button>)}
     </div>

@@ -88,6 +88,7 @@ test('compact administration selector retains all seven icons and synchronizes s
     assert.equal(trigger.querySelector('[aria-hidden="true"]')!.textContent, 'tag');
     assert.ok(trigger.closest('.lg\\:hidden'));
     assert.ok(host.querySelector('[role="tablist"]')!.classList.contains('hidden'));
+    for (const tab of host.querySelectorAll<HTMLButtonElement>('[role="tab"]')) assert.ok(tab.classList.contains('ui-flat-choice'));
     await act(() => trigger.click());
     const list = document.querySelector('[role="listbox"]')!;
     assert.equal(list.querySelectorAll('[role="option"]').length, 7);

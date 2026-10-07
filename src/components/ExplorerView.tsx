@@ -128,23 +128,21 @@ export const ExplorerView: React.FC = () => {
             </span>
             <div className="flex items-center gap-1">
               <button
+                type="button"
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-                  viewMode === 'grid'
-                    ? 'bg-[#eaedff] text-[#253685]'
-                    : 'text-[#767682] hover:bg-[#f8fafc]'
-                }`}
+                aria-pressed={viewMode === 'grid'}
+                aria-label="Vista cuadrícula"
+                className="ui-flat-choice min-w-11 min-h-11 p-1.5 sm:p-2 rounded-lg"
                 title="Vista cuadrícula"
               >
                 <span className="material-symbols-outlined text-[18px]">grid_view</span>
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode('list')}
-                className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-                  viewMode === 'list'
-                    ? 'bg-[#eaedff] text-[#253685]'
-                    : 'text-[#767682] hover:bg-[#f8fafc]'
-                }`}
+                aria-pressed={viewMode === 'list'}
+                aria-label="Vista lista"
+                className="ui-flat-choice min-w-11 min-h-11 p-1.5 sm:p-2 rounded-lg"
                 title="Vista lista"
               >
                 <span className="material-symbols-outlined text-[18px]">view_list</span>

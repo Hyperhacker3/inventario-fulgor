@@ -7,7 +7,6 @@ import { isDemo } from '../lib/supabase';
 export const Sidebar: React.FC = () => {
   const { signOut } = useAuth();
   const { activeView, setActiveView, dispatchCart, setIsHelpModalOpen, user } = useInventory();
-  const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
 
   const navItems = navigationItems(user.role, dispatchCart.length, isDemo);
 
@@ -17,16 +16,6 @@ export const Sidebar: React.FC = () => {
       <button type="button" aria-label="EL TURPIAL — Ir al inicio" className="ui-brand-button mb-6 px-2" onClick={() => setActiveView('dashboard')}>
         <img src="/logo-completo.png" alt="EL TURPIAL" width="303" height="131" className="brand-logo w-full h-auto object-contain" />
       </button>
-
-      {/* Primary CTA Button */}
-      {canOperate && <button
-        id="btn-nueva-remision"
-        onClick={() => setActiveView('dispatch')}
-        className="w-full rounded-xl py-2.5 px-4 mb-6 font-semibold text-sm flex items-center justify-center gap-2"
-      >
-        <span className="material-symbols-outlined text-[18px]">add</span>
-        <span>Nueva Remisión</span>
-      </button>}
 
       {/* Navigation Links */}
       <nav className="app-nav-scroll flex-1 flex flex-col overflow-y-auto">

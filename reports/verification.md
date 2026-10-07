@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Pestañas planas y cantidades sin selector interno (7 de octubre de 2026)
+
+Las siete pestañas superiores de Administración y lista/cuadrícula comparten `ui-flat-choice` con stock: reposo plano, hover elevado y selección hundida/negrita. Se conservan `aria-selected` en pestañas, `aria-pressed` en vistas, persistencia del modo de Inventario y sincronización del selector compacto de Administración. Se elimina Nueva Remisión de la barra lateral porque duplicaba Salidas; los permisos y la emisión de remisiones siguen en esa pantalla.
+
+`NumberInput` oculta las flechas internas con apariencia de campo de texto y reglas para Chromium/WebKit y Firefox; bloquea ArrowUp/ArrowDown para evitar incrementos nativos de 0,001. Conserva el tipo numérico, edición manual, decimales, campos vacíos, límites y eventos del consumidor. Las acciones −/+ siguen cambiando una unidad y respetando disponibilidad.
+
+Validación: typecheck, lint, **134 pruebas unitarias y 25 de integración**, y build correctos. Se amplían pruebas existentes de cascada en ambas paletas, sincronización de Administración, CSS de campos y eventos de cantidades: −/+ de una unidad, bloqueo de incremento nativo, edición con otras teclas y decimales. No se utilizó computer use, navegador automatizado ni Supabase real; la revisión visual queda a cargo del usuario. Publicación autorizada, con comprobación separada de Vercel y recursos públicos.
+
 ## Foco, filtros, cabecera y productos de Historial/Almacenes (7 de octubre de 2026)
 
 La revisión de seis capturas sustituye el contorno azul de campos y selectores por sombra interior, incluyendo buscadores y cantidades. Las descripciones tienen mínimo de 44 px y redimensionamiento vertical. Los chips de categorías reservan espacio para sombras. Stock comparte acabado plano, hover elevado y selección hundida mediante `aria-pressed`; Nueva Remisión conserva el relieve común como acción. La cabecera retira Supabase Activo y el avatar comparte tamaño, radio y sombra de notificaciones y claro/oscuro. El logo compacto reserva espacio en teléfonos pequeños.

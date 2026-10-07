@@ -258,6 +258,11 @@ test('quantity dialog asks before adding, accepts typed amounts and confirms onl
     const plus = document.querySelector<HTMLButtonElement>('[aria-label="Aumentar cantidad"]')!;
     const minus = document.querySelector<HTMLButtonElement>('[aria-label="Reducir cantidad"]')!;
     const input = document.querySelector<HTMLInputElement>('#dispatch-add-quantity')!;
+    assert.ok(input.classList.contains('ui-number-input'));
+    for (const key of ['ArrowUp', 'ArrowDown']) {
+      const event = new dom.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+      await act(() => input.dispatchEvent(event)); assert.equal(event.defaultPrevented, true); assert.equal(input.value, '1');
+    }
     await act(() => plus.click()); assert.equal(input.value,'2');
     await act(() => minus.click()); assert.equal(input.value,'1');
     const setValue = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
@@ -316,6 +321,8 @@ test('numeric fields can be cleared, require a replacement, and accept zero and 
     await type('12.375');
     assert.equal(quantity, 12.375);
     assert.equal(input.value, '12.375');
+    const editKey = new dom.window.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true });
+    await act(() => input.dispatchEvent(editKey)); assert.equal(editKey.defaultPrevented, false);
     await type('0');
     assert.equal(quantity, 0);
     assert.equal(host.querySelector('form')!.checkValidity(), true);
