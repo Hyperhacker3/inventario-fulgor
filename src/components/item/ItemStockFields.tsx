@@ -9,10 +9,10 @@ const units = ['UND', 'MTS', 'RLL', 'KG', 'KL', 'PAR', 'PARES', 'JGO', 'JUEGO', 
 export function ItemStockFields({ quantity, unit, minimum, onQuantity, onUnit, onMinimum }: Props) {
   return <section className="item-stock-controls grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 border-t">
     <label className="text-xs font-bold text-[#454651] uppercase">Stock inicial
-      <div className="ui-stepper ui-inset flex mt-2 border rounded-lg overflow-hidden">
+      <div className="ui-stepper flex gap-3 mt-2">
         <button type="button" aria-label="Reducir stock inicial" onClick={() => onQuantity(Math.max(0, quantity - 1))} className="px-3 shrink-0">−</button>
         <NumberInput id="input-stock-inicial" min="0" step="0.001" required value={quantity}
-          onValueChange={onQuantity} className="w-full min-w-0 bg-transparent text-center py-2" />
+          onValueChange={onQuantity} className="w-full min-w-0 border rounded-lg text-center py-2" />
         <button type="button" aria-label="Aumentar stock inicial" onClick={() => onQuantity(quantity + 1)} className="px-3 shrink-0">+</button>
       </div>
     </label>

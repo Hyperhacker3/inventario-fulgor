@@ -14,7 +14,9 @@ Implementado el 7 de octubre por petición del usuario. Las transiciones de esti
 
 El ajuste posterior sustituye la transición original de 3 segundos por **1,5 segundos** en ambos cambios. Claro/oscuro usa un barrido suave de izquierda a derecha mediante View Transitions; si no está disponible, conserva un fundido de 1,5 segundos. Neumorfismo elimina los bordes y anillos decorativos de superficies, campos, avisos y portales, manteniendo sombras, símbolos, foco del teclado y el documento imprimible. Los cambios rápidos cancelan las capturas anteriores para que prevalezca la última elección.
 
-El usuario aportó cuatro capturas con problemas visuales. La corrección posterior reserva espacio para sombras dentro del scroll de navegación, aplica el relieve al contenedor exterior de filtros, respeta los selectores de bloque y coloca Alcance sobre su campo. Las tarjetas del dashboard tienen más separación. Stock inicial utiliza un solo campo hundido con botones y altura alineada; el peso reserva el ancho de su unidad y se apila por debajo de 480 px. Se conservan los 1,5 segundos y las reglas sin bordes de Neumorfismo. La corrección se comprueba con código/DOM y build; su aspecto en la app sigue sujeto a la revisión del usuario.
+El usuario aportó cuatro capturas con problemas visuales. La corrección publicada en `b73b0d0` reserva espacio para sombras dentro del scroll de navegación, aplica el relieve al contenedor exterior de filtros, respeta los selectores de bloque y coloca Alcance sobre su campo. Las tarjetas del dashboard tienen más separación; el peso reserva el ancho de su unidad y se apila por debajo de 480 px. Se conservan los 1,5 segundos y las reglas sin bordes de Neumorfismo.
+
+En la siguiente revisión pidió unificar las alturas, separar las acciones de Ver elemento, eliminar los rellenos coloreados de todos los botones y aproximar Liquid Glass a la captura del Centro de control de iPhone. `src/controls.css` normaliza campos de una línea/selectores a 44 px y acciones a superficie neutra con relieve; el azul es `#3e4e9e`, con texto rojo, verde o amarillo según el significado y variantes claras en oscuro. Las descripciones siguen siendo multilínea. Las acciones de stock −/+ son botones separados del campo para compartir ese tratamiento. Ver elemento tiene separación de 24 px entre bloques y 16 px entre acciones, con menos botones por fila cuando falta espacio. El vidrio reduce la opacidad, añade reflejos graduados y bordes luminosos, y aplica desenfoque a las capas y controles sobre el fondo ambiente. La evaluación visual y de rendimiento real sigue a cargo del usuario; no se utilizó automatización de navegador.
 
 - Repositorio local: `C:/Users/Assas/Downloads/inventario-fulgor`.
 - Remoto: `https://github.com/Hyperhacker3/inventario-fulgor.git`, rama `main`.
@@ -69,7 +71,7 @@ Los archivos privados están en `.private_import/20261006_almacen/`, ignorados p
 
 ## Apariencia existente y demo
 
-La app combina Tailwind y CSS propio. `src/appearance.css` define tokens de paleta y material compartidos para superficies, campos, controles y portales; las utilidades neutras existentes consumen esos tokens. El vidrio limita el desenfoque a navegación y capas superpuestas y ofrece fondos opacos sin soporte de filtros. El relieve adapta las sombras a cada paleta. Usa fuentes locales Hanken Grotesk, JetBrains Mono y Material Symbols; Material Symbols es el conjunto de iconos, no una biblioteca completa de componentes Material UI. Azul conservado: `#3e4e9e`, con `#253685` como variante oscura.
+La app combina Tailwind y CSS propio. `src/appearance.css` define tokens de paleta y material compartidos para superficies, campos, controles y portales; `src/controls.css` uniforma alturas, superficies de botones y sus colores semánticos. El vidrio incluye desenfoque de paneles/controles, con radios menores de desenfoque en móvil y fondos opacos sin soporte de filtros. El relieve adapta las sombras a cada paleta. Usa fuentes locales Hanken Grotesk, JetBrains Mono y Material Symbols; Material Symbols es el conjunto de iconos, no una biblioteca completa de componentes Material UI. Azul conservado: `#3e4e9e`, con `#253685` como variante; las acciones usan azul claro en oscuro para mantener legibilidad.
 
 La demo elegida está fuera del repositorio:
 
@@ -86,6 +88,7 @@ Es HTML independiente con datos ficticios y logo/fuente embebidos. No tiene cone
 | Arranque y paleta | `index.html`, `src/main.tsx`, `src/shared/theme.ts` |
 | Preferencia claro/oscuro | `src/context/ThemeContext.tsx`, `src/components/ThemeToggle.tsx` |
 | CSS común, estilos y paleta oscura | `src/index.css`, `src/appearance.css`, `src/theme.css` |
+| Alturas uniformes y botones sin rellenos de color | `src/controls.css`, `tests/unit/controlAppearance.test.ts` |
 | Selector de estilo al final de Ayuda | `src/components/HelpModal.tsx`, `src/components/UIStyleToggle.tsx` |
 | Fondo sin fotografía adaptado al estilo | `src/components/ItemPhotoPlaceholder.tsx` |
 | Pruebas de preferencias y transiciones | `tests/unit/theme.test.ts` |
@@ -99,7 +102,7 @@ Los nombres abreviados de componentes de esta tabla se resuelven bajo `src/compo
 
 ## Verificación y límites
 
-Antes de publicar cambios de app: `pnpm typecheck`, `pnpm lint`, `pnpm test` y `pnpm build`. Para esta implementación pasaron typecheck, lint, **116 pruebas unitarias y 25 de integración**, y build. Se verifican en DOM las preferencias, las cuatro combinaciones al arrancar, formularios y selector abierto conservados, almacenamiento bloqueado y duración de la transición. Las pruebas se ejecutaron con Node 24.19.0 disponible, aunque el proyecto solicita Node 22.x. No se realizó revisión visual de la app en navegador ni medición en un dispositivo físico. En la carga privada anterior se ejecutaron 12 comprobaciones de PostgreSQL embebido; el usuario ejecutó y verificó el SQL en su Supabase.
+Antes de publicar cambios de app: `pnpm typecheck`, `pnpm lint`, `pnpm test` y `pnpm build`. Para esta implementación pasaron typecheck, lint, **118 pruebas unitarias y 25 de integración**, y build. Se verifican en DOM las preferencias, las cuatro combinaciones al arrancar, formularios y selector abierto conservados, almacenamiento bloqueado y duración de la transición. Las pruebas nuevas de CSS/DOM comprueban alturas y tratamiento común de botones, significado por variables de color, y exclusiones de opciones, fondos de cierre, valores nativos ocultos e impresión. JSDOM no mide geometría física ni reproduce desenfoque, refracción o interpolación de propiedades registradas. Las pruebas se ejecutaron con Node 24.19.0 disponible, aunque el proyecto solicita Node 22.x. No se realizó revisión visual de la app en navegador ni medición en un dispositivo físico. En la carga privada anterior se ejecutaron 12 comprobaciones de PostgreSQL embebido; el usuario ejecutó y verificó el SQL en su Supabase.
 
 La demo tiene comprobaciones DOM con JSDOM para las nueve combinaciones de estilo/pantalla, búsqueda, detalle, lista/cuadrícula, tema, selector de anchos y registro local. No se hizo verificación visual mediante navegador automatizado ni se midió rendimiento en un dispositivo físico.
 

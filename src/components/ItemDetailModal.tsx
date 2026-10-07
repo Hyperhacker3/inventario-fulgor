@@ -126,7 +126,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
             </Select>
           </label>
           <ItemPhotoPicker value={photo} additional={additionalPhotos} category={item.categoria} onChange={setPhoto} onAdditionalChange={setAdditionalPhotos} onBusyChange={setPhotoBusy} disabled={pending} />
-        </form> : <>
+        </form> : <div className="item-detail-summary flex flex-col gap-6">
           <div className="flex flex-col gap-5">
             <ItemPhotoGallery key={JSON.stringify([item.fotoUrl, item.fotosAdicionales])} item={item} />
             <div className="min-w-0">
@@ -139,7 +139,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
               <p className="text-sm mt-2 text-[#253685]">Valor por 1 {item.unidad.toUpperCase()}: {formatCOP(item.valorUnitario || 0)}</p>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="grid grid-cols-3 gap-4 text-center">
             <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-lg">{item.cantidad}</strong><span className="text-xs">Stock {item.unidad}</span></div>
             <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-lg">{available(item)}</strong><span className="text-xs">Disponible</span></div>
             <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-lg">{item.cantidadDanados ?? 0}</strong><span className="text-xs">Dañado</span></div>
@@ -155,7 +155,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
             </>}
           </div>
           {item.archived && canAdmin && <ArchivedItemActions item={item} onDelete={onPermanentDelete} onRestore={onRestore} />}
-        </>}</ScreenTransition>
+        </div>}</ScreenTransition>
         {history}
       </div>
       <footer className="p-4 border-t bg-[#f8fafc] flex justify-end gap-2">

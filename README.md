@@ -14,7 +14,9 @@ Para cambiar el estilo, abra **Ayuda y Guía** en escritorio o **Ayuda** desde e
 
 Claro/oscuro revela la nueva paleta de **izquierda a derecha**, con un borde suave, durante **1,5 segundos**. En navegadores sin View Transitions se utiliza un fundido de la misma duración. Neumorfismo utiliza únicamente sombras, sin bordes delineados ni anillos decorativos; Liquid Glass conserva sus contornos. El foco visible del teclado y el formato imprimible de las remisiones se mantienen.
 
-La revisión de capturas del usuario corrigió el recorte de las sombras en navegación y filtros, la posición de la etiqueta Alcance y la alineación de stock/peso en Nuevo ítem. Los controles de stock utilizan un solo hundido y el selector de peso se apila en pantallas estrechas.
+La revisión de capturas del usuario corrigió el recorte de las sombras en navegación y filtros, la posición de la etiqueta Alcance y la alineación de stock/peso en Nuevo ítem. Los campos de una línea y selectores comparten **44 px de altura**; las descripciones conservan varias líneas. Los botones usan superficie neutra y relieve como Anterior/Siguiente, con texto azul (`#3e4e9e`) o rojo, verde o amarillo según la acción, con variantes legibles en oscuro. Ver elemento separa sus indicadores y acciones. El selector de peso se apila en pantallas estrechas.
+
+Liquid Glass se ajustó a la referencia del Centro de control aportada por el usuario: superficies más translúcidas, bordes luminosos, reflejos graduados y desenfoque sobre un fondo con variación de color. Es una adaptación web con CSS; la evaluación del parecido, contraste y rendimiento en dispositivos reales se realiza con el usuario.
 
 ## Desarrollo local
 

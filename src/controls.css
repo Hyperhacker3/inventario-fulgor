@@ -1,0 +1,50 @@
+/* One field height and one action material across views, dialogs and body portals. */
+:root {
+  --ui-field-height: 44px;
+  --ui-action: #3e4e9e;
+  --ui-danger: #ba1a1a;
+  --ui-success: #137333;
+  --ui-warning: #755b00;
+}
+:root[data-theme='dark'] {
+  --ui-action: #b8c6ff;
+  --ui-danger: #ffaaa5;
+  --ui-success: #88dfb2;
+  --ui-warning: #f3d483;
+}
+@media screen {
+  /* Hidden native form values, checkboxes, upload pickers and print retain their sizes. */
+  :root[data-ui-style] :is(input:not(:where([type='hidden'], [type='checkbox'], [type='radio'], [type='file'])), select:not(.select-form-value), .app-select-trigger, .ui-search-field):not(:where(.a4-print-container *, .rm-measure *)) {
+    box-sizing: border-box;
+    height: var(--ui-field-height);
+    min-height: var(--ui-field-height);
+    padding-block: 0;
+    line-height: 1.25;
+  }
+  :root[data-ui-style] .ui-search-field {
+    background-color: var(--ui-field);
+    border-radius: var(--ui-control-radius);
+    box-shadow: var(--ui-inset-shadow);
+  }
+  :root[data-ui-style] .ui-search-field > input { height: 100%; min-height: 0; }
+  :root[data-ui-style] .ui-search-field > button { min-height: 32px; height: 32px; flex-shrink: 0; }
+
+  /* Override old colored utility fills, including their hover rules. Color conveys meaning. */
+  :root[data-ui-style] button:not(:where(.app-select-trigger, .app-select-option, .ui-backdrop, .mobile-menu-backdrop, .a4-print-container *, .rm-measure *)) {
+    background-color: var(--ui-button-fill, var(--ui-surface)) !important;
+    background-image: var(--ui-sheen) !important;
+    color: var(--ui-button-ink, var(--ui-action)) !important;
+    border: 1px solid var(--ui-line);
+    border-radius: var(--ui-control-radius);
+    box-shadow: var(--ui-control-shadow) !important;
+    min-height: var(--ui-field-height);
+  }
+  :root[data-ui-style] button:not(:where(.app-select-trigger, .app-select-option, .ui-backdrop, .mobile-menu-backdrop, .a4-print-container *, .rm-measure *)):hover:not(:disabled) { --ui-button-fill: var(--ui-button-hover); }
+  :root[data-ui-style] button:not(:where(.app-select-trigger, .app-select-option, .ui-backdrop, .mobile-menu-backdrop, .a4-print-container *, .rm-measure *)):is(:active, [aria-pressed='true'], [aria-current='page']) { box-shadow: var(--ui-inset-shadow) !important; }
+  :root[data-ui-style] button:not(:where(.app-select-trigger, .app-select-option, .ui-backdrop, .mobile-menu-backdrop, [class*='px-'], [class*='p-'], [class*='w-'], .a4-print-container *, .rm-measure *)) { padding-inline: 12px; }
+  :root[data-ui-style] button:disabled:not(:where(.a4-print-container *, .rm-measure *)) { opacity: .45; cursor: not-allowed; }
+  :root[data-ui-style] button > :is(.material-symbols-outlined, .text-white):not([class*='bg-']) { color: inherit; }
+  :root[data-ui-style] button:is([class*='text-green-'], [class*='text-emerald-'], [class*='bg-green-'], [class*='bg-emerald-'], [class~='bg-[#137333]'], [class~='text-[#137333]'], [class~='bg-[#e6f4ea]']) { --ui-button-ink: var(--ui-success); }
+  :root[data-ui-style] button:is([class*='text-amber-'], [class*='text-yellow-'], [class*='bg-amber-'], [class*='bg-yellow-'], [class~='text-[#755b00]'], [class~='bg-[#fef7e0]']) { --ui-button-ink: var(--ui-warning); }
+  :root[data-ui-style] button:is([class*='text-red-'], [class*='text-rose-'], [class*='bg-red-'], [class*='bg-rose-'], [class~='bg-[#dd4c42]'], [class~='bg-[#ba1a1a]'], [class~='text-[#ba1a1a]'], [class~='text-[#dd4c42]']) { --ui-button-ink: var(--ui-danger); }
+}

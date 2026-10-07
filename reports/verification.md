@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Campos uniformes, acciones sin rellenos y revisión de vidrio (7 de octubre de 2026)
+
+La siguiente revisión del usuario pide igualar alturas, separar las acciones de Ver elemento y aplicar a todos los botones el acabado neutro de Anterior/Siguiente, conservando azul o colores semánticos en el texto. `src/controls.css` uniforma campos de una línea/selectores a 44 px, mantiene descripciones multilínea y excluye valores nativos ocultos, archivos, checkboxes y documento imprimible. Los buscadores compuestos no añaden altura. Las acciones neutralizan sus antiguos rellenos y hover, comparten relieve/forma y mantienen rojo/verde/amarillo mediante variables; los fondos de cierre y las opciones siguen cumpliendo su función. Stock inicial usa el campo estándar con −/+ separados. Ver elemento tiene 24 px entre bloques y 16 px entre acciones, con más filas si falta ancho.
+
+La referencia del Centro de control del usuario orienta Liquid Glass: capas menos opacas, reflejo graduado, contorno luminoso, sombras interiores y desenfoque sobre color ambiente. Se reducen los radios de desenfoque en móvil y se mantiene la alternativa opaca sin filtros. Es CSS y no el motor óptico nativo de Apple. Las transiciones siguen en 1,5 segundos, incluyendo los reflejos donde se admiten propiedades registradas.
+
+Validación: typecheck y lint correctos, **118 pruebas unitarias y 25 de integración**, y build correcto. Las dos pruebas nuevas comprueban reglas CSS/DOM de alturas y botones en las cuatro combinaciones, tokens semánticos y exclusiones de opciones, fondos de cierre y remisión. No resuelven variables como un navegador ni verifican geometría física, contraste, desenfoque o rendimiento real. Las capturas guían la corrección; no se utilizó computer use ni automatización de navegador. Entorno Node 24.19.0 / pnpm 11.19.0; el proyecto declara Node 22.x. No hubo cambios en Supabase real.
+
 ## Corrección de las cuatro capturas de Neumorfismo (7 de octubre de 2026)
 
 Las capturas muestran sombras recortadas en esquinas de navegación/filtros, Alcance junto al selector y alturas desiguales en stock/peso. Se reservó espacio para el relieve en el scroll de navegación, se trasladó la superficie de filtros fuera de su recorte, se corrigió `display` de selectores de bloque y se dispuso Alcance sobre su campo. Las tarjetas tienen más separación. Stock inicial tiene un solo hundido y altura alineada, con foco de teclado alrededor del grupo y botones identificados. Peso usa ancho intrínseco para la unidad y se apila en pantallas inferiores a 480 px.

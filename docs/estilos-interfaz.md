@@ -20,6 +20,9 @@ No forman parte del cambio Bento Grid, una importación de productos, la sustitu
 - Botón **al final del contenido de Ayuda y conexión**, después de las explicaciones y antes de Cerrar. Indica la acción «Cambiar a Liquid Glass» o «Cambiar a Neumorfismo» y muestra el estilo actual.
 - Tanto el cambio de estilo como el cambio claro/oscuro duran **1,5 segundos**. Claro/oscuro revela la nueva paleta de izquierda a derecha con un borde suave; entre estilos se conserva el cambio gradual de superficies. Un segundo cambio cancela el efecto anterior y conserva la última elección; movimiento reducido elimina ambos efectos.
 - Neumorfismo presenta superficies **sin bordes delineados**, separadas por sombras. Liquid Glass conserva sus contornos. El foco visible del teclado se mantiene como indicador temporal de accesibilidad.
+- Los campos de una línea y selectores comparten **44 px de altura**; las áreas de descripción conservan varias líneas. Las opciones largas del selector se abrevian visualmente con puntos suspensivos y conservan su texto completo en el título y el desplegable.
+- Todas las acciones comparten el fondo neutro, forma y relieve de Anterior/Siguiente. El texto es azul `#3e4e9e`, o rojo, verde o amarillo cuando corresponde a su significado; se usan variantes claras en oscuro. Los rellenos antiguos, incluidos los de hover, se neutralizan. Los selectores y las opciones mantienen su tratamiento de campo/lista; los fondos de cierre exterior conservan su función.
+- Ver elemento separa los bloques en 24 px y las acciones en 16 px; la cuadrícula reserva al menos 140 px por acción en pantallas amplias y pasa a varias filas cuando es necesario.
 
 La intensidad de sombras y transparencias adapta la demo a la interfaz existente; queda pendiente la evaluación visual del usuario.
 
@@ -38,7 +41,7 @@ Las pestañas del mismo navegador reciben los cambios mediante el evento `storag
 
 ## Tratamiento visual
 
-**Liquid Glass:** capas translúcidas, reflejos discretos y desenfoque sobre fondos con profundidad. Mantener suficiente opacidad detrás de texto y formularios; prever una alternativa opaca para navegadores sin soporte de `backdrop-filter`. Limitar superficies desenfocadas simultáneas, especialmente en móviles, para evitar efectos costosos al desplazarse. Es una adaptación web del estilo, no componentes nativos de iOS.
+**Liquid Glass:** la captura del Centro de control enviada por el usuario guía la transparencia, las curvas, los reflejos y bordes luminosos. Las superficies claras usan blanco al 38 % y las oscuras una base al 48 %; campos y controles añaden capas más finas. Un gradiente de luz, sombras interiores superiores/inferiores y contornos translúcidos aportan definición. Paneles y navegación desenfocan 24 px y controles 10 px; en móvil se reducen a 16/6 px. El fondo incorpora variación azul, verde, violeta y ámbar visible a través del material. Se conservan fondos opacos donde no hay `backdrop-filter`. Es una adaptación CSS: no reproduce el motor nativo de refracción, adaptación al contenido y transformación de formas de iOS. Referencias de diseño: [Apple, Materials](https://developer.apple.com/design/human-interface-guidelines/materials) y [Meet Liquid Glass](https://developer.apple.com/videos/play/wwdc2025/219/). Contraste y rendimiento en dispositivos reales quedan pendientes de evaluación.
 
 **Neumorfismo:** superficies de tono cercano al fondo, sombras de relieve y controles hundidos, sin bordes delineados ni anillos decorativos. Los bordes se hacen transparentes conservando su espacio, para evitar saltos de tamaño al alternar estilos. La regla cubre tarjetas, campos, avisos, separadores, marcos de fotos y ventanas, incluidos sus pseudo-elementos. Se mantienen las sombras, la forma, el texto y los estados para reconocer los controles. El indicador de foco de teclado sigue visible; las líneas que dibujan el icono del selector y el spinner, y el documento imprimible, conservan sus reglas independientes.
 
@@ -49,6 +52,8 @@ Estados comúnmente necesarios: reposo, hover, pulsado, seleccionado, foco de te
 - Paleta y estilo separados: `data-theme="light|dark"` y `el_turpial_theme`; `data-ui-style="glass|neumorphism"` y `el_turpial_ui_style`. `ThemeProvider` gestiona ambos sin remontar el inventario.
 - `index.html` inicializa ambas preferencias y el indicador de arranque antes de React. `initializeTheme()` en `src/shared/theme.ts` aplica las mismas elecciones y actualiza `color-scheme` y el color de la barra del navegador.
 - `src/appearance.css` define tokens semánticos compartidos para fondo, superficies, campos, bordes, texto, marca, sombras y desenfoque. Las utilidades neutras existentes consumen esos tokens en todas las vistas; los colores de estado conservan su significado. La vista previa de remisiones utiliza la misma paleta, conservando el documento A4 independiente.
+- `src/controls.css`, importado después de apariencia, aplica `--ui-field-height: 44px` a campos de una línea y selectores. Los buscadores compuestos comparten la altura exterior; no se agrandan por el padding interno. Excluye valores nativos ocultos, checkboxes, archivos y documentos imprimibles. Normaliza los botones de acción y deduce su color semántico de las utilidades existentes; no cambia sus eventos, permisos ni payloads.
+- Los reflejos usan propiedades de color registradas con `@property` y se interpolan en la raíz durante el cambio de estilo de 1,5 segundos. Los navegadores sin ese soporte conservan el material y las transiciones de colores/sombras, aunque el reflejo pueda cambiar directamente. Referencia: [MDN, @property](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@property). Para las capas desenfocadas, consultar [MDN, backdrop-filter](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/backdrop-filter).
 - `src/index.css` importa `appearance.css` después de `theme.css`, para que las variables de material prevalezcan sobre los colores neutros anteriores. Las reglas de estados de error, éxito y advertencia conservan sus colores.
 - El CSS compartido adapta tarjetas, botones, campos y ventanas. Se conserva el selector personalizado, con su teclado, validación y opciones desplegadas; no se sustituye por un selector nativo. Las formas circulares de gráficos y controles se mantienen, y el fondo sin fotografía utiliza el material elegido.
 - Los atributos y variables se aplican en `document.documentElement`, incluyendo los selectores, menús y modales que se montan en `document.body`.
@@ -67,7 +72,7 @@ Estados comúnmente necesarios: reposo, hover, pulsado, seleccionado, foco de te
 - Navegación de escritorio y móvil: el área desplazable reserva espacio alrededor de los botones para evitar sombras recortadas en rectángulos; los botones no se encogen al faltar altura.
 - Filtros: el material y la sombra pertenecen al contenedor exterior. Su interior conserva el recorte para abrir/cerrar el panel móvil, con la misma curvatura y sin cortar la sombra exterior.
 - Selectores con clase `block`: utilizan `display: flex`, evitando que el `inline-flex` común los coloque junto a la etiqueta. Alcance dispone además la etiqueta sobre el selector; las tarjetas del dashboard tienen más separación.
-- Stock inicial: un único relieve hundido envuelve los botones y el campo, evitando el doble efecto. Su altura coincide con los otros controles de stock y el foco de teclado se dibuja alrededor del grupo; los botones disponen de nombres accesibles y foco diferenciado.
+- Stock inicial: se corrigió inicialmente el doble hundido del grupo. La petición posterior de botones uniformes sustituye ese grupo por el campo normal y dos botones separados de relieve, todos alineados a 44 px y con foco y nombres accesibles.
 - Peso: la unidad dispone de ancho intrínseco suficiente para su texto; por debajo de 480 px los controles se apilan. El campo numérico deja de estirarse por el texto partido del selector.
 
 Estas correcciones se basan en las capturas y en la estructura/CSS. No implican una revisión visual automatizada de la aplicación y conservan preferencias, datos y transiciones.
@@ -100,6 +105,10 @@ La implementación no requiere SQL. La comprobación visual real se realiza con 
 6. Revisar una remisión en pantalla y en impresión/PDF con ambos estilos, comprobando paginación, logo y contenido. Comprobar Liquid Glass en un navegador sin soporte de desenfoque si se dispone de él.
 
 Esta lista sigue pendiente de evaluación visual; las pruebas de DOM y la compilación no sustituyen la revisión de contraste, impresión y rendimiento en dispositivos reales.
+
+## Verificación de campos, botones y referencia de vidrio
+
+Typecheck, lint, **118 pruebas unitarias y 25 de integración**, y build correctos. Las pruebas CSS/DOM nuevas comprueban las alturas declaradas y el material común de acciones en ambas paletas/estilos, los tokens semánticos y las exclusiones de opciones, cierre exterior y documento imprimible. No resuelven variables como un navegador, ni miden geometría física, contraste, desenfoque, refracción o interpolación de propiedades registradas. La comprobación visual de la referencia se hace con el usuario.
 
 ## Verificación del ajuste a 1,5 segundos
 

@@ -126,7 +126,7 @@ export function Select({ children, className = '', id, style, onChange, onInvali
     <button type="button" ref={trigger} id={controlId} role="combobox" aria-haspopup="listbox" aria-controls={listId} aria-expanded={expanded}
       aria-activedescendant={expanded ? `${listId}-${highlight}` : undefined} aria-label={props['aria-label']} aria-labelledby={props['aria-labelledby']}
       aria-describedby={props['aria-describedby']} aria-required={props.required || undefined} aria-invalid={invalid || props['aria-invalid']}
-      disabled={props.disabled} title={props.title} style={style} className={`app-select-trigger ${className}`} onKeyDown={keyboard}
+      disabled={props.disabled} title={props.title || selectedOption?.label} style={style} className={`app-select-trigger ${className}`} onKeyDown={keyboard}
       onBlur={() => setOpen(false)} onClick={() => { if (expanded) setOpen(false); else show(); }}>
       <span className="app-select-value inline-flex items-center gap-2 min-w-0">
         {selectedOption && optionIcons?.[selectedOption.value] && <span className="material-symbols-outlined text-xl shrink-0" aria-hidden="true">{optionIcons[selectedOption.value]}</span>}

@@ -81,7 +81,7 @@ export const Header: React.FC = () => {
           </button>
 
           {/* Quick Search bar (Desktop & Tablet) */}
-          <div className="hidden sm:flex items-center bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-3.5 py-1.5 w-48 lg:w-80 focus-within:border-[#3e4e9e] focus-within:ring-1 focus-within:ring-[#3e4e9e] focus-within:bg-white transition-all shadow-2xs">
+          <div className="ui-search-field hidden sm:flex items-center bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-3.5 w-48 lg:w-80 focus-within:border-[#3e4e9e] focus-within:ring-1 focus-within:ring-[#3e4e9e] focus-within:bg-white transition-all shadow-2xs">
             <span className="material-symbols-outlined text-[18px] text-[#767682] mr-2">search</span>
             <input autoComplete="off" autoCorrect="off" spellCheck={false}
               id="header-search-input"
@@ -144,7 +144,7 @@ export const Header: React.FC = () => {
               )}
             </button>
 
-            <Presence open={showNotifications}>{showNotifications && <button type="button" tabIndex={-1} aria-label="Cerrar notificaciones al tocar fuera" onClick={() => setShowNotifications(false)} className="fixed inset-0 z-40 bg-black/10 cursor-default" />}
+            <Presence open={showNotifications}>{showNotifications && <button type="button" tabIndex={-1} aria-label="Cerrar notificaciones al tocar fuera" onClick={() => setShowNotifications(false)} className="ui-backdrop fixed inset-0 z-40 bg-black/10 cursor-default" />}
             {showNotifications && (
               <div className="fixed sm:absolute right-3 sm:right-0 top-14 sm:top-auto sm:mt-2 w-[calc(100vw-1.5rem)] sm:w-80 max-w-sm bg-white border border-[#e2e8f0] rounded-2xl shadow-xl p-3.5 z-50 ui-panel-enter">
                 <div className="flex items-center justify-between pb-2 border-b border-[#e2e8f0] mb-2">
