@@ -24,6 +24,8 @@ El logo de empresa conserva el acceso a Inicio, **sin marco, relleno ni sombra**
 
 ## Campos, botones y productos
 
+En cuadrícula, Agregar a la salida ocupa la esquina inferior derecha de la fotografía, con botón neutro de 44 × 44 px e icono rojo. No utiliza una fila propia debajo del contenido. El stock permanece arriba a la derecha y el contador de fotos abajo a la izquierda; lista conserva su acción en la columna Acciones. Los permisos, deshabilitado y apertura independiente no cambian.
+
 Inventario enfatiza el nombre en mayúsculas y negrita, 16 px en móvil / 18 px desde 640 px, con varias líneas sin truncarlo. Lista muestra solo el nombre en la celda del componente: retira marca, categoría, peso, unidad y etiquetas debajo; categoría permanece en su columna y unidad junto a Stock. Cuadrícula mantiene marca/código/ubicación/disponibilidad, retira categoría/peso/unidad y Detalles; su única acción independiente agrega a la salida con icono rojo y 44 px. La tarjeta y el nombre accesible siguen abriendo el producto.
 
 Nuevo ítem, Entradas y Salidas desplazan al primer campo inválido o mensaje de error, incluyendo creación en línea y fallos de guardado; una escritura confirmada vuelve al inicio. Se conserva el borrador, foco y movimiento reducido. Las claves de estantería/nivel/caja son distintas incluso sin selección, evitando duplicados. Altas/ediciones y los nombres/lugares enviados por Salidas se guardan en mayúsculas; los snapshots del servidor necesitan la migración adicional. Ver `docs/formularios-y-nombres.md`.

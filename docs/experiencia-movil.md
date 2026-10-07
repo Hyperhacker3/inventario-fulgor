@@ -24,6 +24,8 @@ Los controles del producto, almacenes y fotografías usan columnas que permiten 
 
 El selector de fotos adapta las columnas al espacio de su propio contenedor: la principal queda centrada y las adicionales forman una cuadrícula. Quitar aparece sobre cada foto y Hacer principal debajo. Las fotos del registro de salida también se distribuyen según el ancho disponible.
 
+La cuadrícula de Inventario coloca el botón rojo de salida sobre la fotografía, abajo a la derecha, con superficie táctil de 44 × 44 px. El contador de fotos queda abajo a la izquierda y el stock arriba a la derecha. Se elimina la fila inferior de acción; en lista se conserva la columna Acciones. Tocar salida no abre también la ficha.
+
 Al tomar una foto principal, adicional o del registro de salida, **Capturar ocupa todo el ancho de su fila en móvil**, por debajo de 640 px. Elegir archivo y Cambiar cámara comparten la fila anterior. El botón se ajusta al contenedor y conserva al menos 44 px de altura; tras capturar, Repetir/Usar foto mantiene sus columnas. Revisar en ambas orientaciones del teléfono y paletas.
 
 ## Teclado

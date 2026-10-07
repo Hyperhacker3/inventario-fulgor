@@ -1,5 +1,11 @@
 # Verificación de la refactorización local
 
+## Acción de salida sobre la fotografía (7 de octubre de 2026)
+
+En cuadrícula, se mueve Agregar a la salida a la esquina inferior derecha de la imagen y se retira su fila inferior. Conserva icono rojo, superficie neutra de 44 × 44 px, nombre accesible, permisos y deshabilitado por disponibilidad. Stock y contador de fotos conservan sus esquinas. La vista de lista no cambia.
+
+Verificación: typecheck, lint, **154 unitarias y 34 de integración (188)** y build. Las pruebas existentes cubren apertura de tarjeta/imagen, clic independiente de salida, teclado, selección de texto y productos no disponibles; no se añaden pruebas para esta disposición visual pequeña. Sin automatización de navegador, computer use, SQL real ni archivos privados; posición/contraste sobre fotos reales quedan por revisar con el usuario. Commit/push autorizados y despliegue comprobado por separado. No requiere migración adicional.
+
 ## Formularios, nombres y ubicaciones (7 de octubre de 2026)
 
 Se corrige la colisión de claves vacías entre Nivel/Caja que duplicaba selectores al cambiar padres. `useFormScroll` sigue campos nativos inválidos, proxies y alertas de validación/guardado/altas en línea, centra y enfoca el error, repite fallos idénticos y vuelve al inicio tras escritura confirmada. Conserva borradores, deshabilitado, idempotencia, movimiento reducido y no desplaza vistas salientes/desmontadas. Inventario muestra nombres en mayúsculas más grandes y varias líneas; lista deja solo nombre, categoría en su columna y unidad junto a stock. Cuadrícula retira peso/unidad/categoría y Detalles, conservando marca/código/ubicación y acción independiente roja.

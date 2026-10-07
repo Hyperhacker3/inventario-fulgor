@@ -16,7 +16,7 @@ Una escritura confirmada vuelve al inicio del área principal. Un fallo conserva
 
 En lista, el nombre aparece en mayúsculas, negrita y 16 px en móvil / 18 px desde 640 px, con varias líneas. Debajo no aparecen marca, categoría, peso, unidad ni etiquetas de condición. Categoría permanece en su columna cuando hay ancho; la unidad permanece junto a Stock para interpretar la cantidad. La fila completa y el nombre accesible siguen abriendo el producto.
 
-En cuadrícula, el nombre también admite varias líneas y conserva marca, código, ubicación y el indicador de disponibilidad/condición. Se retiran categoría, peso y unidad del contenido. Se elimina Detalles; el único botón independiente es Agregar a la salida, con icono rojo, nombre accesible y superficie táctil de 44 px. No aparece para consulta y se deshabilita sin disponibilidad. Pulsarlo no abre simultáneamente la ficha.
+En cuadrícula, el nombre también admite varias líneas y conserva marca, código, ubicación y el indicador de disponibilidad/condición. Se retiran categoría, peso y unidad del contenido. Se elimina Detalles; el único botón independiente es Agregar a la salida, con icono rojo, nombre accesible y superficie táctil de 44 px sobre la esquina inferior derecha de la fotografía, sin fila propia debajo. No aparece para consulta y se deshabilita sin disponibilidad. Pulsarlo no abre simultáneamente la ficha.
 
 ## Guardado en mayúsculas y activación
 

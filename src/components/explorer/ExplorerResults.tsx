@@ -77,6 +77,16 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                         />
                       {renderStockBadge(item)}
                       {photoCount > 1 && <span className="absolute bottom-2.5 left-2.5 px-2 py-1 rounded-md bg-white/90 text-[#253685] text-xs font-semibold">{photoCount} fotos</span>}
+                      {canOperate && <button
+                        type="button"
+                        onClick={() => addToDispatchCart(item)}
+                        disabled={available(item) === 0}
+                        className="absolute bottom-2.5 right-2.5 z-10 w-11 h-11 text-[#dd4c42] rounded-lg flex items-center justify-center transition-all disabled:opacity-50"
+                        aria-label={`Agregar ${uppercaseName(item.nombre)} a la salida`}
+                        title={available(item) > 0 ? 'Agregar a la salida' : 'Sin stock disponible'}
+                      >
+                        <span className="material-symbols-outlined text-[16px]">add_shopping_cart</span>
+                      </button>}
                     </div>
 
                     {/* Card Content */}
@@ -112,19 +122,6 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                         </div>
                       </div>
 
-                      {/* Card Footer Actions */}
-                      {canOperate && <div className="mt-2 pt-2.5 border-t border-[#e2e8f0] flex items-center justify-end">
-                        <button
-                          type="button"
-                          onClick={() => addToDispatchCart(item)}
-                          disabled={available(item) === 0}
-                          className="w-11 h-11 text-[#dd4c42] rounded-lg flex items-center justify-center transition-all disabled:opacity-50"
-                          aria-label={`Agregar ${uppercaseName(item.nombre)} a la salida`}
-                          title={available(item) > 0 ? 'Agregar a la salida' : 'Sin stock disponible'}
-                        >
-                          <span className="material-symbols-outlined text-[16px]">add_shopping_cart</span>
-                        </button>
-                      </div>}
                     </div>
                   </article>
                 );
