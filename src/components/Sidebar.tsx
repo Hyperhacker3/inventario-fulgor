@@ -3,18 +3,19 @@ import { useInventory } from '../context/InventoryContext';
 import { navigationItems } from '../domain/navigation';
 import { useAuth } from '../context/AuthContext';
 import { isDemo } from '../lib/supabase';
+import { DEFAULT_COMPANY } from '../domain/company';
 
 export const Sidebar: React.FC = () => {
   const { signOut } = useAuth();
-  const { activeView, setActiveView, dispatchCart, setIsHelpModalOpen, user } = useInventory();
+  const { activeView, setActiveView, dispatchCart, setIsHelpModalOpen, user, company } = useInventory();
 
   const navItems = navigationItems(user.role, dispatchCart.length, isDemo);
 
   return (
     <aside className="app-sidebar bg-white border-r border-[#e2e8f0] h-full w-64 fixed left-0 top-0 z-40 flex flex-col py-6 px-4 hidden xl:flex select-none">
       {/* Brand Header */}
-      <button type="button" aria-label="EL TURPIAL — Ir al inicio" className="ui-brand-button mb-6 px-2" onClick={() => setActiveView('dashboard')}>
-        <img src="/logo-completo.png" alt="EL TURPIAL" width="303" height="131" className="brand-logo w-full h-auto object-contain" />
+      <button type="button" aria-label={`${company.nombre} — Ir al inicio`} className="ui-brand-button mb-6 px-2" onClick={() => setActiveView('dashboard')}>
+        <img src={company.logo} alt={company.nombre} width="303" height="131" className={`${company.logo === DEFAULT_COMPANY.logo ? 'brand-logo' : ''} w-full h-auto max-h-28 object-contain`} />
       </button>
 
       {/* Navigation Links */}

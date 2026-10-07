@@ -5,6 +5,7 @@ import { normalizeUnit } from '../domain/catalogs';
 import { displayDate, displayTime } from '../shared/dates';
 import { uniquePhotos } from '../domain/photos';
 import { mapUnitValue } from '../domain/money';
+import { mapCompany } from '../domain/company';
 
 export type DbRow = Record<string, unknown>;
 const str = (value: unknown, fallback = ''): string => value == null ? fallback : String(value);
@@ -52,6 +53,7 @@ export const mapElemento = (row: DbRow): Elemento => {
   };
 };
 export const mapRemision = (row: DbRow, itemsByCode?: Map<string, Elemento>): Remision => ({
+  empresa: mapCompany(row.empresa),
   id: str(row.id), numeroRemision: str(row.numero_remision), proyectoId: id(row.proyecto_id) || '',
   proyectoNombre: str(row.proyecto_nombre), cliente: str(row.cliente), ubicacion: str(row.ubicacion),
   entregadoPor: str(row.entregado_por), cargoEntregado: str(row.cargo_entregado),

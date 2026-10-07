@@ -1,5 +1,15 @@
 # Verificación de la refactorización local
 
+## Empresa compartida y NIT debajo del logo (7 de octubre de 2026)
+
+La remisión muestra NIT 800.176.581 inmediatamente debajo del logo en cada página. Empresa es la octava sección de Administración: edita nombre, NIT, logo, dirección y teléfono, con escritura limitada a administradores. Nombre/logo identifican la navegación; el logo original permanece disponible y los archivos aprobados no se modifican. Los logos nuevos se preparan como PNG proporcionado, conservando transparencia, con tamaño acotado y sin fuentes externas. Dirección y teléfono iniciales quedan vacíos.
+
+`20261007000100_company_profile.sql` crea configuración compartida, RPC de lectura/guardado, control de versiones y copia inmutable de empresa en cada remisión. El servidor ignora copias enviadas por el cliente, conserva reintentos y rechaza modificaciones a documentos emitidos. Los documentos anteriores reciben solo los valores iniciales aprobados; la migración puede repetirse sin sobrescribir empresa ni documentos. La app muestra el NIT inicial y permite consultar inventario si la migración todavía falta; la edición compartida necesita activarla. El formulario conserva borradores, comunica errores, bloquea duplicados y ofrece actualización/descartar sin reemplazar automáticamente cambios locales.
+
+Validación: typecheck, lint, **139 pruebas unitarias y 28 de integración**, y build correctos. Cinco pruebas nuevas cubren datos/texto NIT, encabezado con datos históricos/default, validación, permisos/borradores/revisiones, guardado duplicado y preparación de imagen proporcionada. Tres pruebas SQL verifican permisos de roles, tabla cerrada, entradas inválidas, cambios de versión, snapshots, reintentos, migración repetible y conservación de stocks/partidas. Se verifica también que datos de empresa falsificados se sustituyen en el servidor. Se mantienen las pruebas de inventario, valores, impresión, navegación y tema. Sin computer use ni automatización de navegador: paginación y apariencia real quedan por revisar con el usuario.
+
+La migración se ensayó en PostgreSQL embebido; **no se ejecutó en Supabase real**. Activación y uso en `docs/datos-empresa.md`. Commit/push autorizados; verificar Vercel y recursos públicos por separado. Excel e importaciones privadas permanecen excluidos.
+
 ## Pestañas planas y cantidades sin selector interno (7 de octubre de 2026)
 
 Las siete pestañas superiores de Administración y lista/cuadrícula comparten `ui-flat-choice` con stock: reposo plano, hover elevado y selección hundida/negrita. Se conservan `aria-selected` en pestañas, `aria-pressed` en vistas, persistencia del modo de Inventario y sincronización del selector compacto de Administración. Se elimina Nueva Remisión de la barra lateral porque duplicaba Salidas; los permisos y la emisión de remisiones siguen en esa pantalla.

@@ -79,7 +79,7 @@ test('administration shows financial values for racks and boxes, including empty
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
-test('compact administration selector retains all seven icons and synchronizes section with desktop buttons', async () => {
+test('compact administration selector retains all eight icons and synchronizes section with desktop buttons', async () => {
   function Navigation() { const [value, setValue] = useState<AdministrationTab>('codes'); return h(AdministrationNavigation, { value, onChange: setValue }); }
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
   try {
@@ -91,8 +91,8 @@ test('compact administration selector retains all seven icons and synchronizes s
     for (const tab of host.querySelectorAll<HTMLButtonElement>('[role="tab"]')) assert.ok(tab.classList.contains('ui-flat-choice'));
     await act(() => trigger.click());
     const list = document.querySelector('[role="listbox"]')!;
-    assert.equal(list.querySelectorAll('[role="option"]').length, 7);
-    assert.deepEqual([...list.querySelectorAll('.material-symbols-outlined')].map(icon => icon.textContent), ['tag', 'category', 'shelves', 'layers', 'inventory_2', 'folder_open', 'archive']);
+    assert.equal(list.querySelectorAll('[role="option"]').length, 8);
+    assert.deepEqual([...list.querySelectorAll('.material-symbols-outlined')].map(icon => icon.textContent), ['tag', 'category', 'shelves', 'layers', 'inventory_2', 'folder_open', 'archive', 'settings']);
     await act(() => list.querySelector<HTMLButtonElement>('[data-value="boxes"]')!.click());
     assert.match(trigger.textContent!, /Cajas/);
     assert.equal(trigger.querySelector('[aria-hidden="true"]')!.textContent, 'inventory_2');

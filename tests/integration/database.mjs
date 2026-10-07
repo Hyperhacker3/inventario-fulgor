@@ -15,11 +15,12 @@ const outgoingPhotoMigration = fs.readFileSync(new URL('../../supabase/migration
 const locationMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000400_item_locations.sql', import.meta.url), 'utf8');
 const valueMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000500_inventory_values.sql', import.meta.url), 'utf8');
 const levelsMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000600_storage_levels_and_brands.sql', import.meta.url), 'utf8');
+const companyMigration = fs.readFileSync(new URL('../../supabase/migrations/20261007000100_company_profile.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 const warehouseProfile = fs.readFileSync(new URL('../../supabase/configure_warehouse_profile.sql', import.meta.url), 'utf8');
 
-async function database() {
+async function database({ company = true } = {}) {
   const db = new PGlite();
   await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE SCHEMA auth;
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '00000000-0000-0000-0000-000000000001'::uuid $$;
@@ -45,12 +46,74 @@ async function database() {
   await db.exec(locationMigration);
   await db.exec(valueMigration);
   await db.exec(levelsMigration);
+  if (company) await db.exec(companyMigration);
   return db;
 }
 
 const role = (db, value) => db.exec(`SELECT set_config('app.test_role','${value}',false); SET ROLE authenticated;`);
 const asOwner = db => db.exec('RESET ROLE;');
 const itemStock = async db => Number((await db.query("SELECT cantidad FROM public.elementos WHERE id = 'ELM-001'")).rows[0].cantidad);
+
+test('company data is shared with authenticated inventory roles, writable only by admin and protected from stale edits', async () => {
+  const db = await database();
+  const read = async () => (await db.query('SELECT public.inventory_company_profile() AS data')).rows[0].data;
+  const save = async (profile, version) => (await db.query('SELECT public.save_inventory_company_profile($1::jsonb,$2) AS data',[JSON.stringify(profile),version])).rows[0].data;
+  try {
+    await db.exec('SET ROLE anon'); await assert.rejects(read, /permission denied/); await asOwner(db);
+    await role(db,'consulta'); const original = await read(); assert.equal(original.perfil.nit,'800.176.581');
+    const profile = {...original.perfil,nombre:'Empresa compartida',direccion:'Calle 10',telefono:'+57 123'};
+    await assert.rejects(() => save(profile,original.version), /No autorizado/);
+    await assert.rejects(() => db.query('SELECT * FROM public.inventario_empresa'), /permission denied/);
+    await asOwner(db); await role(db,'operador'); await assert.rejects(() => save(profile,original.version), /No autorizado/);
+    await asOwner(db); await role(db,'admin'); const updated = await save(profile,original.version);
+    assert.equal(updated.version,original.version+1); assert.deepEqual(updated.perfil,profile);
+    await assert.rejects(() => save({...profile,nombre:'Borrador antiguo'},original.version), /cambiaron/);
+    assert.deepEqual(await read(),updated);
+    await asOwner(db); await role(db,'consulta'); assert.deepEqual(await read(),updated);
+    await asOwner(db); await role(db,''); await assert.rejects(read, /No autorizado/);
+  } finally { await db.close(); }
+});
+
+test('company input rejects invalid names, NIT, image sources and sizes without changing the saved profile', async () => {
+  const db = await database();
+  try {
+    await role(db,'admin'); const original = (await db.query('SELECT public.inventory_company_profile() AS data')).rows[0].data;
+    for (const patch of [{nombre:''},{nombre:'x'.repeat(121)},{nit:'abc'},{nit:123},{direccion:'x'.repeat(241)},{telefono:'x'.repeat(61)},
+      {logo:'https://external.example/logo.png'},{logo:'data:image/svg+xml;base64,PHN2Zz4='},{logo:'data:image/png;base64,'+'A'.repeat(160000)}]) {
+      await assert.rejects(() => db.query('SELECT public.save_inventory_company_profile($1::jsonb,$2)',[JSON.stringify({...original.perfil,...patch}),original.version]));
+    }
+    assert.deepEqual((await db.query('SELECT public.inventory_company_profile() AS data')).rows[0].data,original);
+    const profile = {...original.perfil,nombre:'  Empresa   nueva ',logo:'data:image/png;base64,iVBORw0KGgo='};
+    const saved = (await db.query('SELECT public.save_inventory_company_profile($1::jsonb,$2) AS data',[JSON.stringify(profile),original.version])).rows[0].data;
+    assert.equal(saved.perfil.nombre,'Empresa nueva'); assert.equal(saved.perfil.logo,profile.logo);
+  } finally { await db.close(); }
+});
+
+test('company migration preserves stock and historic documents while new dispatches capture immutable company data and retries retain it', async () => {
+  const db = await database({company:false});
+  const sql = 'SELECT public.dispatch_inventory_with_photos($1::uuid,\'PROY-001\',\'Entrega\',\'Admin\',\'Recibe\',\'Residente\',\'\',\'[ {"elementoId":"ELM-001","cantidad":1} ]\'::jsonb,\'{}\'::jsonb,\'[]\'::jsonb) AS data';
+  const dispatch = async id => (await db.query(sql,[id])).rows[0].data;
+  try {
+    await role(db,'admin'); const legacy = await dispatch('f254c9e8-f689-4258-bd8e-cf129960d8a9');
+    const stock = await itemStock(db); await asOwner(db); await db.exec(companyMigration);
+    assert.equal(await itemStock(db),stock);
+    const historical = (await db.query('SELECT * FROM public.remisiones WHERE id=$1',[legacy.id])).rows[0];
+    assert.equal(historical.empresa.nit,'800.176.581'); assert.deepEqual(historical.items,legacy.items);
+    await role(db,'admin'); const first = await dispatch('fbc86d0b-d4b2-4baf-a3b7-7b728e13b21d');
+    const original = (await db.query('SELECT public.inventory_company_profile() AS data')).rows[0].data;
+    const next = {...original.perfil,nombre:'Empresa nueva',nit:'900.123.456-1',direccion:'Calle 20',telefono:'555 1234',logo:'data:image/png;base64,iVBORw0KGgo='};
+    await db.query('SELECT public.save_inventory_company_profile($1::jsonb,$2)',[JSON.stringify(next),original.version]);
+    const retry = await dispatch('fbc86d0b-d4b2-4baf-a3b7-7b728e13b21d'); assert.deepEqual(retry.empresa,first.empresa);
+    const second = await dispatch('e94b2bf5-833e-45a4-8f31-3d1ce1c9d7c1'); assert.deepEqual(second.empresa,next);
+    await asOwner(db); await assert.rejects(() => db.query('UPDATE public.remisiones SET empresa=$1::jsonb WHERE id=$2',[JSON.stringify(next),first.id]),/no se puede modificar/);
+    const forged = (await db.query(`INSERT INTO public.remisiones(id,numero_remision,fecha,proyecto_nombre,cliente,entregado_por,cargo_entregado,recibido_por,cargo_recibido,empresa)
+      VALUES('forged-company','REM-TEST-COMPANY','2026-10-07','Proyecto','Cliente','Entrega','Admin','Recibe','','{"nombre":"Falsa"}'::jsonb) RETURNING empresa`)).rows[0].empresa;
+    assert.deepEqual(forged,next);
+    const finalStock = await itemStock(db); await db.exec(companyMigration); assert.equal(await itemStock(db),finalStock);
+    assert.deepEqual((await db.query('SELECT empresa FROM public.remisiones WHERE id=$1',[first.id])).rows[0].empresa,first.empresa);
+    assert.deepEqual((await db.query('SELECT perfil FROM public.inventario_empresa')).rows[0].perfil,next);
+  } finally { await db.close(); }
+});
 
 test('warehouse profile corrects only the selected author, preserves permissions and document snapshots, and can be rerun', async () => {
   const db = await database();

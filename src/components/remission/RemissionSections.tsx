@@ -1,5 +1,6 @@
 import type { Remision } from '../../types';
 import { formatKg, lineWeightKg, totalWeight } from '../../domain/weight';
+import { mapCompany } from '../../domain/company';
 const quantity = (value: number) => value.toLocaleString('es-CO', { maximumFractionDigits: 3 });
 const date = (value?: string) => value?.match(/^\d{4}-\d{2}-\d{2}$/) ? value.split('-').reverse().join('/') : value;
 function Field({ label, value }: { label: string; value?: string }) {
@@ -7,8 +8,12 @@ function Field({ label, value }: { label: string; value?: string }) {
 }
 export function RemissionHeader({ remision: r }: { remision: Remision }) {
   const details = r.datosTransporte;
+  const company = mapCompany(r.empresa);
   return <header className="rm-header">
-    <div className="rm-brand"><img src="/logo-completo.png" alt="EL TURPIAL" width="303" height="131" /><div><span className="rm-eyebrow">FORMATO DE REMISIÓN</span><h1>{r.numeroRemision}</h1><p>Fecha de remisión: <strong>{r.fecha}</strong></p></div></div>
+    <div className="rm-brand"><div className="rm-company"><img src={company.logo} alt={company.nombre} width="303" height="131" />
+      <strong className="rm-company-nit">NIT: {company.nit}</strong><span className="rm-company-name">{company.nombre}</span>
+      {company.direccion && <span>{company.direccion}</span>}{company.telefono && <span>Tel.: {company.telefono}</span>}
+    </div><div><span className="rm-eyebrow">FORMATO DE REMISIÓN</span><h1>{r.numeroRemision}</h1><p>Fecha de remisión: <strong>{r.fecha}</strong></p></div></div>
     <p className="rm-declaration">Constancia de entrega de los materiales relacionados a continuación, en las cantidades indicadas. Las novedades se registran en las observaciones.</p>
     <div className="rm-details"><Field label="Proyecto de obra" value={r.proyectoNombre} /><Field label="Cliente / destinatario" value={r.cliente} />
       <Field label="Persona que realiza la remisión" value={[r.entregadoPor, r.cargoEntregado].filter(Boolean).join(' · ')} /><Field label="Entregar a" value={[r.recibidoPor, r.cargoRecibido].filter(Boolean).join(' · ')} />

@@ -10,6 +10,11 @@
 .rm-brand { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #253685; padding-bottom: 14px; gap: 24px; }
 .rm-brand img { width: 180px; height: 78px; object-fit: contain; }
 .rm-brand > div { text-align: right; min-width: 0; max-width: 430px; }
+.rm-brand > .rm-company { text-align: left; width: 240px; flex-shrink: 0; font-size: 10px; overflow-wrap: anywhere; }
+.rm-company img { display: block; margin-bottom: 4px; }
+.rm-company > span, .rm-company > strong { display: block; }
+.rm-company-nit { font-size: 11px; }
+.rm-company-name { font-weight: 600; }
 .rm-eyebrow { font-size: 10px; letter-spacing: 1.5px; color: #64748b; font-weight: bold; }
 .rm-content h1 { font-size: 21px; line-height: 1.3; color: #253685; overflow-wrap: anywhere; margin: 4px 0; }
 .rm-brand p { font-size: 11px; }

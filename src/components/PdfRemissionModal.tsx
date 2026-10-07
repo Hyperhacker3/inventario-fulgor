@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Remision } from '../types';
 import { RemissionDocument } from './remission/RemissionDocument';
+import { mapCompany } from '../domain/company';
 
 interface PdfRemissionModalProps {
   remision: Remision | null;
@@ -69,7 +70,7 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
             </div>
             <div className="min-w-0">
               <h3 className="font-bold text-xs sm:text-base text-[#131b2e] leading-tight truncate">
-                Vista de Remisión Oficial EL TURPIAL
+                Vista de remisión · {mapCompany(remision.empresa).nombre}
               </h3>
               <p className="text-[11px] sm:text-xs font-mono-code text-[#253685] font-bold truncate">
                 {remision.numeroRemision} • {remision.proyectoNombre}
@@ -138,7 +139,7 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
         <div className="no-print bg-[#f8fafc] px-3 py-1.5 border-b text-[11px] text-slate-500 flex items-center justify-between">
           <span className="flex items-center gap-1.5 truncate">
             <span className="material-symbols-outlined text-[14px] text-emerald-400">verified</span>
-            <span>Formato A4 Estándar EL TURPIAL (Preserva Proporciones de Impresión)</span>
+            <span>Formato A4 · {mapCompany(remision.empresa).nombre}</span>
           </span>
           <span className="text-[10px] font-mono-code text-slate-500 shrink-0 ml-2">
             Escala: {Math.round(computedScale * 100)}%

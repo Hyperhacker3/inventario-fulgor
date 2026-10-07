@@ -10,6 +10,7 @@ import { MobileMenu } from './navigation/MobileMenu';
 import { errorMessage } from '../shared/errors';
 import { ThemeToggle } from './ThemeToggle';
 import { displayCargo } from '../domain/userProfile';
+import { DEFAULT_COMPANY } from '../domain/company';
 
 export const Header: React.FC = () => {
   const {
@@ -21,7 +22,7 @@ export const Header: React.FC = () => {
     activeView,
     setActiveView,
     setIsHelpModalOpen,
-    dispatchCart
+    dispatchCart, company
   } = useInventory();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -72,11 +73,11 @@ export const Header: React.FC = () => {
           
           <button
             type="button"
-            aria-label="EL TURPIAL — Ir al inicio"
+            aria-label={`${company.nombre} — Ir al inicio`}
             className="ui-brand-button xl:hidden flex items-center shrink-0"
             onClick={() => navigate('dashboard')}
           >
-            <img src="/logo-completo.png" alt="EL TURPIAL" width="303" height="131" className="brand-logo w-20 min-[380px]:w-28 sm:w-32 h-auto object-contain" />
+            <img src={company.logo} alt={company.nombre} width="303" height="131" className={`${company.logo === DEFAULT_COMPANY.logo ? 'brand-logo' : ''} w-20 min-[380px]:w-28 sm:w-32 h-auto max-h-11 object-contain`} />
           </button>
 
           {/* Quick Search bar (Desktop & Tablet) */}

@@ -4,6 +4,14 @@ Actualizado: **7 de octubre de 2026**, zona horaria America/Bogota.
 
 Este documento resume el estado para continuar en otro chat. Las secciones anteriores de `reports/verification.md` y `PLAN_REFACTORIZACION.md` son registros históricos; sus conteos y pendientes no sustituyen este estado actual.
 
+## Empresa y NIT en remisiones
+
+La petición más reciente añade **NIT: 800.176.581 inmediatamente debajo del logo** en cada página de la remisión. Administración de datos incorpora Empresa como octava sección: nombre, NIT, logo, dirección y teléfono compartidos entre cuentas. Solo `admin` guarda; los otros roles consultan. Los datos iniciales son EL TURPIAL, el NIT indicado y el logo aprobado, sin inventar dirección/teléfono. El nombre/logo se utilizan en navegación; los logos cargados conservan proporciones/transparencia y sus colores en oscuro.
+
+**Activación pendiente en Supabase real:** ejecutar completo `supabase/migrations/20261007000100_company_profile.sql`, después de las migraciones anteriores. El agente no tiene sesión administrativa ni ejecutó SQL en producción. La migración se ensayó en PGlite; conserva inventario, stocks y partidas. El NIT inicial aparece en PDF incluso sin aplicar el SQL; guardar empresa requiere las funciones nuevas. Procedimiento en `docs/datos-empresa.md`.
+
+Cada remisión nueva captura en el servidor los datos de empresa, incluyendo el logo, y esa copia no cambia al editar la configuración. Los reintentos conservan la copia original. Los documentos anteriores reciben únicamente los valores iniciales aprobados. El guardado controla versiones para evitar sobrescribir cambios de otra cuenta; los borradores sobreviven a errores y actualizaciones de caché. El perfil se carga sin bloquear el arranque del inventario si la migración todavía falta.
+
 ## Cambio visual implementado
 
 **Neumorfismo es ahora el único estilo.** El usuario retiró su elección anterior de Liquid Glass y pidió eliminarlo junto con el botón de cambio de Ayuda. Se eliminaron componente, estado, API y reglas de vidrio. `data-ui-style` queda fijo en `neumorphism` para las reglas CSS; el arranque elimina la antigua clave `el_turpial_ui_style` cuando el almacenamiento lo permite y nunca utiliza su valor. Se conserva la preferencia claro/oscuro.
@@ -31,7 +39,7 @@ El hover común y los productos clicables se publicaron en `fd61f30`: desplazami
 - `c32e702` conserva estados importados que no pertenecen a las opciones antiguas del formulario y protege los archivos privados frente al servidor de desarrollo.
 - Stack: React 19, TypeScript, Vite, Tailwind CSS, TanStack Query y Supabase. Node 22.x y pnpm indicados en `package.json`.
 - La marca visible es **EL TURPIAL**. El nombre técnico del repositorio y la URL histórica siguen conteniendo `fulgor`; no renombrarlos como parte del cambio de estilo.
-- Logo y favicon aprobados: `public/logo-completo.png` y `public/logo-favicon.png`; conservarlos.
+- Logo y favicon aprobados: `public/logo-completo.png` y `public/logo-favicon.png`; conservar los archivos. El perfil compartido permite elegir otro logo para navegación y remisiones; Restaurar logo original usa el archivo aprobado. El favicon estático permanece.
 - Nombre/cargo visible solicitado: **Andrés Castañeda / Almacenista**, separados del correo de inicio de sesión. No convertir esta identidad en un reemplazo fijo para todas las cuentas.
 
 ## Inventario real confirmado
@@ -100,6 +108,8 @@ Es HTML independiente con datos ficticios y logo/fuente embebidos. No tiene cone
 | Categorías y selección de stock | `src/components/explorer/CategoryFilter.tsx`, `ExplorerFilters.tsx`, `tests/unit/explorerFilters.test.ts` |
 | Navegación plana, pestañas, vistas y logo | `src/sidebar.css`, `src/components/Sidebar.tsx`, `src/components/administration/AdministrationNavigation.tsx`, `src/components/ExplorerView.tsx`, `tests/unit/sidebarAppearance.test.ts` |
 | Cantidades sin flechas internas | `src/components/NumberInput.tsx`, `src/controls.css`, `tests/unit/interaction.test.ts`, `tests/unit/controlAppearance.test.ts` |
+| Perfil compartido de empresa | `src/domain/company.ts`, `src/state/useCompanyProfile.ts`, `src/components/administration/CompanyProfileEditor.tsx`, `src/shared/companyLogo.ts` |
+| Empresa inmutable en remisiones | `supabase/migrations/20261007000100_company_profile.sql`, `src/data/mappers.ts`, `src/components/remission/RemissionSections.tsx`, `tests/unit/company.test.ts`, `tests/integration/database.mjs` |
 | Ayuda sin selector de estilo | `src/components/HelpModal.tsx` |
 | Fondo sin fotografía adaptado al estilo | `src/components/ItemPhotoPlaceholder.tsx` |
 | Pruebas de preferencias y transiciones | `tests/unit/theme.test.ts` |
@@ -113,17 +123,19 @@ Los nombres abreviados de componentes de esta tabla se resuelven bajo `src/compo
 
 ## Verificación y límites
 
-Antes de publicar cambios de app: `pnpm typecheck`, `pnpm lint`, `pnpm test` y `pnpm build`. Para esta implementación pasaron typecheck, lint, **134 pruebas unitarias y 25 de integración**, y build. Se verifican paleta, preferencias retiradas, conservación de formularios, selectores y transición. Las pruebas CSS/DOM comprueban foco sin contorno, altura mínima de descripciones, documentos y avatar uniformes, espacio de chips y estados de navegación/stock en ambas paletas. Las pruebas de eventos comprueban productos completos en Inventario, Historial y todas las ubicaciones de Almacenes, acciones independientes, copia de texto y movimientos de productos eliminados. Las pruebas de valores por ubicación mantienen sus comprobaciones financieras. No se mide geometría, movimiento ni contraste real. Node 24.19.0 disponible frente a Node 22.x declarado. Sin revisión visual automatizada ni operaciones en Supabase real. La importación privada anterior y sus SQL no forman parte de este cambio.
+Antes de publicar cambios de app: `pnpm typecheck`, `pnpm lint`, `pnpm test` y `pnpm build`. Para esta implementación pasaron typecheck, lint, **139 pruebas unitarias y 28 de integración**, y build. Las cinco pruebas nuevas de empresa comprueban NIT bajo logo, datos históricos, validación, borradores, permisos, guardados y preparación de logo. Tres pruebas SQL verifican acceso por rol, validación, conflicto de versiones, copia inmutable, reintentos y repetición de la migración sin modificar stocks/partidas. Se mantienen las pruebas de tema, navegación, controles, productos, valores y permisos. No se mide geometría, movimiento ni contraste real. Node 24.19.0 disponible frente a Node 22.x declarado. Sin revisión visual automatizada ni operaciones en Supabase real. La importación privada anterior y sus SQL no forman parte de este cambio.
 
 La demo tiene comprobaciones DOM con JSDOM para las nueve combinaciones de estilo/pantalla, búsqueda, detalle, lista/cuadrícula, tema, selector de anchos y registro local. No se hizo verificación visual mediante navegador automatizado ni se midió rendimiento en un dispositivo físico.
 
 Mantener la instrucción de no usar computer use ni automatización de navegador. La excepción antigua para una prueba de impresión no autoriza pruebas visuales nuevas. El usuario revisa la UI y ejecuta los pasos SQL desde su cuenta; no hay sesión administrativa ni conector de Supabase disponible para el agente. No leer ni solicitar contraseñas o claves privadas.
 
-Revisar `git status` antes de preparar commits; excluir expresamente Excel y archivos privados. No usar `git add .`. La publicación anterior autorizada en `main` no implica que esta implementación esté desplegada. Este cambio visual no requiere SQL ni modificación del inventario.
+Revisar `git status` antes de preparar commits; excluir expresamente Excel y archivos privados. No usar `git add .`. La publicación anterior autorizada en `main` no implica que esta implementación esté desplegada. La configuración compartida de empresa requiere la migración nueva; las correcciones visuales anteriores no necesitaban SQL. No repetir importaciones ni modificar stock para activar la empresa.
 
 **Autorización permanente del usuario, 7 de octubre de 2026:** «Sii, has push a cada cambio que hagamos». Crear commit y hacer push a `origin/main` después de cada cambio terminado y verificado, incluyendo la corrección visual `b73b0d0`. El push activa el despliegue de Vercel; comprobar su resultado y los recursos públicos antes de afirmar que el cambio está publicado. Esta autorización se mantiene para los cambios posteriores de este proyecto, salvo que el usuario la modifique.
 
 ## Trabajo pendiente para continuar
+
+La activación de empresa requiere que el usuario aplique la migración desde su cuenta, abra Administración → Empresa y confirme lectura/guardado. Revisar NIT, logo y contactos en PDF; editar empresa y comprobar que documentos anteriores conservan su copia.
 
 1. Revisar con el usuario Neumorfismo claro/oscuro, barra lateral, stock, Administración y lista/cuadrícula planos/hover/seleccionados. Confirmar Nueva Remisión retirado y cantidades sin flechas nativas, con −/+ de una unidad. Incluir foco sin contorno, alturas mínimas, avatar, chips, productos completos, documentos, navegación móvil e impresión según `docs/estilos-interfaz.md`.
 2. Ajustar la apariencia si la revisión lo requiere y ejecutar las comprobaciones pertinentes después de cualquier cambio de código.
@@ -131,4 +143,4 @@ Revisar `git status` antes de preparar commits; excluir expresamente Excel y arc
 
 ## Mensaje sugerido para continuar la revisión
 
-> Lee README.md, docs/CONTINUIDAD.md y docs/estilos-interfaz.md. Neumorfismo es el único estilo. Navegación, stock, Administración y lista/cuadrícula quedan planos en reposo, elevados en hover y hundidos al seleccionarlos. Nueva Remisión se eliminó por duplicar Salidas. NumberInput oculta sus flechas internas y bloquea arriba/abajo; conserva edición manual de decimales y −/+ de una unidad. Conserva campos sin contorno, altura mínima de 44 px, avatar, chips, documentos uniformes, productos completos clicables y barrido claro/oscuro de 1,5 segundos. Haz commit y push después de cada cambio verificado y comprueba el despliegue. No uses computer use ni automatización de navegador ni publiques archivos privados.
+> Lee README.md, docs/CONTINUIDAD.md, docs/estilos-interfaz.md y docs/datos-empresa.md. La remisión muestra NIT 800.176.581 bajo el logo. Empresa permite editar nombre, NIT, logo, dirección y teléfono; necesita activar la migración nueva desde la cuenta del usuario. Conserva la copia inmutable de empresa en documentos, Neumorfismo, controles planos/seleccionados, campos sin contorno, cantidades sin flechas nativas y barrido claro/oscuro de 1,5 segundos. Haz commit y push después de cada cambio verificado y comprueba el despliegue. No uses computer use ni automatización de navegador ni publiques archivos privados.

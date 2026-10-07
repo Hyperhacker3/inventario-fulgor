@@ -99,7 +99,13 @@ export interface DatosTransporte {
   fechaDevolucion: string;
 }
 
+export interface CompanyProfile {
+  nombre: string; nit: string; direccion: string; telefono: string; logo: string;
+}
+export interface CompanySettings { perfil: CompanyProfile; version: number }
+
 export interface Remision {
+  empresa?: CompanyProfile;
   id: string;
   numeroRemision: string; // e.g. 'REM-2026-0042'
   proyectoId: string;

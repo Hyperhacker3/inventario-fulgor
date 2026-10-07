@@ -1,5 +1,6 @@
 import { useProjectActions } from '../state/useProjectActions';
 import { useDataAdministration } from '../state/useDataAdministration';
+import { useCompanyProfile } from '../state/useCompanyProfile';
 import { categoryChoices } from '../domain/dataAdministration';
 import { combinedInitialStatus } from '../domain/initialLoad';
 import { categories } from '../domain/catalogs';
@@ -27,6 +28,7 @@ function useInventoryValue() {
   const { user } = useAuth();
   const data = useInventoryData();
   const catalogs = useDataAdministration();
+  const companyProfile = useCompanyProfile();
   const categoryOptions = useMemo(() => categoryChoices(catalogs.categorias,
     [...categories, ...data.elementos.map(item => item.categoria)]), [catalogs.categorias, data.elementos]);
   const categoryLabel = (id: string) => catalogs.categorias.find(category => category.id === id)?.nombre || id.replaceAll('_', ' ');
@@ -136,7 +138,7 @@ function useInventoryValue() {
     openPdfRemision, closePdfRemision, openQuickMovement, closeQuickMovement, setIsHelpModalOpen,
     addToDispatchCart, updateDispatchCartQuantity, removeFromDispatchCart, clearDispatchCart,
     getAlmacenById, getEstanteriaById, getNivelById, getCajaById, getProyectoById, getLocationString,
-    resetToDefaultData, ...actions, ...projectActions, ...catalogs, categoryOptions, categoryLabel,
+    resetToDefaultData, ...actions, ...projectActions, ...catalogs, ...companyProfile, categoryOptions, categoryLabel,
   };
 }
 

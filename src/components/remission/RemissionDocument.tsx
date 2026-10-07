@@ -3,6 +3,7 @@ import type { Remision } from '../../types';
 import { observationChunks, paginateRemission, type RemissionPage } from '../../domain/remissionLayout';
 import { RemissionHeader, RemissionClosing, RemissionTable } from './RemissionSections';
 import './remission.css';
+import { mapCompany } from '../../domain/company';
 
 export function RemissionDocument({ remision, scale, onReady }: { remision: Remision; scale: number; onReady?: (ready: boolean) => void }) {
   const measureRef = useRef<HTMLDivElement>(null);
@@ -26,7 +27,7 @@ export function RemissionDocument({ remision, scale, onReady }: { remision: Remi
     void Promise.all([document.fonts.ready, logo?.decode().catch(() => {})]).then(measure);
     return () => { cancelled = true; };
   }, [remision, onReady]);
-  const footer = (page: number, total: number) => <footer className="rm-footer"><span>Inventario turpial · Remisión de entrega</span><span>Página {page} de {total}</span></footer>;
+  const footer = (page: number, total: number) => <footer className="rm-footer"><span>{mapCompany(remision.empresa).nombre} · Remisión de entrega</span><span>Página {page} de {total}</span></footer>;
   return <>
     <div ref={measureRef} className="rm-measure" aria-hidden="true">
       <div className="rm-content"><RemissionHeader remision={remision} />

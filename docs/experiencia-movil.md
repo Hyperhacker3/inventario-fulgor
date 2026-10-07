@@ -18,6 +18,8 @@ La cabecera ya no muestra Supabase Activo. El avatar utiliza el mismo tamaño de
 
 Los campos numéricos compartidos ocultan las flechas internas del navegador y bloquean el incremento con arriba/abajo. Las cantidades siguen editándose directamente o mediante −/+ de una unidad, respetando stock disponible y límites. Se conservan entrada manual de decimales, campos vacíos y validación.
 
+Administración → Empresa aparece también en el selector compacto. Nombre, NIT, dirección y teléfono se apilan en móvil; el logo mantiene proporciones sin recorte. La navegación usa el logo compartido, con altura limitada para conservar los controles de la cabecera. Las remisiones imprimen NIT 800.176.581 bajo el logo por defecto y conservan la empresa al emitir cada documento. Activación mediante la nueva migración en `docs/datos-empresa.md`.
+
 Los controles del producto, almacenes y fotografías usan columnas que permiten ajustar el texto. Las secciones de administración usan una cuadrícula en escritorio y un selector con iconos en móvil. Las filas de búsqueda de Entradas separan la imagen, el texto y Seleccionar, y usan iconos compactos cuando no hay foto. Entradas y Salidas muestran sus cinco resultados por página sin una segunda zona de desplazamiento dentro de la lista.
 
 El selector de fotos adapta las columnas al espacio de su propio contenedor: la principal queda centrada y las adicionales forman una cuadrícula. Quitar aparece sobre cada foto y Hacer principal debajo. Las fotos del registro de salida también se distribuyen según el ancho disponible.
@@ -49,4 +51,4 @@ Tras el despliegue, probar desde un teléfono y una tablet:
 9. Probar Neumorfismo claro y oscuro, incluyendo selectores desplegados y ventanas de cámara/fotografías. Verificar el barrido de aproximadamente 1,5 segundos y animaciones de navegación de 180 ms.
 10. Recargar y comprobar que se conserva la paleta y se utiliza Neumorfismo incluso con una preferencia antigua de Glass; repetir con movimiento reducido para comprobar que el cambio no se anima.
 
-Esta actualización no requiere SQL ni modifica el inventario de Supabase.
+Las reglas de navegación y controles no requieren SQL. La configuración compartida de empresa requiere `20261007000100_company_profile.sql`, sin cambiar productos ni existencias.
