@@ -88,6 +88,9 @@ html:not([data-icons-ready='true']) .material-symbols-outlined { visibility: hid
 .inventory-card-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
 .responsive-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .responsive-actions > button { min-width: 0; min-height: 44px; overflow-wrap: anywhere; }
+@media (max-width: 639px) {
+  .responsive-actions > .ui-camera-capture { grid-column: 1 / -1; width: 100%; }
+}
 .photo-editor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 20px; }
 .photo-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 120px), 1fr)); gap: 12px; }
 .entry-result-row { grid-template-columns: 48px minmax(0, 1fr); }

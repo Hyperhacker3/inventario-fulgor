@@ -1,5 +1,11 @@
 # Verificación de la refactorización local
 
+## Capturar a todo el ancho en móvil (7 de octubre de 2026)
+
+`CameraCaptureModal` identifica Capturar con `ui-camera-capture`; la cuadrícula compartida le asigna todas las columnas y ancho del 100 % por debajo de 640 px. Corrige el botón aislado a la izquierda tanto en fotos de productos como en el registro de salida, manteniendo Elegir archivo/Cambiar cámara en dos columnas, altura mínima de 44 px, estado deshabilitado y flujo de captura. Escritorio y Repetir/Usar foto conservan su disposición. No requiere SQL.
+
+Validación: typecheck, lint, **148 pruebas unitarias y 32 de integración (180 en total)** y build correctos. Cambio de presentación pequeño sin pruebas nuevas que dupliquen la regla CSS. Sin computer use, navegador automatizado, Supabase real ni archivos privados; geometría y cámara física quedan por revisar con el usuario. Publicación autorizada y comprobación HTTP de Vercel/recursos públicos por separado.
+
 ## Lugares, código de emisión y tabla PDF (7 de octubre de 2026)
 
 Salidas pregunta lugares de remisión y destino, obligatorios y separados del proyecto. Nombres de hasta 80 caracteres conservan tildes en el documento; el código usa mayúsculas sin tildes y guiones entre palabras. Fecha de emisión AAAAMMDD del servidor en America/Bogota y consecutivo anual compartido con tres cifras mínimas: `REM-HONDA-BOGOTA-20261007-006`. La vista previa no asigna un número local. Las tarjetas admiten códigos largos sin desbordar junto a su fecha.

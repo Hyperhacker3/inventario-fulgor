@@ -24,6 +24,8 @@ El logo de empresa conserva el acceso a Inicio, **sin marco, relleno ni sombra**
 
 ## Campos, botones y productos
 
+En las ventanas de cámara compartidas por productos y salidas, Capturar ocupa toda la fila y el 100 % del ancho por debajo de 640 px (`ui-camera-capture`). Elegir archivo y Cambiar cámara mantienen dos columnas, separadas 16 px; todos conservan el relieve, altura mínima de 44 px y texto adaptable. La vista previa con Repetir/Usar foto y la disposición de escritorio no cambian.
+
 Salidas añade dos campos obligatorios de lugar (remisión/origen y destino) con la altura/material compartidos y nombres de hasta 80 caracteres. Muestra una referencia de código sin inventar el consecutivo definitivo, asignado por el servidor al emitir. Código visible: `REM-HONDA-BOGOTA-20261007-006`, con fecha AAAAMMDD y consecutivo anual. Uso/migración en `docs/lugares-y-codigos-remision.md`; no se modifican códigos históricos.
 
 El documento A4 se alinea arriba en vista previa e impresión, conservando el margen y la medición dinámica. El NIT hereda Arial/11 px como los datos del encabezado. Origen, destino y ubicación del proyecto quedan separados. La tabla tiene siete columnas, incluyendo Peso unitario (kg) inmediatamente antes de Peso total (kg); nombre/marca se mantienen en Descripción sin texto de peso. Se muestran valores conservados y Pendiente para pesos ausentes. Encabezado y tarjetas admiten códigos largos en varias líneas. La revisión visual de impresión permanece con el usuario.

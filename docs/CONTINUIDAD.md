@@ -4,6 +4,10 @@ Actualizado: **7 de octubre de 2026**, zona horaria America/Bogota.
 
 Este documento resume el estado para continuar en otro chat. Las secciones anteriores de `reports/verification.md` y `PLAN_REFACTORIZACION.md` son registros históricos; sus conteos y pendientes no sustituyen este estado actual.
 
+## Capturar a todo el ancho en móvil
+
+La última corrección hace que Capturar ocupe las dos columnas de su fila por debajo de 640 px, con ancho del 100 % y altura mínima de 44 px. Se aplica en `CameraCaptureModal`, compartido por imágenes principal/adicionales de productos y registro fotográfico de salidas. Elegir archivo y Cambiar cámara conservan dos columnas; escritorio y la vista previa con Repetir/Usar foto conservan su disposición. No necesita SQL. Pasaron typecheck, lint, las 180 pruebas existentes y build. Sin automatización de navegador; confirmar el ancho y la captura en teléfono con el usuario. Commit/push autorizados y despliegue comprobado por separado.
+
 ## Empresa y NIT en remisiones
 
 La petición vigente añade lugares de remisión/origen y destino, obligatorios en Salidas, con código **REM-HONDA-BOGOTA-20261007-006**. Se eligió AAAAMMDD para la fecha numérica, con emisión del servidor en America/Bogota; el consecutivo continúa el conteo anual compartido sin reiniciarlo por ruta o día, con tres cifras mínimas y sin truncar cifras mayores. `dispatch_inventory_with_route` conserva las RPC transaccionales internas y los identificadores/FK existentes; actualiza el código visible y el motivo histórico solo en las salidas nuevas. Reintentos idénticos conservan documento/stock/consecutivo; los lugares y la identidad de emisión son inmutables. Las RPC antiguas se retiran como accesos directos para exigir los lugares.

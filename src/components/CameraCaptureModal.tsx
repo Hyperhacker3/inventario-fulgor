@@ -56,7 +56,7 @@ export function CameraCaptureModal({ isOpen, onClose, onPhotoCaptured, title = '
         {!photo && <button type="button" disabled={loading || cameras.length < 2} onClick={() => {
           if (cameras.length > 1) setSelectedDeviceId(nextCameraId(cameras, currentDeviceId || selectedDeviceId));
         }} className="border rounded-lg px-3 py-2 text-sm">Cambiar cámara</button>}
-        {!photo && <button type="button" disabled={!ready} onClick={snap} className="bg-[#3e4e9e] text-white rounded-lg px-3 py-2 text-sm">Capturar</button>}
+        {!photo && <button type="button" disabled={!ready} onClick={snap} className="ui-camera-capture bg-[#3e4e9e] text-white rounded-lg px-3 py-2 text-sm">Capturar</button>}
         {photo && <><button type="button" onClick={() => setPhoto(null)} className="border rounded-lg px-3 py-2 text-sm">Repetir</button>
           <button type="button" onClick={() => { onPhotoCaptured(photo); close(); }} className="bg-[#3e4e9e] text-white rounded-lg px-3 py-2 text-sm">Usar foto</button></>}
       </div>
