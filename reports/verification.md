@@ -1,6 +1,16 @@
 # Verificación de la refactorización local
 
-## Liquid Glass y Neumorfismo (7 de octubre de 2026)
+## Ajuste de barrido y Neumorfismo sin bordes (7 de octubre de 2026)
+
+Claro/oscuro revela la nueva paleta de izquierda a derecha con una máscara de borde suave durante 1,5 segundos. Entre estilos se conserva el fundido, reducido también a 1,5 segundos. La implementación utiliza View Transitions con cancelación y descarte de capturas obsoletas; si la API no está disponible o no puede iniciarse, usa el fundido. Movimiento reducido aplica los cambios directamente. El DOM y los formularios se conservan.
+
+Neumorfismo hace transparentes los bordes de superficies, campos, avisos, separadores, marcos y portales, manteniendo su espacio para evitar saltos. Elimina anillos decorativos y utiliza sombras; el foco de teclado, los símbolos dibujados con bordes y la remisión imprimible conservan sus reglas. Liquid Glass mantiene contornos.
+
+Las pruebas comprueban capturas diferidas, conservación de campos/foco, cancelación de un cambio anterior, fallos de captura, ausencia de API, movimiento reducido, independencia del cambio de estilo y alcance de las reglas sin bordes. Se conserva la restricción de no utilizar computer use ni automatización de navegador; el efecto visual y el rendimiento en dispositivos reales siguen pendientes de revisión por el usuario.
+
+Validación del ajuste: typecheck, lint, **116 pruebas unitarias y 25 de integración**, y build correctos. El runtime disponible sigue siendo Node 24.19.0 / pnpm 11.19.0; el proyecto declara Node 22.x. Las comprobaciones preceden a la publicación de este ajuste.
+
+## Liquid Glass y Neumorfismo: implementación inicial de 3 segundos (7 de octubre de 2026)
 
 Implementación local con Neumorfismo predeterminado, selector al final de Ayuda y preferencias independientes para estilo y paleta. Ambas transiciones duran 3 segundos, respetan movimiento reducido y conservan la navegación de 180 ms. La paleta se aplica desde la raíz para incluir ventanas y selectores portaled. El vidrio tiene alternativa opaca sin filtros; el relieve adapta las sombras al modo oscuro. Se conserva el diseño del documento imprimible y se adapta su ventana de vista previa.
 

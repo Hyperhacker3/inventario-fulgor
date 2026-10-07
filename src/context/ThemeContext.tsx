@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { APPEARANCE_TRANSITION_MS, applyTheme, applyUIStyle, DEFAULT_UI_STYLE, parseTheme, parseUIStyle, readThemePreference, readUIStylePreference, systemTheme, THEME_STORAGE_KEY, UI_STYLE_STORAGE_KEY, type Theme, type UIStyle } from '../shared/theme';
+import { applyTheme, applyUIStyle, DEFAULT_UI_STYLE, parseTheme, parseUIStyle, readThemePreference, readUIStylePreference, systemTheme, THEME_STORAGE_KEY, UI_STYLE_STORAGE_KEY, type Theme, type UIStyle } from '../shared/theme';
+import { transitionAppearance } from '../shared/appearanceTransition';
 
 const ThemeContext = createContext<{ theme: Theme; toggleTheme: () => void; uiStyle: UIStyle; toggleUIStyle: () => void } | null>(null);
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -9,11 +10,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const theme = preference || system;
   const previous = useRef({ theme, uiStyle });
   useLayoutEffect(() => {
-    const changed = previous.current.theme !== theme || previous.current.uiStyle !== uiStyle;
-    if (changed && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) document.documentElement.dataset.themeChanging = 'true';
-    applyUIStyle(uiStyle); applyTheme(theme); previous.current = { theme, uiStyle };
-    const timer = changed ? window.setTimeout(() => { delete document.documentElement.dataset.themeChanging; }, APPEARANCE_TRANSITION_MS + 50) : undefined;
-    return () => { window.clearTimeout(timer); delete document.documentElement.dataset.themeChanging; };
+    const themeChanged = previous.current.theme !== theme;
+    const changed = themeChanged || previous.current.uiStyle !== uiStyle;
+    previous.current = { theme, uiStyle };
+    const apply = () => { applyUIStyle(uiStyle); applyTheme(theme); };
+    if (changed) return transitionAppearance(apply, themeChanged);
+    apply();
   }, [theme, uiStyle]);
   useEffect(() => {
     const media = window.matchMedia?.('(prefers-color-scheme: dark)');

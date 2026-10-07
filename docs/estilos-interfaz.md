@@ -18,7 +18,8 @@ No forman parte del cambio Bento Grid, una importación de productos, la sustitu
 
 - **Neumorfismo predeterminado** para usuarios sin elección guardada o con almacenamiento bloqueado/inválido.
 - Botón **al final del contenido de Ayuda y conexión**, después de las explicaciones y antes de Cerrar. Indica la acción «Cambiar a Liquid Glass» o «Cambiar a Neumorfismo» y muestra el estilo actual.
-- Tanto el cambio de estilo como el cambio claro/oscuro duran **3 segundos**. Un segundo cambio durante una transición reinicia ese intervalo desde la última elección; movimiento reducido elimina el efecto.
+- Tanto el cambio de estilo como el cambio claro/oscuro duran **1,5 segundos**. Claro/oscuro revela la nueva paleta de izquierda a derecha con un borde suave; entre estilos se conserva el cambio gradual de superficies. Un segundo cambio cancela el efecto anterior y conserva la última elección; movimiento reducido elimina ambos efectos.
+- Neumorfismo presenta superficies **sin bordes delineados**, separadas por sombras. Liquid Glass conserva sus contornos. El foco visible del teclado se mantiene como indicador temporal de accesibilidad.
 
 La intensidad de sombras y transparencias adapta la demo a la interfaz existente; queda pendiente la evaluación visual del usuario.
 
@@ -39,7 +40,7 @@ Las pestañas del mismo navegador reciben los cambios mediante el evento `storag
 
 **Liquid Glass:** capas translúcidas, reflejos discretos y desenfoque sobre fondos con profundidad. Mantener suficiente opacidad detrás de texto y formularios; prever una alternativa opaca para navegadores sin soporte de `backdrop-filter`. Limitar superficies desenfocadas simultáneas, especialmente en móviles, para evitar efectos costosos al desplazarse. Es una adaptación web del estilo, no componentes nativos de iOS.
 
-**Neumorfismo:** superficies de tono cercano al fondo, sombras de relieve y controles hundidos. Los campos y botones deben seguir identificándose por su forma, contraste, texto y estados, además de las sombras. Adaptar la dirección y fuerza de las sombras a ambas paletas; no reutilizar sin cambios las sombras blancas del modo claro en el oscuro.
+**Neumorfismo:** superficies de tono cercano al fondo, sombras de relieve y controles hundidos, sin bordes delineados ni anillos decorativos. Los bordes se hacen transparentes conservando su espacio, para evitar saltos de tamaño al alternar estilos. La regla cubre tarjetas, campos, avisos, separadores, marcos de fotos y ventanas, incluidos sus pseudo-elementos. Se mantienen las sombras, la forma, el texto y los estados para reconocer los controles. El indicador de foco de teclado sigue visible; las líneas que dibujan el icono del selector y el spinner, y el documento imprimible, conservan sus reglas independientes.
 
 Estados comúnmente necesarios: reposo, hover, pulsado, seleccionado, foco de teclado, deshabilitado, carga, error y éxito. El estilo elegido debe ser coherente en todos ellos.
 
@@ -51,8 +52,9 @@ Estados comúnmente necesarios: reposo, hover, pulsado, seleccionado, foco de te
 - `src/index.css` importa `appearance.css` después de `theme.css`, para que las variables de material prevalezcan sobre los colores neutros anteriores. Las reglas de estados de error, éxito y advertencia conservan sus colores.
 - El CSS compartido adapta tarjetas, botones, campos y ventanas. Se conserva el selector personalizado, con su teclado, validación y opciones desplegadas; no se sustituye por un selector nativo. Las formas circulares de gráficos y controles se mantienen, y el fondo sin fotografía utiliza el material elegido.
 - Los atributos y variables se aplican en `document.documentElement`, incluyendo los selectores, menús y modales que se montan en `document.body`.
-- Las animaciones de apertura/cierre y transición de pantallas conservan **180 ms**. Los cambios de estilo y claro/oscuro usan **3000 ms** para colores, sombras, contornos, reflejos y filtros; el fondo de vidrio se desvanece gradualmente. Se respeta `prefers-reduced-motion` y no se introduce un spinner entre pantallas.
-- El cambio de apariencia activa `data-theme-changing` durante el intervalo de transición. `APPEARANCE_TRANSITION_MS` es 3000 y `--theme-duration` es `3000ms`; la limpieza del atributo espera 50 ms adicionales. Al modificar la duración en el futuro, mantener ambos valores coordinados.
+- Las animaciones de apertura/cierre y transición de pantallas conservan **180 ms**. Entre estilos se animan colores, sombras, contornos, reflejos y filtros durante **1500 ms**; el fondo de vidrio se desvanece gradualmente. Se respeta `prefers-reduced-motion` y no se introduce un spinner entre pantallas.
+- `src/shared/appearanceTransition.ts` utiliza `document.startViewTransition()` para claro/oscuro. La captura anterior permanece debajo mientras una máscara de borde suave revela la nueva paleta de izquierda a derecha durante **1500 ms**. `data-theme-sweeping` evita un fundido simultáneo debajo de la captura. El efecto no copia formularios ni remonta vistas; al terminar o cancelarse limpia sus atributos. Las actualizaciones obsoletas se descartan para conservar la última elección. Referencias: [startViewTransition](https://developer.mozilla.org/en-US/docs/Web/API/Document/startViewTransition) y [skipTransition](https://developer.mozilla.org/en-US/docs/Web/API/ViewTransition/skipTransition).
+- Si el navegador no admite la API o la captura no puede iniciarse, se usa el cambio gradual de colores de **1,5 segundos**. Movimiento reducido aplica la elección directamente. Entre estilos se activa `data-theme-changing`; `APPEARANCE_TRANSITION_MS` es 1500 y `--theme-duration` es `1500ms`, con limpieza 50 ms después. Mantener ambos valores coordinados al modificarlos.
 - El almacenamiento bloqueado o inválido no impide el arranque. El proveedor sincroniza cambios entre pestañas y vuelve a los valores predeterminados cuando se borran las preferencias.
 - Las reglas visuales se limitan a pantalla y excluyen `.a4-print-container`, `.rm-measure` y sus descendientes. Se conserva `@media print`; solo se adapta la ventana que rodea al documento.
 - El cambio modifica el contexto de apariencia y los atributos de raíz sin remontar las vistas ni el proveedor de inventario. No introduce consultas remotas ni datos de prueba.
@@ -71,7 +73,7 @@ Mantener jerarquía almacén/estantería/nivel/caja, categorías múltiples, dat
 - Cambiar de estilo durante la edición conserva los datos escritos, el foco cuando sea posible y las cantidades del carrito.
 - Selectores y portales tienen el mismo estilo que la pantalla; se mantienen teclado, Escape, cierre exterior y retorno del foco.
 - En móvil y tablet no se ocultan acciones bajo la barra inferior, no hay desbordamiento horizontal y el teclado conserva su comportamiento actual.
-- Liquid Glass dispone de alternativa sin desenfoque y Neumorfismo conserva contornos/contraste de controles relevantes.
+- Liquid Glass dispone de alternativa sin desenfoque y conserva contornos. Neumorfismo utiliza sombras sin bordes delineados, conservando contraste, estados e indicador de foco de teclado.
 - El arranque no muestra fuentes incompletas ni destellos de otro estilo. Solo el arranque inicial utiliza el spinner.
 - Remisiones impresas conservan contenido, paginación, logo y legibilidad con cualquier estilo activo.
 - Typecheck, lint, pruebas pertinentes y build pasan. No afirmar revisión visual o rendimiento real si únicamente se comprobaron CSS y DOM.
@@ -82,14 +84,18 @@ La implementación no requiere SQL. La comprobación visual real se realiza con 
 
 1. En un navegador sin preferencia de estilo, confirmar que arranca Neumorfismo. Elegir Liquid Glass al final de Ayuda, cerrar y volver a abrir la ayuda, y recargar para verificar la persistencia.
 2. Probar Neumorfismo claro, Neumorfismo oscuro, Liquid Glass claro y Liquid Glass oscuro. Revisar textos, controles, avisos, selección, foco de teclado y estados deshabilitados en las pantallas indicadas arriba.
-3. Observar que colores, sombras, bordes y filtros cambian gradualmente durante aproximadamente 3 segundos. Navegar o abrir/cerrar ventanas para comprobar que sus animaciones siguen siendo cortas. Repetir con movimiento reducido.
+3. Observar el barrido de izquierda a derecha al alternar claro/oscuro y el cambio gradual entre estilos, ambos de aproximadamente 1,5 segundos. Confirmar que Neumorfismo no conserva bordes delineados, incluidos los avisos y marcos de fotografías; Liquid Glass sí conserva contornos. Navegar o abrir/cerrar ventanas para comprobar que sus animaciones siguen siendo cortas. Repetir con movimiento reducido y, si se dispone de él, en un navegador sin View Transitions para comprobar la alternativa gradual.
 4. Escribir un borrador y añadir cantidades al carrito; alternar el estilo y comprobar que se conservan. Abrir selectores y ventanas superpuestas para revisar su apariencia y el funcionamiento de Escape y del foco.
 5. En teléfono y tablet, llegar al selector al final de Ayuda y comprobar acciones visibles, ausencia de desbordamiento horizontal y comportamiento del teclado. Seguir también `docs/experiencia-movil.md`.
 6. Revisar una remisión en pantalla y en impresión/PDF con ambos estilos, comprobando paginación, logo y contenido. Comprobar Liquid Glass en un navegador sin soporte de desenfoque si se dispone de él.
 
 Esta lista sigue pendiente de evaluación visual; las pruebas de DOM y la compilación no sustituyen la revisión de contraste, impresión y rendimiento en dispositivos reales.
 
-## Verificación del 7 de octubre
+## Verificación del ajuste a 1,5 segundos
+
+Typecheck, lint, **116 pruebas unitarias y 25 de integración**, y build correctos. Se añadieron comprobaciones de captura diferida, cancelación y descarte de cambios anteriores, fallos de captura, ausencia de API, movimiento reducido, independencia del cambio de estilo y conservación de formulario/foco al cambiar de estilo mientras hay una captura pendiente. La revisión de selectores cubre bordes neutros, de estado y discontinuos, ventanas montadas en `body`, y exclusiones de impresión y símbolos. No se realizó verificación visual en navegador ni en dispositivos físicos.
+
+## Verificación inicial del 7 de octubre (antes del ajuste a 1,5 segundos)
 
 Typecheck, lint, 109 pruebas unitarias, 25 de integración y build correctos. Las comprobaciones DOM cubren arranque con las cuatro combinaciones, Neumorfismo por defecto, almacenamiento bloqueado/inválido, persistencia, sincronización entre pestañas, independencia de paleta, conservación de campos y selector portaled abierto. Se comprueba que la transición sigue activa después de los antiguos 320 ms y durante casi 3 segundos tras una segunda elección, y que termina posteriormente. La revisión de CSS preservó formas circulares de gráficos y la separación del documento imprimible.
 

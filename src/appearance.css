@@ -121,7 +121,20 @@
   :root[data-ui-style] :is([class~='hover:text-[#253685]'], [class~='hover:text-[#3e4e9e]']):hover { color: var(--ui-brand); }
   :root[data-ui-style] .app-select-option:is([data-highlighted='true'], [aria-selected='true']) { color: var(--ui-brand); }
 
-  /* Appearance changes last 3s. Navigation, dialogs, keyboard and presses retain 180ms. */
+  /* Neumorphism uses relief only. Transparent borders retain dimensions during style changes.
+     Chevron/spinner borders draw symbols, and the printed document has its own rules. */
+  :root[data-ui-style='neumorphism'] *:not(:where(.app-select-chevron, .app-spinner, .a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)),
+  :root[data-ui-style='neumorphism'] *:not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *))::before,
+  :root[data-ui-style='neumorphism'] *:not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *))::after {
+    border-color: transparent !important;
+    border-image: none !important;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-ring-offset-shadow: 0 0 #0000;
+    --tw-inset-ring-shadow: 0 0 #0000;
+  }
+  :root[data-ui-style='neumorphism'] [class*='border']:where([class*='rounded']):not(:where(button, input, textarea, .app-select-trigger, .ui-inset, .rounded-full, .a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { box-shadow: var(--ui-raised); }
+
+  /* Appearance changes last 1.5s. Navigation, dialogs, keyboard and presses retain 180ms. */
   :root[data-theme-changing='true'] body,
   :root[data-theme-changing='true'] *:not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) {
     transition: background-color var(--theme-duration) ease, color var(--theme-duration) ease, border-color var(--theme-duration) ease,
@@ -132,6 +145,22 @@
       visibility var(--ui-motion-duration), grid-template-rows var(--ui-motion-duration) ease;
   }
   :root[data-theme-changing='true'] .theme-toggle-icon svg { transition: transform var(--theme-duration) ease, opacity var(--theme-duration) ease; }
+
+  /* A browser snapshot reveals the finished palette, so colors must not fade underneath it. */
+  :root[data-theme-sweeping='true'] *,
+  :root[data-theme-sweeping='true'] body::before,
+  :root[data-theme-sweeping='true'] body::after { transition: none !important; }
+  :root[data-theme-sweeping='true']::view-transition { pointer-events: none; }
+  :root[data-theme-sweeping='true']::view-transition-group(root) { animation: none; }
+  :root[data-theme-sweeping='true']::view-transition-image-pair(root) { isolation: isolate; }
+  :root[data-theme-sweeping='true']::view-transition-old(root) { animation: none; mix-blend-mode: normal; opacity: 1; z-index: 1; }
+  :root[data-theme-sweeping='true']::view-transition-new(root) {
+    mix-blend-mode: normal; z-index: 2;
+    mask-image: linear-gradient(to right, #000 45%, transparent 55%);
+    mask-size: 250% 100%; mask-repeat: no-repeat;
+    animation: ui-theme-wipe var(--theme-duration) ease-in-out both;
+  }
+  @keyframes ui-theme-wipe { from { mask-position: 100% 0; } to { mask-position: 0% 0; } }
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -143,4 +172,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   :root[data-theme-changing='true'] *, body::before, body::after, .theme-toggle-icon svg { transition: none !important; }
+  :root::view-transition-group(root), :root::view-transition-old(root), :root::view-transition-new(root) { animation: none !important; mask-image: none !important; }
 }
+@media print { :root::view-transition { display: none !important; } }

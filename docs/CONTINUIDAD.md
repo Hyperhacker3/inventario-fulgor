@@ -8,14 +8,16 @@ Este documento resume el estado para continuar en otro chat. Las secciones anter
 
 El usuario probó una demo separada y eligió **Liquid Glass y Neumorfismo**. La aplicación permite alternarlos sin recargar, manteniendo las funciones y los datos. **Neumorfismo es el predeterminado** y el botón está al final del contenido de **Ayuda y conexión**, antes de Cerrar. Ambos estilos tienen paletas clara y oscura, con elecciones independientes y persistencia local.
 
-Implementado el 7 de octubre por petición del usuario. Las transiciones de estilo y claro/oscuro duran **3 segundos**; las de navegación y apertura/cierre siguen en 180 ms. Se respeta movimiento reducido. `data-ui-style` y `el_turpial_ui_style` guardan el estilo, separados de `data-theme` y `el_turpial_theme`. El arranque HTML restaura ambas preferencias antes de React. El usuario solicitó después crear el commit, subirlo a GitHub y publicar la actualización. El despliegue se comprueba por separado y queda pendiente la revisión visual del usuario; no se utilizó computer use ni automatización de navegador.
+Implementado el 7 de octubre por petición del usuario. Las transiciones de estilo y claro/oscuro duran **1,5 segundos**; las de navegación y apertura/cierre siguen en 180 ms. Se respeta movimiento reducido. `data-ui-style` y `el_turpial_ui_style` guardan el estilo, separados de `data-theme` y `el_turpial_theme`. El arranque HTML restaura ambas preferencias antes de React. El usuario solicitó después crear el commit, subirlo a GitHub y publicar la actualización. El despliegue se comprueba por separado y queda pendiente la revisión visual del usuario; no se utilizó computer use ni automatización de navegador.
 
 ## Proyecto y estado del código
+
+El ajuste posterior sustituye la transición original de 3 segundos por **1,5 segundos** en ambos cambios. Claro/oscuro usa un barrido suave de izquierda a derecha mediante View Transitions; si no está disponible, conserva un fundido de 1,5 segundos. Neumorfismo elimina los bordes y anillos decorativos de superficies, campos, avisos y portales, manteniendo sombras, símbolos, foco del teclado y el documento imprimible. Los cambios rápidos cancelan las capturas anteriores para que prevalezca la última elección.
 
 - Repositorio local: `C:/Users/Assas/Downloads/inventario-fulgor`.
 - Remoto: `https://github.com/Hyperhacker3/inventario-fulgor.git`, rama `main`.
 - Aplicación publicada: `https://inventario-fulgor.vercel.app/`.
-- Commit anterior al cambio visual: `c32e702`, publicado después de `c1638c5`. Para identificar la actualización de estilos y su despliegue, consultar el historial de `main` y el estado de Vercel; no deducir la versión publicada solo de este documento.
+- Primera implementación de estilos: `f8e7ae3`, publicada y verificada mediante el estado de Vercel y los recursos de la URL pública. El ajuste posterior a 1,5 segundos y sin bordes de Neumorfismo sucede después de ese commit. Para identificar su versión y despliegue, consultar el historial de `main` y Vercel; no deducir la versión publicada solo de este documento.
 - `c32e702` conserva estados importados que no pertenecen a las opciones antiguas del formulario y protege los archivos privados frente al servidor de desarrollo.
 - Stack: React 19, TypeScript, Vite, Tailwind CSS, TanStack Query y Supabase. Node 22.x y pnpm indicados en `package.json`.
 - La marca visible es **EL TURPIAL**. El nombre técnico del repositorio y la URL histórica siguen conteniendo `fulgor`; no renombrarlos como parte del cambio de estilo.
@@ -85,6 +87,7 @@ Es HTML independiente con datos ficticios y logo/fuente embebidos. No tiene cone
 | Selector de estilo al final de Ayuda | `src/components/HelpModal.tsx`, `src/components/UIStyleToggle.tsx` |
 | Fondo sin fotografía adaptado al estilo | `src/components/ItemPhotoPlaceholder.tsx` |
 | Pruebas de preferencias y transiciones | `tests/unit/theme.test.ts` |
+| Barrido, alternativa y cancelación de capturas | `src/shared/appearanceTransition.ts`, `tests/unit/appearanceTransition.test.ts` |
 | Selectores y ventanas | `src/components/ui/Select.tsx`, `FormDialog.tsx`, `Motion.tsx` |
 | Navegación | `Header.tsx`, `Sidebar.tsx`, `navigation/MobileMenu.tsx`, `navigation/MobileBottomNav.tsx` |
 | Vistas | `ExplorerView.tsx`, `DashboardView.tsx`, `NewItemView.tsx`, `ItemDetailModal.tsx` y demás componentes |
@@ -94,7 +97,7 @@ Los nombres abreviados de componentes de esta tabla se resuelven bajo `src/compo
 
 ## Verificación y límites
 
-Antes de publicar cambios de app: `pnpm typecheck`, `pnpm lint`, `pnpm test` y `pnpm build`. Para esta implementación pasaron typecheck, lint, **109 pruebas unitarias y 25 de integración**, y build. Se verifican en DOM las preferencias, las cuatro combinaciones al arrancar, formularios y selector abierto conservados, almacenamiento bloqueado y duración de la transición. Las pruebas se ejecutaron con Node 24.19.0 disponible, aunque el proyecto solicita Node 22.x. No se realizó revisión visual de la app en navegador ni medición en un dispositivo físico. En la carga privada anterior se ejecutaron 12 comprobaciones de PostgreSQL embebido; el usuario ejecutó y verificó el SQL en su Supabase.
+Antes de publicar cambios de app: `pnpm typecheck`, `pnpm lint`, `pnpm test` y `pnpm build`. Para esta implementación pasaron typecheck, lint, **116 pruebas unitarias y 25 de integración**, y build. Se verifican en DOM las preferencias, las cuatro combinaciones al arrancar, formularios y selector abierto conservados, almacenamiento bloqueado y duración de la transición. Las pruebas se ejecutaron con Node 24.19.0 disponible, aunque el proyecto solicita Node 22.x. No se realizó revisión visual de la app en navegador ni medición en un dispositivo físico. En la carga privada anterior se ejecutaron 12 comprobaciones de PostgreSQL embebido; el usuario ejecutó y verificó el SQL en su Supabase.
 
 La demo tiene comprobaciones DOM con JSDOM para las nueve combinaciones de estilo/pantalla, búsqueda, detalle, lista/cuadrícula, tema, selector de anchos y registro local. No se hizo verificación visual mediante navegador automatizado ni se midió rendimiento en un dispositivo físico.
 
@@ -110,4 +113,4 @@ Revisar `git status` antes de preparar commits; excluir expresamente Excel y arc
 
 ## Mensaje sugerido para continuar la revisión
 
-> Lee README.md, docs/CONTINUIDAD.md y docs/estilos-interfaz.md. Liquid Glass y Neumorfismo ya están implementados y se solicitó su publicación. Revisa Git y el despliegue real antes de continuar; conserva Neumorfismo predeterminado, el botón al final de Ayuda y los 3 segundos al cambiar estilo o claro/oscuro. Conserva funciones, datos de Supabase y formato de los PDF. No uses computer use ni automatización de navegador.
+> Lee README.md, docs/CONTINUIDAD.md y docs/estilos-interfaz.md. Liquid Glass y Neumorfismo ya están implementados y se solicitó su publicación. Revisa Git y el despliegue real antes de continuar; conserva Neumorfismo predeterminado, el botón al final de Ayuda y los 1,5 segundos al cambiar estilo o claro/oscuro. Conserva funciones, datos de Supabase y formato de los PDF. No uses computer use ni automatización de navegador.

@@ -1,8 +1,10 @@
 # Plan de refactorización, optimización y estabilización de EL TURPIAL
 
-Nota de continuidad, 7 de octubre de 2026: este plan conserva el diagnóstico histórico. El estado actual (1.545 elementos al cerrar la segunda importación) y el cambio visual implementado están en `docs/CONTINUIDAD.md` y `docs/estilos-interfaz.md`. Liquid Glass y Neumorfismo ya están aplicados: Neumorfismo predeterminado, botón al final de Ayuda y transiciones de 3 segundos para estilo y claro/oscuro. Pasaron typecheck, lint, 109 pruebas unitarias, 25 de integración y build. El usuario solicitó publicar la actualización; la revisión visual sigue pendiente y el estado del despliegue se comprueba por separado.
+Nota de continuidad, 7 de octubre de 2026: este plan conserva el diagnóstico histórico. El estado actual (1.545 elementos al cerrar la segunda importación) y el cambio visual implementado están en `docs/CONTINUIDAD.md` y `docs/estilos-interfaz.md`. Liquid Glass y Neumorfismo ya están aplicados: Neumorfismo predeterminado, botón al final de Ayuda y transiciones de 1,5 segundos para estilo y claro/oscuro. Pasaron typecheck, lint, 116 pruebas unitarias, 25 de integración y build. El usuario solicitó publicar la actualización; la revisión visual sigue pendiente y el estado del despliegue se comprueba por separado.
 
 Fecha: 30 de septiembre de 2026. Estado al 1 de octubre de 2026: migraciones, importación de 677 productos y despliegue completados. Véase `reports/verification.md` para cambios verificados y trabajo pendiente.
+
+El ajuste visual posterior añade un barrido de izquierda a derecha para claro/oscuro, reduce ambos cambios a 1,5 segundos y elimina los bordes delineados de Neumorfismo, conservando sombras y foco de teclado. Liquid Glass mantiene sus contornos. La navegación continúa en 180 ms y las remisiones impresas conservan su formato.
 
 El objetivo es conservar las funciones del producto, reducir el acoplamiento, mejorar el rendimiento y conseguir que inventario, despachos y trazabilidad sean fiables con varios usuarios. El orden de trabajo debe atender primero la seguridad y la integridad; después la optimización medida.
 

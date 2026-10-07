@@ -3,7 +3,7 @@ export const THEME_STORAGE_KEY = 'el_turpial_theme';
 export type UIStyle = 'glass' | 'neumorphism';
 export const UI_STYLE_STORAGE_KEY = 'el_turpial_ui_style';
 export const DEFAULT_UI_STYLE: UIStyle = 'neumorphism';
-export const APPEARANCE_TRANSITION_MS = 3000;
+export const APPEARANCE_TRANSITION_MS = 1500;
 export function parseUIStyle(value: string | null): UIStyle | null {
   return value === 'glass' || value === 'neumorphism' ? value : null;
 }

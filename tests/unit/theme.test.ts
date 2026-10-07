@@ -162,7 +162,7 @@ test('style persists on remount, syncs other tabs and resets safely for invalid 
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
-test('both appearance changes retain a three-second transition and restart it for a quick second change', async () => {
+test('both appearance changes retain a 1.5-second transition and restart it for a quick second change', async () => {
   reset();
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
   try {
@@ -172,7 +172,7 @@ test('both appearance changes retain a three-second transition and restart it fo
     await act(() => new Promise(resolve => window.setTimeout(resolve, 500)));
     assert.equal(document.documentElement.dataset.themeChanging, 'true');
     await act(() => host.querySelector<HTMLButtonElement>('.ui-style-toggle')!.click());
-    await act(() => new Promise(resolve => window.setTimeout(resolve, 2600)));
+    await act(() => new Promise(resolve => window.setTimeout(resolve, 1100)));
     assert.equal(document.documentElement.dataset.themeChanging, 'true');
     await act(() => new Promise(resolve => window.setTimeout(resolve, 500)));
     assert.equal(document.documentElement.dataset.themeChanging, undefined);
@@ -191,6 +191,33 @@ test('style works with blocked storage and respects reduced motion', async () =>
     assert.equal(document.documentElement.dataset.uiStyle, 'glass');
     assert.equal(document.documentElement.dataset.themeChanging, undefined);
   } finally { dom.window.Storage.prototype.getItem = originalGet; dom.window.Storage.prototype.setItem = originalSet; await act(() => root.unmount()); host.remove(); }
+});
+
+test('provider cancels a pending native snapshot when another style is chosen, preserving the latest palette and form', async () => {
+  reset();
+  let applySnapshot!: ViewTransitionUpdateCallback, finish!: () => void, skips = 0;
+  const finished = new Promise<void>(resolve => { finish = resolve; });
+  document.startViewTransition = callback => {
+    applySnapshot = callback!;
+    return { ready: Promise.resolve(), updateCallbackDone: Promise.resolve(), finished, skipTransition() { skips++; } } as ViewTransition;
+  };
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  try {
+    await act(() => root.render(h(ThemeProvider, null, h('input', { defaultValue: 'Material' }), h(UIStyleToggle), h(ThemeToggle))));
+    const input = host.querySelector('input')!; input.value = '42'; input.focus();
+    await act(() => toggle().click());
+    assert.equal(document.documentElement.dataset.themeSweeping, 'true');
+    assert.equal(document.documentElement.dataset.theme, 'light');
+    await act(() => host.querySelector<HTMLButtonElement>('.ui-style-toggle')!.click());
+    assert.equal(skips, 1);
+    assert.equal(document.documentElement.dataset.uiStyle, 'glass');
+    assert.equal(document.documentElement.dataset.theme, 'dark');
+    await act(async () => { await applySnapshot(); finish(); await finished; });
+    assert.equal(document.documentElement.dataset.themeChanging, 'true');
+    assert.equal(document.documentElement.dataset.themeSweeping, undefined);
+    assert.ok(host.querySelector('input') === input); assert.equal(input.value, '42');
+    assert.ok(document.activeElement === input);
+  } finally { await act(() => root.unmount()); host.remove(); delete (document as Partial<Document>).startViewTransition; }
 });
 
 test('initial HTML restores all four combinations and falls back when style storage is invalid or blocked', () => {
