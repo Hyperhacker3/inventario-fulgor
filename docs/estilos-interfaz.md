@@ -4,7 +4,9 @@ Actualizado el 7 de octubre de 2026. **Neumorfismo es el único estilo de la apl
 
 ## Decisiones vigentes
 
-Almacenes utiliza una pestaña de Administración antes de Estanterías/Niveles/Cajas, sin botón lateral ni pantalla propia. El selector compacto incluye la misma sección; los almacenes dentro del panel tienen selección hundida y reposo plano. Se conservan productos, valores y acciones de ubicaciones. Fotografías del producto coloca el título dentro de su panel, con margen inferior, manteniendo fieldset disabled e identificación accesible por aria-labelledby, también en edición.
+Almacenes utiliza una pestaña de Administración antes de Estanterías/Niveles/Cajas, sin botón lateral ni pantalla propia. Usa la misma cuadrícula de tarjetas, con código, nombre, valor total/dañado y Editar; Crear almacén se muestra según permisos. Se omiten árbol, productos, descripción, ciudad y estado en las tarjetas, conservando los datos en edición. Fotografías del producto coloca el título dentro de su panel, con margen inferior, manteniendo fieldset disabled e identificación accesible por aria-labelledby, también en edición.
+
+Las nueve secciones de Administración conservan su color de texto e icono en reposo, hover y selección: códigos azul, categorías violeta, almacenes marrón, estanterías turquesa, niveles celeste, cajas ámbar, proyectos verde, archivados rojo y empresa azul grisáceo. Variantes claras/oscuras en pestañas, valor del selector compacto y opciones desplegadas; sus superficies neutras y estados planos/elevados/hundidos no cambian. Se retira Actualizar códigos y categorías de la cabecera.
 
 Las tarjetas de Remisiones colocan el icono azul Ver / Imprimir PDF arriba a la derecha, junto al código rojo. Un control de 44 × 44 px con nombre accesible y tooltip ocupa una columna fija; el código utiliza el ancho restante y envuelve si es largo. Se elimina la fila inferior del PDF en móvil, tablet y PC.
 

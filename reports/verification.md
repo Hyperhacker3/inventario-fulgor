@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Almacenes compactos y colores de Administración (7 de octubre de 2026)
+
+Almacenes reutiliza LocationsManager con kind almacen: misma cuadrícula, código/nombre, valores total/dañado y Editar. Crear almacén no requiere seleccionar un padre; se mantienen permisos y diálogo existente. Se eliminan WarehousesManager, árbol, productos y datos adicionales visibles en esta sección; los campos de edición, datos y stocks se conservan. El cálculo sigue agregando una vez cada producto confirmado asignado al almacén, incluidos productos sin estantería/caja, excluyendo archivados y conteos pendientes.
+
+Las nueve secciones tienen colores propios de texto/icono en pestañas y selector compacto/opciones, con variantes oscuras y estados de relieve existentes. Select incorpora optionColors opcional en los spans de texto/icono sin afectar selectores existentes ni validación nativa. Se retira Actualizar códigos y categorías de la cabecera; Comprobar de nuevo queda disponible ante error de catálogo.
+
+Verificación: typecheck, lint, **163 unitarias + 34 de integración (197)** y build. Se amplían pruebas existentes para tarjetas/valores de almacenes, ausencia de árbol, permisos de creación/edición y correspondencia de nueve colores entre pestañas/opciones/selección móvil. Sin nuevas pruebas redundantes, SQL adicional, escrituras en Supabase real, archivos privados, computer use ni navegador automatizado. Geometría/contraste físicos se revisan con el usuario; commit/push y despliegue se comprueban por separado.
+
 ## Almacenes en Administración y título fotográfico interno (7 de octubre de 2026)
 
 Almacenes pasa a una pestaña de Administración de datos antes de Estanterías/Niveles/Cajas. Se retira de sidebar/menú y se elimina WarehouseView como vista; WarehousesManager conserva selección, creación/edición, árbol, productos, valores y controles de ubicaciones. Enlaces heredados y acceso del Dashboard abren el mismo DataAdministrationView en Almacenes; la navegación resalta Administración. Nueve pestañas en escritorio y el mismo selector compacto. Selección de almacenes con los estados planos/hundidos y ancho adaptable, sin padding externo duplicado.

@@ -63,13 +63,24 @@ test('warehouse selection displays the selected total and damaged value plus nes
   assert.equal(south.querySelectorAll('article').length, 1);
 });
 
-test('administration shows financial values for racks and boxes, including empty boxes', async () => {
+test('administration shows compact warehouse cards and financial values for racks and boxes, including empty boxes', async () => {
   const props = { almacenes, estanterias, niveles: [], cajas, elementos,
     user: { name: 'User', email: '', role: 'consulta', avatar: '' },
     getAlmacenById: (id: string | null | undefined) => almacenes.find(row => row.id === id),
     getEstanteriaById: (id: string | null | undefined) => estanterias.find(row => row.id === id) };
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
   try {
+    await act(() => root.render(h(LocationsManagerContent, { ...props, kind: 'almacen' })));
+    assert.equal(host.querySelectorAll('article').length, 2);
+    assertValues(host.querySelector('article')!, 1155, 225);
+    assertValues(host.querySelectorAll('article')[1], 600, 300);
+    assert.match(host.textContent!, /Norte/); assert.match(host.textContent!, /Sur/);
+    assert.doesNotMatch(host.textContent!, /Rack Norte|Caja Norte/);
+    assert.equal(host.querySelector('button'), null);
+    await act(() => root.render(h(LocationsManagerContent, { ...props, kind: 'almacen', user: { ...props.user, role: 'admin' } })));
+    const createWarehouse = [...host.querySelectorAll<HTMLButtonElement>('button')].find(control => control.textContent === 'Crear almacén')!;
+    assert.ok(createWarehouse); assert.equal(createWarehouse.disabled, false);
+    assert.equal([...host.querySelectorAll('article button')].filter(control => control.textContent === 'Editar').length, 2);
     await act(() => root.render(h(LocationsManagerContent, { ...props, kind: 'estanteria' })));
     assertValues(host.querySelector('article')!, 1125, 225);
     assertValues(host.querySelectorAll('article')[1], 600, 300);
@@ -89,13 +100,17 @@ test('compact administration selector retains all nine icons and synchronizes wa
     assert.ok(trigger.closest('.lg\\:hidden'));
     assert.ok(host.querySelector('[role="tablist"]')!.classList.contains('hidden'));
     for (const tab of host.querySelectorAll<HTMLButtonElement>('[role="tab"]')) assert.ok(tab.classList.contains('ui-flat-choice'));
+    const desktopColors = [...host.querySelectorAll<HTMLButtonElement>('[role="tab"]')].map(tab => tab.querySelector<HTMLSpanElement>(':scope > span')!.style.color);
+    assert.equal(new Set(desktopColors).size, 9); assert.ok(desktopColors.every(Boolean));
     await act(() => trigger.click());
     const list = document.querySelector('[role="listbox"]')!;
     assert.equal(list.querySelectorAll('[role="option"]').length, 9);
     assert.deepEqual([...list.querySelectorAll('.material-symbols-outlined')].map(icon => icon.textContent), ['tag', 'category', 'warehouse', 'shelves', 'layers', 'inventory_2', 'folder_open', 'archive', 'settings']);
+    assert.deepEqual([...list.querySelectorAll<HTMLSpanElement>('[role="option"] > span:first-child')].map(span => span.style.color), desktopColors);
     await act(() => list.querySelector<HTMLButtonElement>('[data-value="warehouses"]')!.click());
     assert.match(trigger.textContent!, /Almacenes/);
     assert.equal(trigger.querySelector('[aria-hidden="true"]')!.textContent, 'warehouse');
+    assert.equal(trigger.querySelector<HTMLSpanElement>('.app-select-value')!.style.color, 'var(--ui-admin-warehouses)');
     assert.equal(host.querySelector('[role="tab"][aria-selected="true"]')!.id, 'data-tab-warehouses');
     await act(() => host.querySelector<HTMLButtonElement>('#data-tab-boxes')!.click());
     assert.match(trigger.textContent!, /Cajas/);
