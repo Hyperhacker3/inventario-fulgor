@@ -6,6 +6,8 @@ Actualización posterior: Empresa es la octava sección de Administración y per
 
 Fecha: 30 de septiembre de 2026. Estado al 1 de octubre de 2026: migraciones, importación de 677 productos y despliegue completados. Véase `reports/verification.md` para cambios verificados y trabajo pendiente.
 
+Revisión posterior de cinco capturas: menú y barra inferior móvil comparten la navegación plana/hundida de escritorio; indicadores de fotos quedan sin superficies; movimientos recientes reservan espacio para sombras. `DispatchCartLine` extrae los materiales de salida a tarjetas clicables, con nombres completos y acciones independientes/adaptables. Registro fotográfico coloca su encabezado dentro del panel. `DatePicker` sustituye el calendario nativo por español/Neumorfismo, preservando ISO, límites, validación, foco y teclado. Typecheck, lint, 145 pruebas unitarias, 28 de integración y build correctos. Sin nuevas migraciones ni operaciones sobre inventario real. Revisión visual pendiente con el usuario; commit/push autorizados y despliegue comprobado por separado.
+
 El ajuste visual vigente conserva el barrido de izquierda a derecha para claro/oscuro en 1,5 segundos y Neumorfismo sin bordes delineados, con sombras y foco de teclado. La navegación continúa en 180 ms y las remisiones impresas conservan su formato.
 
 El objetivo es conservar las funciones del producto, reducir el acoplamiento, mejorar el rendimiento y conseguir que inventario, despachos y trazabilidad sean fiables con varios usuarios. El orden de trabajo debe atender primero la seguridad y la integridad; después la optimización medida.

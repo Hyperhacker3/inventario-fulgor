@@ -27,7 +27,7 @@ export function MobileMenu({ open, onClose, items, activeView, onNavigate, searc
       </form>
       <nav aria-label="Todas las pantallas" className="app-nav-scroll min-h-0 overflow-y-auto overscroll-contain flex flex-col">
         {items.map(item => <button key={item.id} type="button" aria-current={navigationIsActive(item, activeView) ? 'page' : undefined} onClick={() => onNavigate(item.id)}
-          className={`flex shrink-0 items-center gap-2 text-left min-h-11 px-2 py-2 text-sm rounded-lg ${navigationIsActive(item, activeView) ? 'bg-[#eaedff] text-[#253685] font-bold' : 'hover:bg-slate-50 text-slate-700'}`}>
+          className="ui-sidebar-action flex shrink-0 items-center gap-2 text-left min-h-11 px-3 py-2 text-sm rounded-lg">
           <span className="material-symbols-outlined text-xl shrink-0" aria-hidden="true">{item.icon}</span><span className="flex-1 min-w-0">{item.label}</span>
           {!!item.badge && <span className="rounded-full bg-red-600 text-white text-xs px-2 py-1">{item.badge}</span>}
         </button>)}
@@ -35,8 +35,8 @@ export function MobileMenu({ open, onClose, items, activeView, onNavigate, searc
       <div className="shrink-0 border-t mt-2 pt-2 grid grid-cols-2 gap-2">
         {identity && <div className="col-span-2 px-2 min-w-0"><p className="text-sm font-semibold break-words">{identity.name}</p><p className="text-xs text-slate-500">{identity.cargo}</p></div>}
         {themeAction && <div className="col-span-2">{themeAction}</div>}
-        <button type="button" onClick={onHelp} className="flex items-center justify-center gap-2 min-h-12 rounded-xl hover:bg-slate-50 text-sm"><span className="material-symbols-outlined">help</span>Ayuda</button>
-        <button type="button" onClick={onSignOut} className="flex items-center justify-center gap-2 min-h-12 rounded-xl hover:bg-red-50 text-sm text-red-700"><span className="material-symbols-outlined">logout</span>Cerrar sesión</button>
+        <button type="button" onClick={onHelp} className="ui-sidebar-action flex items-center justify-center gap-2 min-h-12 rounded-xl text-sm"><span className="material-symbols-outlined">help</span>Ayuda</button>
+        <button type="button" onClick={onSignOut} className="ui-sidebar-action ui-sidebar-logout flex items-center justify-center gap-2 min-h-12 rounded-xl text-sm"><span className="material-symbols-outlined">logout</span>Cerrar sesión</button>
       </div>
       {error && <p role="alert" className="text-sm text-red-700 mt-2">{error}</p>}
     </section>

@@ -1,5 +1,15 @@
 # Verificación de la refactorización local
 
+## Galerías, navegación móvil, calendario y materiales de salida (7 de octubre de 2026)
+
+Los indicadores de ambas galerías muestran solo puntos/píldora, sin material, bordes, sombras ni desplazamiento, conservando zona táctil transparente de 44 px y foco accesible. Movimientos recientes reserva espacio para el relieve compacto y aumenta separación/padding de las tarjetas. Menú móvil, acciones inferiores y barra de accesos usan los estados compartidos de escritorio: reposo plano, selección hundida y hover elevado en dispositivos con mouse. No cambia navegación, permisos ni el comportamiento del teclado móvil.
+
+Los materiales de Salidas se extraen a `DispatchCartLine`: tarjeta completa clicable, nombre transparente que puede ocupar varias líneas, controles separados de cantidad/quitar y disposición adaptable. Conservan cantidades decimales, límites, −/+ de una unidad y protección de clic en controles o texto seleccionado. Registro fotográfico sustituye el legend sobre el borde por un encabezado interior, manteniendo fieldset deshabilitado y nombre accesible.
+
+El calendario de transporte usa un diálogo en español y Neumorfismo, mes/año, semana desde lunes, Hoy/Limpiar, navegación por teclado y límites. Un campo nativo invisible conserva ISO y validación/formularios, sin mostrar el selector del sistema. La aritmética UTC cubre bisiestos y fines de mes; Hoy sigue la fecha local. Se conserva foco, cierre jerárquico con Escape, deshabilitado del formulario y ciclo de animación/inert. Los desplegables de mes/año se sitúan por encima del calendario; el panel limita su altura al viewport.
+
+Validación: typecheck, lint, **145 pruebas unitarias y 28 de integración (173 en total)**, y build correctos. Seis pruebas nuevas comprueban calendario/fechas/formularios/foco/teclado/límites/deshabilitado y acciones independientes del carrito. Se amplían las pruebas existentes de cascada en claro/oscuro para indicadores, sombras de movimientos, navegación móvil y valor de fecha oculto, además del encabezado fotográfico accesible. Se mantienen las pruebas de permisos, remisiones e inventario. JSDOM verifica reglas y eventos; geometría, sombras y tacto reales quedan por revisar con el usuario. No se utilizó computer use, automatización de navegador, Supabase real ni archivos privados. No requiere SQL adicional. Commit/push autorizados; comprobar Vercel y los recursos públicos antes de confirmar publicación.
+
 ## Empresa compartida y NIT debajo del logo (7 de octubre de 2026)
 
 La remisión muestra NIT 800.176.581 inmediatamente debajo del logo en cada página. Empresa es la octava sección de Administración: edita nombre, NIT, logo, dirección y teléfono, con escritura limitada a administradores. Nombre/logo identifican la navegación; el logo original permanece disponible y los archivos aprobados no se modifican. Los logos nuevos se preparan como PNG proporcionado, conservando transparencia, con tamaño acotado y sin fuentes externas. Dirección y teléfono iniciales quedan vacíos.

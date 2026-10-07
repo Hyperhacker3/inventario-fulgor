@@ -24,6 +24,8 @@ Los campos y selectores indican el foco con sombra interior, sin contorno azul. 
 
 Los campos numéricos compartidos no muestran las flechas internas del navegador ni incrementan con las teclas arriba/abajo. Las cantidades se cambian con los botones laterales −/+ de una unidad o escribiéndolas directamente. Se conserva la entrada manual de decimales y la validación de cantidades, pesos y valores.
 
+El menú móvil y la barra inferior comparten los estados de la barra lateral: planos en reposo, hundidos al seleccionar y elevados en hover con mouse. Los indicadores de fotos muestran solo puntos, con una zona táctil transparente de 44 px. Los movimientos recientes reservan espacio para sus sombras. Los materiales de Salidas usan tarjetas completas clicables, nombres sin subrayado ni botón elevado y controles de cantidad separados. El título del registro fotográfico queda dentro del panel. Las fechas de transporte utilizan un calendario propio en español, adaptado a claro/oscuro, con navegación por mes/año, teclado, Hoy y Limpiar; conservan el valor ISO de la remisión.
+
 Las remisiones muestran **NIT: 800.176.581 debajo del logo**. Administración de datos → Empresa permite editar nombre, NIT, logo, dirección y teléfono, compartidos entre cuentas; solo administración guarda. Las remisiones nuevas conservan una copia de los datos al emitirlas. Para activar la edición, ejecute `supabase/migrations/20261007000100_company_profile.sql`; instrucciones y tratamiento de documentos anteriores en [Datos de empresa](docs/datos-empresa.md). El NIT inicial se muestra incluso antes de activar la migración.
 
 ## Desarrollo local

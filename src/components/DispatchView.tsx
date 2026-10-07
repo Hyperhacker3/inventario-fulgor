@@ -8,7 +8,7 @@ import { useInventory } from '../context/InventoryContext';
 import { errorMessage } from '../shared/errors';
 import { available } from '../domain/inventory';
 import { AvailableInventory } from './dispatch/AvailableInventory';
-import { NumberInput } from './NumberInput';
+import { DispatchCartLine } from './dispatch/DispatchCartLine';
 import { OutgoingPhotoPicker } from './dispatch/OutgoingPhotoPicker';
 import { displayCargo } from '../domain/userProfile';
 
@@ -214,68 +214,16 @@ export const DispatchView: React.FC = () => {
                 </span>
               </div>
 
-              <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-3 max-h-60 overflow-y-auto flex flex-col gap-2">
+              <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-4 max-h-60 overflow-y-auto flex flex-col gap-4">
                 {dispatchCart.length === 0 ? (
                   <div className="py-6 text-center text-xs text-[#767682]">
                     Busque un material arriba y pulse Añadir para elegir la cantidad de la salida.
                   </div>
                 ) : (
-                  dispatchCart.map((item) => (
-                    <div
-                      key={item.elemento.id}
-                      className="bg-white border border-[#e2e8f0] rounded-lg p-2.5 flex items-center justify-between gap-3 shadow-2xs"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <button type="button" onClick={() => openItemDetail(item.elemento)} className="block max-w-full text-left font-semibold text-xs text-[#131b2e] truncate hover:text-[#3e4e9e] hover:underline" title={item.elemento.nombre}>
-                          {item.elemento.nombre}
-                        </button>
-                        <span className="font-mono-code text-[10px] text-[#3e4e9e] font-bold">
-                          {item.elemento.codigo}
-                        </span>
-                      </div>
-
-                      {/* Quantity Controller */}
-                      <div className="flex items-center gap-1 bg-[#f8fafc] border border-[#e2e8f0] rounded-md px-1 py-0.5">
-                        <button
-                          type="button"
-                          onClick={() => updateDispatchCartQuantity(item.elemento.id, item.cantidad - 1)}
-                          className="w-6 h-6 flex items-center justify-center text-xs font-bold text-[#454651] hover:bg-[#eaedff] rounded"
-                        >
-                          -
-                        </button>
-                        <NumberInput
-                          required
-                          min="0.001"
-                          step="0.001"
-                          max={available(item.elemento)}
-                          value={item.cantidad}
-                          onValueChange={quantity => updateDispatchCartQuantity(item.elemento.id, quantity)}
-                          className="w-10 text-center font-mono-code font-bold text-xs bg-transparent focus:outline-hidden"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => updateDispatchCartQuantity(item.elemento.id, item.cantidad + 1)}
-                          className="w-6 h-6 flex items-center justify-center text-xs font-bold text-[#454651] hover:bg-[#eaedff] rounded"
-                        >
-                          +
-                        </button>
-                      </div>
-
-                      <span className="text-[11px] text-[#767682] w-8 text-right">
-                        {item.elemento.unidad}
-                      </span>
-
-                      {/* Delete */}
-                      <button
-                        type="button"
-                        onClick={() => removeFromDispatchCart(item.elemento.id)}
-                        className="text-[#767682] hover:text-[#dd4c42] p-1 transition-colors"
-                        title="Quitar"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">delete</span>
-                      </button>
-                    </div>
-                  ))
+                  dispatchCart.map(item => <DispatchCartLine key={item.elemento.id} item={item}
+                    onOpen={() => openItemDetail(item.elemento)}
+                    onQuantity={quantity => updateDispatchCartQuantity(item.elemento.id, quantity)}
+                    onRemove={() => removeFromDispatchCart(item.elemento.id)} />)
                 )}
               </div>
             </div>

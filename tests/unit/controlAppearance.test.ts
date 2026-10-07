@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 import { JSDOM } from 'jsdom';
 
-const css = ['appearance.css', 'controls.css'].map(file => fs.readFileSync(new URL(`../../src/${file}`, import.meta.url), 'utf8')).join('\n');
+const css = ['appearance.css', 'controls.css', 'interactions.css', 'calendar.css'].map(file => fs.readFileSync(new URL(`../../src/${file}`, import.meta.url), 'utf8')).join('\n');
 function fixture(style: string, theme: string) {
   return new JSDOM(`<html data-ui-style="${style}" data-theme="${theme}"><head><style>${css}</style></head><body>
     <input id="quantity" type="number" class="ui-number-input" style="padding-top: 8px">
@@ -15,6 +15,9 @@ function fixture(style: string, theme: string) {
     <div id="avatar" class="ui-header-avatar"></div>
     <ul id="chips" class="ui-category-chips"><li><button>CAF</button></li></ul>
     <div class="movement-documents"><button id="pdf">PDF</button><button id="photos">Fotos</button></div>
+    <div id="history" class="ui-history-scroll"><div id="history-card" class="ui-history-card border rounded-lg bg-[#f8fafc]"></div></div>
+    <input id="date-value" type="date" class="date-form-value">
+    <button id="dot" class="ui-photo-dot"><span></span></button><button id="dot-active" class="ui-photo-dot" aria-current="true"><span></span></button>
     <button id="page" class="border rounded-lg">Anterior</button>
     <button id="save" class="bg-[#3e4e9e] text-white rounded-lg">Guardar</button>
     <button id="entry" class="bg-[#e6f4ea] text-[#137333] rounded-lg">Entrada</button>
@@ -38,6 +41,7 @@ test('single-line quantities, names, dates and comboboxes share a height across 
         assert.equal(computed(id).minHeight, 'var(--ui-field-height)');
       }
       assert.equal(computed('native').height, '1px');
+      assert.equal(computed('date-value').height, '1px'); assert.equal(computed('date-value').minHeight, '0');
       assert.equal(computed('description').height, '96px');
       assert.equal(computed('quantity').appearance, 'textfield');
       assert.match(css, /\.ui-number-input::\-webkit-inner-spin-button,[\s\S]*?\-webkit-appearance:\s*none/);
@@ -74,6 +78,13 @@ test('document actions share width and height, avatar shares action relief, and 
       assert.equal(computed('avatar').boxShadow, computed('page').boxShadow);
       assert.equal(computed('avatar').borderRadius, computed('page').borderRadius);
       assert.equal(computed('chips').padding, '12px');
+      assert.equal(computed('history').padding, '12px');
+      assert.equal(computed('history-card').boxShadow, computed('page').boxShadow);
+      for (const id of ['dot', 'dot-active']) {
+        assert.equal(computed(id).boxShadow, 'none'); assert.equal(computed(id).backgroundColor, 'rgba(0, 0, 0, 0)');
+        assert.equal(computed(id).borderWidth, '0px'); assert.equal(computed(id).transform, 'none');
+        (document.getElementById(id) as HTMLElement).focus(); assert.equal(computed(id).boxShadow, 'none');
+      }
     } finally { dom.window.close(); }
   }
 });

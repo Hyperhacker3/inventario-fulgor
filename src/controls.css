@@ -51,6 +51,8 @@
     box-shadow: var(--ui-control-shadow);
   }
   .ui-category-chips { padding: 12px; margin: -12px; }
+  .ui-history-scroll { padding: 12px; margin: -12px; scroll-padding: 12px; }
+  :root[data-ui-style] .ui-history-scroll > .ui-history-card { background-color: var(--ui-surface); box-shadow: var(--ui-control-shadow); }
   .movement-documents {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 88px), 1fr));
     gap: 12px; width: 192px; max-width: 100%; margin-inline: auto;
@@ -75,4 +77,12 @@
   :root[data-ui-style] button:is([class*='text-green-'], [class*='text-emerald-'], [class*='bg-green-'], [class*='bg-emerald-'], [class~='bg-[#137333]'], [class~='text-[#137333]'], [class~='bg-[#e6f4ea]']) { --ui-button-ink: var(--ui-success); }
   :root[data-ui-style] button:is([class*='text-amber-'], [class*='text-yellow-'], [class*='bg-amber-'], [class*='bg-yellow-'], [class~='text-[#755b00]'], [class~='bg-[#fef7e0]']) { --ui-button-ink: var(--ui-warning); }
   :root[data-ui-style] button:is([class*='text-red-'], [class*='text-rose-'], [class*='bg-red-'], [class*='bg-rose-'], [class~='bg-[#dd4c42]'], [class~='bg-[#ba1a1a]'], [class~='text-[#ba1a1a]'], [class~='text-[#dd4c42]']) { --ui-button-ink: var(--ui-danger); }
+  /* Photo markers have an invisible touch target, rather than an action surface. */
+  :root[data-ui-style] button.ui-photo-dot,
+  :root[data-ui-style] button.ui-photo-dot:is(:hover, :active, :focus, [aria-current]) {
+    background: transparent !important; box-shadow: none !important;
+    border: 0; padding: 0; transform: none !important;
+  }
+  .ui-photo-dot > span { background-color: var(--ui-muted); opacity: .35; }
+  .ui-photo-dot[aria-current='true'] > span { background-color: var(--ui-action); opacity: 1; }
 }

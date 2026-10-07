@@ -1,6 +1,6 @@
 /* The laboratory navigation is quiet at rest; relief identifies interaction and selection. */
 @media screen {
-  :root[data-ui-style] .app-sidebar button.ui-sidebar-action,
+  :root[data-ui-style] button.ui-sidebar-action,
   :root[data-ui-style] button.ui-flat-choice {
     background-color: transparent !important;
     background-image: none !important;
@@ -9,14 +9,14 @@
     border-radius: 20px;
     color: var(--ui-sidebar-ink, var(--ui-muted)) !important;
   }
-  :root[data-ui-style] .app-sidebar button.ui-sidebar-action[aria-current='page'],
+  :root[data-ui-style] button.ui-sidebar-action[aria-current='page'],
   :root[data-ui-style] button.ui-flat-choice:is([aria-pressed='true'], [aria-selected='true']) {
     background-color: var(--ui-surface) !important;
     box-shadow: var(--ui-inset-shadow) !important;
     --ui-sidebar-ink: var(--ui-action);
     font-weight: 700;
   }
-  :root[data-ui-style] .app-sidebar button.ui-sidebar-action:active:not(:disabled),
+  :root[data-ui-style] button.ui-sidebar-action:active:not(:disabled),
   :root[data-ui-style] button.ui-flat-choice:active:not(:disabled) {
     background-color: var(--ui-surface) !important;
     box-shadow: var(--ui-inset-shadow) !important;
@@ -31,11 +31,11 @@
   }
 }
 @media screen and (hover: hover) and (pointer: fine) {
-  :root[data-ui-style] .app-sidebar button.ui-sidebar-action:hover:not(:disabled):not(:active):not([aria-current='page']),
+  :root[data-ui-style] button.ui-sidebar-action:hover:not(:disabled):not(:active):not([aria-current='page']),
   :root[data-ui-style] button.ui-flat-choice:hover:not(:disabled):not(:active):not([aria-pressed='true']):not([aria-selected='true']) {
     background-color: var(--ui-subtle) !important;
     box-shadow: var(--ui-control-shadow) !important;
     --ui-sidebar-ink: var(--ui-action);
   }
-  :root[data-ui-style] .app-sidebar button.ui-sidebar-logout:hover { --ui-sidebar-ink: var(--ui-danger); }
+  :root[data-ui-style] button.ui-sidebar-logout:hover { --ui-sidebar-ink: var(--ui-danger); }
 }

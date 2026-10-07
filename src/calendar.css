@@ -1,0 +1,15 @@
+@media screen {
+  .date-form-value { position: absolute; width: 1px; height: 1px !important; min-height: 0 !important; padding: 0 !important; opacity: 0; pointer-events: none; clip-path: inset(50%); }
+  .app-date-trigger { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-right: 12px; }
+  .app-date-trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .app-date-trigger > svg { flex-shrink: 0; color: var(--ui-action); }
+  .app-calendar-layer { z-index: 100; }
+  :root[data-ui-style] .app-select-list { z-index: 120; }
+  .app-calendar { max-height: calc(var(--app-viewport-height, 100dvh) - 24px); overflow-y: auto; overscroll-behavior: contain; }
+  .app-calendar-month { display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(72px, .7fr) 44px; gap: 8px; align-items: center; }
+  .app-calendar-month .app-select-trigger { min-width: 0; padding-left: 8px; font-size: 12px; }
+  .app-calendar-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+  :root[data-ui-style] button.app-calendar-day { border-radius: 12px; padding: 0; font-size: 14px; }
+  .app-calendar-day[data-adjacent='true'] { opacity: .5; }
+  .app-calendar-day[data-today='true'] { font-weight: 700; }
+}

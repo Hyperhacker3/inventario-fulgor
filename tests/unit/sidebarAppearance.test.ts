@@ -20,6 +20,8 @@ function fixture(theme: string) {
     <button id="admin" role="tab" class="ui-flat-choice" aria-selected="false">Cajas</button><button id="admin-selected" role="tab" class="ui-flat-choice" aria-selected="true">Códigos</button>
     <button id="view" class="ui-flat-choice" aria-pressed="false">Cuadrícula</button><button id="view-selected" class="ui-flat-choice" aria-pressed="true">Lista</button>
     <button id="mobile-brand" class="ui-brand-button">Logo móvil</button>
+    <section class="mobile-menu-panel"><button id="mobile-menu" class="ui-sidebar-action">Inventario</button><button id="mobile-menu-selected" class="ui-sidebar-action" aria-current="page">Inicio</button></section>
+    <nav class="mobile-bottom-nav"><button id="bottom-nav" class="ui-sidebar-action">Inventario</button><button id="bottom-selected" class="ui-sidebar-action" aria-current="page">Inicio</button></nav>
   </body></html>`);
 }
 
@@ -28,13 +30,13 @@ test('sidebar actions are flat at rest, active navigation stays inset, and other
     const dom = fixture(theme), document = dom.window.document;
     const computed = (id: string) => dom.window.getComputedStyle(document.getElementById(id)!);
     try {
-      for (const id of ['nav', 'help', 'logout', 'stock', 'admin', 'view']) {
+      for (const id of ['nav', 'help', 'logout', 'stock', 'admin', 'view', 'mobile-menu', 'bottom-nav']) {
         assert.equal(computed(id).boxShadow, 'none'); assert.equal(computed(id).backgroundColor, 'rgba(0, 0, 0, 0)');
         assert.equal(computed(id).borderWidth, '0px');
       }
       assert.equal(computed('selected').boxShadow, 'var(--ui-inset-shadow)');
       assert.equal(computed('save').boxShadow, 'var(--ui-control-shadow)');
-      for (const id of ['stock-selected', 'admin-selected', 'view-selected']) assert.equal(computed(id).boxShadow, 'var(--ui-inset-shadow)');
+      for (const id of ['stock-selected', 'admin-selected', 'view-selected', 'mobile-menu-selected', 'bottom-selected']) assert.equal(computed(id).boxShadow, 'var(--ui-inset-shadow)');
       for (const id of ['brand', 'mobile-brand']) {
         assert.equal(computed(id).boxShadow, 'none'); assert.equal(computed(id).borderWidth, '0px');
         assert.equal(computed(id).backgroundColor, 'rgba(0, 0, 0, 0)');
@@ -53,8 +55,8 @@ test('hover adds relief only to inactive sidebar actions, selection and press st
       assert.equal(computed('help').boxShadow, 'var(--ui-control-shadow)');
       assert.equal(computed('stock').boxShadow, 'var(--ui-control-shadow)');
       assert.equal(computed('stock-selected').boxShadow, 'var(--ui-inset-shadow)');
-      for (const id of ['admin', 'view']) assert.equal(computed(id).boxShadow, 'var(--ui-control-shadow)');
-      for (const id of ['admin-selected', 'view-selected']) assert.equal(computed(id).boxShadow, 'var(--ui-inset-shadow)');
+      for (const id of ['admin', 'view', 'mobile-menu', 'bottom-nav']) assert.equal(computed(id).boxShadow, 'var(--ui-control-shadow)');
+      for (const id of ['admin-selected', 'view-selected', 'mobile-menu-selected', 'bottom-selected']) assert.equal(computed(id).boxShadow, 'var(--ui-inset-shadow)');
       assert.equal(computed('logout').getPropertyValue('--ui-sidebar-ink'), 'var(--ui-danger)');
       assert.equal(computed('selected').boxShadow, 'var(--ui-inset-shadow)');
       document.getElementById('nav')!.setAttribute('data-test-active', '');

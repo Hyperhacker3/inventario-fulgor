@@ -28,8 +28,8 @@ export function ItemPhotoGallery({ item }: { item: Elemento }) {
       </>}
     </div>
     {photos.length > 1 && <div className="flex flex-col items-center gap-1">
-      <div className="flex flex-wrap justify-center gap-1" aria-label="Elegir fotografía">{photos.map((source, index) => <button key={source} type="button" aria-label={`Ver foto ${index + 1}`} aria-current={index === active ? 'true' : undefined} onClick={() => go(index)} className="w-7 h-7 flex items-center justify-center">
-        <span className={`h-2.5 rounded-full transition-all ${index === active ? 'w-6 bg-[#3e4e9e]' : 'w-2.5 bg-slate-300'}`} />
+      <div className="flex flex-wrap justify-center" aria-label="Elegir fotografía">{photos.map((source, index) => <button key={source} type="button" aria-label={`Ver foto ${index + 1}`} aria-current={index === active ? 'true' : undefined} onClick={() => go(index)} className="ui-photo-dot w-11 h-11 flex items-center justify-center">
+        <span className={`h-2.5 rounded-full transition-all ${index === active ? 'w-6' : 'w-2.5'}`} />
       </button>)}</div>
       <p className="text-xs text-slate-500" aria-live="polite">Foto {active + 1} de {photos.length}</p>
     </div>}

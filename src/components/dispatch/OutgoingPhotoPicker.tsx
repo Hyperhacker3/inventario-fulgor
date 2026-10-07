@@ -1,10 +1,11 @@
-import { useRef, useState, type ChangeEvent } from 'react';
+import { useId, useRef, useState, type ChangeEvent } from 'react';
 import { CameraCaptureModal } from '../CameraCaptureModal';
 import { evidenceCanvas } from '../../shared/evidenceCanvas';
 import { errorMessage } from '../../shared/errors';
 
 interface Props { photos: string[]; onChange: (photos: string[]) => void; disabled?: boolean; onBusyChange: (busy: boolean) => void }
 export function OutgoingPhotoPicker({ photos, onChange, disabled, onBusyChange }: Props) {
+  const heading = useId();
   const input = useRef<HTMLInputElement>(null);
   const [camera, setCamera] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -26,8 +27,8 @@ export function OutgoingPhotoPicker({ photos, onChange, disabled, onBusyChange }
     } catch (cause) { setError(errorMessage(cause)); }
     finally { reading.current = false; setBusy(false); onBusyChange(false); }
   };
-  return <fieldset disabled={disabled || busy} className="min-w-0 rounded-xl border bg-slate-50 p-3 sm:p-4 space-y-3">
-    <legend className="px-1 text-sm font-bold">Registro fotográfico de la salida ({photos.length})</legend>
+  return <fieldset aria-labelledby={heading} disabled={disabled || busy} className="min-w-0 rounded-xl border bg-slate-50 p-4 sm:p-5 space-y-3">
+    <h3 id={heading} className="min-w-0 break-words text-sm font-bold">Registro fotográfico de la salida ({photos.length})</h3>
     <p className="text-xs text-slate-600">Opcional. Las fotos se guardarán con la salida y se consultarán en el historial. Quedan fuera de la remisión PDF.</p>
     <div className="responsive-actions"><button type="button" onClick={() => setCamera(true)} className="px-2 py-2 rounded-lg bg-[#253685] text-white text-sm">Tomar foto</button><button type="button" onClick={() => input.current?.click()} className="px-2 py-2 rounded-lg border bg-white text-sm">Subir fotografías</button></div>
     <input autoComplete="off" autoCorrect="off" spellCheck={false} ref={input} type="file" accept="image/*" multiple className="hidden" onChange={event => { void upload(event); }} />

@@ -1,6 +1,6 @@
 # Navegación y formularios en móvil y tablet
 
-Estado de diseño al 7 de octubre de 2026: Neumorfismo es el único estilo. El usuario retiró Liquid Glass y su botón de Ayuda. La preferencia antigua de estilo se descarta al arrancar; claro/oscuro se conserva con transición de 1,5 segundos, salvo movimiento reducido. El logo de la cabecera compacta no tiene marco, fondo ni sombra. Navegación lateral, stock, pestañas de Administración y lista/cuadrícula comparten reposo plano y selección hundida. El menú móvil mantiene su tratamiento actual. La revisión visual sigue pendiente y el despliegue se verifica por separado. Detalles en [estilos de interfaz](estilos-interfaz.md).
+Estado de diseño al 7 de octubre de 2026: Neumorfismo es el único estilo. El usuario retiró Liquid Glass y su botón de Ayuda. La preferencia antigua de estilo se descarta al arrancar; claro/oscuro se conserva con transición de 1,5 segundos, salvo movimiento reducido. El logo de la cabecera compacta no tiene marco, fondo ni sombra. Navegación lateral, stock, pestañas de Administración y lista/cuadrícula comparten reposo plano y selección hundida. El menú móvil y la barra inferior comparten estos estados con escritorio. La revisión visual sigue pendiente y el despliegue se verifica por separado. Detalles en [estilos de interfaz](estilos-interfaz.md).
 
 La navegación compacta se utiliza por debajo de 1280 px, para aprovechar también el ancho de las tablets en horizontal. La barra inferior conserva Inicio, Inventario, Entradas y Salidas según el rol de la cuenta. El menú reúne todas las pantallas permitidas, además de búsqueda, ayuda y cierre de sesión.
 
@@ -52,3 +52,11 @@ Tras el despliegue, probar desde un teléfono y una tablet:
 10. Recargar y comprobar que se conserva la paleta y se utiliza Neumorfismo incluso con una preferencia antigua de Glass; repetir con movimiento reducido para comprobar que el cambio no se anima.
 
 Las reglas de navegación y controles no requieren SQL. La configuración compartida de empresa requiere `20261007000100_company_profile.sql`, sin cambiar productos ni existencias.
+
+## Revisión de galerías, fechas y salidas
+
+El menú y la barra inferior comparten los estados de escritorio: opción inactiva plana, selección hundida y hover elevado únicamente con mouse. Los puntos de las galerías no muestran marco, fondo ni sombra; conservan objetivos táctiles de 44 × 44 px. Movimientos recientes reserva espacio para las sombras. En Salidas, las tarjetas muestran nombres completos, cantidad y quitar separados y permiten abrir el producto desde su superficie. El encabezado de registro fotográfico está dentro del panel.
+
+Las fechas abren un calendario de la aplicación en español, con paletas claro/oscuro, mes/año y semana desde lunes. El panel se adapta al viewport y permite desplazarse con poca altura, sin recurrir al calendario del sistema. En teléfono el foco inicial se coloca en Cerrar, evitando abrir el teclado; en PC se coloca en el día seleccionado. Escape cierra los niveles desde el más interno y devuelve el foco al control de fecha.
+
+Revisión manual pendiente: comprobar estos estados en menú y barra inferior, cambiar fotos tocando los puntos, desplazarse por movimientos recientes, editar cantidades sin abrir accidentalmente un producto, revisar nombres largos/título fotográfico y elegir fechas con el teléfono en ambas orientaciones y paletas. Las pruebas DOM y CSS comprueban eventos/cascada; no sustituyen esta revisión de geometría real.

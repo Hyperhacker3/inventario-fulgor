@@ -32,6 +32,9 @@ test('photo editor preserves promotion, removal and disabled controls with multi
     assert.equal(remove.matches(':disabled'),true);
     await act(()=>remove.click());assert.equal(additional.length,1);
     await act(()=>root.render(createElement(OutgoingPhotoPicker,{photos:['https://images.test/evidence.jpg'],onChange:value=>{additional=value;},onBusyChange:()=>{}})));
+    const evidencePanel = host.querySelector('fieldset')!;
+    assert.equal(evidencePanel.querySelector('legend'), null);
+    assert.equal(evidencePanel.querySelector('h3')!.id, evidencePanel.getAttribute('aria-labelledby'));
     await act(()=>host.querySelector<HTMLButtonElement>('[aria-label="Quitar foto de salida 1"]')!.click());
     assert.deepEqual(additional,[]);
   } finally {await act(()=>root.unmount());host.remove();}
