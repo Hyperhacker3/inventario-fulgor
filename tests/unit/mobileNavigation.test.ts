@@ -44,8 +44,9 @@ test('quick navigation has at most four actions while the complete menu retains 
   assert.deepEqual(quickNavigationItems('admin', 3).map(item => item.id), ['dashboard','explorer','entries','dispatch']);
   assert.equal(quickNavigationItems('operador', 3).at(-1)?.badge, 3);
   assert.deepEqual(quickNavigationItems('consulta').map(item => item.id), ['dashboard','explorer']);
-  assert.equal(navigationItems('admin').length, 9);
-  assert.equal(navigationItems('operador').some(item => item.id === 'new-item'), false);
+  assert.equal(navigationItems('admin').length, 8);
+  assert.equal(navigationItems('admin').some(item => item.label === 'Nuevo ítem'), false);
+  assert.equal(navigationItems('operador').some(item => item.label === 'Nuevo ítem'), false);
   assert.equal(navigationItems('consulta').some(item => ['new-item','entries','dispatch'].includes(item.id)), false);
   assert.equal(navigationIsActive(navigationItems('admin').find(item => item.id === 'data-admin')!, 'projects'), true);
 });

@@ -32,16 +32,15 @@
 }
 @media screen {
   :root {
-    --ui-nav-inventory: #7755b6; --ui-nav-new-item: #087f8c; --ui-nav-history: #9b6c04;
+    --ui-nav-inventory: #7755b6; --ui-nav-history: #9b6c04;
     --ui-nav-data: #606985; --ui-nav-warehouses: #82603a; --ui-nav-remissions: #a24778; --ui-nav-help: #276d9c;
   }
   :root[data-theme='dark'] {
-    --ui-nav-inventory: #cbb7ff; --ui-nav-new-item: #85dee7; --ui-nav-history: #f0ce83;
+    --ui-nav-inventory: #cbb7ff; --ui-nav-history: #f0ce83;
     --ui-nav-data: #becbe8; --ui-nav-warehouses: #e5c19c; --ui-nav-remissions: #f4b0d4; --ui-nav-help: #93cbea;
   }
   :root[data-ui-style] button.ui-sidebar-action[data-nav-view='dashboard'] { color: var(--ui-action) !important; }
   :root[data-ui-style] button.ui-sidebar-action[data-nav-view='explorer'] { color: var(--ui-nav-inventory) !important; }
-  :root[data-ui-style] button.ui-sidebar-action[data-nav-view='new-item'] { color: var(--ui-nav-new-item) !important; }
   :root[data-ui-style] button.ui-sidebar-action[data-nav-view='entries'] { color: var(--ui-success) !important; }
   :root[data-ui-style] button.ui-sidebar-action:is([data-nav-view='dispatch'], [data-nav-view='logout']) { color: var(--ui-danger) !important; }
   :root[data-ui-style] button.ui-sidebar-action[data-nav-view='history'] { color: var(--ui-nav-history) !important; }

@@ -2,9 +2,9 @@ import { Select } from './ui/Select';
 import { isMobileCameraDevice } from '../shared/cameraDevices';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useInventory } from '../context/InventoryContext';
-import { CategoriaElemento } from '../types';
+import { CategoriaElemento, type Elemento } from '../types';
 import { ItemPhotoPicker } from './ItemPhotoPicker';
-import { ItemLocationFields } from './item/ItemLocationFields';
+import { ItemLocationFieldsContent } from './item/ItemLocationFields';
 import { ItemCategorySelector } from './item/ItemCategorySelector';
 import { ItemStockFields } from './item/ItemStockFields';
 import { errorMessage } from '../shared/errors';
@@ -16,8 +16,20 @@ import { ItemValueField } from './item/ItemValueField';
 import { ItemPrefixSelector } from './item/ItemPrefixSelector';
 import { useFormScroll } from '../hooks/useFormScroll';
 import { uppercaseName } from '../shared/uppercase';
+import { EntryForm } from './entry/EntryForm';
+import { ItemExistingLocationFields } from './item/ItemExistingLocationFields';
+import { ItemImage } from './ItemImage';
+import { isDemo } from '../lib/supabase';
 
-export const NewItemView: React.FC = () => {
+export type RegistrationInventory = Pick<ReturnType<typeof useInventory>, 'almacenes' | 'estanterias' | 'niveles' | 'cajas' | 'addElemento' | 'setActiveView'
+  | 'prefijos' | 'categorias' | 'elementos' | 'catalogReady' | 'catalogLoading' | 'refreshCatalog' | 'createCategoria' | 'createPrefijo'
+  | 'user' | 'addStockMovement' | 'categoryLabel' | 'addCaja' | 'addEstanteria' | 'addNivel'>;
+type Props = { item?: Elemento; onBusyChange: (busy: boolean) => void };
+export function ItemRegistrationForm(props: Props) {
+  const inventory = useInventory();
+  return <ItemRegistrationContent {...props} inventory={inventory} />;
+}
+export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props & { inventory: RegistrationInventory }) {
   const { ref: pageRef, onInvalidCapture, revealError, scrollToStart } = useFormScroll();
   const {
     almacenes,
@@ -25,29 +37,31 @@ export const NewItemView: React.FC = () => {
     cajas,
     addElemento,
     setActiveView,
-    prefijos, categorias, elementos, catalogReady, catalogLoading, refreshCatalog, createCategoria, createPrefijo
-  } = useInventory();
+    prefijos, categorias, elementos, catalogReady, catalogLoading, refreshCatalog, createCategoria, createPrefijo,
+    user, addStockMovement, categoryLabel
+  } = inventory;
 
   // Form State
   const [prefixId, setPrefixId] = useState('');
   const request = useRef<{ signature: string; id: string } | null>(null);
+  const saving = useRef(false);
   const selectedPrefix = prefijos.find(prefix => prefix.id === prefixId && prefix.activo);
-  const codigo = selectedPrefix ? prefixPreview(selectedPrefix, elementos.map(item => item.codigo)) : '';
-  const [marca, setMarca] = useState('');
-  const [nombre, setNombre] = useState('');
-  const [categoria, setCategoria] = useState<CategoriaElemento>('');
-  const [descripcion, setDescripcion] = useState('');
+  const codigo = item?.codigo || (selectedPrefix ? prefixPreview(selectedPrefix, elementos.map(item => item.codigo)) : '');
+  const [marca, setMarca] = useState(item?.marca || '');
+  const [nombre, setNombre] = useState(item?.nombre || '');
+  const [categoria, setCategoria] = useState<CategoriaElemento>(item?.categoria || '');
+  const [descripcion, setDescripcion] = useState(item?.descripcion || '');
   const [almacenId, setAlmacenId] = useState<string>(almacenes[0]?.id || '');
   const [estanteriaId, setEstanteriaId] = useState<string>('');
   const [nivelId, setNivelId] = useState('');
   const [cajaId, setCajaId] = useState<string>('');
   const [cantidad, setCantidad] = useState<number>(0);
-  const [unidad, setUnidad] = useState<string>('UND');
-  const [weight, setWeight] = useState(() => weightDraft());
-  const [valorUnitario, setValorUnitario] = useState(0);
+  const [unidad, setUnidad] = useState<string>(item?.unidad || 'UND');
+  const [weight, setWeight] = useState(() => weightDraft(item?.pesoUnitario));
+  const [valorUnitario, setValorUnitario] = useState(item?.valorUnitario || 0);
   const [stockMinimo, setStockMinimo] = useState<number>(0);
-  const [estado, setEstado] = useState<string>('BUENO');
-  const [cantidadDanados, setCantidadDanados] = useState<number>(0);
+  const [estado, setEstado] = useState<string>(item?.estado || 'BUENO');
+  const [cantidadDanados, setCantidadDanados] = useState<number>(item?.cantidadDanados || 0);
   const [fotoUrl, setFotoUrl] = useState<string>('');
   const [fotosAdicionales, setFotosAdicionales] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -68,6 +82,12 @@ export const NewItemView: React.FC = () => {
   const [prefixBusy, setPrefixBusy] = useState(false);
   const [prefixDraftPending, setPrefixDraftPending] = useState(false);
   const [formVersion, setFormVersion] = useState(0);
+  const [entryBusy, setEntryBusy] = useState(false);
+  const busy = pending || photoBusy || boxBusy || categoryBusy || rackBusy || levelBusy || prefixBusy || entryBusy;
+  useEffect(() => { onBusyChange(busy); }, [busy, onBusyChange]);
+  useEffect(() => () => onBusyChange(false), [onBusyChange]);
+  const canCreate = isDemo || user.role === 'admin';
+  const FormShell = item ? 'div' : 'form';
   const nameInput = useRef<HTMLInputElement>(null);
   useEffect(() => { if (formVersion > 0 && !isMobileCameraDevice(window.navigator)) nameInput.current?.focus({ preventScroll: true }); }, [formVersion]);
 
@@ -89,7 +109,8 @@ export const NewItemView: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pending || photoBusy || boxBusy || categoryBusy || rackBusy || levelBusy || prefixBusy) return;
+    if (item || !canCreate) return;
+    if (saving.current || pending || photoBusy || boxBusy || categoryBusy || rackBusy || levelBusy || prefixBusy) return;
     setFeedback(null);
 
     if (prefixDraftPending) {
@@ -128,6 +149,7 @@ export const NewItemView: React.FC = () => {
     }
 
     try {
+      saving.current = true;
       setPending(true);
       const input = {
         codigo: codigo.trim().toUpperCase(),
@@ -171,20 +193,13 @@ export const NewItemView: React.FC = () => {
     } catch (error) {
       reportFeedback({ type: 'error', message: errorMessage(error) });
     } finally {
+      saving.current = false;
       setPending(false);
     }
   };
 
   return (
-    <div ref={pageRef} onInvalidCapture={onInvalidCapture} className="p-4 md:p-8 max-w-[1000px] mx-auto w-full">
-      {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#131b2e] tracking-tight">Registrar Componente</h2>
-        <p className="text-sm md:text-base text-[#454651]">
-          Alta de nuevo elemento en el inventario fotovoltaico de EL TURPIAL
-        </p>
-      </div>
-
+    <div ref={pageRef} onInvalidCapture={onInvalidCapture} className="w-full min-w-0">
       {feedback && (
         <div
           role={feedback.type === 'success' ? 'status' : 'alert'}
@@ -202,20 +217,21 @@ export const NewItemView: React.FC = () => {
       )}
 
       {/* Main Form */}
-      {!catalogReady && <div className="border bg-white rounded-xl p-4 mb-5 text-sm space-y-2">
+      {!item && !catalogReady && <div className="border bg-white rounded-xl p-4 mb-5 text-sm space-y-2">
         <p>{catalogLoading ? 'Cargando códigos y categorías…' : 'Active la migración de administración de datos en Supabase para registrar productos con código automático.'}</p>
         <button type="button" className="text-[#253685] underline" onClick={() => { void refreshCatalog(); }}>Comprobar de nuevo</button>
       </div>}
-      <form autoComplete="off" onSubmit={handleSubmit} className="bg-white border border-[#e2e8f0] rounded-2xl p-6 md:p-8 shadow-xs flex flex-col gap-6">
-        <fieldset key={formVersion} disabled={pending || boxBusy || categoryBusy || rackBusy || levelBusy || prefixBusy} className="contents">
+      <FormShell autoComplete={item ? undefined : 'off'} onSubmit={item ? undefined : handleSubmit} className="bg-white border border-[#e2e8f0] rounded-2xl p-4 sm:p-6 md:p-8 shadow-xs flex flex-col gap-6">
+        {item && <p className="text-sm text-slate-600">Material seleccionado. Registre la cantidad recibida al final del formulario; sus datos de catálogo se conservan.</p>}
+        <fieldset key={formVersion} disabled={!!item || !canCreate || pending || boxBusy || categoryBusy || rackBusy || levelBusy || prefixBusy} className="contents">
         {/* Row 1: Code and Name */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <div>
-            <ItemPrefixSelector value={prefixId} prefixes={prefijos} onChange={setPrefixId} onCreate={createPrefijo}
+            {item ? <label className="block text-xs font-bold text-[#454651] uppercase">Código<input value={codigo} readOnly className="block w-full mt-2 px-3.5 py-2.5 rounded-lg border font-mono-code" /></label> : <><ItemPrefixSelector value={prefixId} prefixes={prefijos} onChange={setPrefixId} onCreate={createPrefijo}
               onBusyChange={setPrefixBusy} onDraftChange={setPrefixDraftPending} disabled={!catalogReady} />
             <span className="text-[11px] text-[#767682] mt-1 block">
               {codigo && !prefixDraftPending ? `Código estimado: ${codigo}. El definitivo se asigna al guardar.` : 'El número se asigna automáticamente en Supabase.'}
-            </span>
+            </span></>}
           </div>
 
           <div className="md:col-span-2">
@@ -242,8 +258,8 @@ export const NewItemView: React.FC = () => {
 
         {/* Row 2: Category and Description */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          <ItemCategorySelector value={categoria} categories={categorias} onChange={setCategoria}
-            onCreate={createCategoria} onBusyChange={setCategoryBusy} onDraftChange={setCategoryDraftPending} disabled={!catalogReady} />
+          {item ? <label className="block text-xs font-bold text-[#454651] uppercase">Categoría<input value={categoryLabel(categoria)} readOnly className="block w-full mt-2 px-3.5 py-2.5 rounded-lg border" /></label> : <ItemCategorySelector value={categoria} categories={categorias} onChange={setCategoria}
+            onCreate={createCategoria} onBusyChange={setCategoryBusy} onDraftChange={setCategoryDraftPending} disabled={!catalogReady} />}
 
           <div className="md:col-span-2">
             <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-2">
@@ -296,19 +312,20 @@ export const NewItemView: React.FC = () => {
           </div>
         </div>
 
-        <ItemLocationFields warehouseId={selectedAlmacenId} rackId={selectedEstanteriaId} levelId={selectedNivelId} boxId={selectedCajaId}
+        {item ? <ItemExistingLocationFields value={{ warehouseId: item.almacenId || '', rackId: item.estanteriaId || '', levelId: item.nivelId || '', boxId: item.cajaId || '' }} onChange={() => {}}
+          warehouses={almacenes} racks={estanterias} levels={niveles} boxes={cajas} disabled /> : <ItemLocationFieldsContent inventory={inventory} warehouseId={selectedAlmacenId} rackId={selectedEstanteriaId} levelId={selectedNivelId} boxId={selectedCajaId}
           onWarehouse={setAlmacenId} onRack={setEstanteriaId} onLevel={setNivelId} onBox={setCajaId} onBoxBusyChange={setBoxBusy} onBoxDraftChange={setBoxDraftPending}
-          rackDraftPending={rackDraftPending} levelDraftPending={levelDraftPending} onLevelBusyChange={setLevelBusy} onLevelDraftChange={setLevelDraftPending} onRackBusyChange={setRackBusy} onRackDraftChange={setRackDraftPending} />
+          rackDraftPending={rackDraftPending} levelDraftPending={levelDraftPending} onLevelBusyChange={setLevelBusy} onLevelDraftChange={setLevelDraftPending} onRackBusyChange={setRackBusy} onRackDraftChange={setRackDraftPending} />}
 
-        <ItemPhotoPicker value={fotoUrl} additional={fotosAdicionales} category={categoria} onChange={setFotoUrl} onAdditionalChange={setFotosAdicionales} onBusyChange={setPhotoBusy} disabled={pending} />
+        {item ? <ItemImage compact source={item.fotoUrl} category={item.categoria} alt={item.nombre} className="w-20 h-20 rounded-xl" /> : <ItemPhotoPicker value={fotoUrl} additional={fotosAdicionales} category={categoria} onChange={setFotoUrl} onAdditionalChange={setFotosAdicionales} onBusyChange={setPhotoBusy} disabled={pending} />}
 
-        <ItemStockFields quantity={cantidad} unit={unidad} minimum={stockMinimo}
-          onQuantity={setCantidad} onUnit={setUnidad} onMinimum={setStockMinimo} />
+        {!item && <ItemStockFields quantity={cantidad} unit={unidad} minimum={stockMinimo}
+          onQuantity={setCantidad} onUnit={setUnidad} onMinimum={setStockMinimo} />}
         <ItemWeightFields value={weight} onChange={setWeight} stockUnit={unidad} disabled={pending} />
         <ItemValueField value={valorUnitario} onChange={setValorUnitario} unit={unidad} disabled={pending} />
 
         {/* Action Buttons */}
-        <div className="pt-4 flex items-center justify-end gap-3 border-t border-[#e2e8f0]">
+        {!item && <div className="pt-4 flex items-center justify-end gap-3 border-t border-[#e2e8f0]">
           <button
             type="button"
             onClick={() => setActiveView('dashboard')}
@@ -325,9 +342,13 @@ export const NewItemView: React.FC = () => {
             <span className="material-symbols-outlined text-[18px]">save</span>
             <span>{pending ? 'Guardando…' : 'Guardar Componente'}</span>
           </button>
-        </div>
+        </div>}
         </fieldset>
-      </form>
+        {item && <>
+          {item.stockPendiente && <p className="bg-amber-50 p-3 rounded-xl text-sm">Primero verifique el stock mediante un ajuste desde el detalle del producto.</p>}
+          <EntryForm item={item} responsible={user.name} onSave={addStockMovement} onBusyChange={setEntryBusy} />
+        </>}
+      </FormShell>
 
     </div>
   );

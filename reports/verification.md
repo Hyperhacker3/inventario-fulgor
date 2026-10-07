@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Entradas unificadas y remisiones compactas (7 de octubre de 2026)
+
+Entradas integra el formulario completo de alta bajo Buscar material. Se elimina Nuevo ítem de navegación/tipo/vista y Agregar nuevo ítem; enlaces antiguos se resuelven a Entradas. Sin selección, administración da altas con códigos/categorías, fotos, creación de ubicaciones, stock/peso/valor. Seleccionar un existente muestra sus datos sin sobrescribir catálogo y permite registrar cantidad recibida/motivo mediante EntryForm/RPC existente. Operadores no ven alta. Quitar selección vuelve al formulario vacío. Se evita anidar formularios; búsqueda/selección quedan bloqueadas mientras hay operaciones pendientes. Alta añade guardia inmediata contra doble solicitud, conserva borrador/solicitud tras fallo y restablece tras éxito.
+
+La X de detalle usa inset 24/32 px dentro de la imagen y scrollbar fino, permaneciendo fuera del área desplazable. Remisiones reemplaza lista y total de unidades por «Materiales de salida: N», conservando cabecera, búsqueda/paginación y acceso al PDF completo.
+
+Verificación: typecheck, lint, **163 unitarias y 34 de integración (197)** y build. Tres pruebas nuevas cubren alta fallida/reintento/mayúsculas/doble solicitud/bloqueo/éxito, selección y recepción sin alta ni catálogo sobrescrito, operador y enlace antiguo. Se adaptan pruebas de navegación/carga/disposición a Entradas. Sin SQL nuevo, escrituras en Supabase real, archivos privados, computer use ni navegador automatizado. Geometría y comportamiento físico se revisan con el usuario; commit/push y despliegue se verifican por separado.
+
 ## Cierre exterior, navegación y ubicaciones en edición (7 de octubre de 2026)
 
 La ficha cierra por clic/toque en el fondo exterior. Los eventos de contenido y selectores en portal no la cierran; X/Escape/fondo se bloquean durante guardado, fotos o creación de ubicaciones. Editar usa SVG para evitar el texto EDIT al reutilizar fuentes móviles antiguas. Sidebar y menú comparten colores por función con variantes oscuras y estados de relieve existentes. Se retiran los atajos a Administración en Salidas/Nuevo ítem.

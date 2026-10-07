@@ -94,7 +94,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
     <section ref={dialog} role="dialog" aria-modal="true" aria-labelledby="item-detail-heading"
       className="ui-dialog-panel ui-panel-enter relative bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] shadow-2xl border flex flex-col overflow-hidden">
       <button data-dialog-close type="button" onClick={close} disabled={busy} aria-label="Cerrar detalle" title="Cerrar detalle"
-        className="item-detail-close absolute top-3 right-3 sm:top-4 sm:right-4 z-20 w-11 h-11 rounded-xl flex items-center justify-center text-[#253685]">
+        className="item-detail-close absolute top-6 right-6 sm:top-8 sm:right-8 z-20 w-11 h-11 rounded-xl flex items-center justify-center text-[#253685]">
         <span className="material-symbols-outlined text-2xl" aria-hidden="true">close</span>
       </button>
       <div className="item-detail-scroll flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">

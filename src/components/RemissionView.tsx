@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useInventory } from '../context/InventoryContext';
 import { readRemisionesPage } from '../data/repository';
@@ -6,8 +6,7 @@ import { isDemo } from '../lib/supabase';
 import { errorMessage } from '../shared/errors';
 
 export const RemissionView: React.FC = () => {
-  const { remisiones, elementos, openItemDetail, openPdfRemision, setActiveView, user } = useInventory();
-  const productsById = useMemo(() => new Map(elementos.map(item => [item.id, item])), [elementos]);
+  const { remisiones, openPdfRemision, setActiveView, user } = useInventory();
   const [searchQuery, setSearchQuery] = useState('');
   const [remoteSearch, setRemoteSearch] = useState('');
   const [pageState, setPageState] = useState({ key: '', page: 1 });
@@ -77,8 +76,6 @@ export const RemissionView: React.FC = () => {
       {total === 0 && (isDemo || !cloudPage.isPending) && <p className="text-sm text-[#64748b] mb-3">No hay remisiones para esta búsqueda.</p>}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {visibleRemisiones.map((rem) => {
-          const totalItems = rem.items.reduce((sum, i) => sum + i.cantidad, 0);
-
           return (
             <article
               key={rem.id}
@@ -97,39 +94,11 @@ export const RemissionView: React.FC = () => {
                 </h3>
                 <p className="text-xs text-[#454651] mb-3">{rem.cliente}</p>
 
-                {/* Items List Preview */}
-                <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-3 mb-4 flex flex-col gap-1.5 text-xs">
-                  <span className="text-[10px] font-bold uppercase text-[#767682] tracking-wider">
-                    Materiales de la salida ({rem.items.length})
-                  </span>
-                  {rem.items.slice(0, 3).map((item, idx) => {
-                    const product = productsById.get(item.elementoId);
-                    return (
-                    <div key={idx} className="flex justify-between items-center text-[#454651]">
-                      <span className="truncate pr-2">
-                        {item.cantidad} {item.unidad} • {' '}
-                        {product
-                          ? <button type="button" onClick={() => openItemDetail(product)} className="text-left hover:text-[#3e4e9e] hover:underline" title={item.nombre}>{item.nombre}</button>
-                          : item.nombre}
-                      </span>
-                      <span className="font-mono-code text-[11px] font-bold text-[#3e4e9e] shrink-0">
-                        {item.codigo}
-                      </span>
-                    </div>
-                  ); })}
-                  {rem.items.length > 3 && (
-                    <span className="text-[10px] text-[#767682] italic">
-                      + {rem.items.length - 3} componente(s) más...
-                    </span>
-                  )}
-                </div>
+                <p className="text-sm text-[#454651] mb-4">Materiales de salida: <strong>{rem.items.length}</strong></p>
               </div>
 
               {/* Card Footer */}
-              <div className="pt-3 border-t border-[#e2e8f0] flex items-center justify-between gap-3">
-                <div className="text-xs text-[#767682]">
-                  Total: <strong className="text-[#131b2e] font-bold">{totalItems}</strong> unidades
-                </div>
+              <div className="pt-3 border-t border-[#e2e8f0] flex items-center justify-end gap-3">
                 <button
                   onClick={() => openPdfRemision(rem)}
                   className="px-3.5 py-2 bg-[#eaedff] text-[#253685] hover:bg-[#3e4e9e] hover:text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs"

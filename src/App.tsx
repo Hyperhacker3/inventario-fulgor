@@ -22,7 +22,6 @@ const DataAdministrationView = lazy(() => import('./components/DataAdministratio
 const DispatchQuantityModal = lazy(() => import('./components/dispatch/DispatchQuantityModal').then(m => ({ default: m.DispatchQuantityModal })));
 const DashboardView = lazy(() => import('./components/DashboardView').then(m => ({ default: m.DashboardView })));
 const ExplorerView = lazy(() => import('./components/ExplorerView').then(m => ({ default: m.ExplorerView })));
-const NewItemView = lazy(() => import('./components/NewItemView').then(m => ({ default: m.NewItemView })));
 const DispatchView = lazy(() => import('./components/DispatchView').then(m => ({ default: m.DispatchView })));
 const EntryView = lazy(() => import('./components/EntryView').then(m => ({ default: m.EntryView })));
 const HistoryView = lazy(() => import('./components/HistoryView').then(m => ({ default: m.HistoryView })));
@@ -50,20 +49,16 @@ const MainLayout: React.FC = () => {
     selectedOutgoingPhotosId, closeOutgoingPhotos,
     user
   } = useInventory();
-  const canAdmin = isDemo || user.role === 'admin';
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
 
   const renderActiveView = () => {
     if (activeView === 'entries' && !canOperate) return <p className="p-8" role="alert">Su cuenta no puede registrar entradas.</p>;
-    if (activeView === 'new-item' && !canAdmin) return <p className="p-8" role="alert">Su cuenta no puede registrar componentes.</p>;
     if (activeView === 'dispatch' && !canOperate) return <p className="p-8" role="alert">Su cuenta no puede realizar salidas.</p>;
     switch (activeView) {
       case 'dashboard':
         return <DashboardView />;
       case 'explorer':
         return <ExplorerView />;
-      case 'new-item':
-        return <NewItemView />;
       case 'dispatch':
         return <DispatchView />;
       case 'entries':

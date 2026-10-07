@@ -160,7 +160,6 @@ export interface Page<T> { rows: T[]; total: number }
 export type ActiveView = 
   | 'dashboard' 
   | 'explorer' 
-  | 'new-item' 
   | 'dispatch' 
   | 'entries'
   | 'history' 

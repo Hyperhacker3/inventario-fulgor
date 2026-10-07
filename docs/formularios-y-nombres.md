@@ -1,16 +1,22 @@
 # Formularios, inventario y nombres en mayúsculas
 
+## Entradas unificadas
+
+La pantalla y el acceso Nuevo ítem se retiran. Entradas conserva Buscar material y coloca debajo su formulario de registro completo; también se retiran Agregar nuevo ítem y el panel/título Datos de la entrada. Administración puede dar altas sin selección, con códigos/categorías, estado, ubicaciones y creación en línea, fotografías, cantidad inicial/unidad/stock mínimo, peso y valor. Seleccionar un existente muestra sus datos de catálogo sin sobrescribirlos y permite recibir stock indicando cantidad y motivo, con responsable autenticado. Quitar selección vuelve al alta; operadores solo pueden recibir materiales existentes. Los enlaces anteriores `#/new-item` abren Entradas.
+
+`ItemRegistrationForm.tsx` conserva normalización, validación, reintentos e identidad de solicitud del alta y añade bloqueo inmediato frente a doble guardado. Búsqueda/cambio de selección esperan las operaciones pendientes. Recepción utiliza `EntryForm` y la RPC existente. No hay formularios anidados ni migración adicional; errores/éxito conservan el desplazamiento automático.
+
 Actualizado el 7 de octubre de 2026.
 
 ## Nivel duplicado
 
-Editar un producto también permite crear estanterías, niveles y cajas sin salir del formulario, usando los mismos selectores de Nuevo ítem. Cambiar un padre limpia sus dependientes; los controles tienen IDs únicos aunque ambos formularios estén montados. Una creación fallida conserva el borrador y admite reintento. Guardar espera a completar o abandonar la creación pendiente; el catálogo se guarda al crear y la ubicación del producto al confirmar Guardar. Las cajas antiguas sin nivel siguen disponibles; una caja nueva requiere nivel.
+Editar un producto también permite crear estanterías, niveles y cajas sin salir del formulario, usando los mismos selectores del registro de materiales en Entradas. Cambiar un padre limpia sus dependientes; los controles tienen IDs únicos aunque ambos formularios estén montados. Una creación fallida conserva el borrador y admite reintento. Guardar espera a completar o abandonar la creación pendiente; el catálogo se guarda al crear y la ubicación del producto al confirmar Guardar. Las cajas antiguas sin nivel siguen disponibles; una caja nueva requiere nivel.
 
 Nuevo ítem mostraba dos selectores de Nivel después de cambiar la ubicación porque Nivel y Caja compartían la misma clave React cuando sus padres estaban vacíos. Las claves ahora incluyen el tipo de selector. Solo aparece un control de cada tipo; cambiar un padre limpia la selección y los borradores dependientes. Se mantiene almacén → estantería → nivel → caja y la creación en línea.
 
 ## Desplazamiento de los formularios
 
-Nuevo ítem, Entradas y Salidas desplazan la pantalla al primer campo que falla la validación nativa o al mensaje de error de validación/guardado. Los errores de crear prefijos, categorías, estanterías, niveles, cajas o preparar fotografías también se hacen visibles. Los mensajes reciben foco; los selectores personalizados desplazan su botón visible, manteniendo validación nativa.
+Entradas (alta y recepción) y Salidas desplazan la pantalla al primer campo que falla la validación nativa o al mensaje de error de validación/guardado. Los errores de crear prefijos, categorías, estanterías, niveles, cajas o preparar fotografías también se hacen visibles. Los mensajes reciben foco; los selectores personalizados desplazan su botón visible, manteniendo validación nativa.
 
 Una escritura confirmada vuelve al inicio del área principal. Un fallo conserva borradores y reintentos; una actualización de datos o un formulario que se cierra no desplaza otra pantalla. Movimiento reducido usa desplazamiento inmediato. Salidas mantiene la apertura del PDF tras guardar. Entradas conserva el buscador y el producto seleccionado, con la confirmación dentro de Datos de la entrada.
 
@@ -36,6 +42,6 @@ Se ensayó con PostgreSQL embebido; **no se ejecutó en Supabase real** porque e
 
 ## Verificación y revisión
 
-Pasaron typecheck, lint, **156 pruebas unitarias y 34 de integración (190 en total)** y build. Se comprueban errores repetidos, validación nativa/proxy, foco, borradores, movimiento reducido, éxito y desmontaje, claves/cascada de ubicaciones, contenido y acciones del inventario, mayúsculas, permisos, reintentos y preservación histórica. Sin computer use, automatización de navegador ni escrituras en Supabase real. La geometría y el desplazamiento físico se revisan con el usuario.
+Pasaron typecheck, lint, **163 pruebas unitarias y 34 de integración (197 en total)** y build. Se comprueban alta/recepción en la misma pantalla, borradores/reintentos, doble guardado, bloqueo de búsqueda pendiente, permisos y enlaces antiguos, además de errores repetidos, validación, foco, desplazamiento, ubicaciones, mayúsculas y conservación histórica. Sin computer use, automatización de navegador ni escrituras en Supabase real. La geometría y el desplazamiento físico se revisan con el usuario.
 
 Comprobar en teléfono y PC: cambiar estantería/nivel, provocar errores de creación/guardado, repetirlos y completar un guardado. Revisar nombres largos en lista/cuadrícula y la acción roja independiente. Tras activar SQL, comprobar mayúsculas de nuevas altas/salidas y conservación de documentos anteriores, sin usar existencias reales para pruebas ficticias.

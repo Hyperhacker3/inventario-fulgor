@@ -74,7 +74,7 @@ test('navigation retains the visible screen while lazy views load, handles rapid
     const { activeView, setActiveView } = useViewNavigation();
     const [draft, setDraft] = useState('');
     const view = activeView === 'explorer' ? createElement(Explorer) : activeView === 'history' ? createElement(History)
-      : activeView === 'new-item' ? createElement(NewItem) : createElement('section', null,
+      : activeView === 'entries' ? createElement(NewItem) : createElement('section', null,
         createElement('h2', null, 'Inicio'), createElement('input', { value: draft, onChange: event => setDraft(event.currentTarget.value) }));
     return createElement('main', null,
       createElement('button', { onClick: () => setActiveView('explorer'), id: 'go-explorer' }, 'Inventario'),
@@ -101,8 +101,8 @@ test('navigation retains the visible screen while lazy views load, handles rapid
     await navigate('go-explorer'); assert.match(current().textContent!, /Inventario listo/);
     await act(() => { window.history.replaceState(null, '', '#/new-item'); window.dispatchEvent(new dom.window.PopStateEvent('popstate')); });
     assert.match(current().textContent!, /Inventario listo/); assert.equal(host.querySelector('.app-spinner'), null);
-    await act(async () => newItem.resolve({ default: screen('Nuevo ítem listo') }));
-    assert.match(current().textContent!, /Nuevo ítem listo/); assert.equal(host.querySelector('.app-spinner'), null);
+    await act(async () => newItem.resolve({ default: screen('Entradas listas') }));
+    assert.match(current().textContent!, /Entradas listas/); assert.equal(host.querySelector('.app-spinner'), null);
   } finally { await act(() => root.unmount()); host.remove(); window.history.replaceState(null, '', '/'); }
 });
 

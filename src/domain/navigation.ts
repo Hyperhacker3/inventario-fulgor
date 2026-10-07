@@ -6,7 +6,6 @@ export function navigationItems(role: string, cartCount = 0, demo = false): Navi
   return [
     { id: 'dashboard', label: 'Inicio', icon: 'dashboard' },
     { id: 'explorer', label: 'Inventario', icon: 'inventory_2' },
-    ...(demo || role === 'admin' ? [{ id: 'new-item' as const, label: 'Nuevo ítem', icon: 'add_box' }] : []),
     ...(operate ? [
       { id: 'entries' as const, label: 'Entradas', icon: 'input' },
       { id: 'dispatch' as const, label: 'Salidas', icon: 'shopping_cart_checkout', badge: cartCount },

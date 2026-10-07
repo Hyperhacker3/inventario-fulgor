@@ -90,7 +90,7 @@ html:not([data-icons-ready='true']) .material-symbols-outlined { visibility: hid
 .responsive-actions > button { min-width: 0; min-height: 44px; overflow-wrap: anywhere; }
 .item-detail-actions { display: flex; gap: clamp(6px, 2vw, 16px); }
 .item-detail-actions > button { flex: 1 1 0; min-width: 0; min-height: 44px; display: flex; align-items: center; justify-content: center; }
-.item-detail-scroll { scroll-padding-top: 64px; }
+.item-detail-scroll { scroll-padding-top: 64px; scrollbar-width: thin; }
 @media (max-width: 639px) {
   .responsive-actions > .ui-camera-capture { grid-column: 1 / -1; width: 100%; }
 }

@@ -2,11 +2,15 @@ import { Presence } from './ui/Motion';
 import { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { ItemImage } from './ItemImage';
-import { EntryForm } from './entry/EntryForm';
+import { ItemRegistrationContent, type RegistrationInventory } from './ItemRegistrationForm';
 import { isDemo } from '../lib/supabase';
 
 export function EntryView() {
-  const { elementos, addStockMovement, user, getLocationString, openItemDetail, syncStatus, setActiveView } = useInventory();
+  const inventory = useInventory();
+  return <EntryContent inventory={inventory} />;
+}
+export function EntryContent({ inventory }: { inventory: RegistrationInventory & Pick<ReturnType<typeof useInventory>, 'getLocationString' | 'openItemDetail' | 'syncStatus'> }) {
+  const { elementos, user, getLocationString, openItemDetail, syncStatus } = inventory;
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState('');
   const [page, setPage] = useState(1);
@@ -15,12 +19,11 @@ export function EntryView() {
   const matches = query ? elementos.filter(item => !item.archived && `${item.codigo} ${item.nombre} ${item.marca || ''} ${getLocationString(item)}`.toLocaleLowerCase('es').includes(query)) : [];
   const pages = Math.max(1, Math.ceil(matches.length / 5));
   const currentPage = Math.min(page, pages);
-  const item = elementos.find(value => value.id === selectedId);
-  return <div className="p-4 md:p-8 max-w-4xl w-full mx-auto space-y-6">
+  const item = elementos.find(value => value.id === selectedId && !value.archived);
+  const canCreate = isDemo || user.role === 'admin';
+  return <div className="p-4 md:p-8 max-w-[1000px] w-full mx-auto space-y-6">
     <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-      <div><h2 className="text-2xl md:text-3xl font-bold">Entradas</h2><p className="mt-2 text-slate-600">Registre la recepción de material para aumentar sus existencias. Cada entrada se guarda en el historial.</p></div>
-      {(isDemo || user.role === 'admin') && <button type="button" disabled={busy} onClick={() => setActiveView('new-item')}
-        className="shrink-0 min-h-11 rounded-lg bg-[#253685] text-white px-4 py-3 text-sm font-semibold disabled:opacity-50">Agregar nuevo ítem</button>}
+      <div><h2 className="text-2xl md:text-3xl font-bold">Entradas</h2><p className="mt-2 text-slate-600">{canCreate ? 'Busque un material para registrar su recepción o complete el formulario para crear uno nuevo.' : 'Busque un material para registrar su recepción.'} Cada entrada se guarda en el historial.</p></div>
     </header>
     <section className="bg-white border rounded-2xl p-4 space-y-3">
       <label className="block text-sm font-semibold">Buscar material<input autoComplete="off" autoCorrect="off" spellCheck={false} type="search" disabled={busy} value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Código, nombre, marca o ubicación" className="block w-full mt-2 p-3 rounded-xl border" /></label>
@@ -35,13 +38,8 @@ export function EntryView() {
         {pages > 1 && <div className="flex items-center justify-center gap-4 text-sm"><button disabled={busy || currentPage <= 1} onClick={() => setPage(currentPage - 1)} className="disabled:opacity-40">Anterior</button><span>{currentPage} / {pages}</span><button disabled={busy || currentPage >= pages} onClick={() => setPage(currentPage + 1)} className="disabled:opacity-40">Siguiente</button></div>}
       </div></Presence>
     </section>
-    <section className="bg-white border rounded-2xl p-5 space-y-5">
-      <h3 className="text-lg font-bold">Datos de la entrada</h3>
-      {item ? <div key={item.id} className="ui-panel-enter space-y-5">
-        <div className="flex items-center gap-3"><button type="button" disabled={busy} onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${item.nombre}`} className="shrink-0"><ItemImage compact source={item.fotoUrl} category={item.categoria} alt={item.nombre} className="w-16 h-16 rounded-lg" /></button><div className="min-w-0 break-words"><button type="button" disabled={busy} onClick={() => openItemDetail(item)} className="text-left font-bold hover:underline">{item.nombre}</button><p className="text-xs text-slate-600 mt-1">{item.codigo} · {getLocationString(item)}</p></div></div>
-        {item.stockPendiente && <p className="bg-amber-50 p-3 rounded-xl text-sm">Primero verifique el stock mediante un ajuste desde el detalle del producto.</p>}
-        <EntryForm key={item.id} item={item} responsible={user.name} onSave={addStockMovement} onBusyChange={setBusy} />
-      </div> : <p className="text-sm text-slate-600">Busque y seleccione un material para registrar su entrada.</p>}
-    </section>
+    {item && <button type="button" disabled={busy} onClick={() => setSelectedId('')} className="min-h-11 px-4 py-2 rounded-xl text-sm text-[#253685]">Quitar selección</button>}
+    {item || canCreate ? <ItemRegistrationContent key={item?.id || 'registration'} item={item} inventory={inventory} onBusyChange={setBusy} />
+      : <p className="text-sm text-slate-600">Busque y seleccione un material para registrar su entrada.</p>}
   </div>;
 }
