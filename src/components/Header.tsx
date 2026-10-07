@@ -92,11 +92,6 @@ export const Header: React.FC = () => {
               placeholder="Buscar SKU, elemento..."
               className="bg-transparent border-none focus:outline-hidden text-xs sm:text-sm w-full p-0 text-[#131b2e] placeholder-[#767682]"
             />
-            {globalSearch && (
-              <button aria-label="Limpiar búsqueda" onClick={() => setGlobalSearch('')} className="text-[#767682] hover:text-[#131b2e] p-0.5">
-                <span className="material-symbols-outlined text-[16px]">close</span>
-              </button>
-            )}
           </div>
         </div>
 

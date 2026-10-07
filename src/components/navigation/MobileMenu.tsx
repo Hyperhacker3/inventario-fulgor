@@ -23,7 +23,7 @@ export function MobileMenu({ open, onClose, items, activeView, onNavigate, searc
       </div>
       <form autoComplete="off" className="ui-search-field flex shrink-0 items-center border rounded-xl bg-slate-50 px-3 mb-2" onSubmit={event => { event.preventDefault(); onNavigate('explorer'); }}>
         <input autoComplete="off" autoCorrect="off" spellCheck={false} aria-label="Buscar en el inventario" type="search" value={search} onChange={event => onSearch(event.target.value)} placeholder="Buscar producto…" className="min-w-0 w-full bg-transparent py-2 outline-none" />
-        <button type="submit" aria-label="Buscar" className="w-11 h-11 shrink-0"><span className="material-symbols-outlined">search</span></button>
+        <span aria-hidden="true" className="material-symbols-outlined shrink-0">search</span>
       </form>
       <nav aria-label="Todas las pantallas" className="app-nav-scroll min-h-0 overflow-y-auto overscroll-contain flex flex-col">
         {items.map(item => <button key={item.id} type="button" aria-current={navigationIsActive(item, activeView) ? 'page' : undefined} onClick={() => onNavigate(item.id)}

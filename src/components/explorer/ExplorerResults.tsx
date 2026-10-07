@@ -93,13 +93,13 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                     {/* Card Content */}
                     <div className="p-3.5 sm:p-4 flex flex-col flex-1 gap-2">
                       <h3 className="font-bold text-base sm:text-lg leading-snug break-words">
-                        <button type="button" className="ui-product-open block w-full text-left" onClick={() => openItemDetail(item)}
+                        <button type="button" className="ui-product-open inventory-product-name w-full text-left" onClick={() => openItemDetail(item)}
                           aria-label={`Ver detalles de ${item.codigo} · ${item.nombre}`} title={uppercaseName(item.nombre)}>{uppercaseName(item.nombre)}</button>
                       </h3>
 
                       {item.marca && <p className="text-xs text-slate-500 break-words">Marca: {uppercaseName(item.marca)}</p>}
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-mono-code text-xs font-semibold text-[#3e4e9e] bg-[#eaedff] px-2 py-0.5 rounded-md w-fit">
+                        <span className="hidden sm:inline-block font-mono-code text-xs font-semibold text-[#3e4e9e] bg-[#eaedff] px-2 py-0.5 rounded-md w-fit">
                           {item.codigo}
                         </span>
                         {(item.cantidadDanados || 0) > 0 && (
@@ -135,23 +135,23 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                 <table className="inventory-list-table w-full text-left text-xs sm:text-sm">
                   <thead>
                     <tr className="bg-[#f8fafc] border-b border-[#e2e8f0] text-[11px] sm:text-xs font-bold text-[#454651] uppercase tracking-wider">
-                      <th className="p-2.5 sm:p-3">Código</th>
+                      <th className="p-2.5 sm:p-3 hidden sm:table-cell">Código</th>
                       <th className="p-2.5 sm:p-3">Componente</th>
                       <th className="p-2.5 sm:p-3 hidden sm:table-cell">Categoría</th>
                       <th className="p-2.5 sm:p-3 hidden md:table-cell">Almacén</th>
-                      <th className="p-2.5 sm:p-3 text-right">Stock</th>
-                      <th className="p-2.5 sm:p-3 text-center">Acciones</th>
+                      <th className="inventory-stock-cell p-2.5 sm:p-3 text-right">Stock</th>
+                      <th className="inventory-action-cell p-2.5 sm:p-3 text-center">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {items.map((item) => (
                       <tr key={item.id} data-product-id={item.id} onClick={event => openProductSurface(event, () => openItemDetail(item))} className="ui-product ui-product-row">
-                        <td className="p-2.5 sm:p-3 font-mono-code font-bold text-[#3e4e9e] whitespace-nowrap">
+                        <td className="p-2.5 sm:p-3 font-mono-code font-bold text-[#3e4e9e] whitespace-nowrap hidden sm:table-cell">
                           {item.codigo}
                         </td>
-                        <td className="p-2.5 sm:p-3 w-full">
-                          <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="shrink-0">
+                        <td className="inventory-name-cell p-2.5 sm:p-3 w-full">
+                          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                            <div className="hidden sm:block shrink-0">
                               <ItemImage
                                 source={item.fotoUrl}
                                 category={item.categoria}
@@ -161,14 +161,14 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                                 referrerPolicy="no-referrer"
                               />
                             </div>
-                            <div className="min-w-40 sm:min-w-56 flex-1">
-                              <button type="button" onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${item.codigo} · ${item.nombre}`} title={uppercaseName(item.nombre)} className="ui-product-open block w-full text-left text-base sm:text-lg font-bold leading-snug break-words">{uppercaseName(item.nombre)}</button>
+                            <div className="min-w-0 sm:min-w-56 flex-1">
+                              <button type="button" onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${item.codigo} · ${item.nombre}`} title={uppercaseName(item.nombre)} className="ui-product-open inventory-product-name w-full text-left text-base sm:text-lg font-bold leading-snug break-words">{uppercaseName(item.nombre)}</button>
                             </div>
                           </div>
                         </td>
                         <td className="p-2.5 sm:p-3 text-xs text-[#454651] hidden sm:table-cell">{categoryLabel(item.categoria)}</td>
                         <td className="p-2.5 sm:p-3 text-xs text-[#454651] hidden md:table-cell">{warehouseName(item)}</td>
-                        <td className="p-2.5 sm:p-3 text-right font-mono-code font-bold whitespace-nowrap">
+                        <td className="inventory-stock-cell p-2.5 sm:p-3 text-right font-mono-code font-bold whitespace-nowrap">
                           <span
                             className={
                               item.cantidad === 0
@@ -182,7 +182,7 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                           </span>{' '}
                           <span className="text-[10px] font-normal text-[#767682]">{item.unidad}</span>
                         </td>
-                        <td className="p-2.5 sm:p-3 text-center">
+                        <td className="inventory-action-cell p-2.5 sm:p-3 text-center">
                           <div className="flex items-center justify-center gap-3">
                             {canOperate && <button
                               type="button"

@@ -14,13 +14,15 @@ Una escritura confirmada vuelve al inicio del área principal. Un fallo conserva
 
 ## Presentación de Inventario
 
-En lista, el nombre aparece en mayúsculas, negrita y 16 px en móvil / 18 px desde 640 px, con varias líneas. Debajo no aparecen marca, categoría, peso, unidad ni etiquetas de condición. Categoría permanece en su columna cuando hay ancho; la unidad permanece junto a Stock para interpretar la cantidad. La fila completa y el nombre accesible siguen abriendo el producto.
+En lista, el nombre aparece en mayúsculas, negrita y 16 px en móvil / 18 px desde 640 px, con dos líneas y elipsis. Debajo no aparecen marca, categoría, peso, unidad ni etiquetas de condición. Categoría permanece en su columna cuando hay ancho; la unidad permanece junto a Stock para interpretar la cantidad. La fila completa y el nombre accesible siguen abriendo el producto.
 
-En cuadrícula, el nombre también admite varias líneas y conserva marca, código, ubicación y el indicador de disponibilidad/condición. Se retiran categoría, peso y unidad del contenido. Se elimina Detalles; el único botón independiente es Agregar a la salida, con icono rojo, nombre accesible y superficie táctil de 44 px sobre la esquina inferior derecha de la fotografía, sin fila propia debajo. No aparece para consulta y se deshabilita sin disponibilidad. Pulsarlo no abre simultáneamente la ficha.
+En cuadrícula, el nombre también reserva dos líneas y usa elipsis y conserva marca, código, ubicación y el indicador de disponibilidad/condición. Se retiran categoría, peso y unidad del contenido. Se elimina Detalles; el único botón independiente es Agregar a la salida, con icono rojo, nombre accesible y superficie táctil de 44 px sobre la esquina inferior derecha de la fotografía, sin fila propia debajo. No aparece para consulta y se deshabilita sin disponibilidad. Pulsarlo no abre simultáneamente la ficha.
 
 La ubicación visible en lista y cuadrícula se limita al nombre del almacén, sin estantería, nivel ni caja. La columna de lista se llama Almacén; si no hay uno asignado, se muestra Sin almacén asignado. La ficha y los filtros mantienen la jerarquía completa.
 
 ## Guardado en mayúsculas y activación
+
+Inventario se ordena por última modificación descendente, con ID ascendente en empates, antes de paginar. Altas, edición, entradas/salidas y Realtime utilizan las fechas existentes, sin SQL nuevo. El nombre se limita a dos líneas con elipsis, reservando igual altura en lista/cuadrícula; el texto completo continúa en título, nombre accesible y ficha. En lista móvil bajo 640 px solo se ven nombre, stock/unidad y salida, sin código/foto ni scroll horizontal. Tablet/PC mantienen el código, que también se oculta en cuadrícula móvil. Buscar/Limpiar se retiran de buscadores; filtros conservan su reinicio.
 
 Las altas y ediciones desde la app normalizan nombre y marca al guardar, conservando tildes. Los nombres existentes se presentan en mayúsculas en Inventario sin una modificación masiva de la base. Descripciones, observaciones, identificadores, fotos, unidades y valores conservan su tratamiento.
 
@@ -32,6 +34,6 @@ Se ensayó con PostgreSQL embebido; **no se ejecutó en Supabase real** porque e
 
 ## Verificación y revisión
 
-Pasaron typecheck, lint, **154 pruebas unitarias y 34 de integración (188 en total)** y build. Se comprueban errores repetidos, validación nativa/proxy, foco, borradores, movimiento reducido, éxito y desmontaje, claves/cascada de ubicaciones, contenido y acciones del inventario, mayúsculas, permisos, reintentos y preservación histórica. Sin computer use, automatización de navegador ni escrituras en Supabase real. La geometría y el desplazamiento físico se revisan con el usuario.
+Pasaron typecheck, lint, **156 pruebas unitarias y 34 de integración (190 en total)** y build. Se comprueban errores repetidos, validación nativa/proxy, foco, borradores, movimiento reducido, éxito y desmontaje, claves/cascada de ubicaciones, contenido y acciones del inventario, mayúsculas, permisos, reintentos y preservación histórica. Sin computer use, automatización de navegador ni escrituras en Supabase real. La geometría y el desplazamiento físico se revisan con el usuario.
 
 Comprobar en teléfono y PC: cambiar estantería/nivel, provocar errores de creación/guardado, repetirlos y completar un guardado. Revisar nombres largos en lista/cuadrícula y la acción roja independiente. Tras activar SQL, comprobar mayúsculas de nuevas altas/salidas y conservación de documentos anteriores, sin usar existencias reales para pruebas ficticias.

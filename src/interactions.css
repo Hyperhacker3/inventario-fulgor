@@ -14,6 +14,10 @@
     text-decoration: none !important; transform: none !important; outline: none;
   }
   .inventory-list-table, .ui-product-table { border-collapse: separate; border-spacing: 0 12px; }
+  .inventory-product-name {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+    overflow: hidden; overflow-wrap: anywhere; line-height: 1.375; height: 2.75em;
+  }
   :root[data-ui-style] .ui-product-row {
     border-radius: var(--ui-control-radius); background-color: var(--ui-surface); box-shadow: var(--ui-control-shadow);
   }
@@ -24,6 +28,15 @@
   :root[data-ui-style] .ui-product-line {
     border-radius: var(--ui-control-radius); background-color: var(--ui-product-fill, var(--ui-surface)); box-shadow: var(--ui-control-shadow);
   }
+}
+@media screen and (max-width: 639px) {
+  .inventory-list-scroll { overflow-x: visible; }
+  .inventory-list-table { table-layout: fixed; width: 100%; }
+  .inventory-list-table .inventory-name-cell { width: auto; }
+  .inventory-list-table :is(td, th) { padding-inline: 8px; }
+  .inventory-list-table .inventory-stock-cell { width: 68px; white-space: normal; overflow-wrap: anywhere; }
+  .inventory-list-table .inventory-action-cell { width: 60px; }
+  :root[data-ui-style] .inventory-list-table .ui-product-row > td:nth-child(2) { border-radius: var(--ui-control-radius) 0 0 var(--ui-control-radius); }
 }
 @media screen and (hover: hover) and (pointer: fine) {
   :root[data-ui-style] button:not(:where(.ui-product-open, .ui-backdrop, .mobile-menu-backdrop, .a4-print-container *, .rm-measure *)):hover:not(:disabled),

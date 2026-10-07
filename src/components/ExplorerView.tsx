@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useInventory } from '../context/InventoryContext';
-import { ALL_LOCATIONS, emptyInventoryFilters, changeWarehouse, changeRack, changeLevel, filterInventory, type InventoryFilters } from '../domain/explorer';
+import { ALL_LOCATIONS, emptyInventoryFilters, changeWarehouse, changeRack, changeLevel, filterInventory, orderInventoryByActivity, type InventoryFilters } from '../domain/explorer';
 import { ExplorerResults } from './explorer/ExplorerResults';
 import { ExplorerFilters } from './explorer/ExplorerFilters';
 import { useInventoryViewMode } from '../state/useInventoryViewMode';
@@ -27,7 +27,7 @@ export const ExplorerView: React.FC = () => {
   const activeFiltersCount = Number(filters.categories.length > 0) + Number(filters.stock !== 'todos')
     + Number(filters.warehouseId !== ALL_LOCATIONS) + Number(filters.rackId !== ALL_LOCATIONS)
     + Number(filters.levelId !== ALL_LOCATIONS) + Number(filters.boxId !== ALL_LOCATIONS) + Number(!!effectiveSearch.trim());
-  const filteredItems = useMemo(() => filterInventory(elementos, filters, effectiveSearch, getLocationString),
+  const filteredItems = useMemo(() => orderInventoryByActivity(filterInventory(elementos, filters, effectiveSearch, getLocationString)),
     [elementos, filters, effectiveSearch, getLocationString]);
   const pageCount = Math.max(1, Math.ceil(filteredItems.length / 24));
   const currentPage = Math.min(page, pageCount);
@@ -51,34 +51,13 @@ export const ExplorerView: React.FC = () => {
           </div>
           <input autoComplete="off" autoCorrect="off" spellCheck={false}
             id="explorer-prominent-search"
+            aria-label="Buscar productos por código, nombre o atributos"
             type="text"
             value={effectiveSearch}
             onChange={(e) => { setSearchQuery(e.target.value); setGlobalSearch(''); setPage(1); }}
             placeholder="Buscar código (ej. PAN550) o nombre..."
-            className="w-full pl-10 sm:pl-12 pr-20 sm:pr-28 py-2.5 sm:py-3.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-xs sm:text-base text-[#131b2e] focus:outline-hidden focus:ring-2 focus:ring-[#3e4e9e] focus:border-transparent focus:bg-white transition-all shadow-inner"
+            className="w-full pl-10 sm:pl-12 pr-3 py-2.5 sm:py-3.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-xs sm:text-base text-[#131b2e] focus:outline-hidden focus:ring-2 focus:ring-[#3e4e9e] focus:border-transparent focus:bg-white transition-all shadow-inner"
           />
-          <div className="absolute inset-y-0 right-0 pr-1.5 sm:pr-2 flex items-center">
-            {effectiveSearch ? (
-              <button
-                type="button"
-                onClick={() => { setSearchQuery(''); setGlobalSearch(''); setPage(1); }}
-                className="text-[#767682] hover:text-[#131b2e] px-2.5 py-1.5 text-xs font-semibold"
-                title="Limpiar búsqueda"
-              >
-                Limpiar
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => {
-                const el = document.getElementById('explorer-prominent-search');
-                el?.focus();
-              }}
-              className="bg-[#3e4e9e] text-white px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold hover:bg-[#323f80] transition-colors shadow-xs"
-            >
-              Buscar
-            </button>
-          </div>
         </div>
       </div>
 

@@ -3,6 +3,11 @@ import type { Caja, Elemento, Estanteria, NivelEstanteria } from '../types';
 export type StockFilter = 'todos' | 'disponible' | 'bajo' | 'agotado';
 export const ALL_LOCATIONS = 'ALL';
 export const NO_LOCATION = '__NONE__';
+const activityTime = (item: Elemento) => Date.parse(item.updatedAt) || Date.parse(item.createdAt) || 0;
+/** Sort a copy so refreshed items and realtime edits move before older activity. */
+export function orderInventoryByActivity(items: Elemento[]) {
+  return [...items].sort((a, b) => activityTime(b) - activityTime(a) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
 export interface InventoryFilters {
   categories: string[];
   stock: StockFilter;

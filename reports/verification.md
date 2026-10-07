@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Actividad reciente y lista móvil compacta (7 de octubre de 2026)
+
+Inventario carga `updated_at` descendente con desempate por ID ascendente y ordena una copia de los resultados filtrados antes de paginar. Así las entradas, salidas, ediciones y actualizaciones de caché/Realtime llevan el producto a los primeros resultados sin depender de una recarga. Las operaciones existentes ya actualizan la fecha; no requiere SQL adicional. Dos pruebas nuevas verifican actividad frente a creación, zonas horarias, empates, conservación del arreglo original y cambios de stock/nombre desde la segunda página.
+
+Nombres de lista/cuadrícula reservan dos líneas con elipsis, conservando texto completo en ficha, título y nombre accesible. Bajo 640 px, lista oculta código/foto, usa columnas ajustadas al contenedor y conserva nombre, stock/unidad y salida sin desplazamiento horizontal. Tablet/PC mantienen código/foto; cuadrícula oculta código solo en móvil. Buscadores de inventario/cabecera/menú retiran Buscar/Limpiar; el menú conserva Enter para navegar y los filtros mantienen su reinicio.
+
+Verificación correcta: typecheck, lint, **156 pruebas unitarias y 34 de integración (190)** y build. Las pruebas existentes siguen cubriendo clic completo/acción independiente, foco/teclado, permisos, datos y documentos. Sin computer use, automatización de navegador, escrituras en Supabase real ni archivos privados. Geometría/ellipsis reales quedan para revisión con el usuario. Commit/push autorizados y despliegue verificado por separado.
+
 ## Almacén resumido en Inventario (7 de octubre de 2026)
 
 Lista y cuadrícula muestran solo el nombre del almacén obtenido por ID; se omiten estantería, nivel y caja, y se cambia el encabezado de lista a Almacén. Sin asignación se muestra Sin almacén asignado. La ficha, filtros y datos de ubicación se conservan. Se adapta el proveedor sintético de las pruebas existentes al acceso directo de almacén, sin añadir pruebas para este ajuste visual pequeño.

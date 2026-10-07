@@ -30,9 +30,11 @@ Al tomar una foto principal, adicional o del registro de salida, **Capturar ocup
 
 ## Teclado
 
+Lista de Inventario, por debajo de 640 px, muestra nombre, cantidad/unidad y el icono de salida dentro del ancho disponible, sin código/foto ni scroll horizontal. Desde 640 px recupera código/foto. Nombres de lista y cuadrícula reservan dos líneas con puntos suspensivos, también en PC; tocar el producto abre el nombre completo. Cuadrícula oculta código en móvil. La última modificación sitúa el producto al principio, incluyendo entradas/salidas y actualizaciones en tiempo real. Los buscadores no tienen Buscar/Limpiar; para abrir Inventario desde el menú se mantiene Enter del teclado y el acceso Inventario. Limpiar filtros se conserva.
+
 Nuevo ítem, Entradas y Salidas hacen scroll al primer campo inválido o mensaje de error, también en altas de ubicaciones/categorías; conservan borradores y vuelven al inicio al confirmar el guardado. Movimiento reducido evita animar el desplazamiento. Nivel y Caja tienen claves independientes para no duplicarse al cambiar la ubicación.
 
-El inventario muestra nombres en mayúsculas más grandes, en negrita y varias líneas. La lista deja solo el nombre debajo de la imagen; categoría queda en su columna y la unidad junto a Stock. Cuadrícula conserva marca/código/ubicación, sin peso/unidad/categoría ni Detalles, con una única acción de salida de icono rojo. Guardado en mayúsculas y activación del servidor en `formularios-y-nombres.md`.
+El inventario muestra nombres en mayúsculas más grandes, en negrita y hasta dos líneas con elipsis. La lista deja solo el nombre debajo de la imagen; categoría queda en su columna y la unidad junto a Stock. Cuadrícula conserva marca/código/ubicación, sin peso/unidad/categoría ni Detalles, con una única acción de salida de icono rojo. Guardado en mayúsculas y activación del servidor en `formularios-y-nombres.md`.
 
 Claro/oscuro usa un barrido suave de izquierda a derecha; en navegadores sin View Transitions se utiliza un fundido de 1,5 segundos. Neumorfismo muestra relieve mediante sombras y evita bordes delineados; el foco del teclado conserva su indicador visible. La barra inferior, el menú y las ventanas usan Neumorfismo.
 
