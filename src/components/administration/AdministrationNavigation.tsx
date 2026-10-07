@@ -2,6 +2,7 @@ import { Select } from '../ui/Select';
 
 const tabs = [
   { id: 'codes', label: 'Códigos', icon: 'tag' }, { id: 'categories', label: 'Categorías', icon: 'category' },
+  { id: 'warehouses', label: 'Almacenes', icon: 'warehouse' },
   { id: 'racks', label: 'Estanterías', icon: 'shelves' }, { id: 'levels', label: 'Niveles', icon: 'layers' }, { id: 'boxes', label: 'Cajas', icon: 'inventory_2' },
   { id: 'projects', label: 'Proyectos', icon: 'folder_open' }, { id: 'archived', label: 'Archivados', icon: 'archive' },
   { id: 'company', label: 'Empresa', icon: 'settings' },
@@ -18,7 +19,7 @@ export function AdministrationNavigation({ value, onChange }: { value: Administr
         {tabs.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}
       </Select>
     </div>
-    <div role="tablist" aria-label="Datos del inventario" className="hidden lg:grid grid-cols-4 xl:grid-cols-8 gap-2">
+    <div role="tablist" aria-label="Datos del inventario" className="hidden lg:grid grid-cols-3 xl:grid-cols-9 gap-2">
       {tabs.map(tab => <button key={tab.id} type="button" role="tab" id={`data-tab-${tab.id}`} aria-controls="data-tab-panel" aria-selected={value === tab.id}
         onClick={() => onChange(tab.id)} className="ui-flat-choice flex min-w-0 gap-2 items-center justify-center rounded-xl px-2 py-3 text-sm">
         <span className="material-symbols-outlined text-lg shrink-0" aria-hidden="true">{tab.icon}</span>{tab.label}

@@ -4,9 +4,11 @@ Actualizado el 7 de octubre de 2026. **Neumorfismo es el único estilo de la apl
 
 ## Decisiones vigentes
 
+Almacenes utiliza una pestaña de Administración antes de Estanterías/Niveles/Cajas, sin botón lateral ni pantalla propia. El selector compacto incluye la misma sección; los almacenes dentro del panel tienen selección hundida y reposo plano. Se conservan productos, valores y acciones de ubicaciones. Fotografías del producto coloca el título dentro de su panel, con margen inferior, manteniendo fieldset disabled e identificación accesible por aria-labelledby, también en edición.
+
 Las tarjetas de Remisiones colocan el icono azul Ver / Imprimir PDF arriba a la derecha, junto al código rojo. Un control de 44 × 44 px con nombre accesible y tooltip ocupa una columna fija; el código utiliza el ancho restante y envuelve si es largo. Se elimina la fila inferior del PDF en móvil, tablet y PC.
 
-Cada función conserva su color en icono y texto, en reposo/hover/selección, tanto en sidebar como menú móvil: Inicio azul, Inventario violeta, Entradas verde, Salidas rojo, Historial ámbar, Administración azul grisáceo, Almacenes marrón, Remisiones rosa, Ayuda azul claro y Cerrar sesión rojo. Las variantes oscuras mantienen legibilidad y los estados planos/elevados/hundidos existentes. Editar en la ficha usa SVG de 24 px con color heredado, evitando ligaduras de fuentes en caché. El fondo exterior cierra la ficha por clic/toque; no lo hacen sus controles interiores o desplegables y no se permite cerrar durante operaciones pendientes.
+Cada función conserva su color en icono y texto, en reposo/hover/selección, tanto en sidebar como menú móvil: Inicio azul, Inventario violeta, Entradas verde, Salidas rojo, Historial ámbar, Administración azul grisáceo, Remisiones rosa, Ayuda azul claro y Cerrar sesión rojo. Las variantes oscuras mantienen legibilidad y los estados planos/elevados/hundidos existentes. Editar en la ficha usa SVG de 24 px con color heredado, evitando ligaduras de fuentes en caché. El fondo exterior cierra la ficha por clic/toque; no lo hacen sus controles interiores o desplegables y no se permite cerrar durante operaciones pendientes.
 
 - Superficies neutras, separadas por sombras, sin bordes delineados ni anillos decorativos. Los campos y selectores indican el foco con una sombra interior más profunda, sin contorno azul. Los botones conservan el indicador de teclado y se mantienen los bordes que dibujan símbolos.
 - Claro/oscuro permanece disponible en cabecera de escritorio y menú móvil, con preferencia local. Sin elección explícita, sigue al dispositivo.
@@ -86,7 +88,7 @@ Las pruebas simuladas comprueban reglas, cascada y eventos; no miden movimiento,
 2. Revisar logo de escritorio y cabecera compacta, sin marco ni sombra; comprobar su acceso a Inicio y el foco de teclado.
 3. Abrir Ayuda en escritorio/móvil: confirmar que ya no existe cambio de estilo. Recargar un navegador con preferencia antigua de Glass y comprobar Neumorfismo sin alterar su paleta guardada.
 4. Alternar claro/oscuro y observar el barrido de 1,5 segundos; probar cambios rápidos, movimiento reducido y alternativa sin View Transitions. Conservar borradores, selector abierto y carrito.
-5. Revisar Inicio, Inventario (lista/cuadrícula/filtros), Nuevo ítem, Entradas, Salidas, Historial, Administración, Almacenes y Remisiones. Incluir edición, alertas, cámaras y fotos. Comprobar hover/clic completo en productos, acciones independientes, copia de texto y teclado.
+5. Revisar Inicio, Inventario (lista/cuadrícula/filtros), Entradas (alta y recepción), Salidas, Historial, Administración (incluido Almacenes) y Remisiones. Incluir edición, alertas, cámaras y fotos. Comprobar hover/clic completo en productos, acciones independientes, copia de texto y teclado.
 6. Comprobar foco sin contorno en búsquedas, cantidades y altas de prefijos/categorías; reducir una descripción hasta su límite de 44 px. Revisar chips, avatar y PDF/Fotos. En cantidades, confirmar ausencia de flechas internas y probar −/+ de una unidad, edición manual y límites de stock. En teléfono/tablet, comprobar menú, barra inferior, acciones visibles, campos, teclado y ausencia de hover persistente al tocar. Seguir también `docs/experiencia-movil.md`.
 7. Revisar remisiones en pantalla e impresión/PDF, manteniendo contenido, paginación y logo.
 

@@ -25,7 +25,6 @@ const ExplorerView = lazy(() => import('./components/ExplorerView').then(m => ({
 const DispatchView = lazy(() => import('./components/DispatchView').then(m => ({ default: m.DispatchView })));
 const EntryView = lazy(() => import('./components/EntryView').then(m => ({ default: m.EntryView })));
 const HistoryView = lazy(() => import('./components/HistoryView').then(m => ({ default: m.HistoryView })));
-const WarehouseView = lazy(() => import('./components/WarehouseView').then(m => ({ default: m.WarehouseView })));
 const RemissionView = lazy(() => import('./components/RemissionView').then(m => ({ default: m.RemissionView })));
 const PdfRemissionModal = lazy(() => import('./components/PdfRemissionModal').then(m => ({ default: m.PdfRemissionModal })));
 const ItemDetailModal = lazy(() => import('./components/ItemDetailModal').then(m => ({ default: m.ItemDetailModal })));
@@ -66,7 +65,7 @@ const MainLayout: React.FC = () => {
       case 'history':
         return <HistoryView />;
       case 'warehouses':
-        return <WarehouseView />;
+        return <DataAdministrationView initialTab="warehouses" />;
       case 'projects':
         return <DataAdministrationView initialTab="projects" />;
       case 'data-admin':

@@ -45,7 +45,7 @@ export function LocationsManagerContent({ kind, almacenes, estanterias, niveles,
       {admin && <button disabled={!parentId} onClick={() => setTarget({ kind, mode: 'new', parentId })} className="bg-[#253685] text-white rounded-lg px-4 py-3 disabled:opacity-50">Crear {entityName}</button>}
     </div>
     {admin && !parentId && <p className="text-sm text-slate-500">Seleccione {parentName.toLocaleLowerCase('es')} para crear {entityName}.</p>}
-    {!parents.length && <p>Primero cree {rack ? 'un almacén en la pantalla Almacenes' : level ? 'una estantería en esta administración' : 'un nivel en esta administración'}.</p>}
+    {!parents.length && <p>Primero cree {rack ? 'un almacén en la sección Almacenes de esta administración' : level ? 'una estantería en esta administración' : 'un nivel en esta administración'}.</p>}
     <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">{entries.filter(row => !parentId || row.parent === parentId).map(row => <article key={row.id} className="min-w-0 break-words bg-white border rounded-2xl p-5 space-y-2">
       <strong>{row.code}</strong><p>{row.name}</p><p className="text-sm text-slate-600">{row.location}</p><p className="text-sm">{row.description}</p>
       <LocationValueSummary values={valueIndex.get(row.id)} />

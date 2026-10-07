@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from 'react';
+import { useId, useRef, useState, type ChangeEvent } from 'react';
 import { ItemImage } from './ItemImage';
 import { CameraCaptureModal } from './CameraCaptureModal';
 import type { CategoriaElemento } from '../types';
@@ -16,6 +16,7 @@ const readFile = (file: File) => new Promise<string>((resolve, reject) => {
 });
 
 export function ItemPhotoPicker({ value, additional, onChange, onAdditionalChange, category, disabled, onBusyChange }: Props) {
+  const headingId = useId();
   const mainInput = useRef<HTMLInputElement>(null);
   const extraInput = useRef<HTMLInputElement>(null);
   const [cameraTarget, setCameraTarget] = useState<'main' | 'additional' | null>(null);
@@ -40,8 +41,8 @@ export function ItemPhotoPicker({ value, additional, onChange, onAdditionalChang
     onChange(additional[index]);
     onAdditionalChange(additional.flatMap((photo, position) => position === index ? (value ? [value] : []) : [photo]));
   };
-  return <fieldset disabled={disabled || reading} className="p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl min-w-0">
-    <legend className="text-xs font-bold tracking-wider text-[#454651] uppercase px-1">Fotografías del producto</legend>
+  return <fieldset disabled={disabled || reading} aria-labelledby={headingId} className="p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl min-w-0">
+    <h3 id={headingId} className="text-xs font-bold tracking-wider text-[#454651] uppercase mb-4">Fotografías del producto</h3>
     <div className="photo-editor-grid">
       <div className="min-w-0 space-y-3">
         <h3 className="text-sm font-bold">Imagen principal</h3>

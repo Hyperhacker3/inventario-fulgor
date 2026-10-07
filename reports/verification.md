@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Almacenes en Administración y título fotográfico interno (7 de octubre de 2026)
+
+Almacenes pasa a una pestaña de Administración de datos antes de Estanterías/Niveles/Cajas. Se retira de sidebar/menú y se elimina WarehouseView como vista; WarehousesManager conserva selección, creación/edición, árbol, productos, valores y controles de ubicaciones. Enlaces heredados y acceso del Dashboard abren el mismo DataAdministrationView en Almacenes; la navegación resalta Administración. Nueve pestañas en escritorio y el mismo selector compacto. Selección de almacenes con los estados planos/hundidos y ancho adaptable, sin padding externo duplicado.
+
+ItemPhotoPicker reemplaza legend por h3 dentro del fieldset, con ID único/aria-labelledby, margen inferior y los controles/fotos/cámara existentes, en Entradas y edición.
+
+Verificación: typecheck, lint, **163 unitarias + 34 de integración (197)** y build. Se adaptan pruebas existentes de secciones sincronizadas desktop/móvil, permisos/destinos de navegación, título interno y bloqueo del editor fotográfico, y disposición de vistas. Se conserva cobertura de productos clicables, valores y jerarquía. Sin pruebas nuevas para esta reorganización visual, SQL nuevo, escrituras en Supabase real, archivos privados, computer use ni navegador automatizado. Geometría real se revisa con el usuario; commit/push y despliegue se comprueban por separado.
+
 ## PDF integrado en cabecera de remisión (7 de octubre de 2026)
 
 Ver / Imprimir PDF pasa del pie a la esquina superior derecha de cada tarjeta, junto al código rojo. Se muestra solo el icono azul en una superficie neutra de 44 × 44 px, con title y nombre accesible que incluye el número. Cabecera con columna flexible para el código y columna fija para el botón; códigos largos se envuelven sin desplazar la acción a una fila propia. Se elimina el pie y el espacio inferior sobrante. Se conserva la apertura del mismo PDF, el resumen, búsqueda y paginación.

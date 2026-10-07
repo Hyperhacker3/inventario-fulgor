@@ -20,6 +20,9 @@ test('photo editor preserves promotion, removal and disabled controls with multi
   const render=(disabled=false)=>createElement(ItemPhotoPicker,{value:main,additional,disabled,onChange:(value:string)=>{main=value;},onAdditionalChange:(value:string[])=>{additional=value;}});
   try {
     await act(()=>root.render(render()));
+    const productPanel = host.querySelector('fieldset')!;
+    assert.equal(productPanel.querySelector('legend'), null);
+    assert.equal(productPanel.querySelector('h3')!.id, productPanel.getAttribute('aria-labelledby'));
     assert.equal(host.querySelectorAll('img').length,3);
     await act(()=>host.querySelector<HTMLButtonElement>('[aria-label="Usar foto 1 como principal"]')!.click());
     assert.equal(main,'https://images.test/a.jpg');
@@ -44,11 +47,13 @@ test('quick navigation has at most four actions while the complete menu retains 
   assert.deepEqual(quickNavigationItems('admin', 3).map(item => item.id), ['dashboard','explorer','entries','dispatch']);
   assert.equal(quickNavigationItems('operador', 3).at(-1)?.badge, 3);
   assert.deepEqual(quickNavigationItems('consulta').map(item => item.id), ['dashboard','explorer']);
-  assert.equal(navigationItems('admin').length, 8);
+  assert.equal(navigationItems('admin').length, 7);
+  for (const role of ['admin', 'operador', 'consulta']) assert.equal(navigationItems(role).some(item => item.id === 'warehouses'), false);
   assert.equal(navigationItems('admin').some(item => item.label === 'Nuevo ítem'), false);
   assert.equal(navigationItems('operador').some(item => item.label === 'Nuevo ítem'), false);
   assert.equal(navigationItems('consulta').some(item => ['new-item','entries','dispatch'].includes(item.id)), false);
   assert.equal(navigationIsActive(navigationItems('admin').find(item => item.id === 'data-admin')!, 'projects'), true);
+  assert.equal(navigationIsActive(navigationItems('admin').find(item => item.id === 'data-admin')!, 'warehouses'), true);
 });
 
 test('icon-only bottom navigation keeps accessible destinations, active selection and dispatch badge', async () => {

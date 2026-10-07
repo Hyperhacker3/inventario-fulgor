@@ -12,7 +12,6 @@ export function navigationItems(role: string, cartCount = 0, demo = false): Navi
     ] : []),
     { id: 'history', label: 'Historial', icon: 'history' },
     { id: 'data-admin', label: 'Administración de datos', icon: 'settings' },
-    { id: 'warehouses', label: 'Almacenes', icon: 'warehouse' },
     { id: 'remissions', label: 'Remisiones', icon: 'picture_as_pdf' },
   ];
 }
@@ -20,5 +19,5 @@ export function quickNavigationItems(role: string, cartCount = 0, demo = false) 
   return navigationItems(role, cartCount, demo).filter(item => ['dashboard', 'explorer', 'entries', 'dispatch'].includes(item.id));
 }
 export function navigationIsActive(item: NavigationItem, view: ActiveView) {
-  return item.id === view || item.id === 'data-admin' && view === 'projects';
+  return item.id === view || item.id === 'data-admin' && ['projects', 'warehouses'].includes(view);
 }

@@ -79,7 +79,7 @@ test('administration shows financial values for racks and boxes, including empty
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
-test('compact administration selector retains all eight icons and synchronizes section with desktop buttons', async () => {
+test('compact administration selector retains all nine icons and synchronizes warehouses and other sections with desktop buttons', async () => {
   function Navigation() { const [value, setValue] = useState<AdministrationTab>('codes'); return h(AdministrationNavigation, { value, onChange: setValue }); }
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
   try {
@@ -91,9 +91,13 @@ test('compact administration selector retains all eight icons and synchronizes s
     for (const tab of host.querySelectorAll<HTMLButtonElement>('[role="tab"]')) assert.ok(tab.classList.contains('ui-flat-choice'));
     await act(() => trigger.click());
     const list = document.querySelector('[role="listbox"]')!;
-    assert.equal(list.querySelectorAll('[role="option"]').length, 8);
-    assert.deepEqual([...list.querySelectorAll('.material-symbols-outlined')].map(icon => icon.textContent), ['tag', 'category', 'shelves', 'layers', 'inventory_2', 'folder_open', 'archive', 'settings']);
-    await act(() => list.querySelector<HTMLButtonElement>('[data-value="boxes"]')!.click());
+    assert.equal(list.querySelectorAll('[role="option"]').length, 9);
+    assert.deepEqual([...list.querySelectorAll('.material-symbols-outlined')].map(icon => icon.textContent), ['tag', 'category', 'warehouse', 'shelves', 'layers', 'inventory_2', 'folder_open', 'archive', 'settings']);
+    await act(() => list.querySelector<HTMLButtonElement>('[data-value="warehouses"]')!.click());
+    assert.match(trigger.textContent!, /Almacenes/);
+    assert.equal(trigger.querySelector('[aria-hidden="true"]')!.textContent, 'warehouse');
+    assert.equal(host.querySelector('[role="tab"][aria-selected="true"]')!.id, 'data-tab-warehouses');
+    await act(() => host.querySelector<HTMLButtonElement>('#data-tab-boxes')!.click());
     assert.match(trigger.textContent!, /Cajas/);
     assert.equal(trigger.querySelector('[aria-hidden="true"]')!.textContent, 'inventory_2');
     assert.equal(host.querySelector('[role="tab"][aria-selected="true"]')!.id, 'data-tab-boxes');

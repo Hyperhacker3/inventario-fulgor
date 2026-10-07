@@ -7,6 +7,7 @@ import { LocationsManager } from './administration/LocationsManager';
 import { ArchivedItems } from './administration/ArchivedItems';
 import { AdministrationNavigation, type AdministrationTab } from './administration/AdministrationNavigation';
 import { CompanyProfileEditor } from './administration/CompanyProfileEditor';
+import { WarehousesManager } from './administration/WarehousesManager';
 
 export function DataAdministrationView({ initialTab = 'codes' }: { initialTab?: AdministrationTab }) {
   const { catalogReady, catalogLoading, catalogError, refreshCatalog } = useInventory();
@@ -21,6 +22,7 @@ export function DataAdministrationView({ initialTab = 'codes' }: { initialTab?: 
         <button onClick={() => { void refreshCatalog(); }} className="text-[#253685] underline">Comprobar de nuevo</button>
       </div> : <CatalogEditor key={tab} kind={tab === 'codes' ? 'prefijo' : 'categoria'} />)}
       {tab === 'racks' && <LocationsManager key={tab} kind="estanteria" />}
+      {tab === 'warehouses' && <WarehousesManager />}
       {tab === 'levels' && <LocationsManager key={tab} kind="nivel" />}
       {tab === 'boxes' && <LocationsManager key={tab} kind="caja" />}
       {tab === 'projects' && <ProjectsView embedded />}
