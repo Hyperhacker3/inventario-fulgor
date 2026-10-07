@@ -4,6 +4,8 @@ Aplicación de inventario fotovoltaico con React, TypeScript, Vite y Supabase. I
 
 ## Estado actual y continuidad
 
+La ficha se cierra al hacer clic o tocar fuera; los controles interiores no la cierran y las operaciones pendientes bloquean el cierre. Editar utiliza los mismos selectores de creación de estantería, nivel y caja que Nuevo ítem, con borradores y reintentos. El icono Editar es SVG para evitar texto de sustitución en móviles con la fuente anterior en caché. Navegación lateral y menú móvil comparten colores por función; se retiran los accesos de administración de Nuevo ítem y Salidas.
+
 Actualizado el 7 de octubre de 2026. El usuario confirmó que la aplicación muestra correctamente el inventario después de añadir 867 elementos del Excel a los 678 anteriores: **1.545 elementos en total en el momento de la verificación**. Los conteos cambian con las altas y bajas posteriores; no deben fijarse en el código.
 
 La aplicación utiliza **Neumorfismo como único estilo**, con modos claro y oscuro. Por decisión del usuario, se retiraron Liquid Glass y el botón de cambio de estilo de Ayuda. Las preferencias antiguas de estilo se descartan al arrancar, conservando la elección claro/oscuro. La publicación está autorizada después de cada cambio verificado; el despliegue se comprueba por separado en Vercel y en la URL pública.

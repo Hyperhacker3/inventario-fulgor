@@ -5,12 +5,13 @@ import type { Estanteria } from '../../types';
 import { errorMessage } from '../../shared/errors';
 
 interface Props {
+  idPrefix?: string;
   warehouseId: string; rackId: string; racks: Estanteria[];
   onRack: (id: string) => void;
   onCreate: (input: Omit<Estanteria, 'id'>) => Promise<Estanteria>;
   onBusyChange?: (busy: boolean) => void; onDraftChange?: (unfinished: boolean) => void;
 }
-export function ItemRackSelector({ warehouseId, rackId, racks, onRack, onCreate, onBusyChange, onDraftChange }: Props) {
+export function ItemRackSelector({ warehouseId, rackId, racks, onRack, onCreate, onBusyChange, onDraftChange, idPrefix = '' }: Props) {
   const [creating, setCreating] = useState(false);
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -35,8 +36,8 @@ export function ItemRackSelector({ warehouseId, rackId, racks, onRack, onCreate,
     finally { saving.current = false; setBusy(false); onBusyChange?.(false); }
   };
   return <div className="text-xs font-semibold text-[#454651] space-y-2">
-    <label htmlFor="select-estanteria-form" className="block">Estantería</label>
-    <Select id="select-estanteria-form" value={creating ? '__NEW_RACK__' : rackId} disabled={!warehouseId || busy}
+    <label htmlFor={idPrefix + 'select-estanteria-form'} className="block">Estantería</label>
+    <Select id={idPrefix + 'select-estanteria-form'} value={creating ? '__NEW_RACK__' : rackId} disabled={!warehouseId || busy}
       onChange={event => { const draft = event.target.value === '__NEW_RACK__'; setCreating(draft); onDraftChange?.(draft); setError(''); setMessage(''); if (!draft) onRack(event.target.value); }}
       className="block w-full px-3 py-2 rounded-lg border bg-white">
       <option value="">Seleccione una estantería</option>
@@ -44,12 +45,12 @@ export function ItemRackSelector({ warehouseId, rackId, racks, onRack, onCreate,
       {racks.map(rack => <option key={rack.id} value={rack.id}>{rack.codigo} - {rack.nombre}</option>)}
     </Select>
     <Presence open={creating}><div className="ui-panel-enter space-y-2">
-      <label htmlFor="input-nueva-estanteria-codigo" className="block">Código de la nueva estantería</label>
-      <input autoComplete="off" autoCorrect="off" spellCheck={false} id="input-nueva-estanteria-codigo" maxLength={100} value={code} disabled={busy} onChange={event => { setCode(event.target.value); setError(''); }}
+      <label htmlFor={idPrefix + 'input-nueva-estanteria-codigo'} className="block">Código de la nueva estantería</label>
+      <input autoComplete="off" autoCorrect="off" spellCheck={false} id={idPrefix + 'input-nueva-estanteria-codigo'} maxLength={100} value={code} disabled={busy} onChange={event => { setCode(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}
         placeholder="Ej. EST-025" className="w-full px-3 py-2 rounded-lg border bg-white" />
-      <label htmlFor="input-nueva-estanteria-nombre" className="block">Nombre de la nueva estantería</label>
-      <input autoComplete="off" autoCorrect="off" spellCheck={false} id="input-nueva-estanteria-nombre" maxLength={100} value={name} disabled={busy} onChange={event => { setName(event.target.value); setError(''); }}
+      <label htmlFor={idPrefix + 'input-nueva-estanteria-nombre'} className="block">Nombre de la nueva estantería</label>
+      <input autoComplete="off" autoCorrect="off" spellCheck={false} id={idPrefix + 'input-nueva-estanteria-nombre'} maxLength={100} value={name} disabled={busy} onChange={event => { setName(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}
         placeholder="Ej. Zona de materiales eléctricos" className="w-full px-3 py-2 rounded-lg border bg-white" />
       <button type="button" disabled={busy || !code.trim() || !name.trim()} onClick={() => { void create(); }} className="text-white bg-[#253685] rounded-lg px-3 py-2 disabled:opacity-50">{busy ? 'Creando…' : 'Crear y elegir estantería'}</button>

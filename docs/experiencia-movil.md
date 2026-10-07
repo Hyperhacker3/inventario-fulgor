@@ -1,5 +1,7 @@
 # Navegación y formularios en móvil y tablet
 
+La ficha cierra al tocar el fondo exterior, conservando los clics interiores y desplegables; las operaciones pendientes bloquean X/Escape/cierre exterior. Editar usa un SVG para evitar que una fuente antigua muestre EDIT. Su formulario permite crear estantería, nivel y caja con los mismos controles que Nuevo ítem, adaptados al ancho y con IDs independientes. Menú móvil y sidebar comparten colores semánticos por función, manteniendo Entrada verde y Salida roja. Los accesos adicionales a Administración se retiran de Salidas y Nuevo ítem.
+
 Estado de diseño al 7 de octubre de 2026: Neumorfismo es el único estilo. El usuario retiró Liquid Glass y su botón de Ayuda. La preferencia antigua de estilo se descarta al arrancar; claro/oscuro se conserva con transición de 1,5 segundos, salvo movimiento reducido. El logo de la cabecera compacta no tiene marco, fondo ni sombra. Navegación lateral, stock, pestañas de Administración y lista/cuadrícula comparten reposo plano y selección hundida. El menú móvil y la barra inferior comparten estos estados con escritorio. La revisión visual sigue pendiente y el despliegue se verifica por separado. Detalles en [estilos de interfaz](estilos-interfaz.md).
 
 La navegación compacta se utiliza por debajo de 1280 px, para aprovechar también el ancho de las tablets en horizontal. La barra inferior conserva Inicio, Inventario, Entradas y Salidas según el rol de la cuenta. El menú reúne todas las pantallas permitidas, además de búsqueda, ayuda y cierre de sesión.

@@ -26,10 +26,11 @@ export function ItemDetailModal(props: Props) {
   return <ItemDetailContent {...props} inventory={inventory} history={props.item && <ItemHistory itemId={props.item.id} />} />;
 }
 type DetailInventory = Pick<ReturnType<typeof useInventory>, 'user' | 'getLocationString' | 'openQuickMovement' | 'addToDispatchCart'
-  | 'updateElemento' | 'deleteElemento' | 'categoryLabel' | 'almacenes' | 'estanterias' | 'cajas' | 'niveles'>;
+  | 'updateElemento' | 'deleteElemento' | 'categoryLabel' | 'almacenes' | 'estanterias' | 'cajas' | 'niveles'>
+  & Partial<Pick<ReturnType<typeof useInventory>, 'addEstanteria' | 'addNivel' | 'addCaja'>>;
 export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore, inventory, history }: Props & { inventory: DetailInventory; history?: ReactNode }) {
   const { user, getLocationString, openQuickMovement, addToDispatchCart,
-    updateElemento, deleteElemento, categoryLabel, almacenes, estanterias, cajas, niveles } = inventory;
+    updateElemento, deleteElemento, categoryLabel, almacenes, estanterias, cajas, niveles, addEstanteria, addNivel, addCaja } = inventory;
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(item?.nombre || '');
   const [brand, setBrand] = useState(item?.marca || '');
@@ -45,12 +46,16 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [locationBusy, setLocationBusy] = useState(false);
+  const [locationDraft, setLocationDraft] = useState(false);
   const dialog = useRef<HTMLElement>(null);
   const saving = useRef(false);
   const canAdmin = isDemo || user.role === 'admin';
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
 
-  useDialogFocus(dialog, onClose);
+  const busy = pending || photoBusy || locationBusy;
+  const close = () => { if (!busy) onClose(); };
+  useDialogFocus(dialog, close);
   if (!item) return null;
 
   const startEdit = () => {
@@ -64,7 +69,8 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   };
   const save = async (event: FormEvent) => {
     event.preventDefault();
-    if (saving.current || photoBusy || !canAdmin || item.archived) return;
+    if (saving.current || photoBusy || locationBusy || !canAdmin || item.archived) return;
+    if (locationDraft) { setError('Cree o seleccione la ubicación antes de guardar el producto.'); return; }
     saving.current = true;
     setError(''); setPending(true);
     try {
@@ -83,10 +89,11 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
     finally { setPending(false); }
   };
 
-  return <div className="ui-modal-layer fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-6" role="presentation">
+  return <div className="ui-modal-layer fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-6" role="presentation"
+    onClick={event => { if (event.target === event.currentTarget) close(); }}>
     <section ref={dialog} role="dialog" aria-modal="true" aria-labelledby="item-detail-heading"
       className="ui-dialog-panel ui-panel-enter relative bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] shadow-2xl border flex flex-col overflow-hidden">
-      <button data-dialog-close type="button" onClick={onClose} aria-label="Cerrar detalle" title="Cerrar detalle"
+      <button data-dialog-close type="button" onClick={close} disabled={busy} aria-label="Cerrar detalle" title="Cerrar detalle"
         className="item-detail-close absolute top-3 right-3 sm:top-4 sm:right-4 z-20 w-11 h-11 rounded-xl flex items-center justify-center text-[#253685]">
         <span className="material-symbols-outlined text-2xl" aria-hidden="true">close</span>
       </button>
@@ -107,7 +114,8 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
           <label className="block text-sm font-semibold">Descripción
             <textarea autoComplete="off" autoCorrect="off" spellCheck={false} value={description} onChange={event => setDescription(event.target.value)} rows={3} className="block w-full mt-1 p-2.5 border rounded-lg" />
           </label>
-          <ItemExistingLocationFields value={location} onChange={setLocation} warehouses={almacenes} racks={estanterias} levels={niveles} boxes={cajas} disabled={pending || photoBusy} />
+          <ItemExistingLocationFields value={location} onChange={setLocation} warehouses={almacenes} racks={estanterias} levels={niveles} boxes={cajas} disabled={pending || photoBusy}
+            onCreateRack={addEstanteria} onCreateLevel={addNivel} onCreateBox={addCaja} onBusyChange={setLocationBusy} onDraftChange={setLocationDraft} />
           <div className="grid grid-cols-2 gap-4">
             <label className="text-sm font-semibold">Stock mínimo
               <NumberInput min="0" step="0.001" required value={minimum} onValueChange={setMinimum} className="block w-full mt-1 p-2.5 border rounded-lg" />
@@ -126,8 +134,8 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
           </label>
           <ItemPhotoPicker value={photo} additional={additionalPhotos} category={item.categoria} onChange={setPhoto} onAdditionalChange={setAdditionalPhotos} onBusyChange={setPhotoBusy} disabled={pending} />
           <div className="grid grid-cols-2 gap-4 pt-2">
-            <button type="button" onClick={() => setEditing(false)} disabled={pending || photoBusy} className="px-4 py-2 border rounded-lg text-sm">Cancelar</button>
-            <button type="submit" disabled={pending || photoBusy} className="px-4 py-2 bg-[#3e4e9e] text-white rounded-lg text-sm font-semibold">{pending ? 'Guardando…' : 'Guardar'}</button>
+            <button type="button" onClick={() => setEditing(false)} disabled={busy} className="px-4 py-2 border rounded-lg text-sm">Cancelar</button>
+            <button type="submit" disabled={busy || locationDraft} className="px-4 py-2 bg-[#3e4e9e] text-white rounded-lg text-sm font-semibold">{pending ? 'Guardando…' : 'Guardar'}</button>
           </div>
         </form> : <div className="item-detail-summary flex flex-col gap-6">
           <div className="flex flex-col gap-5">
@@ -153,7 +161,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
           </div>
           <div className="item-detail-actions">
             {!item.archived && <>
-            {canAdmin && <button type="button" onClick={startEdit} aria-label="Editar" title="Editar" className="p-2 rounded-lg text-[#253685]"><span className="material-symbols-outlined" aria-hidden="true">edit</span></button>}
+            {canAdmin && <button type="button" onClick={startEdit} aria-label="Editar" title="Editar" className="p-2 rounded-lg text-[#253685]"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m16 3 5 5M4 15 16 3a2.1 2.1 0 0 1 5 5L9 20l-6 1 1-6Z" /></svg></button>}
             {canOperate && !item.stockPendiente && <button type="button" onClick={() => openQuickMovement(item, 'ENTRADA')} aria-label="Entrada" title="Entrada" className="p-2 rounded-lg text-[#137333]"><span className="material-symbols-outlined" aria-hidden="true">input</span></button>}
             {(canAdmin || canOperate && !item.stockPendiente) && <button type="button" onClick={() => openQuickMovement(item, 'AJUSTE')} aria-label={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} title={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} className="p-2 rounded-lg text-[#755b00]"><span className="material-symbols-outlined" aria-hidden="true">tune</span></button>}
             {canOperate && <button type="button" disabled={available(item) === 0} onClick={() => addToDispatchCart(item)} aria-label="Agregar a la salida" title="Agregar a la salida"

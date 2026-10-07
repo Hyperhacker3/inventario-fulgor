@@ -216,7 +216,6 @@ export const NewItemView: React.FC = () => {
             <span className="text-[11px] text-[#767682] mt-1 block">
               {codigo && !prefixDraftPending ? `Código estimado: ${codigo}. El definitivo se asigna al guardar.` : 'El número se asigna automáticamente en Supabase.'}
             </span>
-            <button type="button" className="text-xs text-[#253685] underline mt-2" onClick={() => setActiveView('data-admin')}>Administrar códigos y categorías</button>
           </div>
 
           <div className="md:col-span-2">

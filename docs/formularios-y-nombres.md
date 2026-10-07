@@ -4,6 +4,8 @@ Actualizado el 7 de octubre de 2026.
 
 ## Nivel duplicado
 
+Editar un producto también permite crear estanterías, niveles y cajas sin salir del formulario, usando los mismos selectores de Nuevo ítem. Cambiar un padre limpia sus dependientes; los controles tienen IDs únicos aunque ambos formularios estén montados. Una creación fallida conserva el borrador y admite reintento. Guardar espera a completar o abandonar la creación pendiente; el catálogo se guarda al crear y la ubicación del producto al confirmar Guardar. Las cajas antiguas sin nivel siguen disponibles; una caja nueva requiere nivel.
+
 Nuevo ítem mostraba dos selectores de Nivel después de cambiar la ubicación porque Nivel y Caja compartían la misma clave React cuando sus padres estaban vacíos. Las claves ahora incluyen el tipo de selector. Solo aparece un control de cada tipo; cambiar un padre limpia la selección y los borradores dependientes. Se mantiene almacén → estantería → nivel → caja y la creación en línea.
 
 ## Desplazamiento de los formularios

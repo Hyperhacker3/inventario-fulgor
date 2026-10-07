@@ -26,6 +26,7 @@ export const Sidebar: React.FC = () => {
             <button
               key={item.id}
               id={`nav-item-${item.id}`}
+              data-nav-view={item.id}
               aria-current={isActive ? 'page' : undefined}
               onClick={() => setActiveView(item.id)}
               className={`ui-sidebar-action w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left ${
@@ -57,6 +58,7 @@ export const Sidebar: React.FC = () => {
       <div className="mt-auto pt-4 border-t border-[#e2e8f0] flex flex-col gap-1">
         <button
           id="btn-sidebar-help"
+          data-nav-view="help"
           onClick={() => setIsHelpModalOpen(true)}
           className="ui-sidebar-action w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left"
         >
@@ -65,6 +67,7 @@ export const Sidebar: React.FC = () => {
         </button>
         <button
           id="btn-sidebar-logout"
+          data-nav-view="logout"
           onClick={() => { void signOut(); }}
           className="ui-sidebar-action ui-sidebar-logout w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left"
         >

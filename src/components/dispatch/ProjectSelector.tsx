@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useInventory } from '../../context/InventoryContext';
 
 export function ProjectSelector({ value, onChange, disabled }: { value: string; onChange: (id: string) => void; disabled: boolean }) {
-  const { proyectos, user, addProyecto, setActiveView } = useInventory();
+  const { proyectos, user, addProyecto } = useInventory();
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -37,6 +37,5 @@ export function ProjectSelector({ value, onChange, disabled }: { value: string; 
       ? <button type="button" onClick={() => { void create(); }} className="text-sm font-semibold text-[#253685]">{busy ? 'Guardando…' : `Crear y seleccionar «${name.trim()}»`}</button>
       : <p className="text-xs text-slate-600">Seleccione un proyecto existente o solicite a administración que lo cree.</p>)}
     {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-    <button type="button" onClick={() => setActiveView('projects')} className="block text-sm text-[#253685] underline">Administrar proyectos y datos</button>
   </fieldset>;
 }

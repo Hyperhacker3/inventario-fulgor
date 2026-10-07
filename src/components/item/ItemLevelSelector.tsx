@@ -5,12 +5,13 @@ import type { NivelEstanteria } from '../../types';
 import { errorMessage } from '../../shared/errors';
 
 interface Props {
+  idPrefix?: string; label?: string;
   rackId: string; levelId: string; levels: NivelEstanteria[];
   onLevel: (id: string) => void;
   onCreate: (input: Omit<NivelEstanteria, 'id'>) => Promise<NivelEstanteria>;
   onBusyChange?: (busy: boolean) => void; onDraftChange?: (unfinished: boolean) => void;
 }
-export function ItemLevelSelector({ rackId, levelId, levels, onLevel, onCreate, onBusyChange, onDraftChange }: Props) {
+export function ItemLevelSelector({ rackId, levelId, levels, onLevel, onCreate, onBusyChange, onDraftChange, idPrefix = '', label = 'Nivel' }: Props) {
   const [creating, setCreating] = useState(false);
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -35,8 +36,8 @@ export function ItemLevelSelector({ rackId, levelId, levels, onLevel, onCreate, 
     finally { saving.current = false; setBusy(false); onBusyChange?.(false); }
   };
   return <div className="text-xs font-semibold text-[#454651] space-y-2">
-    <label htmlFor="select-nivel-form" className="block">Nivel</label>
-    <Select id="select-nivel-form" value={creating ? '__NEW_LEVEL__' : levelId} disabled={!rackId || busy}
+    <label htmlFor={idPrefix + 'select-nivel-form'} className="block">{label}</label>
+    <Select id={idPrefix + 'select-nivel-form'} value={creating ? '__NEW_LEVEL__' : levelId} disabled={!rackId || busy}
       onChange={event => { const draft = event.target.value === '__NEW_LEVEL__'; setCreating(draft); onDraftChange?.(draft); setError(''); setMessage(''); if (!draft) onLevel(event.target.value); }}
       className="block w-full px-3 py-2 rounded-lg border bg-white">
       <option value="">Seleccione un nivel</option>
@@ -44,12 +45,12 @@ export function ItemLevelSelector({ rackId, levelId, levels, onLevel, onCreate, 
       {levels.map(level => <option key={level.id} value={level.id}>{level.codigo} - {level.nombre}</option>)}
     </Select>
     <Presence open={creating}><div className="ui-panel-enter space-y-2">
-      <label htmlFor="input-nuevo-nivel-codigo" className="block">Código del nuevo nivel</label>
-      <input autoComplete="off" autoCorrect="off" spellCheck={false} id="input-nuevo-nivel-codigo" maxLength={100} value={code} disabled={busy} onChange={event => { setCode(event.target.value); setError(''); }}
+      <label htmlFor={idPrefix + 'input-nuevo-nivel-codigo'} className="block">Código del nuevo nivel</label>
+      <input autoComplete="off" autoCorrect="off" spellCheck={false} id={idPrefix + 'input-nuevo-nivel-codigo'} maxLength={100} value={code} disabled={busy} onChange={event => { setCode(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}
         placeholder="Ej. NIV-01" className="w-full px-3 py-2 rounded-lg border bg-white" />
-      <label htmlFor="input-nuevo-nivel-nombre" className="block">Nombre del nuevo nivel</label>
-      <input autoComplete="off" autoCorrect="off" spellCheck={false} id="input-nuevo-nivel-nombre" maxLength={100} value={name} disabled={busy} onChange={event => { setName(event.target.value); setError(''); }}
+      <label htmlFor={idPrefix + 'input-nuevo-nivel-nombre'} className="block">Nombre del nuevo nivel</label>
+      <input autoComplete="off" autoCorrect="off" spellCheck={false} id={idPrefix + 'input-nuevo-nivel-nombre'} maxLength={100} value={name} disabled={busy} onChange={event => { setName(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}
         placeholder="Ej. Nivel superior" className="w-full px-3 py-2 rounded-lg border bg-white" />
       <button type="button" disabled={busy || !code.trim() || !name.trim()} onClick={() => { void create(); }} className="text-white bg-[#253685] rounded-lg px-3 py-2 disabled:opacity-50">{busy ? 'Creando…' : 'Crear y elegir nivel'}</button>

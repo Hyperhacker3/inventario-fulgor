@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Cierre exterior, navegación y ubicaciones en edición (7 de octubre de 2026)
+
+La ficha cierra por clic/toque en el fondo exterior. Los eventos de contenido y selectores en portal no la cierran; X/Escape/fondo se bloquean durante guardado, fotos o creación de ubicaciones. Editar usa SVG para evitar el texto EDIT al reutilizar fuentes móviles antiguas. Sidebar y menú comparten colores por función con variantes oscuras y estados de relieve existentes. Se retiran los atajos a Administración en Salidas/Nuevo ítem.
+
+Editar reutiliza selectores de estantería/nivel/caja con IDs propios, dependientes limpios, catálogo local de altas confirmadas y selección inmediata. Mantiene cajas anteriores sin nivel; las nuevas requieren nivel. Borradores, errores/reintentos, doble solicitud, cierre pendiente y Guardar protegido se verifican con proveedores sintéticos, sin cambiar cantidades. Crear guarda el catálogo; Guardar confirma la reubicación del producto.
+
+Pasaron typecheck, lint, **160 pruebas unitarias y 34 de integración (194)** y build. Dos pruebas nuevas cubren cierre exterior/contenido/portal y el ciclo de edición/creación con fallos y solicitudes pendientes. Sin SQL adicional, navegador automatizado, computer use, escrituras en Supabase real ni acceso a archivos privados. Colores y geometría reales quedan para revisión del usuario. Commit/push autorizados; despliegue y assets públicos se comprueban por separado.
+
 ## Ficha ordenada y navegación por iconos (7 de octubre de 2026)
 
 Se retiran barras superior/inferior de la ficha. Una única X absoluta sobre el panel queda fuera del área de scroll, sobre la fotografía y disponible al consultar datos/movimientos. Código/categoría se reúnen bajo foto/nombre con marca, estado, ubicación completa, peso, valor y descripción/comentarios en una lista de datos adaptable (una columna bajo 400 px, dos desde ese ancho). Se conserva el texto original de las descripciones. Stock/Disponible/Dañado usan cifras de 24/30 px. Las cinco acciones pasan a una fila flexible de iconos semánticos, con aria-label/title, permisos, disponibilidad y confirmación de archivo; Guardar/Cancelar quedan dentro del formulario de edición, sin barra inferior.

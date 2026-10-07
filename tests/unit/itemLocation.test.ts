@@ -126,3 +126,68 @@ test('icon actions retain movement, dispatch and archive semantics and the singl
     await act(async () => button(host, 'Archivar').click()); assert.equal(archived, 1); assert.equal(closes, 4);
   } finally { window.confirm = originalConfirm; await act(() => root.unmount()); host.remove(); }
 });
+
+test('product detail dismisses on outside click or touch-generated click but not on its content or a portaled selector', async () => {
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  let closed = 0;
+  try {
+    await act(() => root.render(h(ItemDetailContent, { item, onClose: () => { closed++; }, inventory: inventory(async () => {}) })));
+    await act(() => host.querySelector<HTMLElement>('[role="dialog"]')!.click()); assert.equal(closed, 0);
+    await act(() => button(host, 'Editar').click());
+    await choose(host, 'Almacén', 'w2'); assert.equal(closed, 0);
+    const backdrop = host.querySelector<HTMLElement>('[role="presentation"]')!;
+    await act(() => backdrop.click()); assert.equal(closed, 1);
+    await act(() => backdrop.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))); assert.equal(closed, 2);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
+
+test('editing creates rack, level and box in sequence, preserves failed drafts and prevents incomplete or concurrent product saves', async () => {
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  const saved: Partial<Elemento>[] = [];
+  let rackCalls = 0, closed = 0;
+  let completeRack!: (rack: Estanteria) => void;
+  const rackRequest = new Promise<Estanteria>(resolve => { completeRack = resolve; });
+  const createdRack: Estanteria = { id: 'r3', almacenId: 'w2', codigo: 'EST-N', nombre: 'Nueva' };
+  const services = { ...inventory(async (_id, change) => { saved.push(change); }),
+    addEstanteria: async (input: Omit<Estanteria, 'id'>) => {
+      rackCalls++; assert.equal(input.almacenId, 'w2');
+      if (rackCalls === 1) throw new Error('Sin conexión');
+      return rackRequest;
+    },
+    addNivel: async (input: Omit<import('../../src/types').NivelEstanteria, 'id'>) => { assert.equal(input.estanteriaId, 'r3'); return { ...input, id: 'l3' }; },
+    addCaja: async (input: Omit<Caja, 'id'>) => { assert.equal(input.estanteriaId, 'r3'); assert.equal(input.nivelId, 'l3'); return { ...input, id: 'b3' }; },
+  };
+  const type = async (label: string, value: string) => {
+    const element = [...host.querySelectorAll('label')].find(node => node.textContent === label)!;
+    const input = document.getElementById(element.htmlFor) as HTMLInputElement;
+    await act(() => { Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value')!.set!.call(input, value); input.dispatchEvent(new dom.window.Event('input', { bubbles: true })); });
+  };
+  const submit = () => host.querySelector('form')!.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+  try {
+    await act(() => root.render(h(ItemDetailContent, { item, onClose: () => { closed++; }, inventory: services })));
+    await act(() => button(host, 'Editar').click());
+    assert.equal(native(host, 'Caja').value, 'b1'); // Legacy box remains selectable without a level.
+    assert.equal([...native(host, 'Caja').options].find(option => option.value === '__NEW_BOX__')!.disabled, true);
+    await choose(host, 'Almacén', 'w2'); await choose(host, 'Estantería', '__NEW_RACK__');
+    await type('Código de la nueva estantería', 'est-n'); await type('Nombre de la nueva estantería', 'Nueva');
+    assert.equal(button(host, 'Guardar').disabled, true);
+    await act(() => { submit(); }); assert.equal(saved.length, 0);
+    await act(async () => button(host, 'Crear y elegir estantería').click());
+    assert.match(host.textContent!, /Sin conexión/);
+    assert.equal((host.querySelector('input[id$="input-nueva-estanteria-codigo"]') as HTMLInputElement).value, 'est-n');
+    await act(async () => { const create = button(host, 'Crear y elegir estantería'); create.click(); create.click(); }); assert.equal(rackCalls, 2);
+    assert.equal(button(host, 'Cerrar detalle').disabled, true); assert.equal(button(host, 'Cancelar').disabled, true);
+    await act(() => host.querySelector<HTMLElement>('[role="presentation"]')!.click()); assert.equal(closed, 0);
+    await act(async () => { completeRack(createdRack); await rackRequest; });
+    assert.equal(native(host, 'Estantería').value, 'r3');
+    await choose(host, 'Nivel de estantería', '__NEW_LEVEL__');
+    await type('Código del nuevo nivel', 'niv-n'); await type('Nombre del nuevo nivel', 'Superior');
+    await act(async () => button(host, 'Crear y elegir nivel').click()); assert.equal(native(host, 'Nivel de estantería').value, 'l3');
+    await choose(host, 'Caja', '__NEW_BOX__'); await type('Código de la nueva caja', 'caj-n');
+    await act(async () => button(host, 'Crear y elegir caja').click()); assert.equal(native(host, 'Caja').value, 'b3');
+    assert.equal(button(host, 'Guardar').disabled, false);
+    await act(async () => { submit(); }); assert.equal(saved.length, 1);
+    assert.deepEqual([saved[0].almacenId, saved[0].estanteriaId, saved[0].nivelId, saved[0].cajaId], ['w2', 'r3', 'l3', 'b3']);
+    assert.equal(saved[0].cantidad, undefined);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
