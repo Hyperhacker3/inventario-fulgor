@@ -1,6 +1,7 @@
 @import "./assets/fonts.css";
 @import "tailwindcss";
 @import "./theme.css";
+@import "./appearance.css";
 
 @layer base {
   :root {

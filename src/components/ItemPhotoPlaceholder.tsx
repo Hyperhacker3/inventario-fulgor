@@ -12,7 +12,7 @@ export function ItemPhotoPlaceholder({ category = 'OTROS', compact = false, clas
 }) {
   const label = category.replaceAll('_', ' ');
   return <div role="img" aria-label={`Sin fotografía · ${label}`} title={`Sin fotografía · ${label}`}
-    className={`${className} overflow-hidden flex flex-col items-center justify-center bg-linear-to-br from-[#f2f3ff] via-[#f8fafc] to-[#e8edf8] text-[#3e4e9e]`}>
+    className={`${className} ui-photo-placeholder overflow-hidden flex flex-col items-center justify-center text-[#3e4e9e]`}>
     <span aria-hidden="true" className={compact ? 'inline-flex items-center justify-center' : 'w-28 h-28 rounded-full bg-white/80 border border-white shadow-xs flex items-center justify-center mb-4'}>
       <span className={`material-symbols-outlined ${compact ? 'text-[24px]' : 'text-[64px]'}`} style={{ fontVariationSettings: "'FILL' 0, 'wght' 300" }}>{icons[category] || 'inventory_2'}</span>
     </span>

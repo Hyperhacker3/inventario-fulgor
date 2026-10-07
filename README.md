@@ -2,6 +2,16 @@
 
 Aplicación de inventario fotovoltaico con React, TypeScript, Vite y Supabase. Incluye almacenes, catálogo, entradas, salidas, remisiones, administración de datos e historial.
 
+## Estado actual y continuidad
+
+Actualizado el 7 de octubre de 2026. El usuario confirmó que la aplicación muestra correctamente el inventario después de añadir 867 elementos del Excel a los 678 anteriores: **1.545 elementos en total en el momento de la verificación**. Los conteos cambian con las altas y bajas posteriores; no deben fijarse en el código.
+
+La aplicación implementa **Liquid Glass y Neumorfismo**, independientes del modo claro/oscuro y con preferencia local. **Neumorfismo es el predeterminado**. El botón para alternarlos está al final del contenido de **Ayuda y conexión**. Tanto el cambio de estilo como el cambio claro/oscuro duran **3 segundos**, salvo cuando el dispositivo solicita movimiento reducido. La publicación de esta actualización fue solicitada el 7 de octubre; el resultado del despliegue se comprueba por separado en Vercel y en la URL pública.
+
+Consulte primero [la guía de continuidad](docs/CONTINUIDAD.md) para conocer el estado del inventario, las decisiones de diseño, la demo y los límites de trabajo. El uso, la implementación y la revisión pendiente del cambio visual están en [estilos de interfaz](docs/estilos-interfaz.md).
+
+Para cambiar el estilo, abra **Ayuda y Guía** en escritorio o **Ayuda** desde el menú móvil, desplácese al final y pulse **Cambiar a Liquid Glass** o **Cambiar a Neumorfismo**. El control claro/oscuro conserva su ubicación en la cabecera de escritorio y en el menú móvil. Cada elección se recuerda en este navegador; cambiar una no modifica la otra.
+
 ## Desarrollo local
 
 Requiere Node.js 22 o superior y pnpm. Instale con `pnpm install --frozen-lockfile`, copie `.env.example` a `.env.local`, configure el proyecto Supabase y ejecute `pnpm dev`. La aplicación consulta el inventario exclusivamente desde Supabase y requiere iniciar sesión.
@@ -11,7 +21,7 @@ Configure `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY`. La clave public
 ## Preparación de Supabase
 
 1. Cree un respaldo verificable del esquema y de los datos existentes. Ejecute `supabase/preflight_readonly.sql` para inspeccionar tablas, políticas, permisos, conteos y el código `EST001`. Ensaye primero en un proyecto de pruebas.
-2. En una base nueva, aplique `supabase_schema.sql` y después las migraciones de `supabase/migrations` en este orden: `20261001_secure_inventory.sql`, `20261002_private_item_images.sql`, `20261005_remission_transport.sql`, `20261005000100_unit_weights.sql`, `20261006000100_data_administration.sql`, `20261006000200_archived_inventory.sql`, `20261006000300_outgoing_photos.sql`, `20261006000400_item_locations.sql` y `20261006000500_inventory_values.sql`. El esquema no incluye artículos de ejemplo. En una base existente, aplique solo las migraciones pendientes después del respaldo. La migración de seguridad se detiene si detecta políticas RLS desconocidas para evitar conservar accesos inesperados.
+2. En una base nueva, aplique `supabase_schema.sql` y después las migraciones de `supabase/migrations` en este orden: `20261001_secure_inventory.sql`, `20261002_private_item_images.sql`, `20261005_remission_transport.sql`, `20261005000100_unit_weights.sql`, `20261006000100_data_administration.sql`, `20261006000200_archived_inventory.sql`, `20261006000300_outgoing_photos.sql`, `20261006000400_item_locations.sql`, `20261006000500_inventory_values.sql` y `20261006000600_storage_levels_and_brands.sql`. El esquema no incluye artículos de ejemplo. En una base existente, aplique solo las migraciones pendientes después del respaldo. La migración de seguridad se detiene si detecta políticas RLS desconocidas para evitar conservar accesos inesperados.
 3. Cree usuarios en Supabase Auth. Asigne `app_metadata.role` desde un entorno administrativo: `admin` gestiona catálogo/ubicaciones y realiza movimientos; `operador` registra entradas y salidas; `consulta` solo lee. Un usuario sin rol queda sin permisos de inventario. No use `user_metadata` para roles.
 4. Compruebe las políticas RLS y el bucket privado `item-images` con usuarios de cada rol antes de habilitar la aplicación para el equipo.
 
@@ -35,6 +45,10 @@ Para revisar la carga sin modificarla, ejecute por separado los bloques de `supa
 
 Si se necesita repetir una importación en otro proyecto, `scripts/prepare-import.py` y `scripts/audit-import.mjs` permiten reconstruir el SQL a partir de copias privadas externas. Antes de ejecutarlo, respalde la base, revise `supabase/preflight_readonly.sql` y ensaye la carga.
 
+El 6 de octubre se añadió una segunda carga de **867 filas**, conservando cada fila por separado y los **678 elementos existentes**. El usuario ejecutó el respaldo, la importación y la consulta de verificación en Supabase. El resultado fue 867 añadidos, 1.545 totales, cuatro stocks pendientes y once precios pendientes. Las cantidades por las 13 combinaciones de estantería/nivel coinciden exactamente con el Excel: 341 elementos tienen ambas ubicaciones y 526 no las tenían declaradas. Los 867 pertenecen a Almacén Turpial. El usuario confirmó después que todo se ve correcto en la aplicación.
+
+Los archivos de esta segunda importación son privados y locales: `.private_import/20261006_almacen/` está ignorado por Git; `almacén.xlsx` permanece sin versionar. No incorporar el Excel, el respaldo, el SQL generado ni productos reales a commits o al frontend. El servidor de desarrollo deniega estos archivos. La guía de continuidad recoge las decisiones y los datos pendientes sin reproducir el inventario.
+
 La carga efectuada reemplazó los 674 artículos y registros de prueba anteriores dentro de una transacción. Se aplicaron las migraciones de inventario seguro y fotos privadas. La cuenta creada en Supabase Auth tiene rol `admin`; su contraseña y las claves privadas no están en el repositorio.
 
 ## Verificación y entrega
@@ -45,7 +59,7 @@ El resultado de la refactorización, las medidas antes/después y los límites d
 
 Publique los archivos de `dist` en un servidor estático con fallback a `index.html`. Configure las variables de entorno de producción durante la compilación y confirme el acceso con usuarios de cada rol después del despliegue.
 
-Si publica en Vercel, agregue `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` en **Project Settings → Environment Variables** para el entorno **Production**. Vuelva a desplegar después de guardarlas: Vite incorpora esas variables durante la compilación. Use solo la clave publicable, nunca una clave secreta. Luego inicie sesión en la URL publicada y verifique que aparecen los 677 artículos de Supabase.
+Si publica en Vercel, agregue `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` en **Project Settings → Environment Variables** para el entorno **Production**. Vuelva a desplegar después de guardarlas: Vite incorpora esas variables durante la compilación. Use solo la clave publicable, nunca una clave secreta. Luego inicie sesión en la URL publicada y contraste los artículos con el conteo actual de Supabase; al cerrar la segunda importación se confirmaron 1.545.
 
 Valores en COP: el valor unitario se guarda en `elementos.especificaciones.valor_unitario_cop`. La migración de valores inicializa en cero los precios y documentos anteriores sin valor, conserva los valores ya declarados si se ejecuta otra vez, y captura el precio de cada partida al confirmar la salida. `inventory_project_spending()` suma todas las remisiones del proyecto, sin el límite de 100 documentos de la vista reciente. El dashboard excluye productos archivados y stock pendiente de confirmar; el porcentaje dañado usa el valor de las unidades marcadas como dañadas sobre el valor total de las existencias confirmadas.
 

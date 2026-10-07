@@ -1,0 +1,146 @@
+/* Palette and material are independent. Root tokens also reach body portals.
+   Existing neutral utilities consume these tokens; semantic status colors stay intact. */
+:root {
+  --ui-canvas: #e9edf3;
+  --ui-surface: #e9edf3;
+  --ui-field: #e9edf3;
+  --ui-subtle: #e0e6ee;
+  --ui-line: #c7d0de;
+  --ui-ink: #131b2e;
+  --ui-muted: #454f63;
+  --ui-caption: #58657c;
+  --ui-brand: #253685;
+  --ui-accent: #e0e6f7;
+  --ui-focus: #3e4e9e;
+  --ui-shadow-low: #c3ccd9;
+  --ui-shadow-high: #ffffff;
+  --ui-highlight: rgb(255 255 255 / 0);
+  --ui-glow-opacity: 0;
+  --ui-surface-radius: 18px;
+  --ui-control-radius: 12px;
+  --ui-backdrop: blur(0px) saturate(100%);
+  /* Equal shadow structure makes the material change interpolate smoothly. */
+  --ui-raised: 7px 7px 17px var(--ui-shadow-low), -7px -7px 17px var(--ui-shadow-high), inset 0 1px 0 var(--ui-highlight);
+  --ui-control-shadow: 4px 4px 9px var(--ui-shadow-low), -4px -4px 9px var(--ui-shadow-high), inset 0 1px 0 var(--ui-highlight);
+  --ui-inset-shadow: inset 3px 3px 7px var(--ui-shadow-low), inset -3px -3px 7px var(--ui-shadow-high);
+  --ui-primary-shadow: 3px 3px 8px rgb(37 54 133 / .28), inset 0 1px 0 rgb(255 255 255 / .18);
+}
+:root[data-theme='dark'] {
+  --ui-canvas: #202a3b;
+  --ui-surface: #202a3b;
+  --ui-field: #202a3b;
+  --ui-subtle: #1a2332;
+  --ui-line: #42516a;
+  --ui-ink: #e7edf7;
+  --ui-muted: #c4cfe0;
+  --ui-caption: #a4b2c8;
+  --ui-brand: #aebfff;
+  --ui-accent: #2b3b5b;
+  --ui-focus: #aebfff;
+  --ui-shadow-low: #141b28;
+  --ui-shadow-high: #2b394e;
+}
+:root[data-ui-style='glass'] {
+  --ui-canvas: #edf2fc;
+  --ui-surface: rgb(255 255 255 / .72);
+  --ui-field: rgb(255 255 255 / .48);
+  --ui-subtle: rgb(236 242 253 / .65);
+  --ui-line: #bdcbe2;
+  --ui-accent: rgb(98 126 216 / .18);
+  --ui-glow-opacity: 1;
+  --ui-surface-radius: 22px;
+  --ui-control-radius: 16px;
+  --ui-backdrop: blur(16px) saturate(150%);
+  --ui-raised: 0 8px 24px rgb(40 63 111 / .12), 0 0 0 rgb(255 255 255 / 0), inset 0 1px 0 rgb(255 255 255 / .85);
+  --ui-control-shadow: 0 3px 10px rgb(40 63 111 / .08), 0 0 0 rgb(255 255 255 / 0), inset 0 1px 0 rgb(255 255 255 / .65);
+  --ui-inset-shadow: inset 0 1px 2px rgb(23 32 57 / .09), inset 0 -1px 0 rgb(255 255 255 / .4);
+  --ui-primary-shadow: 0 5px 15px rgb(37 54 133 / .24), inset 0 1px 0 rgb(255 255 255 / .45);
+}
+:root[data-ui-style='glass'][data-theme='dark'] {
+  --ui-canvas: #101b30;
+  --ui-surface: rgb(21 34 58 / .82);
+  --ui-field: rgb(142 168 224 / .12);
+  --ui-subtle: rgb(29 46 73 / .65);
+  --ui-line: #4c6182;
+  --ui-accent: rgb(133 164 240 / .2);
+  --ui-raised: 0 8px 24px rgb(0 0 0 / .22), 0 0 0 rgb(0 0 0 / 0), inset 0 1px 0 rgb(255 255 255 / .14);
+  --ui-control-shadow: 0 3px 10px rgb(0 0 0 / .18), 0 0 0 rgb(0 0 0 / 0), inset 0 1px 0 rgb(255 255 255 / .12);
+  --ui-inset-shadow: inset 0 1px 2px rgb(0 0 0 / .2), inset 0 -1px 0 rgb(255 255 255 / .08);
+}
+
+@media screen {
+  :root[data-ui-style] body { background-color: var(--ui-canvas); color: var(--ui-ink); isolation: isolate; }
+  body::before, body::after {
+    content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    opacity: var(--ui-glow-opacity); transition: opacity var(--theme-duration) ease;
+  }
+  body::before { background-image: radial-gradient(ellipse at 15% 30%, #b5cafc 0, transparent 50%), radial-gradient(ellipse at 90% 75%, #9bcbd2 0, transparent 48%), radial-gradient(ellipse at 75% 5%, #d9c9f1 0, transparent 50%); }
+  body::after { background-image: radial-gradient(ellipse at 15% 30%, #243f77 0, transparent 50%), radial-gradient(ellipse at 90% 75%, #165667 0, transparent 48%), radial-gradient(ellipse at 75% 5%, #453563 0, transparent 50%); opacity: 0; }
+  :root[data-ui-style='glass'][data-theme='dark'] body::before { opacity: 0; }
+  :root[data-ui-style='glass'][data-theme='dark'] body::after { opacity: 1; }
+  :root[data-ui-style] :is(.app-viewport, .ui-canvas, [class~='bg-[#faf8ff]']):not(body) { background-color: transparent; }
+  :root[data-ui-style] .app-loading { background-color: var(--ui-canvas); color: var(--ui-ink); }
+
+  :root[data-ui-style] :is(.bg-white, [class~='bg-white/80'], [class~='bg-white/90'], [class~='bg-white/95'], .ui-surface, .app-select-list, .app-header, .app-sidebar, .mobile-menu-panel, .mobile-bottom-nav):not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { background-color: var(--ui-surface); border-color: var(--ui-line); }
+  :root[data-ui-style] :is(.bg-slate-50, .bg-slate-100, [class~='bg-[#f8fafc]'], [class~='bg-[#e2e8f0]'], [class~='bg-[#cbd5e1]'], .ui-inset):not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { background-color: var(--ui-subtle); }
+  :root[data-ui-style] :is([class~='bg-[#eaedff]'], .bg-blue-50):not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { background-color: var(--ui-accent); }
+
+  /* Raised neutral panels throughout the existing views, including image tiles and alerts. */
+  :root[data-ui-style] :is(.bg-white, .bg-slate-50, [class~='bg-[#f8fafc]'], [role='alert'], [role='status']):where([class*='rounded']):not(:where(button, input, textarea, .rounded-full, .app-select-trigger, .a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)),
+  :root[data-ui-style] :is(.ui-surface, .ui-dialog-panel, .app-select-list, .mobile-menu-panel) {
+    border-radius: var(--ui-surface-radius); box-shadow: var(--ui-raised);
+  }
+  :root[data-ui-style] :is(.app-header, .app-sidebar, .mobile-bottom-nav) { box-shadow: var(--ui-control-shadow); }
+  /* Blur is restricted to overlay layers and navigation; nested cards share the translucent fill. */
+  :root[data-ui-style] :is(.app-header, .app-sidebar, .mobile-bottom-nav, .mobile-menu-panel, .ui-dialog-panel, .app-select-list) { backdrop-filter: var(--ui-backdrop); -webkit-backdrop-filter: var(--ui-backdrop); }
+
+  :root[data-ui-style] :is(button[class*='rounded'], .theme-toggle, .app-select-trigger):not(:where(.a4-print-container *, .rm-measure *, .mobile-menu-backdrop)) { box-shadow: var(--ui-control-shadow); }
+  :root[data-ui-style] :is(button[class*='rounded']:not(.rounded-full), .app-select-trigger):not(:where(.a4-print-container *, .rm-measure *)) { border-radius: var(--ui-control-radius); }
+  :root[data-ui-style] .ui-photo-placeholder { background-color: var(--ui-field); box-shadow: var(--ui-inset-shadow); }
+  :root[data-ui-style] :is(button[class*='rounded']:not([class*='bg-']), .theme-toggle, #btn-notifications, #btn-header-help, #btn-mobile-menu) { background-color: var(--ui-surface); }
+  :root[data-ui-style] :is(button[class~='bg-[#3e4e9e]'], button[class~='bg-[#253685]']) { box-shadow: var(--ui-primary-shadow); }
+  :root[data-ui-style] :is(input:not([type='checkbox']):not([type='radio']):not([type='file']):not(.bg-transparent), textarea, .app-select-trigger, .ui-inset):not(:where(.a4-print-container *, .rm-measure *)) {
+    background-color: var(--ui-field); color: var(--ui-ink); border-color: var(--ui-line); box-shadow: var(--ui-inset-shadow); border-radius: var(--ui-control-radius);
+  }
+  :root[data-ui-style] :is(input, textarea)::placeholder { color: var(--ui-caption); opacity: 1; }
+  :root[data-ui-style] :is(input[type='checkbox'], input[type='radio']) { accent-color: #3e4e9e; }
+  :root[data-ui-style] :is(button, input, textarea, a):focus-visible:not(:where(.a4-print-container *, .rm-measure *)) { outline: 2px solid var(--ui-focus); outline-offset: 3px; }
+  :root[data-ui-style] :is(.app-select-trigger[aria-expanded='true'], .app-select-trigger:hover:not(:disabled), .app-select-option[data-highlighted='true'], .app-select-option[aria-selected='true']) { background-color: var(--ui-accent); color: var(--ui-brand); }
+  :root[data-ui-style] .app-select-option[aria-selected='true'] { box-shadow: var(--ui-inset-shadow); }
+  :root[data-ui-style] .app-select-trigger[aria-invalid='true'] { border-color: #ba1a1a; }
+  :root[data-ui-style][data-theme='dark'] .app-select-trigger[aria-invalid='true'] { border-color: #ffaaa5; }
+  :root[data-ui-style] .app-select-chevron { border-color: var(--ui-brand); }
+  :root[data-ui-style] :is(button[aria-pressed='true'], button[aria-current='page'], button:active:not(:disabled), .app-sidebar nav button[class~='bg-[#eaedff]']):not(:where(.a4-print-container *, .rm-measure *, .mobile-menu-backdrop)) { box-shadow: var(--ui-inset-shadow); }
+
+  :root[data-ui-style] :is([class~='text-[#131b2e]'], .text-slate-800, .text-slate-900, .app-select-trigger, .ui-surface):not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { color: var(--ui-ink); }
+  :root[data-ui-style] :is([class~='text-[#454651]'], [class~='text-[#5f6368]'], .text-slate-600, .text-slate-700, .app-select-option):not(:where(.a4-print-container *, .rm-measure *)) { color: var(--ui-muted); }
+  :root[data-ui-style] :is([class~='text-[#767682]'], [class~='text-[#64748b]'], .text-slate-500):not(:where(.a4-print-container *, .rm-measure *)) { color: var(--ui-caption); }
+  :root[data-ui-style] :is([class~='text-[#253685]'], [class~='text-[#3e4e9e]'], .text-indigo-600):not(:where(.a4-print-container *, .rm-measure *)) { color: var(--ui-brand); }
+  :root[data-ui-style] :is(.border, .border-t, .border-b, .border-r, .border-l):not(:where([class*='border-red'], [class*='border-green'], [class*='border-amber'], [class~='border-[#3e4e9e]'], [class~='border-[#253685]'], .a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { border-color: var(--ui-line); }
+  :root[data-ui-style] :is([class~='hover:bg-[#f2f3ff]'], [class~='hover:bg-[#eaedff]'], [class~='hover:bg-[#f8fafc]'], [class~='hover:bg-slate-50'], [class~='hover:bg-slate-100']):hover { background-color: var(--ui-accent); }
+  :root[data-ui-style] :is([class~='hover:text-[#253685]'], [class~='hover:text-[#3e4e9e]']):hover { color: var(--ui-brand); }
+  :root[data-ui-style] .app-select-option:is([data-highlighted='true'], [aria-selected='true']) { color: var(--ui-brand); }
+
+  /* Appearance changes last 3s. Navigation, dialogs, keyboard and presses retain 180ms. */
+  :root[data-theme-changing='true'] body,
+  :root[data-theme-changing='true'] *:not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) {
+    transition: background-color var(--theme-duration) ease, color var(--theme-duration) ease, border-color var(--theme-duration) ease,
+      box-shadow var(--theme-duration) ease, border-radius var(--theme-duration) ease, filter var(--theme-duration) ease,
+      backdrop-filter var(--theme-duration) ease, -webkit-backdrop-filter var(--theme-duration) ease,
+      fill var(--theme-duration) ease, stroke var(--theme-duration) ease,
+      transform var(--ui-motion-duration) ease, opacity var(--ui-motion-duration) ease,
+      visibility var(--ui-motion-duration), grid-template-rows var(--ui-motion-duration) ease;
+  }
+  :root[data-theme-changing='true'] .theme-toggle-icon svg { transition: transform var(--theme-duration) ease, opacity var(--theme-duration) ease; }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root[data-ui-style='glass'] { --ui-surface: #edf2fc; --ui-field: #e1e9f6; --ui-subtle: #e1e9f6; }
+  :root[data-ui-style='glass'][data-theme='dark'] { --ui-surface: #1a2944; --ui-field: #213553; --ui-subtle: #213553; }
+}
+@media (max-width: 639px) {
+  :root[data-ui-style='neumorphism'] { --ui-raised: 5px 5px 12px var(--ui-shadow-low), -5px -5px 12px var(--ui-shadow-high), inset 0 1px 0 var(--ui-highlight); }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme-changing='true'] *, body::before, body::after, .theme-toggle-icon svg { transition: none !important; }
+}

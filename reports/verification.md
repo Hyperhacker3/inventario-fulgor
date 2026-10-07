@@ -1,5 +1,15 @@
 # Verificación de la refactorización local
 
+## Liquid Glass y Neumorfismo (7 de octubre de 2026)
+
+Implementación local con Neumorfismo predeterminado, selector al final de Ayuda y preferencias independientes para estilo y paleta. Ambas transiciones duran 3 segundos, respetan movimiento reducido y conservan la navegación de 180 ms. La paleta se aplica desde la raíz para incluir ventanas y selectores portaled. El vidrio tiene alternativa opaca sin filtros; el relieve adapta las sombras al modo oscuro. Se conserva el diseño del documento imprimible y se adapta su ventana de vista previa.
+
+Validación: typecheck y lint correctos, 109 pruebas unitarias y 25 de integración correctas, build correcto. Se comprobaron las cuatro combinaciones en el arranque HTML, preferencias persistentes y sincronizadas, recuperación ante almacenamiento bloqueado o inválido, independencia claro/oscuro, conservación de campos y selector abierto, y permanencia de la transición durante casi 3 segundos. Se revisaron los selectores CSS que excluyen A4/medición/impresión y preservan formas circulares. Las pruebas utilizan DOM y PostgreSQL embebido; no se hizo revisión visual en navegador ni medición en dispositivos físicos.
+
+El runtime disponible es Node 24.19.0 / pnpm 11.19.0; el proyecto solicita Node 22.x. No se modificó el Supabase real ni se ejecutó SQL de producción. La verificación local precedió a la solicitud posterior del usuario de crear el commit, subirlo y publicar la actualización; el resultado del despliegue se comprueba por separado. README, continuidad y guía de estilos recogen el estado actual. Las secciones siguientes conservan los resultados históricos.
+
+Nota de estado, 7 de octubre de 2026: este archivo conserva las verificaciones históricas de cada actualización. Para el estado actual y el trabajo pendiente lea `docs/CONTINUIDAD.md`. Los conteos originales de 677 productos ya no corresponden al total después de la segunda importación.
+
 Fecha: 2 de octubre de 2026. Alcance: código, PostgreSQL embebido y verificación del proyecto Supabase mediante el Editor SQL y el inicio de sesión del usuario.
 
 ## Resultado comprobado

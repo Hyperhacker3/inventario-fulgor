@@ -20,24 +20,29 @@ Dos solicitudes de alta se serializan en la base de datos para evitar códigos r
 
 En **Categorías**, escriba una clave (letras, números o guion bajo, como `FERRETERIA`) y un nombre visible. El nombre y la disponibilidad se pueden editar. La clave permanece estable para conservar la relación con los productos. Desactivar una categoría impide nuevas altas con ella y conserva sus productos en el inventario y los filtros.
 
-## Estanterías, cajas y proyectos
+## Estanterías, niveles, cajas y proyectos
+
+La jerarquía actual es **almacén → estantería → nivel → caja**. Para activar los niveles y las marcas, aplique `supabase/migrations/20261006000600_storage_levels_and_brands.sql` después de las migraciones anteriores; consulte el orden completo en README.md. No vuelva a ejecutar importaciones para activar estas funciones.
 
 - En **Estanterías**, seleccione un almacén y pulse **Crear estantería**.
-- En **Cajas**, seleccione una estantería y pulse **Crear caja**.
-- En ambas pestañas puede editar los datos de las ubicaciones existentes.
+- En **Niveles**, seleccione una estantería y pulse **Crear nivel**.
+- En **Cajas**, seleccione un nivel de estantería y pulse **Crear caja**.
+- En estas secciones puede editar los datos de las ubicaciones existentes y consultar su valor total y dañado. Las cajas antiguas sin nivel se conservan hasta asignarlo al editar.
 - En **Proyectos** puede crear, editar, finalizar y reactivar los destinos de las salidas. Los proyectos actuales se conservan; la administración se ha integrado en esta pantalla.
 
 Solo las cuentas con rol `admin` pueden modificar estos datos. Operadores y cuentas de consulta pueden leerlos.
 
 ## Registrar varios productos y crear cajas desde el alta
 
-En **Nuevo ítem**, el selector **Caja** muestra primero **Seleccione una caja**, debajo **Crear nueva caja** y después las cajas existentes. Escriba su código y pulse **Crear y elegir caja**. Se guarda en Supabase dentro de la estantería seleccionada y queda elegida para el componente. Es necesario seleccionar primero una estantería. La caja creada también queda disponible en Administración de datos.
+En **Nuevo ítem**, el selector **Caja** muestra primero **Seleccione una caja**, debajo **Crear nueva caja** y después las cajas existentes. Escriba su código y pulse **Crear y elegir caja**. Se guarda en Supabase dentro del nivel seleccionado y queda elegida para el componente. Es necesario seleccionar antes almacén, estantería y nivel. La caja creada también queda disponible en Administración de datos.
 
 El selector **Categoría** muestra primero **Seleccione una categoría**, debajo **Crear nueva categoría** y después las categorías existentes. Escriba el nombre y pulse **Crear y elegir categoría**. Se guarda en Supabase y queda seleccionada para el componente; su clave se genera automáticamente. Puede seguir eligiendo categorías existentes. Las categorías inactivas requieren reactivarse en Administración de datos.
 
-El selector **Estantería** sigue el mismo orden: **Seleccione una estantería**, **Crear nueva estantería** y las existentes del almacén elegido. Para crearla, escriba su código y nombre y pulse **Crear y elegir estantería**. Se guarda en Supabase en el almacén seleccionado y queda lista para asignarle una caja. Al cambiar de estantería se limpia la selección de caja.
+El selector **Estantería** sigue el mismo orden: **Seleccione una estantería**, **Crear nueva estantería** y las existentes del almacén elegido. Para crearla, escriba su código y nombre y pulse **Crear y elegir estantería**. Se guarda en Supabase en el almacén seleccionado y queda lista para asignarle niveles. El selector **Nivel** permite elegir uno de esa estantería o crearlo desde el alta. Cambiar de estantería invalida las selecciones de nivel y caja del padre anterior; cambiar de nivel invalida la caja anterior.
 
-Después de guardar un componente, el formulario permanece abierto. Conserva el prefijo, categoría, almacén y estantería. Reinicia nombre, descripción, caja, stock, unidad, peso, mínimo, estado, daños y fotografías. El código del siguiente componente sigue asignándose automáticamente al guardar.
+El prefijo también permite **Agregar nuevo código** desde el alta, limitado a tres letras; Supabase asigna los números definitivos al guardar el elemento. En la edición del elemento, almacén, estantería, nivel y caja se eligen de los catálogos existentes, sin creación en ese formulario.
+
+Después de guardar un componente, el formulario permanece abierto. Conserva el prefijo, categoría, almacén y estantería. Reinicia nombre, marca, descripción, nivel, caja, stock, unidad, peso, valor unitario, mínimo, estado, daños y fotografías. El código del siguiente componente sigue asignándose automáticamente al guardar.
 
 Crear categorías, cajas y estanterías desde el alta utiliza las tablas existentes y no requiere ejecutar otro SQL.
 

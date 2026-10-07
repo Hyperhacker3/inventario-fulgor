@@ -1,19 +1,20 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { applyTheme, parseTheme, readThemePreference, systemTheme, THEME_STORAGE_KEY, type Theme } from '../shared/theme';
+import { APPEARANCE_TRANSITION_MS, applyTheme, applyUIStyle, DEFAULT_UI_STYLE, parseTheme, parseUIStyle, readThemePreference, readUIStylePreference, systemTheme, THEME_STORAGE_KEY, UI_STYLE_STORAGE_KEY, type Theme, type UIStyle } from '../shared/theme';
 
-const ThemeContext = createContext<{ theme: Theme; toggleTheme: () => void } | null>(null);
+const ThemeContext = createContext<{ theme: Theme; toggleTheme: () => void; uiStyle: UIStyle; toggleUIStyle: () => void } | null>(null);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreference] = useState<Theme | null>(readThemePreference);
   const [system, setSystem] = useState<Theme>(systemTheme);
+  const [uiStyle, setUIStyle] = useState<UIStyle>(readUIStylePreference);
   const theme = preference || system;
-  const previous = useRef(theme);
+  const previous = useRef({ theme, uiStyle });
   useLayoutEffect(() => {
-    const changed = previous.current !== theme;
+    const changed = previous.current.theme !== theme || previous.current.uiStyle !== uiStyle;
     if (changed && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) document.documentElement.dataset.themeChanging = 'true';
-    applyTheme(theme); previous.current = theme;
-    const timer = changed ? window.setTimeout(() => { delete document.documentElement.dataset.themeChanging; }, 360) : undefined;
+    applyUIStyle(uiStyle); applyTheme(theme); previous.current = { theme, uiStyle };
+    const timer = changed ? window.setTimeout(() => { delete document.documentElement.dataset.themeChanging; }, APPEARANCE_TRANSITION_MS + 50) : undefined;
     return () => { window.clearTimeout(timer); delete document.documentElement.dataset.themeChanging; };
-  }, [theme]);
+  }, [theme, uiStyle]);
   useEffect(() => {
     const media = window.matchMedia?.('(prefers-color-scheme: dark)');
     const change = () => setSystem(media?.matches ? 'dark' : 'light');
@@ -21,6 +22,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const storage = (event: StorageEvent) => {
       if (event.storageArea && event.storageArea !== window.localStorage) return;
       if (event.key === THEME_STORAGE_KEY || event.key === null) { setPreference(parseTheme(event.newValue)); change(); }
+      if (event.key === UI_STYLE_STORAGE_KEY || event.key === null) setUIStyle(parseUIStyle(event.newValue) || DEFAULT_UI_STYLE);
     };
     window.addEventListener('storage', storage);
     return () => { media?.removeEventListener('change', change); window.removeEventListener('storage', storage); };
@@ -30,7 +32,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     try { window.localStorage.setItem(THEME_STORAGE_KEY, next); } catch { /* Keep the choice for this session if storage is unavailable. */ }
     setPreference(next);
   }, [theme]);
-  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
+  const toggleUIStyle = useCallback(() => {
+    const next = uiStyle === 'neumorphism' ? 'glass' : 'neumorphism';
+    try { window.localStorage.setItem(UI_STYLE_STORAGE_KEY, next); } catch { /* Keep the choice for this session if storage is unavailable. */ }
+    setUIStyle(next);
+  }, [uiStyle]);
+  return <ThemeContext.Provider value={{ theme, toggleTheme, uiStyle, toggleUIStyle }}>{children}</ThemeContext.Provider>;
 }
 export function useTheme() {
   const context = useContext(ThemeContext);

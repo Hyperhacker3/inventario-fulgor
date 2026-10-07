@@ -3,15 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#faf8ff" />
+    <meta name="theme-color" content="#e9edf3" />
     <script>
       (function () {
-        var preference = null;
+        var preference = null, stylePreference = null;
         try { preference = localStorage.getItem('el_turpial_theme'); } catch (_) {}
+        try { stylePreference = localStorage.getItem('el_turpial_ui_style'); } catch (_) {}
         var theme = preference === 'light' || preference === 'dark' ? preference : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        var uiStyle = stylePreference === 'glass' ? 'glass' : 'neumorphism';
         document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.uiStyle = uiStyle;
         document.documentElement.style.colorScheme = theme;
-        document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#101522' : '#faf8ff';
+        document.querySelector('meta[name="theme-color"]').content = uiStyle === 'glass' ? (theme === 'dark' ? '#101b30' : '#edf2fc') : (theme === 'dark' ? '#202a3b' : '#e9edf3');
       })();
     </script>
     <link rel="icon" type="image/png" sizes="256x256" href="/logo-favicon.png" />
@@ -22,8 +25,8 @@
     <link rel="preload" as="font" type="font/woff2" href="/fonts/material-symbols.woff2" crossorigin />
     <link rel="preload" as="image" href="/logo-completo.png" />
     <style>
-      body { margin: 0; background: #faf8ff; }
-      .app-loading { box-sizing: border-box; min-height: 100vh; min-height: 100dvh; width: 100%; display: grid; place-items: center; padding: 24px; background: #faf8ff; color: #131b2e; font: 16px/1.5 Arial, sans-serif; text-align: center; }
+      body { margin: 0; background: #e9edf3; }
+      .app-loading { box-sizing: border-box; min-height: 100vh; min-height: 100dvh; width: 100%; display: grid; place-items: center; padding: 24px; background: #e9edf3; color: #131b2e; font: 16px/1.5 Arial, sans-serif; text-align: center; }
       .app-loading-content { width: 100%; max-width: 380px; }
       .app-loading h1 { margin: 0 0 16px; color: #253685; font-size: 24px; font-weight: 700; }
       .app-loading p { margin: 16px 0; color: #64748b; }
@@ -32,7 +35,9 @@
       .app-loading button:disabled { opacity: .5; cursor: wait; }
       .app-loading button.app-secondary { display: block; margin: 12px auto 0; background: transparent; color: #253685; text-decoration: underline; }
       .app-spinner[hidden], .app-loading [hidden] { display: none; }
-      html[data-theme='dark'] body, html[data-theme='dark'] .app-loading { background: #101522; color: #e7edf7; }
+      html[data-theme='dark'] body, html[data-theme='dark'] .app-loading { background: #202a3b; color: #e7edf7; }
+      html[data-ui-style='glass'] body, html[data-ui-style='glass'] .app-loading { background: #edf2fc; }
+      html[data-ui-style='glass'][data-theme='dark'] body, html[data-ui-style='glass'][data-theme='dark'] .app-loading { background: #101b30; }
       html[data-theme='dark'] .app-loading p { color: #a4b2c8; }
       html[data-theme='dark'] .app-loading h1, html[data-theme='dark'] .app-loading button.app-secondary { color: #aebfff; }
       html[data-theme='dark'] .app-spinner { border-color: #303b53; border-top-color: #aebfff; }

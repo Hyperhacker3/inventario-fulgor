@@ -60,18 +60,18 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
   return createPortal(
     <div data-motion-open={active} inert={!active} aria-hidden={!active || undefined} className="print-layer fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-1 sm:p-4 overflow-hidden">
       {/* Container Dialog */}
-      <div ref={dialog} role="dialog" aria-modal="true" aria-label="Vista de remisión" className="ui-panel-enter bg-[#1e293b] text-white rounded-2xl max-w-5xl w-full flex flex-col h-[98dvh] shadow-2xl border border-slate-700 overflow-hidden">
+      <div ref={dialog} role="dialog" aria-modal="true" aria-label="Vista de remisión" className="ui-dialog-panel ui-surface ui-panel-enter bg-white rounded-2xl max-w-5xl w-full flex flex-col h-[98dvh] shadow-2xl border overflow-hidden">
         {/* Top Control Bar (Hidden when printing) */}
-        <div className="no-print bg-slate-900 px-3 sm:px-6 py-3 border-b border-slate-700 flex flex-wrap items-center justify-between gap-2 sm:gap-4 shrink-0">
+        <div className="no-print bg-[#f8fafc] px-3 sm:px-6 py-3 border-b flex flex-wrap items-center justify-between gap-2 sm:gap-4 shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#3e4e9e] text-white flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[20px] sm:text-[24px]">picture_as_pdf</span>
             </div>
             <div className="min-w-0">
-              <h3 className="font-bold text-xs sm:text-base text-white leading-tight truncate">
+              <h3 className="font-bold text-xs sm:text-base text-[#131b2e] leading-tight truncate">
                 Vista de Remisión Oficial EL TURPIAL
               </h3>
-              <p className="text-[11px] sm:text-xs font-mono-code text-[#93c5fd] font-bold truncate">
+              <p className="text-[11px] sm:text-xs font-mono-code text-[#253685] font-bold truncate">
                 {remision.numeroRemision} • {remision.proyectoNombre}
               </p>
             </div>
@@ -80,12 +80,12 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
           {/* Scale & Action Controls */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             {/* Zoom / Scale Selector */}
-            <div className="flex items-center bg-slate-800 rounded-lg p-0.5 border border-slate-700 text-xs">
+            <div className="ui-inset flex items-center rounded-lg p-0.5 border text-xs">
               <button
                 type="button"
                 onClick={() => setScaleMode('fit')}
                 className={`px-2 py-1 rounded font-medium transition-colors ${
-                  scaleMode === 'fit' ? 'bg-[#3e4e9e] text-white font-bold' : 'text-slate-300 hover:text-white'
+                  scaleMode === 'fit' ? 'bg-[#3e4e9e] text-white font-bold' : 'text-slate-600 hover:text-[#253685]'
                 }`}
                 title="Ajustar automáticamente al ancho de la pantalla"
               >
@@ -95,7 +95,7 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
                 type="button"
                 onClick={() => setScaleMode('100')}
                 className={`px-2 py-1 rounded font-medium transition-colors ${
-                  scaleMode === '100' ? 'bg-[#3e4e9e] text-white font-bold' : 'text-slate-300 hover:text-white'
+                  scaleMode === '100' ? 'bg-[#3e4e9e] text-white font-bold' : 'text-slate-600 hover:text-[#253685]'
                 }`}
                 title="Ver a escala real 100%"
               >
@@ -105,7 +105,7 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
                 type="button"
                 onClick={() => setScaleMode('75')}
                 className={`hidden sm:inline-block px-2 py-1 rounded font-medium transition-colors ${
-                  scaleMode === '75' ? 'bg-[#3e4e9e] text-white font-bold' : 'text-slate-300 hover:text-white'
+                  scaleMode === '75' ? 'bg-[#3e4e9e] text-white font-bold' : 'text-slate-600 hover:text-[#253685]'
                 }`}
               >
                 75%
@@ -127,7 +127,7 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
             <button
               data-dialog-close onClick={onClose}
               id="btn-close-pdf-modal"
-              className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-colors"
+              className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-white hover:bg-slate-100 border text-slate-700 rounded-lg text-xs font-bold transition-colors"
             >
               Cerrar
             </button>
@@ -135,12 +135,12 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
         </div>
 
         {/* Mobile Format Hint */}
-        <div className="no-print bg-slate-950/80 px-3 py-1.5 border-b border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+        <div className="no-print bg-[#f8fafc] px-3 py-1.5 border-b text-[11px] text-slate-500 flex items-center justify-between">
           <span className="flex items-center gap-1.5 truncate">
             <span className="material-symbols-outlined text-[14px] text-emerald-400">verified</span>
             <span>Formato A4 Estándar EL TURPIAL (Preserva Proporciones de Impresión)</span>
           </span>
-          <span className="text-[10px] font-mono-code text-slate-400 shrink-0 ml-2">
+          <span className="text-[10px] font-mono-code text-slate-500 shrink-0 ml-2">
             Escala: {Math.round(computedScale * 100)}%
           </span>
         </div>
@@ -148,7 +148,7 @@ export const PdfRemissionModal: React.FC<PdfRemissionModalProps> = ({ remision, 
         {/* Scrollable Printable A4 Area */}
         <div
           ref={containerRef}
-          className="print-preview-scroll flex-1 overflow-auto p-2 sm:p-6 flex justify-center items-start bg-[#475569]/30"
+          className="print-preview-scroll flex-1 overflow-auto p-2 sm:p-6 flex justify-center items-start bg-[#f8fafc]"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {/* Scaled Wrapper: keeps the A4 sheet rigidly at 794px width without wrapping or breaking */}
