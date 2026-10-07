@@ -3,34 +3,38 @@ import type { Elemento, HistorialMovimiento } from '../../types';
 import { NumberInput } from '../NumberInput';
 import { roundQuantity, validQuantity } from '../../domain/quantity';
 import { errorMessage } from '../../shared/errors';
+import { useFormScroll } from '../../hooks/useFormScroll';
 
 export interface EntryInput { elementoId: string; tipo: 'ENTRADA'; cantidad: number; motivo: string; responsable: string; requestId: string }
 interface Props { item: Elemento; responsible: string; onSave: (input: EntryInput) => Promise<HistorialMovimiento>; onBusyChange: (busy: boolean) => void }
 export function EntryForm({ item, responsible, onSave, onBusyChange }: Props) {
+  const { ref: formRef, onInvalidCapture, revealError, scrollToStart } = useFormScroll<HTMLFormElement>();
   const [quantity, setQuantity] = useState(0);
   const [reason, setReason] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+  const reportError = (message: string) => { setError(message); if (message) revealError(); };
   const [receipt, setReceipt] = useState<HistorialMovimiento | null>(null);
   const saving = useRef(false);
   const request = useRef<{ signature: string; id: string } | null>(null);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (saving.current) return;
-    setError('');
-    if (item.archived || item.stockPendiente) { setError('Seleccione un material activo con stock verificado.'); return; }
-    if (!validQuantity(quantity) || quantity <= 0) { setError('Indique una cantidad positiva, con hasta tres decimales.'); return; }
-    if (!reason.trim()) { setError('Indique el motivo de la entrada.'); return; }
+    reportError('');
+    if (item.archived || item.stockPendiente) { reportError('Seleccione un material activo con stock verificado.'); return; }
+    if (!validQuantity(quantity) || quantity <= 0) { reportError('Indique una cantidad positiva, con hasta tres decimales.'); return; }
+    if (!reason.trim()) { reportError('Indique el motivo de la entrada.'); return; }
     const signature = JSON.stringify([item.id, quantity, reason.trim()]);
     if (request.current?.signature !== signature) request.current = { signature, id: crypto.randomUUID() };
     saving.current = true; setPending(true); onBusyChange(true);
     try {
       const saved = await onSave({ elementoId: item.id, tipo: 'ENTRADA', cantidad: quantity, motivo: reason.trim(), responsable: responsible, requestId: request.current.id });
       setReceipt(saved); setQuantity(0); setReason(''); request.current = null;
-    } catch (cause) { setError(errorMessage(cause)); }
+      scrollToStart();
+    } catch (cause) { reportError(errorMessage(cause)); }
     finally { saving.current = false; setPending(false); onBusyChange(false); }
   };
-  return <form autoComplete="off" onSubmit={submit} className="space-y-5">
+  return <form ref={formRef} onInvalidCapture={onInvalidCapture} autoComplete="off" onSubmit={submit} className="space-y-5">
     {error && <p role="alert" className="rounded-xl bg-red-50 text-red-800 p-3 text-sm">{error}</p>}
     {receipt && <p role="status" className="rounded-xl bg-green-50 text-green-900 border border-green-200 p-3 text-sm">Entrada registrada: +{receipt.cantidad} {receipt.unidad} de {receipt.itemCode}. Stock tras este movimiento: {receipt.stockNuevo} {receipt.unidad}.</p>}
     <fieldset disabled={pending || item.stockPendiente || item.archived} className="space-y-5 disabled:opacity-60">

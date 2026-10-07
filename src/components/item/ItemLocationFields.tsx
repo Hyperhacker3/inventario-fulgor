@@ -12,9 +12,14 @@ interface Props {
   onRackBusyChange?: (busy: boolean) => void; onRackDraftChange?: (unfinished: boolean) => void;
   onLevelBusyChange?: (busy: boolean) => void; onLevelDraftChange?: (unfinished: boolean) => void;
 }
-export function ItemLocationFields({ warehouseId, rackId, levelId, boxId, onWarehouse, onRack, onLevel, onBox, onBoxBusyChange, onBoxDraftChange,
-  rackDraftPending = false, levelDraftPending = false, onRackBusyChange, onRackDraftChange, onLevelBusyChange, onLevelDraftChange }: Props) {
-  const { almacenes, estanterias, niveles, cajas, addCaja, addEstanteria, addNivel } = useInventory();
+type LocationInventory = Pick<ReturnType<typeof useInventory>, 'almacenes' | 'estanterias' | 'niveles' | 'cajas' | 'addCaja' | 'addEstanteria' | 'addNivel'>;
+export function ItemLocationFields(props: Props) {
+  const inventory = useInventory();
+  return <ItemLocationFieldsContent {...props} inventory={inventory} />;
+}
+export function ItemLocationFieldsContent({ warehouseId, rackId, levelId, boxId, onWarehouse, onRack, onLevel, onBox, onBoxBusyChange, onBoxDraftChange,
+  rackDraftPending = false, levelDraftPending = false, onRackBusyChange, onRackDraftChange, onLevelBusyChange, onLevelDraftChange, inventory }: Props & { inventory: LocationInventory }) {
+  const { almacenes, estanterias, niveles, cajas, addCaja, addEstanteria, addNivel } = inventory;
   const racks = estanterias.filter(rack => rack.almacenId === warehouseId);
   const levels = niveles.filter(level => level.estanteriaId === rackId);
   const boxes = cajas.filter(box => box.estanteriaId === rackId && box.nivelId === levelId);
@@ -29,11 +34,11 @@ export function ItemLocationFields({ warehouseId, rackId, levelId, boxId, onWare
           {almacenes.map(warehouse => <option key={warehouse.id} value={warehouse.id}>{warehouse.nombre} ({warehouse.codigo})</option>)}
         </Select>
       </label>
-      <ItemRackSelector key={warehouseId} warehouseId={warehouseId} rackId={rackId} racks={racks}
+      <ItemRackSelector key={`rack:${warehouseId}`} warehouseId={warehouseId} rackId={rackId} racks={racks}
         onRack={id => { onRack(id); onLevel(''); onBox(''); }} onCreate={addEstanteria} onBusyChange={onRackBusyChange} onDraftChange={onRackDraftChange} />
-      <ItemLevelSelector key={readyRack} rackId={readyRack} levelId={readyLevel} levels={levels}
+      <ItemLevelSelector key={`level:${readyRack}`} rackId={readyRack} levelId={readyLevel} levels={levels}
         onLevel={id => { onLevel(id); onBox(''); }} onCreate={addNivel} onBusyChange={onLevelBusyChange} onDraftChange={onLevelDraftChange} />
-      <ItemBoxSelector key={readyLevel} rackId={readyRack} levelId={readyLevel} boxId={readyLevel ? boxId : ''} boxes={readyLevel ? boxes : []}
+      <ItemBoxSelector key={`box:${readyLevel}`} rackId={readyRack} levelId={readyLevel} boxId={readyLevel ? boxId : ''} boxes={readyLevel ? boxes : []}
         onBox={onBox} onCreate={addCaja} onBusyChange={onBoxBusyChange} onDraftChange={onBoxDraftChange} />
     </div>
   </section>;

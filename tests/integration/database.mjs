@@ -17,11 +17,12 @@ const valueMigration = fs.readFileSync(new URL('../../supabase/migrations/202610
 const levelsMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000600_storage_levels_and_brands.sql', import.meta.url), 'utf8');
 const companyMigration = fs.readFileSync(new URL('../../supabase/migrations/20261007000100_company_profile.sql', import.meta.url), 'utf8');
 const routeMigration = fs.readFileSync(new URL('../../supabase/migrations/20261007000200_remission_route.sql', import.meta.url), 'utf8');
+const uppercaseMigration = fs.readFileSync(new URL('../../supabase/migrations/20261007000300_uppercase_registration.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 const warehouseProfile = fs.readFileSync(new URL('../../supabase/configure_warehouse_profile.sql', import.meta.url), 'utf8');
 
-async function database({ company = true, route = false } = {}) {
+async function database({ company = true, route = false, uppercase = false } = {}) {
   const db = new PGlite();
   await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE SCHEMA auth;
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '00000000-0000-0000-0000-000000000001'::uuid $$;
@@ -48,7 +49,8 @@ async function database({ company = true, route = false } = {}) {
   await db.exec(valueMigration);
   await db.exec(levelsMigration);
   if (company) await db.exec(companyMigration);
-  if (route) await db.exec(routeMigration);
+  if (route || uppercase) await db.exec(routeMigration);
+  if (uppercase) await db.exec(uppercaseMigration);
   return db;
 }
 
@@ -59,6 +61,55 @@ const itemStock = async db => Number((await db.query("SELECT cantidad FROM publi
 const routeSql = 'SELECT public.dispatch_inventory_with_route($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb,$11,$12) AS rem';
 const routeArgs = (request, origin = 'Honda', destination = 'Bogotá') => [request,'PROY-001','Entrega','Operador','Recibe','Residente','',
   JSON.stringify([{ elementoId:'ELM-001',cantidad:1 }]),'{}','[]',origin,destination];
+
+test('uppercase registration preserves previous records and stock while new outputs snapshot uppercase names, locations and signed-in users', async () => {
+  const db=await database({route:true});
+  try {
+    await db.exec(`UPDATE public.elementos SET nombre='Módulo solar',especificaciones=especificaciones||'{"marca":"Fabricante"}'::jsonb WHERE id='ELM-001';
+      UPDATE public.proyectos SET nombre='Proyecto solar',cliente='Cliente de prueba',ubicacion='Bogotá, dirección 1' WHERE id='PROY-001';`);
+    await role(db,'operador');
+    const oldArgs=routeArgs('91000000-0000-0000-0000-000000000001');
+    const old=(await db.query(routeSql,oldArgs)).rows[0].rem;
+    const stock=await itemStock(db);
+    await asOwner(db);await db.exec(uppercaseMigration);await db.exec(uppercaseMigration);
+    assert.equal(await itemStock(db),stock);
+    const previous=(await db.query('SELECT to_jsonb(rem) AS rem FROM public.remisiones AS rem WHERE id=$1',[old.id])).rows[0].rem;
+    assert.equal(previous.proyecto_nombre,old.proyecto_nombre);assert.deepEqual(previous.items,old.items);assert.equal(previous.lugar_destino,'Bogotá');
+    // Updating stock or unrelated metadata must not silently rename the old catalog.
+    await db.exec("UPDATE public.elementos SET cantidad=cantidad,especificaciones=especificaciones||'{\"otra\":\"sin cambios\"}'::jsonb WHERE id='ELM-001'");
+    assert.equal((await db.query("SELECT nombre,especificaciones->>'marca' AS marca FROM public.elementos WHERE id='ELM-001'")).rows[0].marca,'Fabricante');
+    await role(db,'operador');assert.deepEqual((await db.query(routeSql,oldArgs)).rows[0].rem,previous);
+    const args=routeArgs('91000000-0000-0000-0000-000000000002');args[8]='{"transportador":"José Pérez","placaVehiculo":"abc123","fechaDespacho":"2026-10-07","telefonoRecibe":"12345"}';
+    const rem=(await db.query(routeSql,args)).rows[0].rem;
+    assert.equal(rem.proyecto_nombre,'PROYECTO SOLAR');assert.equal(rem.cliente,'CLIENTE DE PRUEBA');assert.equal(rem.ubicacion,'BOGOTÁ, DIRECCIÓN 1');
+    assert.equal(rem.lugar_remision,'HONDA');assert.equal(rem.lugar_destino,'BOGOTÁ');assert.equal(rem.entregado_por,'ENTREGA');assert.equal(rem.recibido_por,'RECIBE');
+    assert.equal(rem.cargo_entregado,'OPERADOR');assert.equal(rem.cargo_recibido,'RESIDENTE');assert.equal(rem.items[0].nombre,'MÓDULO SOLAR');assert.equal(rem.items[0].marca,'FABRICANTE');
+    assert.equal(rem.datos_transporte.transportador,'JOSÉ PÉREZ');assert.equal(rem.datos_transporte.placaVehiculo,'ABC123');assert.equal(rem.datos_transporte.fechaDespacho,'2026-10-07');assert.equal(rem.datos_transporte.telefonoRecibe,'12345');
+    const history=(await db.query('SELECT elemento_nombre,proyecto_nombre,responsable FROM public.historial WHERE remision_id=$1',[rem.id])).rows[0];
+    assert.deepEqual(history,{elemento_nombre:'MÓDULO SOLAR',proyecto_nombre:'PROYECTO SOLAR',responsable:'OPERADOR DE PRUEBA'});
+    assert.deepEqual((await db.query(routeSql,args)).rows[0].rem,rem);assert.equal(await itemStock(db),stock-1);
+    await asOwner(db);await db.exec(uppercaseMigration);
+    assert.deepEqual((await db.query('SELECT to_jsonb(rem) AS rem FROM public.remisiones AS rem WHERE id=$1',[rem.id])).rows[0].rem,rem);
+    await assert.rejects(()=>db.query('UPDATE public.remisiones SET uppercase_names=false WHERE id=$1',[rem.id]),/política de nombres/);
+  } finally {await db.close();}
+});
+
+test('new and edited product names/brands are persisted uppercase without weakening permissions, quantities or other metadata', async () => {
+  const db=await database({uppercase:true});
+  try {
+    await role(db,'admin');
+    await db.exec(`UPDATE public.elementos SET nombre='  Tornillo de fijación  ',especificaciones=especificaciones||'{"marca":"  Acmé  ","nota":"Texto conservado"}'::jsonb WHERE id='ELM-001'`);
+    const item=(await db.query("SELECT * FROM public.elementos WHERE id='ELM-001'")).rows[0];
+    assert.equal(item.nombre,'TORNILLO DE FIJACIÓN');assert.equal(item.especificaciones.marca,'ACMÉ');assert.equal(item.especificaciones.nota,'Texto conservado');assert.equal(Number(item.cantidad),184);
+    const input={codigo:'NEW001',nombre:'Nombre nuevo',categoria:'OTROS',cantidad:0,stock_minimo:0,unidad:'UND',especificaciones:{marca:'Marca nueva'}};
+    const created=(await db.query('SELECT public.create_inventory_item($1::jsonb) AS item',[JSON.stringify(input)])).rows[0].item;
+    assert.equal(created.nombre,'NOMBRE NUEVO');assert.equal(created.especificaciones.marca,'MARCA NUEVA');
+    await asOwner(db);await role(db,'operador');assert.equal((await db.query("UPDATE public.elementos SET nombre='no autorizado' WHERE id='ELM-001' RETURNING id")).rows.length,0);
+    assert.equal((await db.query("SELECT nombre FROM public.elementos WHERE id='ELM-001'")).rows[0].nombre,'TORNILLO DE FIJACIÓN');
+    await asOwner(db);await role(db,'consulta');await assert.rejects(()=>db.query(routeSql,routeArgs('91000000-0000-0000-0000-000000000003')),/No autorizado/);
+    await asOwner(db);await db.exec('SET ROLE anon');await assert.rejects(()=>db.exec('SELECT public.uppercase_inventory_names()'),/permission/);
+  } finally {await db.close();}
+});
 
 test('new route preserves old remissions and annual counters, stores places/code/date and retries the exact transaction without deducting twice', async () => {
   const db = await database();

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { JSDOM } from 'jsdom';
-import { act, createElement as h } from 'react';
+import { act, createElement as h, useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { mapAlmacen, mapEstanteria, mapNivel, mapCaja, mapElemento, mapRemision } from '../../src/data/mappers';
 import { byId, locationLabel, validateItem } from '../../src/domain/inventory';
@@ -11,6 +11,7 @@ import { WarehouseTreeContent } from '../../src/components/warehouses/WarehouseT
 import { StockAlerts } from '../../src/components/StockAlerts';
 import { ItemLevelSelector } from '../../src/components/item/ItemLevelSelector';
 import { ItemDetailContent } from '../../src/components/ItemDetailModal';
+import { ItemLocationFieldsContent } from '../../src/components/item/ItemLocationFields';
 
 const warehouses=[mapAlmacen({id:'W1',nombre:'Norte'})];
 const racks=[mapEstanteria({id:'R1',nombre:'Estante',almacen_id:'W1'}),mapEstanteria({id:'R2',nombre:'Otro',almacen_id:'W1'})];
@@ -55,6 +56,33 @@ async function choose(host:HTMLElement,value:string){
 }
 const setter=Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
 const type=(input:HTMLInputElement,value:string)=>{setter.call(input,value);input.dispatchEvent(new dom.window.Event('input',{bubbles:true}));};
+
+test('location hierarchy never duplicates level/box controls when empty parents change, and clears dependent drafts', async () => {
+  function Location() {
+    const [warehouseId,onWarehouse]=useState('W1'),[rackId,onRack]=useState(''),[levelId,onLevel]=useState(''),[boxId,onBox]=useState('');
+    return h(ItemLocationFieldsContent,{warehouseId,rackId,levelId,boxId,onWarehouse,onRack,onLevel,onBox,
+      inventory:{almacenes:warehouses,estanterias:racks,niveles:levels,cajas:boxes,
+        addCaja:async()=>{throw new Error('Unexpected create');},addNivel:async()=>{throw new Error('Unexpected create');},addEstanteria:async()=>{throw new Error('Unexpected create');}}});
+  }
+  const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);
+  const errors:string[]=[];const previousError=console.error;console.error=(...values)=>{errors.push(values.join(' '));};
+  const change=async(id:string,value:string)=>act(()=>{const select=host.querySelector<HTMLSelectElement>(`#${id}-value`)!;select.value=value;select.dispatchEvent(new dom.window.Event('change',{bubbles:true}));});
+  const single=()=>{for(const id of ['select-almacen-form','select-estanteria-form','select-nivel-form','select-caja-form'])assert.equal(host.querySelectorAll(`#${id}`).length,1,id);};
+  try {
+    await act(()=>root.render(h(Location)));single();
+    for(const rack of ['R1','R2','','R1']) {
+      await change('select-estanteria-form',rack);single();
+      const level=host.querySelector<HTMLSelectElement>('#select-nivel-form-value')!;
+      assert.equal(level.value,'');assert.equal(host.querySelector<HTMLButtonElement>('#select-nivel-form')!.disabled,!rack);
+    }
+    await change('select-nivel-form','L1');await change('select-caja-form','__NEW_BOX__');
+    assert.ok(host.querySelector('#input-nueva-caja'));
+    await change('select-nivel-form','L2');single();assert.equal(host.querySelector('#input-nueva-caja'),null);
+    assert.equal(host.querySelector<HTMLSelectElement>('#select-caja-form-value')!.value,'');
+    await change('select-estanteria-form','');single();
+    assert.equal(errors.filter(error=>/same key|unique.*key/i.test(error)).length,0);
+  } finally {console.error=previousError;await act(()=>root.unmount());host.remove();}
+});
 
 test('the remaining-alerts link reveals every item and the last item opens its own detail',async()=>{
   const alerts=Array.from({length:160},(_,index)=>({...product,id:`M${index}`,codigo:`MAT${index}`}));

@@ -22,6 +22,7 @@ import { itemLocationColumns } from '../domain/itemLocation';
 import { roundCOP } from '../domain/money';
 import { displayCargo } from '../domain/userProfile';
 import { validateRemissionRoute, remissionDate, remissionCode, remissionSequence } from '../domain/remissionRoute';
+import { uppercaseName } from '../shared/uppercase';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
 const newId = (prefix: string) => `${prefix}-DEMO-${crypto.randomUUID()}`;
@@ -51,7 +52,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
   const addElemento = async (input: Omit<Elemento, 'id' | 'createdAt' | 'updatedAt'>,
     assignment: { prefixId: string; requestId: string }) => {
     requireAdmin();
-    const item = { ...input, codigo: input.codigo.trim().toUpperCase() };
+    const item = { ...input, codigo: input.codigo.trim().toUpperCase(), nombre: uppercaseName(input.nombre), marca: uppercaseName(input.marca) };
     validateItem(item, data.almacenes, data.estanterias, data.cajas, data.niveles);
     const signature = JSON.stringify({ item: { ...item, codigo: '' }, prefix: assignment.prefixId });
     const persist = async (payload: Record<string, unknown>) => {
@@ -91,12 +92,12 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     const before = data.elementos.find(el => el.id === id);
     if (!before) throw new Error('Componente no encontrado.');
     if (updates.cantidad !== undefined && !isDemo) throw new Error('Use una entrada o ajuste para cambiar existencias.');
-    const next = { ...before, ...updates };
+    const next = { ...before, ...updates, nombre: uppercaseName(updates.nombre ?? before.nombre), marca: uppercaseName(updates.marca ?? before.marca) };
     validateItem(next, data.almacenes, data.estanterias, data.cajas, data.niveles);
     return saveGallery(next, before, { save: saveImage, remove: removeImage }, async gallery => {
       const photo = gallery.main;
       if (isDemo) {
-        setDemoData(prev => ({ ...prev, elementos: prev.elementos.map(el => el.id === id ? { ...el, ...updates, fotoUrl: photo, fotosAdicionales: gallery.additional, updatedAt: isoNow() } : el) }));
+        setDemoData(prev => ({ ...prev, elementos: prev.elementos.map(el => el.id === id ? { ...el, ...updates, nombre: next.nombre, marca: next.marca, fotoUrl: photo, fotosAdicionales: gallery.additional, updatedAt: isoNow() } : el) }));
         return;
       }
       const saved = await updateRow('elementos', id, {
@@ -119,6 +120,10 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
 
   const processDispatch = async (payload: RemissionRoute & { proyectoId: string; entregadoPor: string; cargoEntregado?: string; recibidoPor: string; cargoRecibido?: string; observaciones?: string; requestId?: string; datosTransporte?: DatosTransporte; fotosSalida?: string[] }): Promise<Remision> => {
     requireOperator();
+    payload = { ...payload, lugarRemision: uppercaseName(payload.lugarRemision), lugarDestino: uppercaseName(payload.lugarDestino),
+      entregadoPor: uppercaseName(payload.entregadoPor || user?.name), cargoEntregado: uppercaseName(payload.cargoEntregado || displayCargo(user)),
+      recibidoPor: uppercaseName(payload.recibidoPor), cargoRecibido: uppercaseName(payload.cargoRecibido),
+      ...(payload.datosTransporte && { datosTransporte: { ...payload.datosTransporte, transportador: uppercaseName(payload.datosTransporte.transportador), placaVehiculo: uppercaseName(payload.datosTransporte.placaVehiculo) } }) };
     const route = validateRemissionRoute(payload);
     const requestId = payload.requestId || crypto.randomUUID();
     const retrying = outgoingRequests.current.has(requestId);
@@ -153,11 +158,11 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     const remission: Remision = {
       id: remissionNumber, numeroRemision: remissionNumber, proyectoId: project.id,
       ...route,
-      proyectoNombre: project.nombre, cliente: project.cliente, ubicacion: project.ubicacion,
+      proyectoNombre: uppercaseName(project.nombre), cliente: uppercaseName(project.cliente), ubicacion: uppercaseName(project.ubicacion),
       entregadoPor: payload.entregadoPor || user?.name || '', cargoEntregado: payload.cargoEntregado || displayCargo(user),
       recibidoPor: payload.recibidoPor, cargoRecibido: payload.cargoRecibido || '', observaciones: payload.observaciones || '',
       fecha: issuedDate, items: cart.map(line => ({ elementoId: line.elemento.id, codigo: line.elemento.codigo,
-        nombre: line.elemento.nombre, marca: line.elemento.marca || '', cantidad: line.cantidad, unidad: line.elemento.unidad,
+        nombre: uppercaseName(line.elemento.nombre), marca: uppercaseName(line.elemento.marca), cantidad: line.cantidad, unidad: line.elemento.unidad,
         pesoUnitario: line.elemento.pesoUnitario,
         valorUnitarioCOP: line.elemento.valorUnitario || 0, valorTotalCOP: roundCOP(line.cantidad * (line.elemento.valorUnitario || 0)),
         ...(line.elemento.pesoUnitario && { pesoTotalKg: lineWeightKg(line.elemento.pesoUnitario, line.cantidad)! }) })),
@@ -167,10 +172,10 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     const requested = new Map(cart.map(line => [line.elemento.id, line.cantidad]));
     const history: HistorialMovimiento[] = cart.map(line => {
       const live = data.elementos.find(item => item.id === line.elemento.id)!;
-      return { id: newId('MOV'), tipo: 'SALIDA', elementoId: live.id, itemCode: live.codigo, itemName: live.nombre,
-        proyectoId: project.id, proyectoNombre: project.nombre, remisionId: remission.id, remisionNumero: remission.numeroRemision,
+      return { id: newId('MOV'), tipo: 'SALIDA', elementoId: live.id, itemCode: live.codigo, itemName: uppercaseName(live.nombre),
+        proyectoId: project.id, proyectoNombre: uppercaseName(project.nombre), remisionId: remission.id, remisionNumero: remission.numeroRemision,
         cantidad: line.cantidad, unidad: live.unidad, stockAnterior: live.cantidad, stockNuevo: live.cantidad - line.cantidad,
-        motivo: `Remisión ${remission.numeroRemision}`, responsable: user?.name || '', fecha: displayDate(now), hora: displayTime(now), docType: 'pdf' };
+        motivo: `Remisión ${remission.numeroRemision}`, responsable: uppercaseName(user?.name), fecha: displayDate(now), hora: displayTime(now), docType: 'pdf' };
     });
     setDemoData(prev => {
       const elementos = prev.elementos.map(item => {

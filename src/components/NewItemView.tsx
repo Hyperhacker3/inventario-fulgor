@@ -14,8 +14,11 @@ import { parseWeightDraft, weightDraft } from '../domain/weight';
 import { prefixPreview } from '../domain/dataAdministration';
 import { ItemValueField } from './item/ItemValueField';
 import { ItemPrefixSelector } from './item/ItemPrefixSelector';
+import { useFormScroll } from '../hooks/useFormScroll';
+import { uppercaseName } from '../shared/uppercase';
 
 export const NewItemView: React.FC = () => {
+  const { ref: pageRef, onInvalidCapture, revealError, scrollToStart } = useFormScroll();
   const {
     almacenes,
     estanterias, niveles,
@@ -48,6 +51,10 @@ export const NewItemView: React.FC = () => {
   const [fotoUrl, setFotoUrl] = useState<string>('');
   const [fotosAdicionales, setFotosAdicionales] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const reportFeedback: typeof setFeedback = value => {
+    setFeedback(value);
+    if (value && typeof value !== 'function' && value.type === 'error') revealError();
+  };
   const [pending, setPending] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [boxBusy, setBoxBusy] = useState(false);
@@ -86,29 +93,29 @@ export const NewItemView: React.FC = () => {
     setFeedback(null);
 
     if (prefixDraftPending) {
-      setFeedback({ type: 'error', message: 'Pulse Crear y elegir código, o seleccione un código existente, antes de guardar el componente.' });
+      reportFeedback({ type: 'error', message: 'Pulse Crear y elegir código, o seleccione un código existente, antes de guardar el componente.' });
       return;
     }
 
     if (rackDraftPending) {
-      setFeedback({ type: 'error', message: 'Pulse Crear y elegir estantería, o seleccione una estantería existente, antes de guardar el componente.' });
+      reportFeedback({ type: 'error', message: 'Pulse Crear y elegir estantería, o seleccione una estantería existente, antes de guardar el componente.' });
       return;
     }
 
     if (levelDraftPending) {
-      setFeedback({ type: 'error', message: 'Cree o seleccione el nivel antes de guardar el componente.' }); return;
+      reportFeedback({ type: 'error', message: 'Cree o seleccione el nivel antes de guardar el componente.' }); return;
     }
     if (boxDraftPending) {
-      setFeedback({ type: 'error', message: 'Pulse Crear y elegir caja, o seleccione una caja existente, antes de guardar el componente.' });
+      reportFeedback({ type: 'error', message: 'Pulse Crear y elegir caja, o seleccione una caja existente, antes de guardar el componente.' });
       return;
     }
     if (categoryDraftPending) {
-      setFeedback({ type: 'error', message: 'Pulse Crear y elegir categoría, o seleccione una categoría existente, antes de guardar el componente.' });
+      reportFeedback({ type: 'error', message: 'Pulse Crear y elegir categoría, o seleccione una categoría existente, antes de guardar el componente.' });
       return;
     }
 
     if (!catalogReady || !selectedPrefix || !categorias.some(row => row.id === categoria && row.activo)) {
-      setFeedback({
+      reportFeedback({
         type: 'error',
         message: 'Seleccione un prefijo y una categoría activos en Administración de datos.'
       });
@@ -116,7 +123,7 @@ export const NewItemView: React.FC = () => {
     }
 
     if (!nombre.trim()) {
-      setFeedback({ type: 'error', message: 'Por favor ingrese el nombre del componente fotovoltaico.' });
+      reportFeedback({ type: 'error', message: 'Por favor ingrese el nombre del componente fotovoltaico.' });
       return;
     }
 
@@ -124,7 +131,7 @@ export const NewItemView: React.FC = () => {
       setPending(true);
       const input = {
         codigo: codigo.trim().toUpperCase(),
-        nombre: nombre.trim(), marca: marca.trim(),
+        nombre: uppercaseName(nombre), marca: uppercaseName(marca),
         descripcion: descripcion.trim(),
         categoria,
         cantidad: Number(cantidad),
@@ -146,7 +153,7 @@ export const NewItemView: React.FC = () => {
       if (request.current?.signature !== signature) request.current = { signature, id: crypto.randomUUID() };
       const created = await addElemento(input, { prefixId, requestId: request.current.id });
 
-      setFeedback({
+      reportFeedback({
         type: 'success',
         message: `Componente ${created.codigo} registrado. Puede añadir el siguiente.`
       });
@@ -160,15 +167,16 @@ export const NewItemView: React.FC = () => {
       request.current = null;
       // Remount editable numeric/photo/box fields to clear their internal drafts too.
       setFormVersion(version => version + 1);
+      scrollToStart();
     } catch (error) {
-      setFeedback({ type: 'error', message: errorMessage(error) });
+      reportFeedback({ type: 'error', message: errorMessage(error) });
     } finally {
       setPending(false);
     }
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-[1000px] mx-auto w-full">
+    <div ref={pageRef} onInvalidCapture={onInvalidCapture} className="p-4 md:p-8 max-w-[1000px] mx-auto w-full">
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl md:text-3xl font-bold text-[#131b2e] tracking-tight">Registrar Componente</h2>

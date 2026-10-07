@@ -112,7 +112,7 @@ test('page layout has one vertical scroll owner, natural page height and clipped
   assert.match(css, /\.app-viewport\s*\{[^}]*position:\s*fixed/);
   for (const name of ['HistoryView', 'NewItemView', 'ExplorerView', 'DispatchView', 'RemissionView', 'WarehouseView']) {
     const source = fs.readFileSync(new URL(`../../src/components/${name}.tsx`, import.meta.url), 'utf8');
-    const rootClass = source.match(/return\s*\(?\s*<div className="([^"]+)"/)![1];
+    const rootClass = source.match(/return\s*\(?\s*<div\b[^>]*\bclassName="([^"]+)"/)![1];
     assert.doesNotMatch(rootClass, /overflow-y-auto|h-full|h-screen/, `${name} must use the main scroll area`);
   }
 });

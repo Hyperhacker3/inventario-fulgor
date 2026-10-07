@@ -31,6 +31,22 @@ const cart = (surface: HTMLElement) => [...surface.querySelectorAll<HTMLButtonEl
   .find(button => /add_shopping_cart|shopping_cart_checkout/.test(button.textContent!))!;
 
 for (const mode of ['list', 'grid'] as const) {
+  test(`${mode}: inventory emphasizes uppercase names with only the requested metadata and a single red dispatch action`, async () => {
+    const products = [{ ...items[0], nombre: 'Cable solar largo con descripción', marca: 'Fabricante', pesoUnitario: { valor: 2, unidad: 'kg' as const } }];
+    await withResults(mode, async host => {
+      const surface = product(host, products[0]), name = surface.querySelector<HTMLButtonElement>('.ui-product-open')!;
+      assert.equal(name.textContent, 'CABLE SOLAR LARGO CON DESCRIPCIÓN'); assert.ok((mode === 'grid' ? name.parentElement! : name).classList.contains('sm:text-lg'));
+      assert.equal(name.classList.contains('truncate'), false); assert.doesNotMatch(surface.textContent!, /2 kg|Peso pendiente|\/ und/);
+      assert.equal([...surface.querySelectorAll('button')].some(button => button.textContent === 'Detalles'), false);
+      assert.equal(surface.querySelectorAll('button').length, 2); // Accessible name + independent dispatch action.
+      if (mode === 'list') {
+        const component = surface.querySelector('td:nth-child(2)')!;
+        assert.doesNotMatch(component.textContent!, /Fabricante|Otros materiales|dañados/);
+        assert.equal(surface.querySelector('td:nth-child(3)')!.textContent, 'Otros materiales');
+      } else { assert.match(surface.textContent!, /Marca: FABRICANTE/); assert.ok(cart(surface).classList.contains('text-[#dd4c42]')); }
+      await Promise.resolve();
+    }, products);
+  });
   test(`${mode}: the entire product opens its own detail, including code, location, stock, image and free surface`, async () => {
     await withResults(mode, async (host, opened, dispatched) => {
       for (const item of items) {
@@ -54,11 +70,9 @@ for (const mode of ['list', 'grid'] as const) {
       await click(surface.querySelector<HTMLButtonElement>('.ui-product-open')!);
       assert.deepEqual(opened, [items[1]]);
       const details = [...surface.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Detalles');
-      if (mode === 'grid') {
-        assert.ok(details); await click(details); assert.deepEqual(opened, [items[1], items[1]]);
-      } else { assert.equal(details, undefined); assert.equal(surface.querySelector('[title="Ver detalles"]'), null); }
+      assert.equal(details, undefined); assert.equal(surface.querySelector('[title="Ver detalles"]'), null);
       await click(cart(surface).querySelector<HTMLElement>('span')!);
-      assert.deepEqual(dispatched, [items[1]]); assert.equal(opened.length, mode === 'grid' ? 2 : 1);
+      assert.deepEqual(dispatched, [items[1]]); assert.equal(opened.length, 1);
     });
   });
 

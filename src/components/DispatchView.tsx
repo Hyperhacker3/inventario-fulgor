@@ -13,8 +13,11 @@ import { AvailableInventory } from './dispatch/AvailableInventory';
 import { DispatchCartLine } from './dispatch/DispatchCartLine';
 import { OutgoingPhotoPicker } from './dispatch/OutgoingPhotoPicker';
 import { displayCargo } from '../domain/userProfile';
+import { useFormScroll } from '../hooks/useFormScroll';
+import { uppercaseName } from '../shared/uppercase';
 
 export const DispatchView: React.FC = () => {
+  const { ref: pageRef, onInvalidCapture, revealError, scrollToStart } = useFormScroll();
   const {
     elementos,
     proyectos,
@@ -30,12 +33,13 @@ export const DispatchView: React.FC = () => {
   // Dispatch form state
   const [selectedProyectoId, setSelectedProyectoId] = useState<string>('');
   const [route, setRoute] = useState({ lugarRemision: '', lugarDestino: '' });
-  const [entregadoPor, setEntregadoPor] = useState(user.name);
-  const [cargoEntregado, setCargoEntregado] = useState(displayCargo(user));
+  const [entregadoPor, setEntregadoPor] = useState(uppercaseName(user.name));
+  const [cargoEntregado, setCargoEntregado] = useState(uppercaseName(displayCargo(user)));
   const [recibidoPor, setRecibidoPor] = useState('');
   const [cargoRecibido, setCargoRecibido] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const reportError = (message: string) => { setErrorMsg(message); if (message) revealError(); };
   const [pending, setPending] = useState(false);
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
   const [transport, setTransport] = useState(emptyTransport);
@@ -60,24 +64,24 @@ export const DispatchView: React.FC = () => {
   const handleDispatch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (sending.current || photoBusy) return;
-    setErrorMsg('');
-    if (!routeReady) { setErrorMsg('Active la actualización de lugares y códigos de remisión antes de registrar la salida.'); return; }
-    try { validateRemissionRoute(route); } catch (cause) { setErrorMsg(errorMessage(cause)); return; }
-    if (!photosReady) { setErrorMsg('Active la actualización de registro fotográfico antes de registrar la salida.'); return; }
-    if (!automaticReady) { setErrorMsg('Active la actualización del cálculo automático de peso antes de generar la remisión.'); return; }
+    reportError('');
+    if (!routeReady) { reportError('Active la actualización de lugares y códigos de remisión antes de registrar la salida.'); return; }
+    try { validateRemissionRoute(route); } catch (cause) { reportError(errorMessage(cause)); return; }
+    if (!photosReady) { reportError('Active la actualización de registro fotográfico antes de registrar la salida.'); return; }
+    if (!automaticReady) { reportError('Active la actualización del cálculo automático de peso antes de generar la remisión.'); return; }
 
     if (dispatchCart.length === 0) {
-      setErrorMsg('Debe agregar al menos un componente a la salida.');
+      reportError('Debe agregar al menos un componente a la salida.');
       return;
     }
 
     if (!attempted && !effectiveProjectId) {
-      setErrorMsg('Debe seleccionar el proyecto de destino.');
+      reportError('Debe seleccionar el proyecto de destino.');
       return;
     }
 
     if (!recibidoPor.trim()) {
-      setErrorMsg('Debe ingresar el nombre del responsable que recibe en obra.');
+      reportError('Debe ingresar el nombre del responsable que recibe en obra.');
       return;
     }
 
@@ -85,7 +89,7 @@ export const DispatchView: React.FC = () => {
     for (const item of attempted ? [] : dispatchCart) {
       const live = elementos.find((el) => el.id === item.elemento.id);
       if (!live || available(live) < item.cantidad) {
-        setErrorMsg(`Stock insuficiente para ${item.elemento.nombre}. Disponible: ${live ? available(live) : 0}`);
+        reportError(`Stock insuficiente para ${item.elemento.nombre}. Disponible: ${live ? available(live) : 0}`);
         return;
       }
     }
@@ -98,11 +102,12 @@ export const DispatchView: React.FC = () => {
         ...(transportReady && { datosTransporte: transport }) });
       setRequestId(crypto.randomUUID());
       setPhotos([]); setAttempted(false);
+      scrollToStart();
       void import('canvas-confetti').then(({ default: confetti }) => {
         confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
       }).catch(() => {});
     } catch (error) {
-      setErrorMsg(errorMessage(error));
+      reportError(errorMessage(error));
     } finally {
       setPending(false);
       sending.current = false;
@@ -110,7 +115,7 @@ export const DispatchView: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-[1000px] mx-auto w-full">
+    <div ref={pageRef} onInvalidCapture={onInvalidCapture} className="p-4 md:p-8 max-w-[1000px] mx-auto w-full">
       {/* Page Title from Mockup Image 1 */}
       <div className="mb-6">
         <h2 className="text-2xl md:text-3xl font-bold text-[#131b2e] tracking-tight">Salidas</h2>
@@ -167,7 +172,7 @@ export const DispatchView: React.FC = () => {
                   type="text"
                   value={entregadoPor}
                   onChange={(e) => setEntregadoPor(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-xs text-[#131b2e]"
+                  className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-xs text-[#131b2e] uppercase"
                   placeholder="Nombre responsable"
                 />
               </div>
@@ -180,7 +185,7 @@ export const DispatchView: React.FC = () => {
                   type="text"
                   value={recibidoPor}
                   onChange={(e) => setRecibidoPor(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-xs text-[#131b2e]"
+                  className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-xs text-[#131b2e] uppercase"
                   placeholder="Ingeniero / Residente"
                   required
                 />
@@ -189,10 +194,10 @@ export const DispatchView: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label className="text-xs font-bold text-[#454651]">CARGO DE QUIEN ENTREGA
-                <input autoComplete="off" autoCorrect="off" spellCheck={false} value={cargoEntregado} onChange={event => setCargoEntregado(event.target.value)} className="block w-full mt-1 px-3 py-2 border rounded-lg text-xs" />
+                <input autoComplete="off" autoCorrect="off" spellCheck={false} value={cargoEntregado} onChange={event => setCargoEntregado(event.target.value)} className="block w-full mt-1 px-3 py-2 border rounded-lg text-xs uppercase" />
               </label>
               <label className="text-xs font-bold text-[#454651]">CARGO DE QUIEN RECIBE
-                <input autoComplete="off" autoCorrect="off" spellCheck={false} value={cargoRecibido} onChange={event => setCargoRecibido(event.target.value)} className="block w-full mt-1 px-3 py-2 border rounded-lg text-xs" />
+                <input autoComplete="off" autoCorrect="off" spellCheck={false} value={cargoRecibido} onChange={event => setCargoRecibido(event.target.value)} className="block w-full mt-1 px-3 py-2 border rounded-lg text-xs uppercase" />
               </label>
             </div>
 

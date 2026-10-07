@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Formularios, nombres y ubicaciones (7 de octubre de 2026)
+
+Se corrige la colisión de claves vacías entre Nivel/Caja que duplicaba selectores al cambiar padres. `useFormScroll` sigue campos nativos inválidos, proxies y alertas de validación/guardado/altas en línea, centra y enfoca el error, repite fallos idénticos y vuelve al inicio tras escritura confirmada. Conserva borradores, deshabilitado, idempotencia, movimiento reducido y no desplaza vistas salientes/desmontadas. Inventario muestra nombres en mayúsculas más grandes y varias líneas; lista deja solo nombre, categoría en su columna y unidad junto a stock. Cuadrícula retira peso/unidad/categoría y Detalles, conservando marca/código/ubicación y acción independiente roja.
+
+Altas/ediciones y datos personales/lugares de Salidas se normalizan al enviar. La nueva migración `20261007000300_uppercase_registration.sql` normaliza nuevas partidas, nombres/marcas, proyecto/cliente/ubicación, responsables y transporte del servidor. No modifica textos históricos, stock, permisos, solicitudes ni snapshots previos. Se puede repetir y conserva reintentos incluso de documentos anteriores. Requiere lugares y las migraciones anteriores; no se ejecutó en Supabase real.
+
+Validación: typecheck, lint, **154 unitarias y 34 de integración (188)** y build correctos. Se añaden seis pruebas DOM para scroll/cascada/contenidos y dos SQL para mayúsculas/roles/reintentos/preservación; se actualizan expectativas de Detalles y la comprobación de raíz de las pantallas con refs. Sin computer use, automatización de navegador ni archivos privados. Revisión manual y activación en `docs/formularios-y-nombres.md`; publicación autorizada y despliegue verificado por separado.
+
 ## Capturar a todo el ancho en móvil (7 de octubre de 2026)
 
 `CameraCaptureModal` identifica Capturar con `ui-camera-capture`; la cuadrícula compartida le asigna todas las columnas y ancho del 100 % por debajo de 640 px. Corrige el botón aislado a la izquierda tanto en fotos de productos como en el registro de salida, manteniendo Elegir archivo/Cambiar cámara en dos columnas, altura mínima de 44 px, estado deshabilitado y flujo de captura. Escritorio y Repetir/Usar foto conservan su disposición. No requiere SQL.

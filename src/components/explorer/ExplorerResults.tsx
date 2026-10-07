@@ -4,7 +4,7 @@ import { ItemImage } from '../ItemImage';
 import { isDemo } from '../../lib/supabase';
 import { available } from '../../domain/inventory';
 import { itemPhotos } from '../../domain/photos';
-import { formatUnitWeight } from '../../domain/weight';
+import { uppercaseName } from '../../shared/uppercase';
 import { openProductSurface } from '../../shared/productInteraction';
 
 type ResultsInventory = Pick<ReturnType<typeof useInventory>, 'getLocationString' | 'openItemDetail' | 'addToDispatchCart' | 'user' | 'categoryLabel'>;
@@ -81,13 +81,12 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
 
                     {/* Card Content */}
                     <div className="p-3.5 sm:p-4 flex flex-col flex-1 gap-2">
-                      <h3 className="font-bold text-sm sm:text-base leading-snug line-clamp-1">
+                      <h3 className="font-bold text-base sm:text-lg leading-snug break-words">
                         <button type="button" className="ui-product-open block w-full text-left" onClick={() => openItemDetail(item)}
-                          aria-label={`Ver detalles de ${item.codigo} · ${item.nombre}`} title={item.nombre}>{item.nombre}</button>
+                          aria-label={`Ver detalles de ${item.codigo} · ${item.nombre}`} title={uppercaseName(item.nombre)}>{uppercaseName(item.nombre)}</button>
                       </h3>
 
-                      {item.marca && <p className="text-xs text-slate-500 truncate">Marca: {item.marca}</p>}
-                      <p className={`text-[11px] ${item.pesoUnitario ? 'text-slate-500' : 'text-amber-700'}`}>{formatUnitWeight(item.pesoUnitario)}{item.pesoUnitario ? ` / ${item.unidad}` : ''}</p>
+                      {item.marca && <p className="text-xs text-slate-500 break-words">Marca: {uppercaseName(item.marca)}</p>}
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-mono-code text-xs font-semibold text-[#3e4e9e] bg-[#eaedff] px-2 py-0.5 rounded-md w-fit">
                           {item.codigo}
@@ -111,35 +110,21 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                             {getLocationString(item)}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[15px] text-[#767682] shrink-0">category</span>
-                          <span>{categoryLabel(item.categoria)}</span>
-                        </div>
                       </div>
 
                       {/* Card Footer Actions */}
-                      <div className="mt-2 pt-2.5 border-t border-[#e2e8f0] flex items-center justify-between gap-2">
+                      {canOperate && <div className="mt-2 pt-2.5 border-t border-[#e2e8f0] flex items-center justify-end">
                         <button
-                          type="button"
-                          onClick={() => openItemDetail(item)}
-                          className="flex-1 bg-transparent border border-[#3e4e9e] text-[#3e4e9e] text-xs font-bold py-1.5 rounded-lg hover:bg-[#f2f3ff] transition-colors"
-                        >
-                          Detalles
-                        </button>
-                        {canOperate && <button
                           type="button"
                           onClick={() => addToDispatchCart(item)}
                           disabled={available(item) === 0}
-                          className={`flex-1 text-xs font-bold py-1.5 rounded-lg flex items-center justify-center gap-1 transition-all ${
-                            available(item) > 0
-                              ? 'bg-[#3e4e9e] text-white hover:bg-[#323f80] active:scale-95'
-                              : 'bg-[#e2e8f0] text-[#767682] cursor-not-allowed'
-                          }`}
+                          className="w-11 h-11 text-[#dd4c42] rounded-lg flex items-center justify-center transition-all disabled:opacity-50"
+                          aria-label={`Agregar ${uppercaseName(item.nombre)} a la salida`}
                           title={available(item) > 0 ? 'Agregar a la salida' : 'Sin stock disponible'}
                         >
                           <span className="material-symbols-outlined text-[16px]">add_shopping_cart</span>
-                        </button>}
-                      </div>
+                        </button>
+                      </div>}
                     </div>
                   </article>
                 );
@@ -166,7 +151,7 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                         <td className="p-2.5 sm:p-3 font-mono-code font-bold text-[#3e4e9e] whitespace-nowrap">
                           {item.codigo}
                         </td>
-                        <td className="p-2.5 sm:p-3">
+                        <td className="p-2.5 sm:p-3 w-full">
                           <div className="flex items-center gap-2 sm:gap-3">
                             <div className="shrink-0">
                               <ItemImage
@@ -178,23 +163,8 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                                 referrerPolicy="no-referrer"
                               />
                             </div>
-                            <div className="min-w-0">
-                              <button type="button" onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${item.codigo} · ${item.nombre}`} title={item.nombre} className="ui-product-open block max-w-full text-left font-semibold leading-snug truncate">{item.nombre}</button>
-                              {item.marca && <p className="text-xs text-slate-500 truncate">{item.marca}</p>}
-                              <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-[#767682]">
-                                <span>{categoryLabel(item.categoria)}</span>
-                                <span className={item.pesoUnitario ? 'text-slate-500' : 'text-amber-700'}>{formatUnitWeight(item.pesoUnitario)}{item.pesoUnitario ? ` / ${item.unidad}` : ''}</span>
-                                {(item.cantidadDanados || 0) > 0 && (
-                                  <span className="text-[10px] font-bold text-[#c5221f] bg-[#fce8e6] px-1 py-0.2 rounded">
-                                    {item.cantidadDanados} dañados
-                                  </span>
-                                )}
-                                {item.estado && item.estado !== 'BUENO' && (
-                                  <span className="text-[10px] font-semibold text-[#755b00] bg-[#fef7e0] px-1 py-0.2 rounded">
-                                    {item.estado}
-                                  </span>
-                                )}
-                              </div>
+                            <div className="min-w-40 sm:min-w-56 flex-1">
+                              <button type="button" onClick={() => openItemDetail(item)} aria-label={`Ver detalles de ${item.codigo} · ${item.nombre}`} title={uppercaseName(item.nombre)} className="ui-product-open block w-full text-left text-base sm:text-lg font-bold leading-snug break-words">{uppercaseName(item.nombre)}</button>
                             </div>
                           </div>
                         </td>

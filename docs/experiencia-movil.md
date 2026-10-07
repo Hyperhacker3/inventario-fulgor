@@ -12,7 +12,7 @@ Las ventanas y pantallas conservan animaciones de 180 ms y los botones responden
 
 Los campos de una línea y selectores comparten una altura de 44 px. Las descripciones siguen siendo multilínea, se redimensionan solo verticalmente y no se pueden reducir por debajo de 44 px. El foco de campos y selectores usa sombra interior sin contorno azul. Las categorías reservan espacio para sus sombras; stock queda plano cuando está inactivo y hundido al seleccionarlo. Las acciones usan fondo neutro y texto azul o semántico en ambas paletas. Ver elemento tiene 16 px entre botones y una cuadrícula que evita amontonarlos; sus bloques están separados por 24 px.
 
-En Inventario, Historial y Almacenes se puede tocar toda la fila o tarjeta del producto para abrir el detalle. El nombre no se subraya ni tiene relieve propio y conserva acceso con teclado; el foco resalta el producto completo. La lista de Inventario elimina el ojo redundante y conserva salida; Detalles permanece en cuadrícula. Los controles sin stock siguen deshabilitados. PDF/Fotos tienen altura de 44 px, columnas iguales y se apilan al faltar ancho. El desplazamiento de hover común a botones y productos se limita a dispositivos con puntero preciso y hover; no se activa con el toque y respeta movimiento reducido.
+En Inventario, Historial y Almacenes se puede tocar toda la fila o tarjeta del producto para abrir el detalle. El nombre no se subraya ni tiene relieve propio y conserva acceso con teclado; el foco resalta el producto completo. La lista de Inventario elimina el ojo redundante y conserva salida; Cuadrícula retira Detalles y conserva la acción de salida con icono rojo. Los controles sin stock siguen deshabilitados. PDF/Fotos tienen altura de 44 px, columnas iguales y se apilan al faltar ancho. El desplazamiento de hover común a botones y productos se limita a dispositivos con puntero preciso y hover; no se activa con el toque y respeta movimiento reducido.
 
 La cabecera ya no muestra Supabase Activo. El avatar utiliza el mismo tamaño de 44 × 44 px y relieve que notificaciones y claro/oscuro. El logo reduce su ancho por debajo de 380 px para dejar espacio a los controles. Nueva Remisión se eliminó de la barra lateral por duplicar Salidas. Lista/cuadrícula mantiene controles de al menos 44 × 44 px y selección hundida; Administración conserva su selector compacto sincronizado con las pestañas de escritorio.
 
@@ -27,6 +27,10 @@ El selector de fotos adapta las columnas al espacio de su propio contenedor: la 
 Al tomar una foto principal, adicional o del registro de salida, **Capturar ocupa todo el ancho de su fila en móvil**, por debajo de 640 px. Elegir archivo y Cambiar cámara comparten la fila anterior. El botón se ajusta al contenedor y conserva al menos 44 px de altura; tras capturar, Repetir/Usar foto mantiene sus columnas. Revisar en ambas orientaciones del teléfono y paletas.
 
 ## Teclado
+
+Nuevo ítem, Entradas y Salidas hacen scroll al primer campo inválido o mensaje de error, también en altas de ubicaciones/categorías; conservan borradores y vuelven al inicio al confirmar el guardado. Movimiento reducido evita animar el desplazamiento. Nivel y Caja tienen claves independientes para no duplicarse al cambiar la ubicación.
+
+El inventario muestra nombres en mayúsculas más grandes, en negrita y varias líneas. La lista deja solo el nombre debajo de la imagen; categoría queda en su columna y la unidad junto a Stock. Cuadrícula conserva marca/código/ubicación, sin peso/unidad/categoría ni Detalles, con una única acción de salida de icono rojo. Guardado en mayúsculas y activación del servidor en `formularios-y-nombres.md`.
 
 Claro/oscuro usa un barrido suave de izquierda a derecha; en navegadores sin View Transitions se utiliza un fundido de 1,5 segundos. Neumorfismo muestra relieve mediante sombras y evita bordes delineados; el foco del teclado conserva su indicador visible. La barra inferior, el menú y las ventanas usan Neumorfismo.
 
