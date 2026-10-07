@@ -24,6 +24,10 @@ El logo de empresa conserva el acceso a Inicio, **sin marco, relleno ni sombra**
 
 ## Campos, botones y productos
 
+Salidas añade dos campos obligatorios de lugar (remisión/origen y destino) con la altura/material compartidos y nombres de hasta 80 caracteres. Muestra una referencia de código sin inventar el consecutivo definitivo, asignado por el servidor al emitir. Código visible: `REM-HONDA-BOGOTA-20261007-006`, con fecha AAAAMMDD y consecutivo anual. Uso/migración en `docs/lugares-y-codigos-remision.md`; no se modifican códigos históricos.
+
+El documento A4 se alinea arriba en vista previa e impresión, conservando el margen y la medición dinámica. El NIT hereda Arial/11 px como los datos del encabezado. Origen, destino y ubicación del proyecto quedan separados. La tabla tiene siete columnas, incluyendo Peso unitario (kg) inmediatamente antes de Peso total (kg); nombre/marca se mantienen en Descripción sin texto de peso. Se muestran valores conservados y Pendiente para pesos ausentes. Encabezado y tarjetas admiten códigos largos en varias líneas. La revisión visual de impresión permanece con el usuario.
+
 El menú móvil y los accesos inferiores utilizan ahora las mismas reglas `ui-sidebar-action` de escritorio: planos en reposo, elevados en hover solo con puntero fino y hundidos al seleccionar. Ayuda, sesión y cambio de paleta dentro del menú también son planos. Se conserva el cierre, foco, roles, permisos y ocultación de la barra con el teclado abierto.
 
 Las galerías de productos y fotografías de salida exceptúan los indicadores del material común mediante `ui-photo-dot`: puntos de 10 px/píldora activa, sin fondo, marco, sombra ni desplazamiento, dentro de botones táctiles transparentes de 44 × 44 px. La foto actual consume el azul de acción de cada paleta y conserva nombre accesible, contador y foco de teclado. Los movimientos recientes tienen 12 px de espacio para sombras y separación de 16 px, con el relieve compacto de las filas de inventario.
@@ -54,7 +58,7 @@ Empresa añade un formulario de dos columnas en escritorio y una en móvil, con 
 - `index.html`, `src/shared/theme.ts` y `src/context/ThemeContext.tsx`: arranque fijo, limpieza de preferencia retirada y persistencia de claro/oscuro. El contexto expone únicamente tema y su acción; `UIStyleToggle.tsx` se eliminó.
 - `src/shared/appearanceTransition.ts`: barrido, alternativa, cancelación y descarte de capturas obsoletas; mantiene formularios, foco y carrito sin remontar vistas. `APPEARANCE_TRANSITION_MS` es 1500 y `--theme-duration` es `1500ms`; conservar ambos coordinados.
 
-Typecheck, lint, **145 pruebas unitarias y 28 de integración**, y build correctos. Se añaden pruebas de perfil/formulario/logo, NIT debajo del logo y conservación de documentos. SQL ensayado en PostgreSQL embebido con permisos, conflictos de versión, reintentos y migración repetible. Se mantienen comprobaciones de selección, cantidades, foco, alturas, documentos, avatar, chips, productos, tema, permisos, navegación, valores e impresión. La activación de empresa en Supabase real queda a cargo del usuario.
+Typecheck, lint, **148 pruebas unitarias y 32 de integración**, y build correctos. Se añaden pruebas de lugares, códigos, columnas/alineación de PDF, perfil/formulario/logo, NIT debajo del logo y conservación de documentos. SQL ensayado en PostgreSQL embebido con permisos, conflictos de versión, reintentos y migración repetible. Se mantienen comprobaciones de selección, cantidades, foco, alturas, documentos, avatar, chips, productos, tema, permisos, navegación, valores e impresión. La activación de empresa en Supabase real queda a cargo del usuario.
 
 Las pruebas simuladas comprueban reglas, cascada y eventos; no miden movimiento, geometría, contraste ni rendimiento reales. Node 24.19.0 / pnpm 11.19.0 disponibles frente a Node 22.x declarado. No se utilizó computer use ni automatización de navegador, ni se modificó Supabase real.
 

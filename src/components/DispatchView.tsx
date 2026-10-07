@@ -1,7 +1,9 @@
 import { ProjectSelector } from './dispatch/ProjectSelector';
 import { TransportFields } from './dispatch/TransportFields';
 import { emptyTransport } from '../domain/remissionTransport';
-import { useRemissionTransport, useUnitWeightDispatch, useOutgoingPhotos } from '../state/useRemissionTransport';
+import { useRemissionTransport, useUnitWeightDispatch, useOutgoingPhotos, useRemissionRoute } from '../state/useRemissionTransport';
+import { RemissionRouteFields } from './dispatch/RemissionRouteFields';
+import { validateRemissionRoute } from '../domain/remissionRoute';
 import { formatKg, formatUnitWeight, lineWeightKg, totalWeight } from '../domain/weight';
 import React, { useRef, useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
@@ -27,6 +29,7 @@ export const DispatchView: React.FC = () => {
 
   // Dispatch form state
   const [selectedProyectoId, setSelectedProyectoId] = useState<string>('');
+  const [route, setRoute] = useState({ lugarRemision: '', lugarDestino: '' });
   const [entregadoPor, setEntregadoPor] = useState(user.name);
   const [cargoEntregado, setCargoEntregado] = useState(displayCargo(user));
   const [recibidoPor, setRecibidoPor] = useState('');
@@ -43,6 +46,8 @@ export const DispatchView: React.FC = () => {
   const photoQuery = useOutgoingPhotos();
   const photosReady = photoQuery.data === true && !photoQuery.isError;
   const transportQuery = useRemissionTransport();
+  const routeQuery = useRemissionRoute();
+  const routeReady = routeQuery.data === true && !routeQuery.isError;
   const automaticQuery = useUnitWeightDispatch();
   const automaticReady = automaticQuery.data === true && !automaticQuery.isError;
   const transportReady = transportQuery.data === true && !transportQuery.isError;
@@ -56,6 +61,8 @@ export const DispatchView: React.FC = () => {
     e.preventDefault();
     if (sending.current || photoBusy) return;
     setErrorMsg('');
+    if (!routeReady) { setErrorMsg('Active la actualización de lugares y códigos de remisión antes de registrar la salida.'); return; }
+    try { validateRemissionRoute(route); } catch (cause) { setErrorMsg(errorMessage(cause)); return; }
     if (!photosReady) { setErrorMsg('Active la actualización de registro fotográfico antes de registrar la salida.'); return; }
     if (!automaticReady) { setErrorMsg('Active la actualización del cálculo automático de peso antes de generar la remisión.'); return; }
 
@@ -86,6 +93,7 @@ export const DispatchView: React.FC = () => {
     sending.current = true; setPending(true); setAttempted(true);
     try {
       await processDispatch({ proyectoId: selectedProyectoId, entregadoPor, cargoEntregado,
+        ...route,
         recibidoPor, cargoRecibido, observaciones, requestId, fotosSalida: photos,
         ...(transportReady && { datosTransporte: transport }) });
       setRequestId(crypto.randomUUID());
@@ -147,6 +155,7 @@ export const DispatchView: React.FC = () => {
             )}
 
             <ProjectSelector value={effectiveProjectId} onChange={setSelectedProyectoId} disabled={pending} />
+            <RemissionRouteFields value={route} onChange={setRoute} />
 
             {/* Delivery & Receiver */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -237,12 +246,13 @@ export const DispatchView: React.FC = () => {
             </fieldset>
             {!automaticReady && <p role="status" className="text-xs text-amber-700">El cálculo automático de peso requiere activar la actualización de Supabase. <button type="button" className="underline" onClick={() => { void automaticQuery.refetch(); }}>Comprobar de nuevo</button></p>}
             {!photosReady && <p role="status" className="text-xs text-amber-700">El registro fotográfico requiere activar la actualización de Supabase. <button type="button" className="underline" onClick={() => { void photoQuery.refetch(); }}>Comprobar de nuevo</button></p>}
+            {!routeReady && <p role="status" className="text-xs text-amber-700">Los lugares y el nuevo código requieren activar la actualización de remisiones. <button type="button" className="underline" onClick={() => { void routeQuery.refetch(); }}>Comprobar de nuevo</button></p>}
 
             {/* Primary Action Dispatch Button (Red Coral from Mockup Image 1) */}
             <button
               type="submit"
               id="btn-process-dispatch"
-              disabled={dispatchCart.length === 0 || pending || photoBusy || !automaticReady || !photosReady}
+              disabled={dispatchCart.length === 0 || pending || photoBusy || !automaticReady || !photosReady || !routeReady}
               className={`w-full px-3 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all shadow-sm ${
                 dispatchCart.length > 0
                   ? 'bg-[#dd4c42] hover:bg-[#b12c26] active:scale-[0.98]'

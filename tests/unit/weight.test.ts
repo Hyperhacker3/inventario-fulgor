@@ -24,6 +24,6 @@ test('inventory metadata and remission snapshots preserve the declared unit weig
   const remission = mapRemision({ items:[{ nombre:'Ejemplo',codigo:'EJE001',cantidad:20,unidad:'und',pesoUnitario:{ valor:40,unidad:'g' },pesoTotalKg:0.8 },{ nombre:'Pendiente',cantidad:1,unidad:'und' }] });
   const table = renderToStaticMarkup(createElement(RemissionTable,{ remision:remission,indices:[0,1] }));
   const closing = renderToStaticMarkup(createElement(RemissionClosing,{ remision:remission,notes:['Sin observaciones.'],indices:[0] }));
-  assert.match(table,/0,8/); assert.match(table,/Por unidad: 0,04 kg/); assert.match(table,/Pendiente/);
+  assert.match(table,/0,8/); assert.match(table,/<td>0,04<\/td>/); assert.match(table,/Peso unitario \(kg\)/); assert.doesNotMatch(table,/Por unidad:/); assert.match(table,/Pendiente/);
   assert.match(closing,/Peso parcial conocido: 0,8 kg/); assert.match(closing,/1 material/);
 });

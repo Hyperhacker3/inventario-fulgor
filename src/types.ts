@@ -104,10 +104,14 @@ export interface CompanyProfile {
 }
 export interface CompanySettings { perfil: CompanyProfile; version: number }
 
+export interface RemissionRoute { lugarRemision: string; lugarDestino: string }
+
 export interface Remision {
   empresa?: CompanyProfile;
   id: string;
-  numeroRemision: string; // e.g. 'REM-2026-0042'
+  numeroRemision: string; // e.g. 'REM-HONDA-BOGOTA-20261007-006'; legacy codes remain valid.
+  lugarRemision?: string;
+  lugarDestino?: string;
   proyectoId: string;
   proyectoNombre: string;
   cliente: string;

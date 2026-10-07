@@ -16,11 +16,12 @@ const locationMigration = fs.readFileSync(new URL('../../supabase/migrations/202
 const valueMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000500_inventory_values.sql', import.meta.url), 'utf8');
 const levelsMigration = fs.readFileSync(new URL('../../supabase/migrations/20261006000600_storage_levels_and_brands.sql', import.meta.url), 'utf8');
 const companyMigration = fs.readFileSync(new URL('../../supabase/migrations/20261007000100_company_profile.sql', import.meta.url), 'utf8');
+const routeMigration = fs.readFileSync(new URL('../../supabase/migrations/20261007000200_remission_route.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 const warehouseProfile = fs.readFileSync(new URL('../../supabase/configure_warehouse_profile.sql', import.meta.url), 'utf8');
 
-async function database({ company = true } = {}) {
+async function database({ company = true, route = false } = {}) {
   const db = new PGlite();
   await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE SCHEMA auth;
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '00000000-0000-0000-0000-000000000001'::uuid $$;
@@ -47,12 +48,101 @@ async function database({ company = true } = {}) {
   await db.exec(valueMigration);
   await db.exec(levelsMigration);
   if (company) await db.exec(companyMigration);
+  if (route) await db.exec(routeMigration);
   return db;
 }
 
 const role = (db, value) => db.exec(`SELECT set_config('app.test_role','${value}',false); SET ROLE authenticated;`);
 const asOwner = db => db.exec('RESET ROLE;');
 const itemStock = async db => Number((await db.query("SELECT cantidad FROM public.elementos WHERE id = 'ELM-001'")).rows[0].cantidad);
+
+const routeSql = 'SELECT public.dispatch_inventory_with_route($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb,$11,$12) AS rem';
+const routeArgs = (request, origin = 'Honda', destination = 'Bogotá') => [request,'PROY-001','Entrega','Operador','Recibe','Residente','',
+  JSON.stringify([{ elementoId:'ELM-001',cantidad:1 }]),'{}','[]',origin,destination];
+
+test('new route preserves old remissions and annual counters, stores places/code/date and retries the exact transaction without deducting twice', async () => {
+  const db = await database();
+  try {
+    await role(db,'operador');
+    const old = (await db.query("SELECT public.dispatch_inventory_with_photos('10000000-0000-0000-0000-000000000001'::uuid,'PROY-001','Entrega','Operador','Recibe','Residente','', '[{\"elementoId\":\"ELM-001\",\"cantidad\":2}]'::jsonb,'{}'::jsonb,'[]'::jsonb) AS rem")).rows[0].rem;
+    await asOwner(db); await db.exec(routeMigration); await role(db,'operador');
+    const args = routeArgs('10000000-0000-0000-0000-000000000002',' Honda  ',' Bogotá  ');
+    const first = (await db.query(routeSql,args)).rows[0].rem;
+    assert.equal(first.lugar_remision,'Honda'); assert.equal(first.lugar_destino,'Bogotá');
+    assert.match(first.fecha,/^\d{4}-\d{2}-\d{2}$/);
+    assert.equal(first.numero_remision,`REM-HONDA-BOGOTA-${first.fecha.replaceAll('-','')}-002`);
+    assert.notEqual(first.id,first.numero_remision); // Stable internal references remain intact.
+    const previous = (await db.query('SELECT * FROM public.remisiones WHERE id=$1',[old.id])).rows[0];
+    assert.equal(previous.numero_remision,old.numero_remision); assert.deepEqual(previous.items,old.items);
+    assert.equal(previous.lugar_remision,null); assert.equal(previous.lugar_destino,null);
+    const repeat = (await db.query(routeSql,args)).rows[0].rem;
+    assert.deepEqual(repeat,first); assert.equal(await itemStock(db),181);
+    const movements = (await db.query('SELECT remision_id,motivo FROM public.historial WHERE remision_id=$1',[first.id])).rows;
+    assert.equal(movements.length,1); assert.equal(movements[0].motivo,`Remisión ${first.numero_remision}`);
+    const changed = [...args]; changed[11]='Medellín'; await assert.rejects(() => db.query(routeSql,changed), /otros lugares/);
+    const changedItems = [...args]; changedItems[7]='[{"elementoId":"ELM-001","cantidad":3}]';
+    await assert.rejects(() => db.query(routeSql,changedItems), /otro contenido/);
+    assert.equal(await itemStock(db),181);
+    await asOwner(db); await db.exec(routeMigration); await role(db,'consulta');
+    assert.equal((await db.query('SELECT numero_remision FROM public.remisiones WHERE id=$1',[first.id])).rows[0].numero_remision,first.numero_remision);
+  } finally { await db.close(); }
+});
+
+test('route rejects unauthorized users, missing places and legacy write bypasses before changing stocks or allocating a counter', async () => {
+  const db = await database({ route:true });
+  const args = routeArgs('20000000-0000-0000-0000-000000000001');
+  try {
+    await db.exec('SET ROLE anon'); await assert.rejects(() => db.query(routeSql,args), /permission denied/); await asOwner(db);
+    for (const accountRole of ['consulta','']) { await role(db,accountRole); await assert.rejects(() => db.query(routeSql,args), /No autorizado/); await asOwner(db); }
+    await role(db,'operador');
+    for (const place of [null,'','---','a'.repeat(81)]) { const invalid=[...args]; invalid[10]=place; await assert.rejects(() => db.query(routeSql,invalid), /lugares/); }
+    const invalidDest=[...args]; invalidDest[11]=''; await assert.rejects(() => db.query(routeSql,invalidDest), /lugares/);
+    await assert.rejects(() => db.query('SELECT public.dispatch_inventory_with_photos($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb)',args.slice(0,10)), /permission denied/);
+    const tooMany=[...args]; tooMany[7]='[{"elementoId":"ELM-001","cantidad":185}]'; await assert.rejects(() => db.query(routeSql,tooMany), /Stock no disponible/);
+    assert.equal(await itemStock(db),184); assert.equal((await db.query('SELECT count(*) AS n FROM public.remisiones')).rows[0].n,0);
+    await asOwner(db); assert.equal((await db.query('SELECT count(*) AS n FROM public.remision_consecutivos')).rows[0].n,0);
+  } finally { await db.close(); }
+});
+
+test('route keeps authoritative weight/price/company/photos snapshots and freezes issued places, code, date and retry identity', async () => {
+  const db = await database({ route:true });
+  const request='30000000-0000-0000-0000-000000000001';
+  const photo=`outgoing://00000000-0000-0000-0000-000000000001/${request}/30000000-0000-0000-0000-000000000002.jpg`;
+  try {
+    await db.exec("UPDATE public.elementos SET especificaciones=especificaciones||'{\"peso_unitario\":{\"valor\":40,\"unidad\":\"g\"},\"valor_unitario_cop\":6500}'::jsonb WHERE id='ELM-001'");
+    await db.query("INSERT INTO storage.objects(bucket_id,name) VALUES('outgoing-images',$1)",[photo.slice(11)]);
+    await role(db,'admin'); const args=routeArgs(request,'São José','Bogotá'); args[9]=JSON.stringify([photo]);
+    const first=(await db.query(routeSql,args)).rows[0].rem;
+    assert.match(first.numero_remision,/^REM-SAO-JOSE-BOGOTA-/); assert.deepEqual(first.fotos_salida,[photo]);
+    assert.deepEqual(first.items[0].pesoUnitario,{ valor:40,unidad:'g' }); assert.equal(first.items[0].pesoTotalKg,0.04);
+    assert.equal(first.items[0].valorUnitarioCOP,6500); assert.equal(first.empresa.nit,'800.176.581');
+    await asOwner(db);
+    for (const [column,value] of [['lugar_remision','Otra ciudad'],['lugar_destino','Medellín'],['numero_remision','FALSA'],['fecha','2000-01-01']]) {
+      await assert.rejects(() => db.query(`UPDATE public.remisiones SET ${column}=$1 WHERE id=$2`,[value,first.id]), /no se pueden modificar/);
+    }
+    await assert.rejects(() => db.query("UPDATE public.remisiones SET request_payload=request_payload-'route_request' WHERE id=$1",[first.id]), /no se pueden modificar/);
+    await db.exec("UPDATE public.elementos SET especificaciones=especificaciones||'{\"peso_unitario\":{\"valor\":1,\"unidad\":\"kg\"},\"valor_unitario_cop\":1}'::jsonb WHERE id='ELM-001'");
+    await role(db,'admin'); assert.deepEqual((await db.query(routeSql,args)).rows[0].rem,first);
+    const changedPhotos=[...args]; changedPhotos[9]='[]'; await assert.rejects(() => db.query(routeSql,changedPhotos), /otras fotos/);
+    assert.equal(await itemStock(db),183);
+  } finally { await db.close(); }
+});
+
+test('annual route counters grow past three and four digits without truncation and remain intact after rerunning the migration', async () => {
+  const db = await database({ route:true });
+  try {
+    const year=Number((await db.query("SELECT extract(year FROM now() AT TIME ZONE 'America/Bogota') AS year")).rows[0].year);
+    await db.query('INSERT INTO public.remision_consecutivos(anio,ultimo) VALUES($1,999)',[year]);
+    await role(db,'operador'); const first=(await db.query(routeSql,routeArgs('40000000-0000-0000-0000-000000000001'))).rows[0].rem;
+    assert.match(first.numero_remision,/-1000$/);
+    await asOwner(db); await db.query('UPDATE public.remision_consecutivos SET ultimo=9999 WHERE anio=$1',[year]);
+    await role(db,'operador'); const second=(await db.query(routeSql,routeArgs('40000000-0000-0000-0000-000000000002'))).rows[0].rem;
+    assert.match(second.numero_remision,/-10000$/); assert.match(second.id,/-10000$/);
+    await asOwner(db); await db.exec(routeMigration); await role(db,'operador');
+    const third=(await db.query(routeSql,routeArgs('40000000-0000-0000-0000-000000000003'))).rows[0].rem;
+    assert.match(third.numero_remision,/-10001$/); assert.equal(await itemStock(db),181);
+  } finally { await db.close(); }
+});
 
 test('company data is shared with authenticated inventory roles, writable only by admin and protected from stale edits', async () => {
   const db = await database();

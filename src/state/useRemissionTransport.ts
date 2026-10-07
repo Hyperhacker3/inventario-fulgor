@@ -31,3 +31,13 @@ export function useOutgoingPhotos() {
     },
   });
 }
+export function useRemissionRoute() {
+  const { user } = useAuth();
+  return useQuery({ queryKey: ['fulgor', user?.email, 'remission-route-ready'], staleTime: 60_000, retry: false,
+    queryFn: async () => {
+      const result = await requireSupabase().rpc('remission_route_ready');
+      if (result.error) throw new Error('Los lugares y el nuevo código requieren activar la actualización de remisiones.');
+      return result.data === true;
+    },
+  });
+}

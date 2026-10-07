@@ -61,7 +61,7 @@ export const RemissionView: React.FC = () => {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Buscar por número de remisión (ej. REM-2026-0042), proyecto o receptor..."
+          placeholder="Buscar por código de remisión, proyecto o receptor..."
           className="w-full py-1 text-sm bg-transparent border-none focus:outline-hidden text-[#131b2e]"
         />
         {searchQuery && (
@@ -82,11 +82,11 @@ export const RemissionView: React.FC = () => {
           return (
             <article
               key={rem.id}
-              className="bg-white border border-[#e2e8f0] rounded-2xl p-5 flex flex-col justify-between hover:shadow-md hover:border-[#cbd5e1] transition-all group"
+              className="min-w-0 bg-white border border-[#e2e8f0] rounded-2xl p-5 flex flex-col justify-between hover:shadow-md hover:border-[#cbd5e1] transition-all group"
             >
               <div>
-                <div className="flex justify-between items-start mb-3">
-                  <span className="font-mono-code font-bold text-xs bg-[#fce8e6] text-[#dd4c42] border border-[#ffdad6] px-2.5 py-1 rounded-lg">
+                <div className="flex flex-col items-start gap-2 mb-3">
+                  <span className="min-w-0 max-w-full break-words [overflow-wrap:anywhere] font-mono-code font-bold text-xs bg-[#fce8e6] text-[#dd4c42] border border-[#ffdad6] px-2.5 py-1 rounded-lg">
                     {rem.numeroRemision}
                   </span>
                   <span className="text-xs text-[#767682] font-medium">{rem.fecha}</span>

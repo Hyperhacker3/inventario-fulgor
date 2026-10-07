@@ -55,6 +55,8 @@ Las reglas de navegación y controles no requieren SQL. La configuración compar
 
 ## Revisión de galerías, fechas y salidas
 
+Salidas incorpora lugares de remisión y destino obligatorios, apilados en teléfonos y en dos columnas cuando hay ancho. El código de emisión largo se ajusta en las tarjetas de Remisiones sin desbordar junto a la fecha. El PDF conserva A4 rígido y escala adaptable, ahora alineado arriba, con NIT integrado en la tipografía y peso unitario/total en columnas separadas. La emisión requiere activar la migración de lugares; instrucciones en `lugares-y-codigos-remision.md`.
+
 El menú y la barra inferior comparten los estados de escritorio: opción inactiva plana, selección hundida y hover elevado únicamente con mouse. Los puntos de las galerías no muestran marco, fondo ni sombra; conservan objetivos táctiles de 44 × 44 px. Movimientos recientes reserva espacio para las sombras. En Salidas, las tarjetas muestran nombres completos, cantidad y quitar separados y permiten abrir el producto desde su superficie. El encabezado de registro fotográfico está dentro del panel.
 
 Las fechas abren un calendario de la aplicación en español, con paletas claro/oscuro, mes/año y semana desde lunes. El panel se adapta al viewport y permite desplazarse con poca altura, sin recurrir al calendario del sistema. En teléfono el foco inicial se coloca en Cerrar, evitando abrir el teclado; en PC se coloca en el día seleccionado. Escape cierra los niveles desde el más interno y devuelve el foco al control de fecha.

@@ -1,4 +1,4 @@
-import type { DatosTransporte, DispatchCartItem, Elemento, Almacen, Estanteria, NivelEstanteria, Caja, HistorialMovimiento, Remision, TipoMovimiento } from '../types';
+import type { DatosTransporte, DispatchCartItem, Elemento, Almacen, Estanteria, NivelEstanteria, Caja, HistorialMovimiento, Remision, RemissionRoute, TipoMovimiento } from '../types';
 import type { Dispatch, SetStateAction } from 'react';
 import { useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ import { saveOutgoingImage, removeOutgoingImage } from '../shared/outgoingImages
 import { itemLocationColumns } from '../domain/itemLocation';
 import { roundCOP } from '../domain/money';
 import { displayCargo } from '../domain/userProfile';
+import { validateRemissionRoute, remissionDate, remissionCode, remissionSequence } from '../domain/remissionRoute';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
 const newId = (prefix: string) => `${prefix}-DEMO-${crypto.randomUUID()}`;
@@ -116,8 +117,9 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       applyItemChange(id, null); await syncAfterWrite(refreshItemIds([id])); }
   };
 
-  const processDispatch = async (payload: { proyectoId: string; entregadoPor: string; cargoEntregado?: string; recibidoPor: string; cargoRecibido?: string; observaciones?: string; requestId?: string; datosTransporte?: DatosTransporte; fotosSalida?: string[] }): Promise<Remision> => {
+  const processDispatch = async (payload: RemissionRoute & { proyectoId: string; entregadoPor: string; cargoEntregado?: string; recibidoPor: string; cargoRecibido?: string; observaciones?: string; requestId?: string; datosTransporte?: DatosTransporte; fotosSalida?: string[] }): Promise<Remision> => {
     requireOperator();
+    const route = validateRemissionRoute(payload);
     const requestId = payload.requestId || crypto.randomUUID();
     const retrying = outgoingRequests.current.has(requestId);
     if (!retrying) validateDispatch(cart, data.elementos);
@@ -133,10 +135,11 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
         p_observaciones: payload.observaciones || '',
         p_items: cart.map(line => ({ elementoId: line.elemento.id, cantidad: line.cantidad })),
         p_datos_transporte: payload.datosTransporte || emptyTransport(),
+        p_lugar_remision: route.lugarRemision, p_lugar_destino: route.lugarDestino,
       };
       const response = await outgoingRequests.current.submit(requestId, values, payload.fotosSalida || [],
         { save: saveOutgoingImage, remove: removeOutgoingImage, definitelyRejected: isDatabaseRejection },
-        photos => rpc<Record<string, unknown>>('dispatch_inventory_with_photos', { ...values, p_fotos: photos }));
+        photos => rpc<Record<string, unknown>>('dispatch_inventory_with_route', { ...values, p_fotos: photos }));
       const remission = mapRemision(response);
       rememberRemission(remission);
       await syncAfterWrite(refreshItemIds(cart.map(line => line.elemento.id)), refresh('historial', 'project-spending'));
@@ -144,13 +147,16 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       return remission;
     }
     const now = isoNow();
-    const remissionNumber = `REM-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+    const issuedDate = remissionDate(new Date(now));
+    const sequence = Math.max(0, ...data.remisiones.map(rem => remissionSequence(rem.numeroRemision, issuedDate.slice(0, 4)))) + 1;
+    const remissionNumber = remissionCode(route, issuedDate, sequence);
     const remission: Remision = {
       id: remissionNumber, numeroRemision: remissionNumber, proyectoId: project.id,
+      ...route,
       proyectoNombre: project.nombre, cliente: project.cliente, ubicacion: project.ubicacion,
       entregadoPor: payload.entregadoPor || user?.name || '', cargoEntregado: payload.cargoEntregado || displayCargo(user),
       recibidoPor: payload.recibidoPor, cargoRecibido: payload.cargoRecibido || '', observaciones: payload.observaciones || '',
-      fecha: displayDate(now), items: cart.map(line => ({ elementoId: line.elemento.id, codigo: line.elemento.codigo,
+      fecha: issuedDate, items: cart.map(line => ({ elementoId: line.elemento.id, codigo: line.elemento.codigo,
         nombre: line.elemento.nombre, marca: line.elemento.marca || '', cantidad: line.cantidad, unidad: line.elemento.unidad,
         pesoUnitario: line.elemento.pesoUnitario,
         valorUnitarioCOP: line.elemento.valorUnitario || 0, valorTotalCOP: roundCOP(line.cantidad * (line.elemento.valorUnitario || 0)),

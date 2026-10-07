@@ -55,6 +55,7 @@ export const mapElemento = (row: DbRow): Elemento => {
 export const mapRemision = (row: DbRow, itemsByCode?: Map<string, Elemento>): Remision => ({
   empresa: mapCompany(row.empresa),
   id: str(row.id), numeroRemision: str(row.numero_remision), proyectoId: id(row.proyecto_id) || '',
+  lugarRemision: str(row.lugar_remision), lugarDestino: str(row.lugar_destino),
   proyectoNombre: str(row.proyecto_nombre), cliente: str(row.cliente), ubicacion: str(row.ubicacion),
   entregadoPor: str(row.entregado_por), cargoEntregado: str(row.cargo_entregado),
   recibidoPor: str(row.recibido_por), cargoRecibido: str(row.cargo_recibido),
