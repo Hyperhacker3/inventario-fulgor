@@ -85,20 +85,19 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
 
   return <div className="ui-modal-layer fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-6" role="presentation">
     <section ref={dialog} role="dialog" aria-modal="true" aria-labelledby="item-detail-heading"
-      className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] shadow-2xl border flex flex-col overflow-hidden">
-      <header className="px-4 sm:px-6 py-3 sm:py-4 border-b flex items-center justify-between bg-[#f8fafc]">
-        <div className="min-w-0 flex flex-wrap gap-x-3 gap-y-1"><span className="font-mono-code font-bold text-[#253685]">{item.codigo}</span>
-          <span className="break-words text-xs text-[#64748b]">{categoryLabel(item.categoria)}</span></div>
-        <button data-dialog-close type="button" onClick={onClose} aria-label="Cerrar detalle" className="min-w-11 min-h-11 text-2xl text-[#64748b]">×</button>
-      </header>
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">
+      className="ui-dialog-panel ui-panel-enter relative bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] shadow-2xl border flex flex-col overflow-hidden">
+      <button data-dialog-close type="button" onClick={onClose} aria-label="Cerrar detalle" title="Cerrar detalle"
+        className="item-detail-close absolute top-3 right-3 sm:top-4 sm:right-4 z-20 w-11 h-11 rounded-xl flex items-center justify-center text-[#253685]">
+        <span className="material-symbols-outlined text-2xl" aria-hidden="true">close</span>
+      </button>
+      <div className="item-detail-scroll flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">
         {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
         {item.archived && <p className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm">Elemento archivado. No admite entradas, salidas ni edición.</p>}
         {item.stockPendiente && <p role="status" className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
           Stock pendiente de verificar desde el Excel. No disponible para salida hasta que administración registre el ajuste.
         </p>}
         <ScreenTransition screen={editing ? "edit" : "detail"}>{editing ? <form autoComplete="off" id="item-edit-form" onSubmit={save} className="space-y-4">
-          <h2 id="item-detail-heading" className="text-xl font-bold">Editar {item.codigo}</h2>
+          <h2 id="item-detail-heading" className="text-xl font-bold pr-14">Editar {item.codigo}</h2>
           <label className="block text-sm font-semibold">Nombre
             <input autoComplete="off" autoCorrect="off" spellCheck={false} required value={name} onChange={event => setName(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg" />
           </label>
@@ -126,43 +125,46 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
             </Select>
           </label>
           <ItemPhotoPicker value={photo} additional={additionalPhotos} category={item.categoria} onChange={setPhoto} onAdditionalChange={setAdditionalPhotos} onBusyChange={setPhotoBusy} disabled={pending} />
+          <div className="grid grid-cols-2 gap-4 pt-2">
+            <button type="button" onClick={() => setEditing(false)} disabled={pending || photoBusy} className="px-4 py-2 border rounded-lg text-sm">Cancelar</button>
+            <button type="submit" disabled={pending || photoBusy} className="px-4 py-2 bg-[#3e4e9e] text-white rounded-lg text-sm font-semibold">{pending ? 'Guardando…' : 'Guardar'}</button>
+          </div>
         </form> : <div className="item-detail-summary flex flex-col gap-6">
           <div className="flex flex-col gap-5">
             <ItemPhotoGallery key={JSON.stringify([item.fotoUrl, item.fotosAdicionales])} item={item} />
             <div className="min-w-0">
-              <h2 id="item-detail-heading" className="text-xl font-bold text-[#131b2e]">{item.nombre}</h2>
-              <p className="text-sm text-[#454651] mt-2">{item.descripcion}</p>
-              <p className="text-sm text-slate-600 mt-2">Marca: {item.marca || 'Sin declarar'}</p>
-              <p className="text-xs text-[#64748b] mt-3">Ubicación: {getLocationString(item)}</p>
-              <p className="text-xs text-[#64748b] mt-1">Estado: {item.estado || 'BUENO'}</p>
-              <p className={`text-sm mt-2 ${item.pesoUnitario ? 'text-[#253685]' : 'text-amber-700'}`}>Peso por 1 {item.unidad.toUpperCase()}: {formatUnitWeight(item.pesoUnitario)}</p>
-              <p className="text-sm mt-2 text-[#253685]">Valor por 1 {item.unidad.toUpperCase()}: {formatCOP(item.valorUnitario || 0)}</p>
+              <h2 id="item-detail-heading" className="text-xl sm:text-2xl font-bold text-[#131b2e] break-words">{item.nombre}</h2>
+              <dl className="item-detail-data mt-5 grid grid-cols-1 min-[400px]:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                <div className="min-w-0"><dt className="text-xs text-slate-500">Código</dt><dd className="font-mono-code font-semibold mt-1 break-words">{item.codigo}</dd></div>
+                <div className="min-w-0"><dt className="text-xs text-slate-500">Categoría</dt><dd className="font-semibold mt-1 break-words">{categoryLabel(item.categoria)}</dd></div>
+                <div className="min-w-0"><dt className="text-xs text-slate-500">Marca</dt><dd className="mt-1 break-words">{item.marca || 'Sin declarar'}</dd></div>
+                <div className="min-w-0"><dt className="text-xs text-slate-500">Estado</dt><dd className="mt-1 break-words">{item.estado || 'BUENO'}</dd></div>
+                <div className="min-w-0 min-[400px]:col-span-2"><dt className="text-xs text-slate-500">Ubicación</dt><dd className="mt-1 break-words">{getLocationString(item)}</dd></div>
+                <div className="min-w-0"><dt className="text-xs text-slate-500">Peso por 1 {item.unidad.toUpperCase()}</dt><dd className={`mt-1 break-words ${item.pesoUnitario ? 'text-[#253685]' : 'text-amber-700'}`}>{formatUnitWeight(item.pesoUnitario)}</dd></div>
+                <div className="min-w-0"><dt className="text-xs text-slate-500">Valor por 1 {item.unidad.toUpperCase()}</dt><dd className="mt-1 break-words text-[#253685]">{formatCOP(item.valorUnitario || 0)}</dd></div>
+                {item.descripcion && <div className="min-w-0 min-[400px]:col-span-2"><dt className="text-xs text-slate-500">Descripción / comentarios</dt><dd className="mt-1 whitespace-pre-wrap break-words">{item.descripcion}</dd></div>}
+              </dl>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-lg">{item.cantidad}</strong><span className="text-xs">Stock {item.unidad}</span></div>
-            <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-lg">{available(item)}</strong><span className="text-xs">Disponible</span></div>
-            <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-lg">{item.cantidadDanados ?? 0}</strong><span className="text-xs">Dañado</span></div>
+            <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-2xl sm:text-3xl break-words">{item.cantidad}</strong><span className="text-xs">Stock {item.unidad}</span></div>
+            <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-2xl sm:text-3xl break-words">{available(item)}</strong><span className="text-xs">Disponible</span></div>
+            <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-2xl sm:text-3xl break-words">{item.cantidadDanados ?? 0}</strong><span className="text-xs">Dañado</span></div>
           </div>
-          <div className="responsive-actions">
+          <div className="item-detail-actions">
             {!item.archived && <>
-            {canAdmin && <button type="button" onClick={startEdit} className="px-3 py-2 rounded-lg border text-sm font-semibold">Editar</button>}
-            {canOperate && !item.stockPendiente && <button type="button" onClick={() => openQuickMovement(item, 'ENTRADA')} className="px-3 py-2 rounded-lg bg-[#e6f4ea] text-[#137333] text-sm font-semibold">Entrada</button>}
-            {(canAdmin || canOperate && !item.stockPendiente) && <button type="button" onClick={() => openQuickMovement(item, 'AJUSTE')} className="px-3 py-2 rounded-lg bg-[#fef7e0] text-[#755b00] text-sm font-semibold">{item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'}</button>}
-            {canOperate && <button type="button" disabled={available(item) === 0} onClick={() => addToDispatchCart(item)}
-              className="px-3 py-2 rounded-lg bg-[#dd4c42] text-white text-sm font-semibold disabled:opacity-40">Agregar a la salida</button>}
-            {canAdmin && <button type="button" disabled={pending} onClick={archive} className="px-3 py-2 rounded-lg border text-red-700 text-sm font-semibold">Archivar</button>}
+            {canAdmin && <button type="button" onClick={startEdit} aria-label="Editar" title="Editar" className="p-2 rounded-lg text-[#253685]"><span className="material-symbols-outlined" aria-hidden="true">edit</span></button>}
+            {canOperate && !item.stockPendiente && <button type="button" onClick={() => openQuickMovement(item, 'ENTRADA')} aria-label="Entrada" title="Entrada" className="p-2 rounded-lg text-[#137333]"><span className="material-symbols-outlined" aria-hidden="true">input</span></button>}
+            {(canAdmin || canOperate && !item.stockPendiente) && <button type="button" onClick={() => openQuickMovement(item, 'AJUSTE')} aria-label={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} title={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} className="p-2 rounded-lg text-[#755b00]"><span className="material-symbols-outlined" aria-hidden="true">tune</span></button>}
+            {canOperate && <button type="button" disabled={available(item) === 0} onClick={() => addToDispatchCart(item)} aria-label="Agregar a la salida" title="Agregar a la salida"
+              className="p-2 rounded-lg text-[#dd4c42] disabled:opacity-40"><span className="material-symbols-outlined" aria-hidden="true">add_shopping_cart</span></button>}
+            {canAdmin && <button type="button" disabled={pending} onClick={archive} aria-label="Archivar" title="Archivar" className="p-2 rounded-lg text-red-700"><span className="material-symbols-outlined" aria-hidden="true">archive</span></button>}
             </>}
           </div>
           {item.archived && canAdmin && <ArchivedItemActions item={item} onDelete={onPermanentDelete} onRestore={onRestore} />}
         </div>}</ScreenTransition>
         {history}
       </div>
-      <footer className="p-4 border-t bg-[#f8fafc] flex justify-end gap-2">
-        {editing && <><button type="button" onClick={() => setEditing(false)} disabled={pending || photoBusy} className="px-4 py-2 border rounded-lg text-sm">Cancelar</button>
-          <button type="submit" form="item-edit-form" disabled={pending || photoBusy} className="px-4 py-2 bg-[#3e4e9e] text-white rounded-lg text-sm font-semibold">{pending ? 'Guardando…' : 'Guardar'}</button></>}
-        {!editing && <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-sm">Cerrar</button>}
-      </footer>
     </section>
   </div>;
 }

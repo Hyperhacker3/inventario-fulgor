@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Ficha ordenada y navegación por iconos (7 de octubre de 2026)
+
+Se retiran barras superior/inferior de la ficha. Una única X absoluta sobre el panel queda fuera del área de scroll, sobre la fotografía y disponible al consultar datos/movimientos. Código/categoría se reúnen bajo foto/nombre con marca, estado, ubicación completa, peso, valor y descripción/comentarios en una lista de datos adaptable (una columna bajo 400 px, dos desde ese ancho). Se conserva el texto original de las descripciones. Stock/Disponible/Dañado usan cifras de 24/30 px. Las cinco acciones pasan a una fila flexible de iconos semánticos, con aria-label/title, permisos, disponibilidad y confirmación de archivo; Guardar/Cancelar quedan dentro del formulario de edición, sin barra inferior.
+
+La navegación inferior compacta conserva selección hundida, insignias, destinos y ocultación con teclado, y retira los textos visibles. Inicio azul, Inventario violeta, Entradas verde y Salidas rojo, con tonos legibles en oscuro. La fuente local de iconos incluye `edit` y descarta `visibility`, que ya no se utiliza; compilación/despliegue no descargan fuentes.
+
+Pasaron typecheck, lint, **158 pruebas unitarias y 34 de integración (192)** y build. Se añaden pruebas para acciones de movimientos/salida/archivo y el único cierre tras actualización/scroll, y para nombres accesibles/destinos/selección/insignia de navegación sin textos; se adaptan pruebas existentes de edición y marca. Sin SQL adicional, computer use, automatización de navegador ni cambios en inventario real o archivos privados. Posición, colores y geometría reales se revisan con el usuario. Commit/push autorizados y despliegue comprobado por separado.
+
 ## Actividad reciente y lista móvil compacta (7 de octubre de 2026)
 
 Inventario carga `updated_at` descendente con desempate por ID ascendente y ordena una copia de los resultados filtrados antes de paginar. Así las entradas, salidas, ediciones y actualizaciones de caché/Realtime llevan el producto a los primeros resultados sin depender de una recarga. Las operaciones existentes ya actualizan la fecha; no requiere SQL adicional. Dos pruebas nuevas verifican actividad frente a creación, zonas horarias, empates, conservación del arreglo original y cambios de stock/nombre desde la segunda página.

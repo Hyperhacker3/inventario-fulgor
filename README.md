@@ -38,6 +38,8 @@ En Inventario, lista y cuadrícula muestran únicamente el nombre del almacén, 
 
 Inventario ordena los productos por **última modificación**, del más reciente al más antiguo, incluyendo entradas, salidas, edición y cambios recibidos en tiempo real. Desempata por ID para mantener un orden estable y conserva 24 productos por página. Los nombres reservan dos líneas y muestran puntos suspensivos al excederlas, en lista/cuadrícula y todos los tamaños. En lista móvil (menos de 640 px) se ven nombre, cantidad/unidad y salida, sin código, fotografía ni desplazamiento horizontal; tablet y PC mantienen el código. Los buscadores de productos retiran Buscar/Limpiar: filtran al escribir; cabecera y menú conservan Enter para abrir Inventario desde otra pantalla. Limpiar filtros permanece disponible.
 
+La ficha de producto elimina las barras superior/inferior y reúne código, categoría, marca, estado, ubicación completa, peso, valor y comentarios bajo el nombre y las fotografías. La X flota sobre la imagen y permanece visible fuera del área desplazable en móvil, tablet y PC. Stock/Disponible/Dañado tienen números de 24/30 px. Editar, Entrada, Ajuste, Salida y Archivar se muestran como iconos accesibles de colores en una fila adaptable. Guardar/Cancelar permanecen dentro del formulario de edición. La navegación inferior compacta muestra solo iconos: Inicio azul, Inventario violeta, Entradas verde y Salidas rojo, conservando selección, insignias y nombres accesibles.
+
 ## Desarrollo local
 
 Requiere Node.js 22 o superior y pnpm. Instale con `pnpm install --frozen-lockfile`, copie `.env.example` a `.env.local`, configure el proyecto Supabase y ejecute `pnpm dev`. La aplicación consulta el inventario exclusivamente desde Supabase y requiere iniciar sesión.

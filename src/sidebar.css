@@ -30,6 +30,14 @@
     transform: none !important;
   }
 }
+@media screen {
+  :root { --ui-nav-inventory: #7755b6; }
+  :root[data-theme='dark'] { --ui-nav-inventory: #cbb7ff; }
+  :root[data-ui-style] .mobile-bottom-nav button[data-nav-view='dashboard'] { color: var(--ui-action) !important; }
+  :root[data-ui-style] .mobile-bottom-nav button[data-nav-view='explorer'] { color: var(--ui-nav-inventory) !important; }
+  :root[data-ui-style] .mobile-bottom-nav button[data-nav-view='entries'] { color: var(--ui-success) !important; }
+  :root[data-ui-style] .mobile-bottom-nav button[data-nav-view='dispatch'] { color: var(--ui-danger) !important; }
+}
 @media screen and (hover: hover) and (pointer: fine) {
   :root[data-ui-style] button.ui-sidebar-action:hover:not(:disabled):not(:active):not([aria-current='page']),
   :root[data-ui-style] button.ui-flat-choice:hover:not(:disabled):not(:active):not([aria-pressed='true']):not([aria-selected='true']) {

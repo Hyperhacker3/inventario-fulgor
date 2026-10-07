@@ -123,8 +123,9 @@ test('editing includes existing levels and an editable brand; errors preserve th
   const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);
   try {
     await act(()=>root.render(h(ItemDetailContent,{item:{...product,estado:'OBSOLETO'},onClose(){},inventory})));
-    assert.match(host.textContent!,/Marca: Fabricante/);
-    await act(()=>[...host.querySelectorAll('button')].find(button=>button.textContent==='Editar')!.click());
+    const brandData = [...host.querySelectorAll('dt')].find(field => field.textContent === 'Marca')!.nextElementSibling!;
+    assert.equal(brandData.textContent, 'Fabricante');
+    await act(()=>host.querySelector<HTMLButtonElement>('[aria-label="Editar"]')!.click());
     const conditionLabel=[...host.querySelectorAll('label')].find(label=>label.textContent?.startsWith('Estado'))!;
     assert.equal(conditionLabel.querySelector('select')!.value,'OBSOLETO');
     assert.match(conditionLabel.querySelector('[role="combobox"]')!.textContent!,/OBSOLETO/);

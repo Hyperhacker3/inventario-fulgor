@@ -50,6 +50,21 @@ test('quick navigation has at most four actions while the complete menu retains 
   assert.equal(navigationIsActive(navigationItems('admin').find(item => item.id === 'data-admin')!, 'projects'), true);
 });
 
+test('icon-only bottom navigation keeps accessible destinations, active selection and dispatch badge', async () => {
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  const navigated: string[] = [];
+  try {
+    await act(() => root.render(createElement(MobileBottomNav, { items: quickNavigationItems('admin', 3), activeView: 'explorer', keyboardOpen: false, onNavigate: view => { navigated.push(view); } })));
+    const controls = [...host.querySelectorAll<HTMLButtonElement>('button')];
+    assert.deepEqual(controls.map(control => control.getAttribute('aria-label')), ['Inicio', 'Inventario', 'Entradas', 'Salidas']);
+    assert.equal(controls[1].getAttribute('aria-current'), 'page');
+    for (const control of controls) { assert.equal(control.querySelector('.material-symbols-outlined')!.getAttribute('aria-hidden'), 'true'); await act(() => control.click()); }
+    assert.deepEqual(navigated, ['dashboard', 'explorer', 'entries', 'dispatch']);
+    assert.match(controls[3].textContent!, /3/);
+    assert.doesNotMatch(host.textContent!, /Inicio|Inventario|Entradas|Salidas/);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
+
 test('overlay menu closes outside or with Escape, traps focus, and preserves input focus across data updates', async () => {
   let closed = 0, latest = 0, selected = '';
   const trigger = document.body.appendChild(document.createElement('button'));

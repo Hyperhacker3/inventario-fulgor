@@ -23,7 +23,7 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement,
   HTMLInputElement: dom.window.HTMLInputElement, IS_REACT_ACT_ENVIRONMENT: true });
 const { createRoot } = await import('react-dom/client');
-const button = (host: HTMLElement, text: string) => [...host.querySelectorAll<HTMLButtonElement>('button')].find(value => value.textContent?.trim() === text)!;
+const button = (host: HTMLElement, text: string) => [...host.querySelectorAll<HTMLButtonElement>('button')].find(value => (value.getAttribute('aria-label') || value.textContent?.trim()) === text)!;
 const field = (host: HTMLElement, label: string) => {
   const target = [...host.querySelectorAll<HTMLLabelElement>('label')].find(value => value.textContent === label)!;
   return document.getElementById(target.htmlFor) as HTMLButtonElement;
@@ -94,4 +94,35 @@ test('read-only and archived product details do not expose the edit form', async
       assert.equal(button(host, 'Editar'), undefined); assert.equal(host.querySelector('form'), null);
     }
   } finally { await act(() => root.unmount()); host.remove(); }
+});
+
+test('icon actions retain movement, dispatch and archive semantics and the single close control survives data refresh and scrolling', async () => {
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  const originalConfirm = window.confirm;
+  let closes = 0, archived = 0, accepted = false;
+  const movements: string[] = [], dispatched: string[] = [];
+  window.confirm = () => accepted;
+  const services = { ...inventory(async () => {}),
+    openQuickMovement: (_item: Elemento, kind: string) => { movements.push(kind); },
+    addToDispatchCart: (selected: Elemento) => { dispatched.push(selected.id); },
+    deleteElemento: async () => { archived++; },
+  };
+  try {
+    await act(() => root.render(h(ItemDetailContent, { item, onClose: () => { closes++; }, inventory: services })));
+    assert.equal(host.querySelectorAll('[aria-label="Cerrar detalle"]').length, 1);
+    assert.equal(host.querySelector('footer'), null);
+    await act(() => button(host, 'Entrada').click());
+    await act(() => button(host, 'Ajuste').click());
+    await act(() => button(host, 'Agregar a la salida').click());
+    assert.deepEqual(movements, ['ENTRADA', 'AJUSTE']); assert.deepEqual(dispatched, [item.id]);
+    await act(() => button(host, 'Archivar').click()); assert.equal(archived, 0);
+    const close = button(host, 'Cerrar detalle');
+    await act(() => root.render(h(ItemDetailContent, { item: { ...item, cantidad: 15 }, onClose: () => { closes += 2; }, inventory: services })));
+    const scroll = host.querySelector<HTMLElement>('.item-detail-scroll')!;
+    await act(() => { scroll.scrollTop = 300; scroll.dispatchEvent(new dom.window.Event('scroll')); });
+    assert.equal(button(host, 'Cerrar detalle'), close); assert.equal(scroll.contains(close), false);
+    await act(() => close.click()); assert.equal(closes, 2);
+    accepted = true;
+    await act(async () => button(host, 'Archivar').click()); assert.equal(archived, 1); assert.equal(closes, 4);
+  } finally { window.confirm = originalConfirm; await act(() => root.unmount()); host.remove(); }
 });
