@@ -6,15 +6,14 @@
     <meta name="theme-color" content="#e9edf3" />
     <script>
       (function () {
-        var preference = null, stylePreference = null;
+        var preference = null;
         try { preference = localStorage.getItem('el_turpial_theme'); } catch (_) {}
-        try { stylePreference = localStorage.getItem('el_turpial_ui_style'); } catch (_) {}
+        try { localStorage.removeItem('el_turpial_ui_style'); } catch (_) {}
         var theme = preference === 'light' || preference === 'dark' ? preference : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        var uiStyle = stylePreference === 'glass' ? 'glass' : 'neumorphism';
         document.documentElement.dataset.theme = theme;
-        document.documentElement.dataset.uiStyle = uiStyle;
+        document.documentElement.dataset.uiStyle = 'neumorphism';
         document.documentElement.style.colorScheme = theme;
-        document.querySelector('meta[name="theme-color"]').content = uiStyle === 'glass' ? (theme === 'dark' ? '#101b30' : '#edf2fc') : (theme === 'dark' ? '#202a3b' : '#e9edf3');
+        document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#202a3b' : '#e9edf3';
       })();
     </script>
     <link rel="icon" type="image/png" sizes="256x256" href="/logo-favicon.png" />
@@ -36,12 +35,9 @@
       .app-loading button.app-secondary { display: block; margin: 12px auto 0; }
       .app-spinner[hidden], .app-loading [hidden] { display: none; }
       html[data-theme='dark'] body, html[data-theme='dark'] .app-loading { background: #202a3b; color: #e7edf7; }
-      html[data-ui-style='glass'] body, html[data-ui-style='glass'] .app-loading { background: #edf2fc; }
-      html[data-ui-style='glass'][data-theme='dark'] body, html[data-ui-style='glass'][data-theme='dark'] .app-loading { background: #101b30; }
       html[data-theme='dark'] .app-loading p { color: #a4b2c8; }
       html[data-theme='dark'] .app-loading h1, html[data-theme='dark'] .app-loading button.app-secondary { color: #aebfff; }
       html[data-theme='dark'] .app-loading button { background: #202a3b; color: #b8c6ff; box-shadow: 4px 4px 9px #141b28, -4px -4px 9px #2b394e; }
-      html[data-ui-style='glass'] .app-loading button { border: 1px solid #ffffff80; border-radius: 22px; background: #ffffff40; backdrop-filter: blur(10px); box-shadow: 0 5px 14px #1f305229, inset 0 1px 1px #ffffffc0; }
       html[data-theme='dark'] .app-spinner { border-color: #303b53; border-top-color: #aebfff; }
       @keyframes app-spin { to { transform: rotate(360deg); } }
       @media (prefers-reduced-motion: reduce) { .app-spinner { animation: none; } }

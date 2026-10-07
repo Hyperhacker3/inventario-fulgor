@@ -21,9 +21,6 @@
   :root[data-ui-style]:not(:where([data-theme-changing='true'])) .ui-product-row > td { transition: background-color var(--ui-motion-duration) ease; }
   :root[data-ui-style] .ui-product-row > td:first-child { border-radius: var(--ui-control-radius) 0 0 var(--ui-control-radius); }
   :root[data-ui-style] .ui-product-row > td:last-child { border-radius: 0 var(--ui-control-radius) var(--ui-control-radius) 0; }
-  :root[data-ui-style='glass'] .ui-product-row > td { border-block: 1px solid var(--ui-line); }
-  :root[data-ui-style='glass'] .ui-product-row > td:first-child { border-left: 1px solid var(--ui-line); }
-  :root[data-ui-style='glass'] .ui-product-row > td:last-child { border-right: 1px solid var(--ui-line); }
 }
 @media screen and (hover: hover) and (pointer: fine) {
   :root[data-ui-style] button:not(:where(.ui-product-open, .ui-backdrop, .mobile-menu-backdrop, .a4-print-container *, .rm-measure *)):hover:not(:disabled),

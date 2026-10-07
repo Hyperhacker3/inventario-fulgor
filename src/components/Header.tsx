@@ -74,7 +74,7 @@ export const Header: React.FC = () => {
           <button
             type="button"
             aria-label="EL TURPIAL — Ir al inicio"
-            className="xl:hidden flex items-center shrink-0"
+            className="ui-brand-button xl:hidden flex items-center shrink-0"
             onClick={() => navigate('dashboard')}
           >
             <img src="/logo-completo.png" alt="EL TURPIAL" width="303" height="131" className="brand-logo w-28 sm:w-32 h-auto object-contain" />

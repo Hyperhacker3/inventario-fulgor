@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Barra lateral del laboratorio y retirada de Liquid Glass (7 de octubre de 2026)
+
+El usuario eligió Neumorfismo como único estilo y pidió retirar Glass y su botón de Ayuda. Se eliminaron `UIStyleToggle`, su estado/API en el contexto, reglas de vidrio, fondos ambiente, reflejos registrados y la elección de estilo del arranque. HTML y React fijan Neumorfismo y descartan la antigua preferencia `el_turpial_ui_style`; se conserva la paleta guardada, incluso si otra pestaña transmite una preferencia antigua. El barrido claro/oscuro, su alternativa de 1,5 segundos y movimiento reducido permanecen.
+
+`src/sidebar.css` aplica la referencia del laboratorio únicamente a la barra lateral de escritorio: botones planos en reposo, relieve al pasar el mouse, selección y pulsación con sombra interior. Incluye Nueva Remisión, Ayuda y sesión; la navegación identifica la opción activa con `aria-current`. Los logos de barra y cabecera compacta conservan su acción sin marco, fondo, sombra ni desplazamiento. Los demás botones y productos conservan su tratamiento. El laboratorio histórico no se modificó.
+
+Validación: typecheck y lint correctos, **128 pruebas unitarias y 25 de integración**, y build correcto. Dos pruebas nuevas simulan estados de puntero para comprobar la cascada CSS en ambas paletas; las pruebas de tema se actualizan para cubrir migración, almacenamiento bloqueado, eventos de preferencias retiradas, conservación de formulario/selector y cancelación de capturas con cambios rápidos. Se conservan pruebas de campos, acciones, productos, navegación, impresión y permisos. JSDOM no mide movimiento, geometría, contraste ni rendimiento real. Node 24.19.0 / pnpm 11.19.0 disponibles frente a Node 22.x declarado. Sin computer use, automatización de navegador, cambios en Supabase real ni acceso a archivos privados. Las secciones siguientes describen implementaciones anteriores que quedan sustituidas por esta decisión.
+
 ## Hover común y productos completos clicables (7 de octubre de 2026)
 
 La animación de navegación se comparte con todos los botones y productos mediante `src/interactions.css`: desplazamiento horizontal de 2 px en 180 ms, limitado a hover con puntero preciso y desactivado con movimiento reducido. Se conserva la pulsación de botones y se excluyen fondos de cierre/documentos impresos. Las transiciones de estilo y paleta siguen en 1,5 segundos.

@@ -5,10 +5,10 @@ import { JSDOM } from 'jsdom';
 import { act, createElement as h } from 'react';
 import { ThemeProvider } from '../../src/context/ThemeContext';
 import { ThemeToggle } from '../../src/components/ThemeToggle';
-import { UIStyleToggle } from '../../src/components/UIStyleToggle';
+
 import { Select } from '../../src/components/ui/Select';
 import { MobileMenu } from '../../src/components/navigation/MobileMenu';
-import { THEME_STORAGE_KEY, UI_STYLE_STORAGE_KEY, initializeTheme, parseTheme, readUIStylePreference } from '../../src/shared/theme';
+import { THEME_STORAGE_KEY, initializeTheme, parseTheme } from '../../src/shared/theme';
 
 const dom = new JSDOM('<!doctype html><html><head><meta name="theme-color"></head><body></body></html>', { url: 'https://app.test/' });
 let dark = false, reduced = false;
@@ -110,126 +110,116 @@ test('initial HTML applies system or saved theme before loading the application 
   }
 });
 
-test('style defaults to neumorphism, changes independently of color and preserves live fields and a portaled selector', async () => {
-  reset(); initializeTheme();
+test('retired glass preferences become neumorphism, preserving palette, live fields and an open selector', async () => {
+  reset(); window.localStorage.setItem('el_turpial_ui_style', 'glass'); initializeTheme();
+  assert.equal(window.localStorage.getItem('el_turpial_ui_style'), null);
   assert.equal(document.documentElement.dataset.uiStyle, 'neumorphism');
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
-  const styleButton = () => host.querySelector<HTMLButtonElement>('.ui-style-toggle')!;
   try {
-    await act(() => root.render(h(ThemeProvider, null, h('input', { defaultValue: 'Material' }), h(UIStyleToggle), h(ThemeToggle),
+    await act(() => root.render(h(ThemeProvider, null, h('input', { defaultValue: 'Material' }), h(ThemeToggle),
       h(Select, { value: 'A', onChange() {} }, h('option', { value: 'A' }, 'Almacén A'), h('option', { value: 'B' }, 'Almacén B')))));
-    assert.match(styleButton().textContent!, /Cambiar a Liquid Glass/);
     const input = host.querySelector('input')!; input.value = 'Cantidad: 42'; input.focus();
-    await act(() => styleButton().click());
-    assert.equal(document.documentElement.dataset.uiStyle, 'glass');
-    assert.equal(window.localStorage.getItem(UI_STYLE_STORAGE_KEY), 'glass');
-    assert.equal(window.localStorage.getItem(THEME_STORAGE_KEY), null);
-    assert.equal(document.documentElement.dataset.theme, 'light');
-    assert.equal(document.querySelector('meta[name="theme-color"]')!.getAttribute('content'), '#edf2fc');
-    assert.equal(host.querySelector('input'), input); assert.equal(input.value, 'Cantidad: 42'); assert.equal(document.activeElement, input);
     const trigger = host.querySelector<HTMLButtonElement>('.app-select-trigger')!;
     await act(() => trigger.click());
     const list = document.querySelector('.app-select-list')!;
-    assert.ok(list.closest('.ui-presence')?.parentElement === document.body);
     await act(() => toggle().click());
     assert.equal(document.documentElement.dataset.theme, 'dark');
-    assert.equal(document.documentElement.dataset.uiStyle, 'glass');
-    assert.equal(document.querySelector('meta[name="theme-color"]')!.getAttribute('content'), '#101b30');
-    await act(() => styleButton().click());
     assert.equal(document.documentElement.dataset.uiStyle, 'neumorphism');
+    assert.equal(document.querySelector('meta[name="theme-color"]')!.getAttribute('content'), '#202a3b');
     assert.equal(window.localStorage.getItem(THEME_STORAGE_KEY), 'dark');
-    assert.ok(document.querySelector('.app-select-list') === list);
-    assert.equal(trigger.getAttribute('aria-expanded'), 'true');
-    assert.equal(input.value, 'Cantidad: 42');
+    assert.equal(host.querySelector('input'), input); assert.equal(input.value, 'Cantidad: 42');
+    assert.equal(document.querySelector('.app-select-list'), list); assert.equal(trigger.getAttribute('aria-expanded'), 'true');
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
-test('style persists on remount, syncs other tabs and resets safely for invalid or cleared preferences', async () => {
-  reset(true); window.localStorage.setItem(UI_STYLE_STORAGE_KEY, 'glass');
-  const host = document.body.appendChild(document.createElement('div'));
-  let root = createRoot(host);
-  const storage = (value: string | null, key: string | null = UI_STYLE_STORAGE_KEY) => window.dispatchEvent(new dom.window.StorageEvent('storage', { key, newValue: value, storageArea: window.localStorage }));
+test('legacy style storage events and remounts cannot restore glass or overwrite the saved palette', async () => {
+  reset(true); window.localStorage.setItem(THEME_STORAGE_KEY, 'light'); window.localStorage.setItem('el_turpial_ui_style', 'glass');
+  const host = document.body.appendChild(document.createElement('div')); let root = createRoot(host);
   try {
-    await act(() => root.render(h(ThemeProvider, null, h(UIStyleToggle))));
-    assert.equal(document.documentElement.dataset.uiStyle, 'glass');
+    await act(() => root.render(h(ThemeProvider, null, h(ThemeToggle))));
+    const event = (key: string | null, value: string | null) => window.dispatchEvent(new dom.window.StorageEvent('storage', { key, newValue: value, storageArea: window.localStorage }));
+    await act(() => event('el_turpial_ui_style', 'glass'));
+    assert.equal(document.documentElement.dataset.uiStyle, 'neumorphism'); assert.equal(document.documentElement.dataset.theme, 'light');
     await act(() => root.unmount()); root = createRoot(host);
-    await act(() => root.render(h(ThemeProvider, null, h(UIStyleToggle))));
-    assert.equal(document.documentElement.dataset.uiStyle, 'glass');
-    await act(() => storage('invalid')); assert.equal(document.documentElement.dataset.uiStyle, 'neumorphism');
-    await act(() => storage('glass')); assert.equal(document.documentElement.dataset.uiStyle, 'glass');
-    await act(() => storage(null, null)); assert.equal(document.documentElement.dataset.uiStyle, 'neumorphism');
-    assert.equal(document.documentElement.dataset.theme, 'dark');
+    await act(() => root.render(h(ThemeProvider, null, h(ThemeToggle))));
+    assert.equal(document.documentElement.dataset.uiStyle, 'neumorphism'); assert.equal(document.documentElement.dataset.theme, 'light');
+    await act(() => event(null, null)); assert.equal(document.documentElement.dataset.theme, 'dark');
+    assert.equal(document.documentElement.dataset.uiStyle, 'neumorphism');
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
-test('both appearance changes retain a 1.5-second transition and restart it for a quick second change', async () => {
+test('palette changes retain a 1.5-second fallback and restart it for a quick second change', async () => {
   reset();
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
   try {
-    await act(() => root.render(h(ThemeProvider, null, h(UIStyleToggle), h(ThemeToggle))));
+    await act(() => root.render(h(ThemeProvider, null, h(ThemeToggle))));
     assert.equal(document.documentElement.dataset.themeChanging, undefined);
     await act(() => toggle().click());
     await act(() => new Promise(resolve => window.setTimeout(resolve, 500)));
     assert.equal(document.documentElement.dataset.themeChanging, 'true');
-    await act(() => host.querySelector<HTMLButtonElement>('.ui-style-toggle')!.click());
+    await act(() => toggle().click());
     await act(() => new Promise(resolve => window.setTimeout(resolve, 1100)));
     assert.equal(document.documentElement.dataset.themeChanging, 'true');
     await act(() => new Promise(resolve => window.setTimeout(resolve, 500)));
     assert.equal(document.documentElement.dataset.themeChanging, undefined);
+    assert.equal(document.documentElement.dataset.theme, 'light');
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
-test('style works with blocked storage and respects reduced motion', async () => {
-  reset(); reduced = true;
+test('fixed neumorphism and theme toggling work when reading, removing and saving storage are blocked', async () => {
+  reset(true); reduced = true;
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
-  const originalGet = dom.window.Storage.prototype.getItem, originalSet = dom.window.Storage.prototype.setItem;
-  dom.window.Storage.prototype.getItem = dom.window.Storage.prototype.setItem = () => { throw new Error('Blocked storage'); };
+  const originalGet = dom.window.Storage.prototype.getItem, originalSet = dom.window.Storage.prototype.setItem, originalRemove = dom.window.Storage.prototype.removeItem;
+  dom.window.Storage.prototype.getItem = dom.window.Storage.prototype.setItem = dom.window.Storage.prototype.removeItem = () => { throw new Error('Blocked storage'); };
   try {
-    assert.equal(readUIStylePreference(), 'neumorphism');
-    await act(() => root.render(h(ThemeProvider, null, h(UIStyleToggle))));
-    await act(() => host.querySelector<HTMLButtonElement>('.ui-style-toggle')!.click());
-    assert.equal(document.documentElement.dataset.uiStyle, 'glass');
+    initializeTheme(); assert.equal(document.documentElement.dataset.uiStyle, 'neumorphism');
+    await act(() => root.render(h(ThemeProvider, null, h(ThemeToggle))));
+    assert.equal(document.documentElement.dataset.theme, 'dark');
+    await act(() => toggle().click()); assert.equal(document.documentElement.dataset.theme, 'light');
+    assert.equal(document.documentElement.dataset.uiStyle, 'neumorphism');
     assert.equal(document.documentElement.dataset.themeChanging, undefined);
-  } finally { dom.window.Storage.prototype.getItem = originalGet; dom.window.Storage.prototype.setItem = originalSet; await act(() => root.unmount()); host.remove(); }
+  } finally {
+    dom.window.Storage.prototype.getItem = originalGet; dom.window.Storage.prototype.setItem = originalSet; dom.window.Storage.prototype.removeItem = originalRemove;
+    await act(() => root.unmount()); host.remove();
+  }
 });
 
-test('provider cancels a pending native snapshot when another style is chosen, preserving the latest palette and form', async () => {
+test('a second palette choice cancels a pending snapshot and preserves the latest palette and form', async () => {
   reset();
-  let applySnapshot!: ViewTransitionUpdateCallback, finish!: () => void, skips = 0;
-  const finished = new Promise<void>(resolve => { finish = resolve; });
+  const callbacks: ViewTransitionUpdateCallback[] = [], finishes: (() => void)[] = []; let skips = 0;
   document.startViewTransition = callback => {
-    applySnapshot = callback!;
+    callbacks.push(callback!);
+    const finished = new Promise<void>(resolve => { finishes.push(resolve); });
     return { ready: Promise.resolve(), updateCallbackDone: Promise.resolve(), finished, skipTransition() { skips++; } } as ViewTransition;
   };
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
   try {
-    await act(() => root.render(h(ThemeProvider, null, h('input', { defaultValue: 'Material' }), h(UIStyleToggle), h(ThemeToggle))));
+    await act(() => root.render(h(ThemeProvider, null, h('input', { defaultValue: 'Material' }), h(ThemeToggle))));
     const input = host.querySelector('input')!; input.value = '42'; input.focus();
-    await act(() => toggle().click());
-    assert.equal(document.documentElement.dataset.themeSweeping, 'true');
-    assert.equal(document.documentElement.dataset.theme, 'light');
-    await act(() => host.querySelector<HTMLButtonElement>('.ui-style-toggle')!.click());
-    assert.equal(skips, 1);
-    assert.equal(document.documentElement.dataset.uiStyle, 'glass');
-    assert.equal(document.documentElement.dataset.theme, 'dark');
-    await act(async () => { await applySnapshot(); finish(); await finished; });
-    assert.equal(document.documentElement.dataset.themeChanging, 'true');
+    await act(() => toggle().click()); assert.equal(document.documentElement.dataset.themeSweeping, 'true');
+    await act(() => toggle().click()); assert.equal(skips, 1); assert.equal(callbacks.length, 2);
+    await act(async () => { await callbacks[1](); finishes[1](); });
+    await act(async () => { await callbacks[0](); finishes[0](); });
+    assert.equal(document.documentElement.dataset.theme, 'light'); assert.equal(document.documentElement.dataset.uiStyle, 'neumorphism');
     assert.equal(document.documentElement.dataset.themeSweeping, undefined);
-    assert.ok(host.querySelector('input') === input); assert.equal(input.value, '42');
-    assert.ok(document.activeElement === input);
+    assert.equal(host.querySelector('input'), input); assert.equal(input.value, '42'); assert.equal(document.activeElement, input);
   } finally { await act(() => root.unmount()); host.remove(); delete (document as Partial<Document>).startViewTransition; }
 });
 
-test('initial HTML restores all four combinations and falls back when style storage is invalid or blocked', () => {
+test('initial HTML uses only neumorphism even with legacy preferences or unavailable storage', () => {
   const html = fs.readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
-  for (const theme of ['light', 'dark']) for (const style of ['neumorphism', 'glass', 'invalid', 'blocked']) {
+  for (const theme of ['light', 'dark']) for (const legacy of ['neumorphism', 'glass', 'invalid', 'blocked', 'remove-blocked']) {
     const shell = new JSDOM(html, { url: 'https://app.test/', runScripts: 'dangerously', beforeParse(win) {
       Object.assign(win, { matchMedia: () => ({ matches: theme === 'dark' }) });
-      if (style === 'blocked') win.Storage.prototype.getItem = () => { throw new Error('Blocked'); };
-      else { win.localStorage.setItem(THEME_STORAGE_KEY, theme); win.localStorage.setItem(UI_STYLE_STORAGE_KEY, style); }
+      win.localStorage.setItem(THEME_STORAGE_KEY, theme); win.localStorage.setItem('el_turpial_ui_style', legacy);
+      if (legacy === 'blocked') win.Storage.prototype.getItem = () => { throw new Error('Blocked'); };
+      if (legacy === 'remove-blocked') win.Storage.prototype.removeItem = () => { throw new Error('Blocked'); };
     } });
     assert.equal(shell.window.document.documentElement.dataset.theme, theme);
-    assert.equal(shell.window.document.documentElement.dataset.uiStyle, style === 'glass' ? 'glass' : 'neumorphism');
+    assert.equal(shell.window.document.documentElement.dataset.uiStyle, 'neumorphism');
+    assert.equal(shell.window.document.querySelector('meta[name="theme-color"]')!.getAttribute('content'), theme === 'dark' ? '#202a3b' : '#e9edf3');
+    if (legacy !== 'remove-blocked' && legacy !== 'blocked') assert.equal(shell.window.localStorage.getItem('el_turpial_ui_style'), null);
     shell.window.close();
   }
+  assert.doesNotMatch(html, /data-ui-style='glass'/);
 });

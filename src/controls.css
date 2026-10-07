@@ -32,7 +32,7 @@
   /* Override old colored utility fills, including their hover rules. Color conveys meaning. */
   :root[data-ui-style] button:not(:where(.app-select-trigger, .app-select-option, .ui-backdrop, .mobile-menu-backdrop, .a4-print-container *, .rm-measure *)) {
     background-color: var(--ui-button-fill, var(--ui-surface)) !important;
-    background-image: var(--ui-sheen) !important;
+    background-image: none !important;
     color: var(--ui-button-ink, var(--ui-action)) !important;
     border: 1px solid var(--ui-line);
     border-radius: var(--ui-control-radius);

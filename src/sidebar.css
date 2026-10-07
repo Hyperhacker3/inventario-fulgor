@@ -1,0 +1,36 @@
+/* The laboratory navigation is quiet at rest; relief identifies interaction and selection. */
+@media screen {
+  :root[data-ui-style] .app-sidebar button.ui-sidebar-action {
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border: 0;
+    border-radius: 20px;
+    color: var(--ui-sidebar-ink, var(--ui-muted)) !important;
+  }
+  :root[data-ui-style] .app-sidebar button.ui-sidebar-action[aria-current='page'] {
+    background-color: var(--ui-surface) !important;
+    box-shadow: var(--ui-inset-shadow) !important;
+    --ui-sidebar-ink: var(--ui-action);
+  }
+  :root[data-ui-style] .app-sidebar button.ui-sidebar-action:active:not(:disabled) {
+    background-color: var(--ui-surface) !important;
+    box-shadow: var(--ui-inset-shadow) !important;
+  }
+  :root[data-ui-style] button.ui-brand-button {
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border: 0;
+    border-radius: 0;
+    transform: none !important;
+  }
+}
+@media screen and (hover: hover) and (pointer: fine) {
+  :root[data-ui-style] .app-sidebar button.ui-sidebar-action:hover:not(:disabled):not(:active):not([aria-current='page']) {
+    background-color: var(--ui-subtle) !important;
+    box-shadow: var(--ui-control-shadow) !important;
+    --ui-sidebar-ink: var(--ui-action);
+  }
+  :root[data-ui-style] .app-sidebar button.ui-sidebar-logout:hover { --ui-sidebar-ink: var(--ui-danger); }
+}

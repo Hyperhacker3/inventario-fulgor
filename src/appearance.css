@@ -1,7 +1,4 @@
-@property --ui-sheen-top { syntax: '<color>'; inherits: true; initial-value: transparent; }
-@property --ui-sheen-middle { syntax: '<color>'; inherits: true; initial-value: transparent; }
-@property --ui-sheen-bottom { syntax: '<color>'; inherits: true; initial-value: transparent; }
-/* Palette and material are independent. Root tokens also reach body portals.
+/* Neumorphic palette tokens also reach body portals.
    Existing neutral utilities consume these tokens; semantic status colors stay intact. */
 :root {
   --ui-canvas: #e9edf3;
@@ -17,20 +14,11 @@
   --ui-focus: #3e4e9e;
   --ui-shadow-low: #c3ccd9;
   --ui-shadow-high: #ffffff;
-  --ui-highlight: rgb(255 255 255 / 0);
-  --ui-glow-opacity: 0;
   --ui-surface-radius: 18px;
   --ui-control-radius: 12px;
-  --ui-backdrop: blur(0px) saturate(100%);
-  --ui-control-backdrop: blur(0px) saturate(100%);
   --ui-button-hover: #edf1f7;
-  --ui-sheen-top: transparent;
-  --ui-sheen-middle: transparent;
-  --ui-sheen-bottom: transparent;
-  --ui-sheen: linear-gradient(145deg, var(--ui-sheen-top) 0%, var(--ui-sheen-middle) 28%, transparent 52%, var(--ui-sheen-bottom) 100%);
-  /* Equal shadow structure makes the material change interpolate smoothly. */
-  --ui-raised: 7px 7px 17px var(--ui-shadow-low), -7px -7px 17px var(--ui-shadow-high), inset 0 1px 0 var(--ui-highlight), inset 0 -1px 0 transparent;
-  --ui-control-shadow: 4px 4px 9px var(--ui-shadow-low), -4px -4px 9px var(--ui-shadow-high), inset 0 1px 0 var(--ui-highlight), inset 0 -1px 0 transparent;
+  --ui-raised: 7px 7px 17px var(--ui-shadow-low), -7px -7px 17px var(--ui-shadow-high);
+  --ui-control-shadow: 4px 4px 9px var(--ui-shadow-low), -4px -4px 9px var(--ui-shadow-high);
   --ui-inset-shadow: inset 3px 3px 7px var(--ui-shadow-low), inset -3px -3px 7px var(--ui-shadow-high);
   --ui-primary-shadow: 3px 3px 8px rgb(37 54 133 / .28), inset 0 1px 0 rgb(255 255 255 / .18);
 }
@@ -50,53 +38,9 @@
   --ui-shadow-high: #2b394e;
   --ui-button-hover: #253247;
 }
-:root[data-ui-style='glass'] {
-  --ui-canvas: #edf2fc;
-  --ui-surface: rgb(255 255 255 / .38);
-  --ui-field: rgb(255 255 255 / .28);
-  --ui-subtle: rgb(234 241 252 / .32);
-  --ui-line: rgb(255 255 255 / .62);
-  --ui-accent: rgb(98 126 216 / .18);
-  --ui-glow-opacity: 1;
-  --ui-surface-radius: 28px;
-  --ui-control-radius: 22px;
-  --ui-backdrop: blur(24px) saturate(170%);
-  --ui-control-backdrop: blur(10px) saturate(160%);
-  --ui-button-hover: rgb(255 255 255 / .52);
-  --ui-sheen-top: rgb(255 255 255 / .5);
-  --ui-sheen-middle: rgb(255 255 255 / .08);
-  --ui-sheen-bottom: rgb(38 61 104 / .06);
-  --ui-raised: 0 12px 32px rgb(31 48 82 / .16), 0 2px 6px rgb(31 48 82 / .06), inset 0 1px 1px rgb(255 255 255 / .9), inset 0 -1px 1px rgb(75 96 135 / .22);
-  --ui-control-shadow: 0 5px 14px rgb(31 48 82 / .14), 0 1px 3px rgb(31 48 82 / .06), inset 0 1px 1px rgb(255 255 255 / .9), inset 0 -1px 1px rgb(75 96 135 / .22);
-  --ui-inset-shadow: inset 0 1px 2px rgb(23 32 57 / .09), inset 0 -1px 0 rgb(255 255 255 / .4);
-  --ui-primary-shadow: 0 5px 15px rgb(37 54 133 / .24), inset 0 1px 0 rgb(255 255 255 / .45);
-}
-:root[data-ui-style='glass'][data-theme='dark'] {
-  --ui-canvas: #101b30;
-  --ui-surface: rgb(27 40 62 / .48);
-  --ui-field: rgb(200 219 247 / .1);
-  --ui-subtle: rgb(26 42 65 / .36);
-  --ui-line: rgb(219 236 255 / .3);
-  --ui-accent: rgb(133 164 240 / .2);
-  --ui-button-hover: rgb(163 189 222 / .18);
-  --ui-sheen-top: rgb(236 246 255 / .2);
-  --ui-sheen-middle: rgb(220 237 255 / .035);
-  --ui-sheen-bottom: rgb(0 0 0 / .12);
-  --ui-raised: 0 12px 32px rgb(0 0 0 / .28), 0 2px 6px rgb(0 0 0 / .12), inset 0 1px 1px rgb(234 247 255 / .45), inset 0 -1px 1px rgb(0 0 0 / .32);
-  --ui-control-shadow: 0 5px 14px rgb(0 0 0 / .24), 0 1px 3px rgb(0 0 0 / .12), inset 0 1px 1px rgb(234 247 255 / .4), inset 0 -1px 1px rgb(0 0 0 / .3);
-  --ui-inset-shadow: inset 0 1px 2px rgb(0 0 0 / .2), inset 0 -1px 0 rgb(255 255 255 / .08);
-}
 
 @media screen {
   :root[data-ui-style] body { background-color: var(--ui-canvas); color: var(--ui-ink); isolation: isolate; }
-  body::before, body::after {
-    content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-    opacity: var(--ui-glow-opacity); transition: opacity var(--theme-duration) ease;
-  }
-  body::before { background-image: radial-gradient(ellipse at 12% 25%, #afc8f3 0, transparent 52%), radial-gradient(ellipse at 88% 72%, #93c5c7 0, transparent 50%), radial-gradient(ellipse at 78% 6%, #c6b9e4 0, transparent 48%), radial-gradient(ellipse at 30% 90%, #e8caab 0, transparent 45%); }
-  body::after { background-image: radial-gradient(ellipse at 12% 25%, #243f77 0, transparent 52%), radial-gradient(ellipse at 88% 72%, #165667 0, transparent 50%), radial-gradient(ellipse at 78% 6%, #453563 0, transparent 48%), radial-gradient(ellipse at 30% 90%, #62442e 0, transparent 45%); opacity: 0; }
-  :root[data-ui-style='glass'][data-theme='dark'] body::before { opacity: 0; }
-  :root[data-ui-style='glass'][data-theme='dark'] body::after { opacity: 1; }
   :root[data-ui-style] :is(.app-viewport, .ui-canvas, [class~='bg-[#faf8ff]']):not(body) { background-color: transparent; }
   :root[data-ui-style] .app-loading { background-color: var(--ui-canvas); color: var(--ui-ink); }
 
@@ -110,15 +54,6 @@
     border-radius: var(--ui-surface-radius); box-shadow: var(--ui-raised);
   }
   :root[data-ui-style] :is(.app-header, .app-sidebar, .mobile-bottom-nav) { box-shadow: var(--ui-control-shadow); }
-  /* Functional glass layers float over the ambient canvas; content uses a quieter material. */
-  :root[data-ui-style] :is(.app-header, .app-sidebar, .mobile-bottom-nav, .mobile-menu-panel, .ui-dialog-panel, .app-select-list) { backdrop-filter: var(--ui-backdrop); -webkit-backdrop-filter: var(--ui-backdrop); }
-  :root[data-ui-style='glass'] :is(.app-header, .app-sidebar, .mobile-bottom-nav, .mobile-menu-panel, .ui-dialog-panel, .app-select-list, .ui-surface, .ui-search-field, .bg-white[class*='rounded']):not(:where(button, input, textarea, .a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) {
-    background-image: var(--ui-sheen);
-    backdrop-filter: var(--ui-backdrop); -webkit-backdrop-filter: var(--ui-backdrop);
-  }
-  :root[data-ui-style='glass'] :is(button, input, textarea):not(:where(.app-select-option, .ui-backdrop, .mobile-menu-backdrop, [type='checkbox'], [type='radio'], [type='file'], [type='hidden'], .bg-transparent, .a4-print-container *, .rm-measure *)) {
-    backdrop-filter: var(--ui-control-backdrop); -webkit-backdrop-filter: var(--ui-control-backdrop);
-  }
 
   :root[data-ui-style] :is(button[class*='rounded'], .theme-toggle, .app-select-trigger):not(:where(.a4-print-container *, .rm-measure *, .mobile-menu-backdrop)) { box-shadow: var(--ui-control-shadow); }
   :root[data-ui-style] :is(button[class*='rounded']:not(.rounded-full), .app-select-trigger):not(:where(.a4-print-container *, .rm-measure *)) { border-radius: var(--ui-control-radius); }
@@ -147,7 +82,7 @@
   :root[data-ui-style] :is([class~='hover:text-[#253685]'], [class~='hover:text-[#3e4e9e]']):hover { color: var(--ui-brand); }
   :root[data-ui-style] .app-select-option:is([data-highlighted='true'], [aria-selected='true']) { color: var(--ui-brand); }
 
-  /* Neumorphism uses relief only. Transparent borders retain dimensions during style changes.
+  /* Neumorphism uses relief only. Transparent borders retain layout dimensions.
      Chevron/spinner borders draw symbols, and the printed document has its own rules. */
   :root[data-ui-style='neumorphism'] *:not(:where(.app-select-chevron, .app-spinner, .a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)),
   :root[data-ui-style='neumorphism'] *:not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *))::before,
@@ -161,7 +96,6 @@
   :root[data-ui-style='neumorphism'] [class*='border']:where([class*='rounded']):not(:where(button, input, textarea, .app-select-trigger, .ui-inset, .rounded-full, .a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) { box-shadow: var(--ui-raised); }
 
   /* Appearance changes last 1.5s. Navigation, dialogs, keyboard and presses retain 180ms. */
-  :root[data-theme-changing='true'] { transition: --ui-sheen-top var(--theme-duration) ease, --ui-sheen-middle var(--theme-duration) ease, --ui-sheen-bottom var(--theme-duration) ease; }
   :root[data-theme-changing='true'] body,
   :root[data-theme-changing='true'] *:not(:where(.a4-print-container, .a4-print-container *, .rm-measure, .rm-measure *)) {
     transition: background-color var(--theme-duration) ease, color var(--theme-duration) ease, border-color var(--theme-duration) ease,
@@ -190,16 +124,10 @@
   @keyframes ui-theme-wipe { from { mask-position: 100% 0; } to { mask-position: 0% 0; } }
 }
 
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  :root[data-ui-style='glass'] { --ui-surface: #edf2fc; --ui-field: #e1e9f6; --ui-subtle: #e1e9f6; }
-  :root[data-ui-style='glass'][data-theme='dark'] { --ui-surface: #1a2944; --ui-field: #213553; --ui-subtle: #213553; }
-}
 @media (max-width: 639px) {
-  :root[data-ui-style='neumorphism'] { --ui-raised: 5px 5px 12px var(--ui-shadow-low), -5px -5px 12px var(--ui-shadow-high), inset 0 1px 0 var(--ui-highlight), inset 0 -1px 0 transparent; }
-  :root[data-ui-style='glass'] { --ui-backdrop: blur(16px) saturate(160%); --ui-control-backdrop: blur(6px) saturate(150%); }
+  :root[data-ui-style='neumorphism'] { --ui-raised: 5px 5px 12px var(--ui-shadow-low), -5px -5px 12px var(--ui-shadow-high); }
 }
 @media (prefers-reduced-motion: reduce) {
-  :root[data-theme-changing='true'] { transition: none !important; }
   :root[data-theme-changing='true'] *, body::before, body::after, .theme-toggle-icon svg { transition: none !important; }
   :root::view-transition-group(root), :root::view-transition-old(root), :root::view-transition-new(root) { animation: none !important; mask-image: none !important; }
 }

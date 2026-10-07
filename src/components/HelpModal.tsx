@@ -2,7 +2,6 @@ import { useInventory } from '../context/InventoryContext';
 import { isDemo } from '../lib/supabase';
 import { useRef } from 'react';
 import { useDialogFocus } from '../hooks/useDialogFocus';
-import { UIStyleToggle } from './UIStyleToggle';
 
 export function HelpModal() {
   const { isHelpModalOpen, setIsHelpModalOpen, resetToDefaultData, syncStatus } = useInventory();
@@ -28,7 +27,6 @@ export function HelpModal() {
           if (window.confirm('¿Restablecer los datos de demostración locales?')) { resetToDefaultData(); setIsHelpModalOpen(false); }
         }}>Restablecer</button>
       </div>}
-      <UIStyleToggle />
       <footer className="flex justify-end"><button className="bg-[#3e4e9e] text-white rounded-lg px-5 py-2" onClick={() => setIsHelpModalOpen(false)}>Cerrar</button></footer>
     </section>
   </div>;

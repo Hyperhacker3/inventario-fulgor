@@ -4,6 +4,7 @@
 @import "./appearance.css";
 @import "./controls.css";
 @import "./interactions.css";
+@import "./sidebar.css";
 
 @layer base {
   :root {

@@ -34,7 +34,7 @@ function capture() {
 test('native sweep captures the old palette, then applies the new one without copying live fields', async () => {
   reset(); const view = capture(); document.startViewTransition = view.start;
   const input = document.querySelector('input')!; input.value = '42'; input.focus();
-  const cleanup = transitionAppearance(() => applyTheme('dark'), true);
+  const cleanup = transitionAppearance(() => applyTheme('dark'));
   try {
     assert.equal(root.dataset.theme, 'light');
     assert.equal(root.dataset.themeSweeping, 'true');
@@ -50,10 +50,10 @@ test('native sweep captures the old palette, then applies the new one without co
 
 test('interrupting a sweep prevents its late callback and completion from overwriting the latest choice', async () => {
   reset(); const old = capture(); document.startViewTransition = old.start;
-  const stopOld = transitionAppearance(() => applyTheme('dark'), true);
+  const stopOld = transitionAppearance(() => applyTheme('dark'));
   stopOld(); assert.equal(old.skips(), 1);
   const current = capture(); document.startViewTransition = current.start;
-  const stopCurrent = transitionAppearance(() => applyTheme('light'), true);
+  const stopCurrent = transitionAppearance(() => applyTheme('light'));
   try {
     current.update(); old.update();
     assert.equal(root.dataset.theme, 'light');
@@ -66,19 +66,19 @@ test('interrupting a sweep prevents its late callback and completion from overwr
 
 test('unsupported or unavailable native capture falls back, and reduced motion always applies immediately', () => {
   reset(); let updates = 0;
-  let cleanup = transitionAppearance(() => updates++, true);
+  let cleanup = transitionAppearance(() => updates++);
   assert.equal(updates, 1); assert.equal(root.dataset.themeChanging, 'true'); cleanup();
   document.startViewTransition = () => { throw new Error('Capture unavailable'); };
-  cleanup = transitionAppearance(() => updates++, true);
+  cleanup = transitionAppearance(() => updates++);
   assert.equal(updates, 2); assert.equal(root.dataset.themeSweeping, undefined); assert.equal(root.dataset.themeChanging, 'true'); cleanup();
   reduced = true;
-  cleanup = transitionAppearance(() => updates++, true);
+  cleanup = transitionAppearance(() => updates++);
   assert.equal(updates, 3); assert.equal(root.dataset.themeChanging, undefined); assert.equal(root.dataset.themeSweeping, undefined); cleanup();
 });
 
 test('a skipped browser snapshot still applies the palette and cleans up without an unhandled rejection', async () => {
   reset(); const view = capture(); document.startViewTransition = view.start;
-  const cleanup = transitionAppearance(() => applyTheme('dark'), true);
+  const cleanup = transitionAppearance(() => applyTheme('dark'));
   try {
     view.ready.reject(new Error('Document hidden'));
     view.update(); view.finished.resolve();
@@ -87,12 +87,11 @@ test('a skipped browser snapshot still applies the palette and cleans up without
   } finally { cleanup(); }
 });
 
-test('style changes use the 1.5-second fade, independently of native sweep support', () => {
-  reset(); let captures = 0;
-  document.startViewTransition = () => { captures++; throw new Error('Should not capture style changes'); };
-  const cleanup = transitionAppearance(() => { root.dataset.uiStyle = 'glass'; }, false);
+test('the palette fallback retains a 1.5-second fade when native capture is unavailable', () => {
+  reset();
+  const cleanup = transitionAppearance(() => applyTheme('dark'));
   try {
-    assert.equal(captures, 0); assert.equal(root.dataset.uiStyle, 'glass');
+    assert.equal(root.dataset.theme, 'dark'); assert.equal(root.dataset.uiStyle, 'neumorphism');
     assert.equal(root.dataset.themeChanging, 'true'); assert.equal(root.dataset.themeSweeping, undefined);
     const css = fs.readFileSync(new URL('../../src/theme.css', import.meta.url), 'utf8');
     assert.equal(APPEARANCE_TRANSITION_MS, 1500); assert.match(css, /--theme-duration:\s*1500ms/);
@@ -112,8 +111,6 @@ test('neumorphic border rules cover neutral, status, dashed and portaled surface
     for (const surface of children.slice(0, 4)) assert.ok(surface.matches(selector));
     for (const symbolOrPrint of children.slice(4)) assert.equal(symbolOrPrint.matches(selector), false);
     for (const printChild of fixture.querySelectorAll('.a4-print-container *, .rm-measure *')) assert.equal(printChild.matches(selector), false);
-    root.dataset.uiStyle = 'glass';
-    assert.equal(children[0].matches(selector), false);
     assert.match(borderRule, /--tw-ring-shadow: 0 0 #0000/);
     assert.match(css, /:focus-visible[^}]*outline: 2px/);
   } finally { fixture.remove(); }

@@ -23,8 +23,8 @@ function fixture(style: string, theme: string) {
   </body></html>`);
 }
 
-test('single-line quantities, names, dates and comboboxes share a height across both materials and palettes', () => {
-  for (const style of ['neumorphism', 'glass']) for (const theme of ['light', 'dark']) {
+test('single-line quantities, names, dates and comboboxes share a height across both palettes', () => {
+  for (const style of ['neumorphism']) for (const theme of ['light', 'dark']) {
     const dom = fixture(style, theme), document = dom.window.document;
     const computed = (id: string) => dom.window.getComputedStyle(document.getElementById(id)!);
     try {
@@ -41,7 +41,7 @@ test('single-line quantities, names, dates and comboboxes share a height across 
 });
 
 test('previously filled actions use the pagination material and semantic text without styling list options, backdrops or print as actions', () => {
-  for (const style of ['neumorphism', 'glass']) for (const theme of ['light', 'dark']) {
+  for (const style of ['neumorphism']) for (const theme of ['light', 'dark']) {
     const dom = fixture(style, theme), document = dom.window.document;
     const computed = (id: string) => dom.window.getComputedStyle(document.getElementById(id)!);
     try {

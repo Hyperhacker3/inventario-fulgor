@@ -1,7 +1,7 @@
 import { APPEARANCE_TRANSITION_MS } from './theme';
 
 /** Animate root appearance without copying DOM, remounting views or losing drafts. */
-export function transitionAppearance(update: () => void, sweep: boolean): () => void {
+export function transitionAppearance(update: () => void): () => void {
   const root = document.documentElement;
   let cancelled = false;
   let transition: ViewTransition | undefined;
@@ -18,7 +18,7 @@ export function transitionAppearance(update: () => void, sweep: boolean): () => 
   };
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   if (reduced) apply();
-  else if (sweep && typeof document.startViewTransition === 'function') {
+  else if (typeof document.startViewTransition === 'function') {
     root.dataset.themeSweeping = 'true';
     try {
       transition = document.startViewTransition(apply);
