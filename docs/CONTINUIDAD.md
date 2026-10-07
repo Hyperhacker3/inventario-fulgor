@@ -107,6 +107,8 @@ Mantener la instrucción de no usar computer use ni automatización de navegador
 
 Revisar `git status` antes de preparar commits; excluir expresamente Excel y archivos privados. No usar `git add .`. La publicación anterior autorizada en `main` no implica que esta implementación esté desplegada. Este cambio visual no requiere SQL ni modificación del inventario.
 
+**Autorización permanente del usuario, 7 de octubre de 2026:** «Sii, has push a cada cambio que hagamos». Crear commit y hacer push a `origin/main` después de cada cambio terminado y verificado, incluyendo la corrección visual `b73b0d0`. El push activa el despliegue de Vercel; comprobar su resultado y los recursos públicos antes de afirmar que el cambio está publicado. Esta autorización se mantiene para los cambios posteriores de este proyecto, salvo que el usuario la modifique.
+
 ## Trabajo pendiente para continuar
 
 1. Revisar con el usuario las cuatro combinaciones de estilo/paleta, contraste, selectores, ventanas, navegación móvil y remisiones impresas, siguiendo la guía de `docs/estilos-interfaz.md`.
