@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Corrección de las cuatro capturas de Neumorfismo (7 de octubre de 2026)
+
+Las capturas muestran sombras recortadas en esquinas de navegación/filtros, Alcance junto al selector y alturas desiguales en stock/peso. Se reservó espacio para el relieve en el scroll de navegación, se trasladó la superficie de filtros fuera de su recorte, se corrigió `display` de selectores de bloque y se dispuso Alcance sobre su campo. Las tarjetas tienen más separación. Stock inicial tiene un solo hundido y altura alineada, con foco de teclado alrededor del grupo y botones identificados. Peso usa ancho intrínseco para la unidad y se apila en pantallas inferiores a 480 px.
+
+Se conservan Neumorfismo predeterminado sin bordes, Liquid Glass, ambas transiciones de 1,5 segundos, funciones y documento imprimible. La verificación utiliza las pruebas existentes de filtros, selectores, navegación, formularios y apariencia; las capturas del usuario orientan la corrección. No se usa computer use ni automatización de navegador y queda pendiente la confirmación visual del usuario en la app.
+
+Validación: typecheck y lint correctos, **116 pruebas unitarias y 25 de integración** correctas, y build correcto. El entorno disponible continúa siendo Node 24.19.0 / pnpm 11.19.0, frente a Node 22.x declarado en el proyecto. No hubo operaciones sobre Supabase real.
+
 ## Ajuste de barrido y Neumorfismo sin bordes (7 de octubre de 2026)
 
 Claro/oscuro revela la nueva paleta de izquierda a derecha con una máscara de borde suave durante 1,5 segundos. Entre estilos se conserva el fundido, reducido también a 1,5 segundos. La implementación utiliza View Transitions con cancelación y descarte de capturas obsoletas; si la API no está disponible o no puede iniciarse, usa el fundido. Movimiento reducido aplica los cambios directamente. El DOM y los formularios se conservan.

@@ -14,10 +14,12 @@ Implementado el 7 de octubre por petición del usuario. Las transiciones de esti
 
 El ajuste posterior sustituye la transición original de 3 segundos por **1,5 segundos** en ambos cambios. Claro/oscuro usa un barrido suave de izquierda a derecha mediante View Transitions; si no está disponible, conserva un fundido de 1,5 segundos. Neumorfismo elimina los bordes y anillos decorativos de superficies, campos, avisos y portales, manteniendo sombras, símbolos, foco del teclado y el documento imprimible. Los cambios rápidos cancelan las capturas anteriores para que prevalezca la última elección.
 
+El usuario aportó cuatro capturas con problemas visuales. La corrección posterior reserva espacio para sombras dentro del scroll de navegación, aplica el relieve al contenedor exterior de filtros, respeta los selectores de bloque y coloca Alcance sobre su campo. Las tarjetas del dashboard tienen más separación. Stock inicial utiliza un solo campo hundido con botones y altura alineada; el peso reserva el ancho de su unidad y se apila por debajo de 480 px. Se conservan los 1,5 segundos y las reglas sin bordes de Neumorfismo. La corrección se comprueba con código/DOM y build; su aspecto en la app sigue sujeto a la revisión del usuario.
+
 - Repositorio local: `C:/Users/Assas/Downloads/inventario-fulgor`.
 - Remoto: `https://github.com/Hyperhacker3/inventario-fulgor.git`, rama `main`.
 - Aplicación publicada: `https://inventario-fulgor.vercel.app/`.
-- Primera implementación de estilos: `f8e7ae3`, publicada y verificada mediante el estado de Vercel y los recursos de la URL pública. El ajuste posterior a 1,5 segundos y sin bordes de Neumorfismo sucede después de ese commit. Para identificar su versión y despliegue, consultar el historial de `main` y Vercel; no deducir la versión publicada solo de este documento.
+- Primera implementación de estilos: `f8e7ae3`; barrido de 1,5 segundos y Neumorfismo sin bordes: `3f9c10b`. Ambos publicados y verificados mediante el estado de Vercel y los recursos de la URL pública. La corrección de las cuatro capturas sucede después. Para identificar su versión y despliegue, consultar el historial de `main` y Vercel; no deducir la versión publicada solo de este documento.
 - `c32e702` conserva estados importados que no pertenecen a las opciones antiguas del formulario y protege los archivos privados frente al servidor de desarrollo.
 - Stack: React 19, TypeScript, Vite, Tailwind CSS, TanStack Query y Supabase. Node 22.x y pnpm indicados en `package.json`.
 - La marca visible es **EL TURPIAL**. El nombre técnico del repositorio y la URL histórica siguen conteniendo `fulgor`; no renombrarlos como parte del cambio de estilo.

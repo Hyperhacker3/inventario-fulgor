@@ -22,8 +22,8 @@ export function ExplorerFilters({ visible, filters, warehouses, racks, levels, b
   const warehouseNames = new Map(warehouses.map(warehouse => [warehouse.id, warehouse.nombre]));
   const rackNames = new Map(racks.map(rack => [rack.id, `${warehouseNames.get(rack.almacenId || '') || 'Sin almacén'} > ${rack.nombre || rack.codigo}`]));
   const levelNames = new Map(levels.map(level => [level.id, `Nivel ${level.nombre || level.codigo}`]));
-  return <aside id="inventory-filters" data-expanded={visible} className="filter-panel w-full lg:w-64 shrink-0">
-    <div className="filter-panel-inner"><div className="bg-white border rounded-xl p-4 sm:p-5 shadow-xs space-y-5">
+  return <aside id="inventory-filters" data-expanded={visible} className="filter-panel bg-white border rounded-xl shadow-xs w-full lg:w-64 shrink-0">
+    <div className="filter-panel-inner"><div className="p-4 sm:p-5 space-y-5">
       <div className="flex justify-between items-center border-b pb-2"><h3 className="font-bold">Filtros</h3>
         <button id="btn-clear-filters" type="button" onClick={onClear} className="text-[#3e4e9e] text-xs font-semibold">Limpiar</button></div>
       <CategoryFilter options={categories} selected={filters.categories} label={categoryLabel} onChange={onCategories} />

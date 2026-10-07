@@ -29,7 +29,7 @@ export const Sidebar: React.FC = () => {
       </button>}
 
       {/* Navigation Links */}
-      <nav className="flex-1 flex flex-col gap-1 overflow-y-auto pr-1">
+      <nav className="app-nav-scroll flex-1 flex flex-col overflow-y-auto">
         {navItems.map((item) => {
           const isActive = activeView === item.id || item.id === 'data-admin' && activeView === 'projects';
           return (

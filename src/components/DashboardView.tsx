@@ -33,7 +33,7 @@ export function DashboardView() {
       <div><p className="text-xs font-bold tracking-widest text-[#3e4e9e] uppercase mb-1">EL TURPIAL · Control de inventario</p>
         <h2 className="text-2xl md:text-3xl font-bold">Panel de inventario</h2><p className="text-sm text-slate-500 mt-1">Disponibilidad, distribución y prioridades del inventario actual.</p></div>
       <div className="flex flex-wrap gap-3 items-end">
-        <label className="text-xs text-slate-500">Alcance<Select value={warehouse} onChange={event => setWarehouse(event.target.value)} className="block mt-1 border rounded-lg p-2 text-sm bg-white text-slate-800">
+        <label className="flex flex-col gap-1 text-xs text-slate-500">Alcance<Select value={warehouse} onChange={event => setWarehouse(event.target.value)} className="block border rounded-lg p-2 text-sm bg-white text-slate-800">
           <option value="ALL">Todos los almacenes</option>{almacenes.map(row => <option key={row.id} value={row.id}>{row.nombre}</option>)}<option value="NONE">Sin almacén</option>
         </Select></label>
         <button type="button" onClick={() => setActiveView('explorer')} className="px-4 py-2.5 text-sm font-bold rounded-lg bg-[#3e4e9e] text-white">Ver inventario</button>
@@ -41,10 +41,10 @@ export function DashboardView() {
     </div>
     {syncStatus === 'offline' && <p role="alert" className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">No se pudo confirmar la sincronización. Los datos mostrados corresponden a la última lectura disponible.</p>}
     {elementos.length === 0 && syncStatus === 'syncing' ? <p role="status" className="p-8 bg-white rounded-xl">Cargando indicadores…</p> : <>
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{metrics.map(metric => <section key={metric.label} className="bg-white border border-[#e2e8f0] rounded-xl p-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-5">{metrics.map(metric => <section key={metric.label} className="min-w-0 bg-white border border-[#e2e8f0] rounded-xl p-4">
         <h3 className="text-xs font-semibold text-slate-600">{metric.label}</h3><p className={`text-3xl font-bold mt-2 ${metric.color}`}>{number.format(metric.value)}</p><p className="text-[11px] text-slate-500 mt-2">{metric.hint}</p>
       </section>)}</div>
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-5">
         {[
           ['Valor del inventario', formatCOP(values.total), 'Stock confirmado × valor unitario. Incluye material dañado.'],
           ['Valor del material utilizable', formatCOP(values.usable), 'Valor del stock confirmado sin las unidades dañadas.'],

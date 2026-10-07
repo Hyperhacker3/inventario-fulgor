@@ -62,6 +62,16 @@ Estados comúnmente necesarios: reposo, hover, pulsado, seleccionado, foco de te
 
 ## Alcance de revisión
 
+### Correcciones a partir de las cuatro capturas del usuario
+
+- Navegación de escritorio y móvil: el área desplazable reserva espacio alrededor de los botones para evitar sombras recortadas en rectángulos; los botones no se encogen al faltar altura.
+- Filtros: el material y la sombra pertenecen al contenedor exterior. Su interior conserva el recorte para abrir/cerrar el panel móvil, con la misma curvatura y sin cortar la sombra exterior.
+- Selectores con clase `block`: utilizan `display: flex`, evitando que el `inline-flex` común los coloque junto a la etiqueta. Alcance dispone además la etiqueta sobre el selector; las tarjetas del dashboard tienen más separación.
+- Stock inicial: un único relieve hundido envuelve los botones y el campo, evitando el doble efecto. Su altura coincide con los otros controles de stock y el foco de teclado se dibuja alrededor del grupo; los botones disponen de nombres accesibles y foco diferenciado.
+- Peso: la unidad dispone de ancho intrínseco suficiente para su texto; por debajo de 480 px los controles se apilan. El campo numérico deja de estirarse por el texto partido del selector.
+
+Estas correcciones se basan en las capturas y en la estructura/CSS. No implican una revisión visual automatizada de la aplicación y conservan preferencias, datos y transiciones.
+
 Comprobar Inicio, Inventario (lista/cuadrícula/filtros), Nuevo ítem, Entradas, Salidas, Historial, Administración de datos (todas las secciones), Almacenes, Remisiones, inicio de sesión, ayuda y alertas. Incluir ventanas de edición, cantidades, cámara y fotos, además de selectores desplegados sobre ellas.
 
 Mantener jerarquía almacén/estantería/nivel/caja, categorías múltiples, datos opcionales, estados importados, valores y pesos. Un cambio de estilo no debe modificar payloads de Supabase ni snapshots de las remisiones.
