@@ -79,13 +79,20 @@ export const RemissionView: React.FC = () => {
           return (
             <article
               key={rem.id}
-              className="min-w-0 bg-white border border-[#e2e8f0] rounded-2xl p-5 flex flex-col justify-between hover:shadow-md hover:border-[#cbd5e1] transition-all group"
+              className="min-w-0 bg-white border border-[#e2e8f0] rounded-2xl p-5 hover:shadow-md hover:border-[#cbd5e1] transition-all group"
             >
               <div>
                 <div className="flex flex-col items-start gap-2 mb-3">
-                  <span className="min-w-0 max-w-full break-words [overflow-wrap:anywhere] font-mono-code font-bold text-xs bg-[#fce8e6] text-[#dd4c42] border border-[#ffdad6] px-2.5 py-1 rounded-lg">
-                    {rem.numeroRemision}
-                  </span>
+                  <div className="remission-card-heading grid grid-cols-[minmax(0,1fr)_44px] items-start gap-3 w-full">
+                    <span className="min-w-0 max-w-full justify-self-start break-words [overflow-wrap:anywhere] font-mono-code font-bold text-xs bg-[#fce8e6] text-[#dd4c42] border border-[#ffdad6] px-2.5 py-1 rounded-lg">
+                      {rem.numeroRemision}
+                    </span>
+                    <button type="button" onClick={() => openPdfRemision(rem)} title="Ver / Imprimir PDF"
+                      aria-label={`Ver / Imprimir PDF de ${rem.numeroRemision}`}
+                      className="w-11 h-11 rounded-xl text-[#253685] flex items-center justify-center">
+                      <span className="material-symbols-outlined text-2xl" aria-hidden="true">picture_as_pdf</span>
+                    </button>
+                  </div>
                   <span className="text-xs text-[#767682] font-medium">{rem.fecha}</span>
                 </div>
 
@@ -94,18 +101,7 @@ export const RemissionView: React.FC = () => {
                 </h3>
                 <p className="text-xs text-[#454651] mb-3">{rem.cliente}</p>
 
-                <p className="text-sm text-[#454651] mb-4">Materiales de salida: <strong>{rem.items.length}</strong></p>
-              </div>
-
-              {/* Card Footer */}
-              <div className="pt-3 border-t border-[#e2e8f0] flex items-center justify-end gap-3">
-                <button
-                  onClick={() => openPdfRemision(rem)}
-                  className="px-3.5 py-2 bg-[#eaedff] text-[#253685] hover:bg-[#3e4e9e] hover:text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs"
-                >
-                  <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
-                  <span>Ver / Imprimir PDF</span>
-                </button>
+                <p className="text-sm text-[#454651]">Materiales de salida: <strong>{rem.items.length}</strong></p>
               </div>
             </article>
           );

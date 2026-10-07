@@ -1,5 +1,11 @@
 # Verificación de la refactorización local
 
+## PDF integrado en cabecera de remisión (7 de octubre de 2026)
+
+Ver / Imprimir PDF pasa del pie a la esquina superior derecha de cada tarjeta, junto al código rojo. Se muestra solo el icono azul en una superficie neutra de 44 × 44 px, con title y nombre accesible que incluye el número. Cabecera con columna flexible para el código y columna fija para el botón; códigos largos se envuelven sin desplazar la acción a una fila propia. Se elimina el pie y el espacio inferior sobrante. Se conserva la apertura del mismo PDF, el resumen, búsqueda y paginación.
+
+Verificación: typecheck, lint, **163 unitarias + 34 de integración (197)** y build. Ajuste visual pequeño sin nuevas pruebas. Sin SQL adicional, escrituras en Supabase real, archivos privados, computer use ni navegador automatizado. Geometría real se revisa con el usuario; commit/push y despliegue se verifican por separado.
+
 ## Entradas unificadas y remisiones compactas (7 de octubre de 2026)
 
 Entradas integra el formulario completo de alta bajo Buscar material. Se elimina Nuevo ítem de navegación/tipo/vista y Agregar nuevo ítem; enlaces antiguos se resuelven a Entradas. Sin selección, administración da altas con códigos/categorías, fotos, creación de ubicaciones, stock/peso/valor. Seleccionar un existente muestra sus datos sin sobrescribir catálogo y permite registrar cantidad recibida/motivo mediante EntryForm/RPC existente. Operadores no ven alta. Quitar selección vuelve al formulario vacío. Se evita anidar formularios; búsqueda/selección quedan bloqueadas mientras hay operaciones pendientes. Alta añade guardia inmediata contra doble solicitud, conserva borrador/solicitud tras fallo y restablece tras éxito.

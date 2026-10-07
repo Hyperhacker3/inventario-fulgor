@@ -4,6 +4,8 @@ Actualizado el 7 de octubre de 2026. **Neumorfismo es el único estilo de la apl
 
 ## Decisiones vigentes
 
+Las tarjetas de Remisiones colocan el icono azul Ver / Imprimir PDF arriba a la derecha, junto al código rojo. Un control de 44 × 44 px con nombre accesible y tooltip ocupa una columna fija; el código utiliza el ancho restante y envuelve si es largo. Se elimina la fila inferior del PDF en móvil, tablet y PC.
+
 Cada función conserva su color en icono y texto, en reposo/hover/selección, tanto en sidebar como menú móvil: Inicio azul, Inventario violeta, Entradas verde, Salidas rojo, Historial ámbar, Administración azul grisáceo, Almacenes marrón, Remisiones rosa, Ayuda azul claro y Cerrar sesión rojo. Las variantes oscuras mantienen legibilidad y los estados planos/elevados/hundidos existentes. Editar en la ficha usa SVG de 24 px con color heredado, evitando ligaduras de fuentes en caché. El fondo exterior cierra la ficha por clic/toque; no lo hacen sus controles interiores o desplegables y no se permite cerrar durante operaciones pendientes.
 
 - Superficies neutras, separadas por sombras, sin bordes delineados ni anillos decorativos. Los campos y selectores indican el foco con una sombra interior más profunda, sin contorno azul. Los botones conservan el indicador de teclado y se mantienen los bordes que dibujan símbolos.
