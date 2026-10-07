@@ -1,3 +1,4 @@
+import { StateIcon } from '../ui/StateIcon';
 import { Select } from '../ui/Select';
 
 const tabs = [
@@ -15,7 +16,7 @@ export function AdministrationNavigation({ value, onChange }: { value: Administr
   return <>
     <div className="lg:hidden">
       <label htmlFor="data-section-select" className="block text-xs font-semibold text-slate-600 mb-2">Sección de administración</label>
-      <Select id="data-section-select" aria-label="Sección de administración" aria-controls="data-tab-panel" value={value} optionIcons={icons} optionColors={colors}
+      <Select id="data-section-select" aria-label="Sección de administración" aria-controls="data-tab-panel" value={value} optionIcons={icons} optionColors={colors} stateIcons
         onChange={event => onChange(event.target.value as AdministrationTab)} className="w-full bg-white border rounded-xl px-4 py-3 text-[#253685] font-semibold">
         {tabs.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}
       </Select>
@@ -24,7 +25,7 @@ export function AdministrationNavigation({ value, onChange }: { value: Administr
       {tabs.map(tab => <button key={tab.id} type="button" role="tab" id={`data-tab-${tab.id}`} aria-controls="data-tab-panel" aria-selected={value === tab.id}
         onClick={() => onChange(tab.id)} className="ui-flat-choice flex min-w-0 gap-2 items-center justify-center rounded-xl px-2 py-3 text-sm">
         <span className="inline-flex items-center justify-center gap-2 min-w-0" style={{ color: tab.color }}>
-          <span className="material-symbols-outlined text-lg shrink-0" aria-hidden="true">{tab.icon}</span><span>{tab.label}</span>
+          <StateIcon icon={tab.icon} filled={value === tab.id} className="text-lg shrink-0" /><span>{tab.label}</span>
         </span>
       </button>)}
     </div>

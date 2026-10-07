@@ -6,6 +6,7 @@
 @import "./interactions.css";
 @import "./sidebar.css";
 @import "./calendar.css";
+@import "./state-icons.css";
 
 @layer base {
   :root {

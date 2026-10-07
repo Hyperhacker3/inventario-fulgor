@@ -111,6 +111,10 @@ test('icon actions retain movement, dispatch and archive semantics and the singl
     await act(() => root.render(h(ItemDetailContent, { item, onClose: () => { closes++; }, inventory: services })));
     assert.equal(host.querySelectorAll('[aria-label="Cerrar detalle"]').length, 1);
     assert.equal(host.querySelector('footer'), null);
+    const actionIcons = [...host.querySelectorAll('.item-detail-actions [data-icon]')];
+    assert.deepEqual(actionIcons.map(icon => icon.getAttribute('data-icon')), ['edit', 'input', 'tune', 'add_shopping_cart', 'archive']);
+    assert.ok(actionIcons.every(icon => icon.getAttribute('aria-hidden') === 'true' && icon.getAttribute('data-filled') === 'false'));
+    assert.equal(button(host, 'Editar').querySelector('svg') !== null, true);
     await act(() => button(host, 'Entrada').click());
     await act(() => button(host, 'Ajuste').click());
     await act(() => button(host, 'Agregar a la salida').click());

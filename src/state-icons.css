@@ -1,0 +1,18 @@
+.ui-state-icon { flex-shrink: 0; vertical-align: middle; }
+svg.ui-state-icon { width: 1em; height: 1em; }
+.material-symbols-outlined.ui-state-icon {
+  font-variation-settings: 'FILL' var(--ui-icon-fill, 0), 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  transition: font-variation-settings var(--ui-motion-duration) ease;
+}
+.ui-state-icon[data-filled='true'] { --ui-icon-fill: 1; }
+.ui-icon-outline { opacity: calc(1 - var(--ui-icon-fill, 0)); }
+.ui-icon-solid { opacity: var(--ui-icon-fill, 0); }
+.ui-icon-outline, .ui-icon-solid { transition: opacity var(--ui-motion-duration) ease; }
+:is(.ui-sidebar-action, .ui-flat-choice, .app-select-option, .item-detail-actions > button):active:not(:disabled),
+.item-detail-actions > button:focus-visible:not(:disabled) { --ui-icon-fill: 1; }
+@media (hover: hover) and (pointer: fine) {
+  .item-detail-actions > button:hover:not(:disabled) { --ui-icon-fill: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-state-icon, .ui-icon-outline, .ui-icon-solid { transition: none !important; }
+}

@@ -1,3 +1,4 @@
+import { StateIcon } from './ui/StateIcon';
 import { ScreenTransition } from './ui/Motion';
 import { Select } from './ui/Select';
 import { useRef, useState, type FormEvent, type ReactNode } from 'react';
@@ -161,12 +162,12 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
           </div>
           <div className="item-detail-actions">
             {!item.archived && <>
-            {canAdmin && <button type="button" onClick={startEdit} aria-label="Editar" title="Editar" className="p-2 rounded-lg text-[#253685]"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m16 3 5 5M4 15 16 3a2.1 2.1 0 0 1 5 5L9 20l-6 1 1-6Z" /></svg></button>}
-            {canOperate && !item.stockPendiente && <button type="button" onClick={() => openQuickMovement(item, 'ENTRADA')} aria-label="Entrada" title="Entrada" className="p-2 rounded-lg text-[#137333]"><span className="material-symbols-outlined" aria-hidden="true">input</span></button>}
-            {(canAdmin || canOperate && !item.stockPendiente) && <button type="button" onClick={() => openQuickMovement(item, 'AJUSTE')} aria-label={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} title={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} className="p-2 rounded-lg text-[#755b00]"><span className="material-symbols-outlined" aria-hidden="true">tune</span></button>}
+            {canAdmin && <button type="button" onClick={startEdit} aria-label="Editar" title="Editar" className="p-2 rounded-lg text-[#253685]"><StateIcon icon="edit" /></button>}
+            {canOperate && !item.stockPendiente && <button type="button" onClick={() => openQuickMovement(item, 'ENTRADA')} aria-label="Entrada" title="Entrada" className="p-2 rounded-lg text-[#137333]"><StateIcon icon="input" /></button>}
+            {(canAdmin || canOperate && !item.stockPendiente) && <button type="button" onClick={() => openQuickMovement(item, 'AJUSTE')} aria-label={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} title={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} className="p-2 rounded-lg text-[#755b00]"><StateIcon icon="tune" /></button>}
             {canOperate && <button type="button" disabled={available(item) === 0} onClick={() => addToDispatchCart(item)} aria-label="Agregar a la salida" title="Agregar a la salida"
-              className="p-2 rounded-lg text-[#dd4c42] disabled:opacity-40"><span className="material-symbols-outlined" aria-hidden="true">add_shopping_cart</span></button>}
-            {canAdmin && <button type="button" disabled={pending} onClick={archive} aria-label="Archivar" title="Archivar" className="p-2 rounded-lg text-red-700"><span className="material-symbols-outlined" aria-hidden="true">archive</span></button>}
+              className="p-2 rounded-lg text-[#dd4c42] disabled:opacity-40"><StateIcon icon="add_shopping_cart" /></button>}
+            {canAdmin && <button type="button" disabled={pending} onClick={archive} aria-label="Archivar" title="Archivar" className="p-2 rounded-lg text-red-700"><StateIcon icon="archive" /></button>}
             </>}
           </div>
           {item.archived && canAdmin && <ArchivedItemActions item={item} onDelete={onPermanentDelete} onRestore={onRestore} />}

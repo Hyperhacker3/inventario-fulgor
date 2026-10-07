@@ -1,9 +1,11 @@
+import { StateIcon } from './StateIcon';
 import { Children, Fragment, isValidElement, useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type SelectHTMLAttributes } from 'react';
 import { createPortal } from 'react-dom';
 import { Presence, useMotionActive } from './Motion';
 
 type Props = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'multiple' | 'size' | 'defaultValue'> & {
   optionIcons?: Readonly<Record<string, string>>;
+  stateIcons?: boolean;
   optionColors?: Readonly<Record<string, string>>;
 };
 interface Choice { value: string; label: string; disabled: boolean }
@@ -20,7 +22,7 @@ function choices(node: ReactNode): Choice[] {
 }
 
 /** Styled select-only combobox. The hidden select preserves form validation and change events. */
-export function Select({ children, className = '', id, style, onChange, onInvalid, optionIcons, optionColors, ...props }: Props) {
+export function Select({ children, className = '', id, style, onChange, onInvalid, optionIcons, optionColors, stateIcons = false, ...props }: Props) {
   const generated = useId();
   const controlId = id || `select-${generated}`;
   const listId = `${controlId}-options`;
@@ -130,7 +132,7 @@ export function Select({ children, className = '', id, style, onChange, onInvali
       disabled={props.disabled} title={props.title || selectedOption?.label} style={style} className={`app-select-trigger ${className}`} onKeyDown={keyboard}
       onBlur={() => setOpen(false)} onClick={() => { if (expanded) setOpen(false); else show(); }}>
       <span className="app-select-value inline-flex items-center gap-2 min-w-0" style={{ color: selectedOption && optionColors?.[selectedOption.value] }}>
-        {selectedOption && optionIcons?.[selectedOption.value] && <span className="material-symbols-outlined text-xl shrink-0" aria-hidden="true">{optionIcons[selectedOption.value]}</span>}
+        {selectedOption && optionIcons?.[selectedOption.value] && <>{stateIcons ? <StateIcon icon={optionIcons[selectedOption.value]} filled className="text-xl" /> : <span className="material-symbols-outlined text-xl shrink-0" aria-hidden="true">{optionIcons[selectedOption.value]}</span>}</>}
         <span>{selectedOption?.label || 'Seleccione una opción'}</span>
       </span><span className="app-select-chevron" aria-hidden="true" />
     </button>
@@ -142,7 +144,7 @@ export function Select({ children, className = '', id, style, onChange, onInvali
         data-value={option.value} data-highlighted={highlight === index} aria-selected={value === option.value} disabled={option.disabled}
         className="app-select-option" onPointerMove={() => { if (!option.disabled) setHighlight(index); }} onClick={() => choose(index)}>
         <span className="inline-flex items-center gap-2 min-w-0" style={{ color: optionColors?.[option.value] }}>
-          {optionIcons?.[option.value] && <span className="material-symbols-outlined text-xl shrink-0" aria-hidden="true">{optionIcons[option.value]}</span>}
+          {optionIcons?.[option.value] && <>{stateIcons ? <StateIcon icon={optionIcons[option.value]} filled={value === option.value} className="text-xl" /> : <span className="material-symbols-outlined text-xl shrink-0" aria-hidden="true">{optionIcons[option.value]}</span>}</>}
           <span>{option.label}</span>
         </span>{value === option.value && <span aria-hidden="true">✓</span>}
       </button>)}

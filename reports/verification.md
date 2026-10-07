@@ -1,5 +1,12 @@
 # Verificación de la refactorización local
 
+
+## Relleno coherente de iconos (7 de octubre de 2026)
+
+StateIcon unifica el estado delineado/relleno en Sidebar, MobileMenu, MobileBottomNav y las nueve secciones de Administración, incluido su selector compacto. Los símbolos lineales disponen de variantes SVG y Editar conserva SVG para evitar ligaduras en caché. Sidebar reutiliza navigationIsActive para proyectos/almacenes. Las cinco acciones de la ficha muestran el relleno durante la interacción, sin quedar seleccionadas; disabled, accesibilidad, colores y movimiento reducido se conservan.
+
+Verificación: typecheck, lint, **163 unitarias + 34 de integración (197)** y build correctos. Se amplían pruebas existentes para recorrer todas las selecciones compactas/móviles y conservar llamadas/confirmación de acciones. Tras ampliar el recorrido del menú, sus siete pruebas vuelven a pasar. Sin SQL, escrituras en Supabase real, archivos privados ni navegador automatizado. Revisión de geometría física con el usuario; publicación y despliegue se verifican por separado.
+
 ## Almacenes compactos y colores de Administración (7 de octubre de 2026)
 
 Almacenes reutiliza LocationsManager con kind almacen: misma cuadrícula, código/nombre, valores total/dañado y Editar. Crear almacén no requiere seleccionar un padre; se mantienen permisos y diálogo existente. Se eliminan WarehousesManager, árbol, productos y datos adicionales visibles en esta sección; los campos de edición, datos y stocks se conservan. El cálculo sigue agregando una vez cada producto confirmado asignado al almacén, incluidos productos sin estantería/caja, excluyendo archivados y conteos pendientes.

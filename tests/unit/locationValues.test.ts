@@ -96,28 +96,37 @@ test('compact administration selector retains all nine icons and synchronizes wa
   try {
     await act(() => root.render(h(Navigation)));
     const trigger = host.querySelector<HTMLButtonElement>('[role="combobox"]')!;
-    assert.equal(trigger.querySelector('[aria-hidden="true"]')!.textContent, 'tag');
+    assert.equal(trigger.querySelector('[data-icon]')!.getAttribute('data-icon'), 'tag');
     assert.ok(trigger.closest('.lg\\:hidden'));
     assert.ok(host.querySelector('[role="tablist"]')!.classList.contains('hidden'));
     for (const tab of host.querySelectorAll<HTMLButtonElement>('[role="tab"]')) assert.ok(tab.classList.contains('ui-flat-choice'));
     const desktopColors = [...host.querySelectorAll<HTMLButtonElement>('[role="tab"]')].map(tab => tab.querySelector<HTMLSpanElement>(':scope > span')!.style.color);
+    assert.equal(host.querySelectorAll('[role="tab"] [data-filled="true"]').length, 1);
     assert.equal(new Set(desktopColors).size, 9); assert.ok(desktopColors.every(Boolean));
     await act(() => trigger.click());
     const list = document.querySelector('[role="listbox"]')!;
     assert.equal(list.querySelectorAll('[role="option"]').length, 9);
-    assert.deepEqual([...list.querySelectorAll('.material-symbols-outlined')].map(icon => icon.textContent), ['tag', 'category', 'warehouse', 'shelves', 'layers', 'inventory_2', 'folder_open', 'archive', 'settings']);
+    assert.equal(list.querySelectorAll('[data-filled="true"]').length, 1);
+    assert.deepEqual([...list.querySelectorAll('[data-icon]')].map(icon => icon.getAttribute('data-icon')), ['tag', 'category', 'warehouse', 'shelves', 'layers', 'inventory_2', 'folder_open', 'archive', 'settings']);
     assert.deepEqual([...list.querySelectorAll<HTMLSpanElement>('[role="option"] > span:first-child')].map(span => span.style.color), desktopColors);
     await act(() => list.querySelector<HTMLButtonElement>('[data-value="warehouses"]')!.click());
     assert.match(trigger.textContent!, /Almacenes/);
-    assert.equal(trigger.querySelector('[aria-hidden="true"]')!.textContent, 'warehouse');
+    assert.equal(trigger.querySelector('[data-icon]')!.getAttribute('data-icon'), 'warehouse');
     assert.equal(trigger.querySelector<HTMLSpanElement>('.app-select-value')!.style.color, 'var(--ui-admin-warehouses)');
     assert.equal(host.querySelector('[role="tab"][aria-selected="true"]')!.id, 'data-tab-warehouses');
+    for (const tab of host.querySelectorAll<HTMLButtonElement>('[role="tab"]')) {
+      await act(() => tab.click());
+      assert.equal(host.querySelectorAll('[role="tab"] [data-filled="true"]').length, 1);
+      assert.equal(tab.querySelector('[data-icon]')!.getAttribute('data-filled'), 'true');
+      assert.equal(trigger.querySelector('[data-icon]')!.getAttribute('data-filled'), 'true');
+      assert.equal(trigger.querySelector('[data-icon]')!.getAttribute('data-icon'), tab.querySelector('[data-icon]')!.getAttribute('data-icon'));
+    }
     await act(() => host.querySelector<HTMLButtonElement>('#data-tab-boxes')!.click());
     assert.match(trigger.textContent!, /Cajas/);
-    assert.equal(trigger.querySelector('[aria-hidden="true"]')!.textContent, 'inventory_2');
+    assert.equal(trigger.querySelector('[data-icon]')!.getAttribute('data-icon'), 'inventory_2');
     assert.equal(host.querySelector('[role="tab"][aria-selected="true"]')!.id, 'data-tab-boxes');
     await act(() => host.querySelector<HTMLButtonElement>('#data-tab-projects')!.click());
     assert.match(trigger.textContent!, /Proyectos/);
-    assert.equal(trigger.querySelector('[aria-hidden="true"]')!.textContent, 'folder_open');
+    assert.equal(trigger.querySelector('[data-icon]')!.getAttribute('data-icon'), 'folder_open');
   } finally { await act(() => root.unmount()); host.remove(); }
 });

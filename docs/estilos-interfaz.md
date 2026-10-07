@@ -1,5 +1,7 @@
 # Neumorfismo y comportamiento de la interfaz
 
+Los iconos de navegación lateral, menú móvil, accesos inferiores y Administración comparten `StateIcon`: delineados en reposo y rellenos al seleccionar, también en el selector compacto. Las acciones de la ficha (Editar, Entrada, Ajuste, Salida y Archivar) muestran relleno al pulsar, con hover solo de mouse y foco visible de teclado; no conservan una selección ficticia después de ejecutar. Los símbolos lineales usan variantes SVG propias, incluido Editar, para que el cambio sea visible sin depender de fuentes en caché. Se mantienen colores, nombres accesibles, permisos y controles deshabilitados; movimiento reducido elimina la transición. Sidebar utiliza `navigationIsActive` también para los alias de Administración.
+
 Actualizado el 7 de octubre de 2026. **Neumorfismo es el único estilo de la aplicación.** El usuario pidió retirar Liquid Glass y el botón de cambio de Ayuda. La implementación anterior queda registrada como historial en `reports/verification.md`; esta guía describe el estado vigente. La revisión visual se realiza con el usuario y el despliegue se comprueba por separado.
 
 ## Decisiones vigentes

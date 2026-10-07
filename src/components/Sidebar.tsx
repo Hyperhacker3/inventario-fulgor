@@ -1,8 +1,9 @@
 import React from 'react';
 import { useInventory } from '../context/InventoryContext';
-import { navigationItems } from '../domain/navigation';
+import { navigationItems, navigationIsActive } from '../domain/navigation';
 import { useAuth } from '../context/AuthContext';
 import { isDemo } from '../lib/supabase';
+import { StateIcon } from './ui/StateIcon';
 import { DEFAULT_COMPANY } from '../domain/company';
 
 export const Sidebar: React.FC = () => {
@@ -21,7 +22,7 @@ export const Sidebar: React.FC = () => {
       {/* Navigation Links */}
       <nav className="app-nav-scroll flex-1 flex flex-col overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = activeView === item.id || item.id === 'data-admin' && activeView === 'projects';
+          const isActive = navigationIsActive(item, activeView);
           return (
             <button
               key={item.id}
@@ -36,12 +37,7 @@ export const Sidebar: React.FC = () => {
               }`}
             >
               <div className="flex items-center gap-3">
-                <span
-                  className="material-symbols-outlined text-[20px]"
-                  style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
-                >
-                  {item.icon}
-                </span>
+                <StateIcon icon={item.icon} filled={isActive} className="text-[20px]" />
                 <span className="text-[14px]">{item.label}</span>
               </div>
               {item.badge !== undefined && item.badge > 0 && (
@@ -62,7 +58,7 @@ export const Sidebar: React.FC = () => {
           onClick={() => setIsHelpModalOpen(true)}
           className="ui-sidebar-action w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left"
         >
-          <span className="material-symbols-outlined text-[20px]">help</span>
+          <StateIcon icon="help" className="text-[20px]" />
           <span className="text-[14px]">Ayuda y Guía</span>
         </button>
         <button
@@ -71,7 +67,7 @@ export const Sidebar: React.FC = () => {
           onClick={() => { void signOut(); }}
           className="ui-sidebar-action ui-sidebar-logout w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left"
         >
-          <span className="material-symbols-outlined text-[20px]">logout</span>
+          <StateIcon icon="logout" className="text-[20px]" />
           <span className="text-[14px]">Cerrar Sesión</span>
         </button>
       </div>

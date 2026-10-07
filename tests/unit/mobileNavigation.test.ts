@@ -64,9 +64,14 @@ test('icon-only bottom navigation keeps accessible destinations, active selectio
     const controls = [...host.querySelectorAll<HTMLButtonElement>('button')];
     assert.deepEqual(controls.map(control => control.getAttribute('aria-label')), ['Inicio', 'Inventario', 'Entradas', 'Salidas']);
     assert.equal(controls[1].getAttribute('aria-current'), 'page');
-    for (const control of controls) { assert.equal(control.querySelector('.material-symbols-outlined')!.getAttribute('aria-hidden'), 'true'); await act(() => control.click()); }
+    for (const control of controls) { assert.equal(control.querySelector('.ui-state-icon')!.getAttribute('aria-hidden'), 'true'); await act(() => control.click()); }
     assert.deepEqual(navigated, ['dashboard', 'explorer', 'entries', 'dispatch']);
     assert.match(controls[3].textContent!, /3/);
+    for (const item of quickNavigationItems('admin', 3)) {
+      await act(() => root.render(createElement(MobileBottomNav, { items: quickNavigationItems('admin', 3), activeView: item.id, keyboardOpen: false, onNavigate: () => {} })));
+      assert.equal(host.querySelectorAll('[data-filled="true"]').length, 1);
+      assert.equal(host.querySelector('[data-filled="true"]')!.getAttribute('data-icon'), item.icon);
+    }
     assert.doesNotMatch(host.textContent!, /Inicio|Inventario|Entradas|Salidas/);
   } finally { await act(() => root.unmount()); host.remove(); }
 });
@@ -85,6 +90,11 @@ test('overlay menu closes outside or with Escape, traps focus, and preserves inp
     await act(()=>root.render(createElement(MobileMenu,{...props,open:true,onClose:()=>{closed++;}})));
     const close=document.querySelector<HTMLButtonElement>('[data-dialog-close]')!;
     assert.equal(document.activeElement,close);
+    for (const item of props.items) {
+      await act(() => root.render(createElement(MobileMenu, {...props, activeView:item.id, open:true, onClose:()=>{closed++;}})));
+      assert.equal(document.querySelectorAll('.mobile-menu-panel [data-filled="true"]').length, 1);
+      assert.equal(document.querySelector('.mobile-menu-panel [data-filled="true"]')!.getAttribute('data-icon'), item.icon);
+    }
     const input=document.querySelector<HTMLInputElement>('input')!;
     input.focus();
     await act(()=>root.render(createElement(MobileMenu,{...props,search:'CAB',open:true,onClose:()=>{latest++;}})));
