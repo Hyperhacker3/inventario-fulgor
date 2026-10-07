@@ -24,6 +24,8 @@ El logo de empresa conserva el acceso a Inicio, **sin marco, relleno ni sombra**
 
 ## Campos, botones y productos
 
+Inventario simplifica la ubicación a solo el nombre del almacén, tanto en lista como en cuadrícula. Se omiten estantería, nivel y caja para que no añadan líneas a las filas; la columna se identifica como Almacén. Sin asignación se muestra Sin almacén asignado. La ubicación completa permanece en la ficha y los filtros.
+
 En cuadrícula, Agregar a la salida ocupa la esquina inferior derecha de la fotografía, con botón neutro de 44 × 44 px e icono rojo. No utiliza una fila propia debajo del contenido. El stock permanece arriba a la derecha y el contador de fotos abajo a la izquierda; lista conserva su acción en la columna Acciones. Los permisos, deshabilitado y apertura independiente no cambian.
 
 Inventario enfatiza el nombre en mayúsculas y negrita, 16 px en móvil / 18 px desde 640 px, con varias líneas sin truncarlo. Lista muestra solo el nombre en la celda del componente: retira marca, categoría, peso, unidad y etiquetas debajo; categoría permanece en su columna y unidad junto a Stock. Cuadrícula mantiene marca/código/ubicación/disponibilidad, retira categoría/peso/unidad y Detalles; su única acción independiente agrega a la salida con icono rojo y 44 px. La tarjeta y el nombre accesible siguen abriendo el producto.

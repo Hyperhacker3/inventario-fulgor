@@ -18,6 +18,8 @@ En lista, el nombre aparece en mayúsculas, negrita y 16 px en móvil / 18 px de
 
 En cuadrícula, el nombre también admite varias líneas y conserva marca, código, ubicación y el indicador de disponibilidad/condición. Se retiran categoría, peso y unidad del contenido. Se elimina Detalles; el único botón independiente es Agregar a la salida, con icono rojo, nombre accesible y superficie táctil de 44 px sobre la esquina inferior derecha de la fotografía, sin fila propia debajo. No aparece para consulta y se deshabilita sin disponibilidad. Pulsarlo no abre simultáneamente la ficha.
 
+La ubicación visible en lista y cuadrícula se limita al nombre del almacén, sin estantería, nivel ni caja. La columna de lista se llama Almacén; si no hay uno asignado, se muestra Sin almacén asignado. La ficha y los filtros mantienen la jerarquía completa.
+
 ## Guardado en mayúsculas y activación
 
 Las altas y ediciones desde la app normalizan nombre y marca al guardar, conservando tildes. Los nombres existentes se presentan en mayúsculas en Inventario sin una modificación masiva de la base. Descripciones, observaciones, identificadores, fotos, unidades y valores conservan su tratamiento.

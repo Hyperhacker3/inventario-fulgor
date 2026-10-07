@@ -1,5 +1,11 @@
 # Verificación de la refactorización local
 
+## Almacén resumido en Inventario (7 de octubre de 2026)
+
+Lista y cuadrícula muestran solo el nombre del almacén obtenido por ID; se omiten estantería, nivel y caja, y se cambia el encabezado de lista a Almacén. Sin asignación se muestra Sin almacén asignado. La ficha, filtros y datos de ubicación se conservan. Se adapta el proveedor sintético de las pruebas existentes al acceso directo de almacén, sin añadir pruebas para este ajuste visual pequeño.
+
+Verificación: typecheck, lint, **154 unitarias y 34 de integración (188)** y build. Sin SQL adicional, escrituras en Supabase real, computer use ni automatización de navegador. La altura real de filas se revisa con el usuario. Commit/push autorizados y despliegue comprobado por separado.
+
 ## Acción de salida sobre la fotografía (7 de octubre de 2026)
 
 En cuadrícula, se mueve Agregar a la salida a la esquina inferior derecha de la imagen y se retira su fila inferior. Conserva icono rojo, superficie neutra de 44 × 44 px, nombre accesible, permisos y deshabilitado por disponibilidad. Stock y contador de fotos conservan sus esquinas. La vista de lista no cambia.

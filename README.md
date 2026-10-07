@@ -34,6 +34,8 @@ Salidas pregunta lugar de remisión y destino. Las nuevas remisiones usan **REM-
 
 Nuevo ítem corrige Nivel duplicado al cambiar la ubicación. Nuevo ítem, Entradas y Salidas desplazan al campo o mensaje de error y vuelven al inicio tras guardar correctamente. Inventario muestra nombres más grandes, en mayúsculas y varias líneas; lista conserva solo el nombre en la celda del componente y cuadrícula mantiene marca/código/ubicación sin peso/unidad ni Detalles. Nombre y marca se normalizan en altas/ediciones; Salidas guarda nombres y lugares en mayúsculas. Los snapshots del servidor requieren `20261007000300_uppercase_registration.sql`. [Uso y activación](docs/formularios-y-nombres.md).
 
+En Inventario, lista y cuadrícula muestran únicamente el nombre del almacén, sin estantería, nivel ni caja. La columna de lista se llama Almacén. Los productos sin almacén indican Sin almacén asignado; la ficha y los filtros conservan la ubicación completa.
+
 ## Desarrollo local
 
 Requiere Node.js 22 o superior y pnpm. Instale con `pnpm install --frozen-lockfile`, copie `.env.example` a `.env.local`, configure el proyecto Supabase y ejecute `pnpm dev`. La aplicación consulta el inventario exclusivamente desde Supabase y requiere iniciar sesión.

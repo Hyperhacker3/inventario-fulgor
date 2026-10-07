@@ -7,7 +7,7 @@ import { itemPhotos } from '../../domain/photos';
 import { uppercaseName } from '../../shared/uppercase';
 import { openProductSurface } from '../../shared/productInteraction';
 
-type ResultsInventory = Pick<ReturnType<typeof useInventory>, 'getLocationString' | 'openItemDetail' | 'addToDispatchCart' | 'user' | 'categoryLabel'>;
+type ResultsInventory = Pick<ReturnType<typeof useInventory>, 'getAlmacenById' | 'openItemDetail' | 'addToDispatchCart' | 'user' | 'categoryLabel'>;
 
 export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'grid' | 'list' }) {
   const inventory = useInventory();
@@ -15,7 +15,8 @@ export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'gri
 }
 
 export function ExplorerResultsContent({ items, mode, inventory }: { items: Elemento[]; mode: 'grid' | 'list'; inventory: ResultsInventory }) {
-  const { getLocationString, openItemDetail, addToDispatchCart, user, categoryLabel } = inventory;
+  const { getAlmacenById, openItemDetail, addToDispatchCart, user, categoryLabel } = inventory;
+  const warehouseName = (item: Elemento) => getAlmacenById(item.almacenId)?.nombre || 'Sin almacén asignado';
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
   // Stock Badge renderer
   const renderStockBadge = (item: Elemento) => {
@@ -117,7 +118,7 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                         <div className="flex items-center gap-1.5">
                           <span className="material-symbols-outlined text-[15px] text-[#767682] shrink-0">location_on</span>
                           <span className="truncate">
-                            {getLocationString(item)}
+                            {warehouseName(item)}
                           </span>
                         </div>
                       </div>
@@ -137,7 +138,7 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                       <th className="p-2.5 sm:p-3">Código</th>
                       <th className="p-2.5 sm:p-3">Componente</th>
                       <th className="p-2.5 sm:p-3 hidden sm:table-cell">Categoría</th>
-                      <th className="p-2.5 sm:p-3 hidden md:table-cell">Ubicación</th>
+                      <th className="p-2.5 sm:p-3 hidden md:table-cell">Almacén</th>
                       <th className="p-2.5 sm:p-3 text-right">Stock</th>
                       <th className="p-2.5 sm:p-3 text-center">Acciones</th>
                     </tr>
@@ -166,7 +167,7 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                           </div>
                         </td>
                         <td className="p-2.5 sm:p-3 text-xs text-[#454651] hidden sm:table-cell">{categoryLabel(item.categoria)}</td>
-                        <td className="p-2.5 sm:p-3 text-xs text-[#454651] hidden md:table-cell">{getLocationString(item)}</td>
+                        <td className="p-2.5 sm:p-3 text-xs text-[#454651] hidden md:table-cell">{warehouseName(item)}</td>
                         <td className="p-2.5 sm:p-3 text-right font-mono-code font-bold whitespace-nowrap">
                           <span
                             className={

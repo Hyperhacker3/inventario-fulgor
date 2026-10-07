@@ -20,7 +20,7 @@ async function withResults(mode: 'grid' | 'list', check: (host: HTMLElement, ope
     await act(() => root.render(h(ExplorerResultsContent, { items: products, mode, inventory: {
       user: { name: 'Operador', email: 'operator@app.test', role: 'operador', avatar: '' },
       openItemDetail: item => { opened.push(item); }, addToDispatchCart: item => { dispatched.push(item); },
-      categoryLabel: () => 'Otros materiales', getLocationString: () => 'Almacén de prueba',
+      categoryLabel: () => 'Otros materiales', getAlmacenById: () => ({ id: 'warehouse-test', nombre: 'Almacén de prueba', codigo: 'TEST', ciudad: 'Ciudad de prueba', capacidadPorcentaje: 0, estado: 'Operativo' as const }),
     } })));
     await check(host, opened, dispatched);
   } finally { document.getSelection()?.removeAllRanges(); await act(() => root.unmount()); host.remove(); }
