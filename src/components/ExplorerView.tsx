@@ -15,7 +15,7 @@ export const ExplorerView: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useInventoryViewMode();
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
 
   const [filters, setFilters] = useState(emptyInventoryFilters);
@@ -63,7 +63,13 @@ export const ExplorerView: React.FC = () => {
           <p role="status" className="min-w-0 text-xs sm:text-sm text-[#454651]">
             Mostrando <strong className="text-[#131b2e] font-bold">{filteredItems.length.toLocaleString('es-CO')}</strong> componentes
           </p>
-          <div role="group" aria-label="Vista del inventario" className="flex items-center gap-1">
+          <div role="group" aria-label="Controles del inventario" className="flex items-center gap-1">
+            <button type="button" aria-expanded={filtersOpen} aria-controls="inventory-filters" aria-pressed={filtersOpen}
+              aria-label={filtersOpen ? 'Ocultar filtros' : 'Mostrar filtros'} title={filtersOpen ? 'Ocultar filtros' : 'Mostrar filtros'}
+              onClick={() => setFiltersOpen(open => !open)} className="ui-flat-choice relative min-w-11 min-h-11 p-2 rounded-lg">
+              <StateIcon icon="filter_list" filled={filtersOpen} className="text-xl" />
+              {activeFiltersCount > 0 && <span aria-hidden="true" className="absolute -top-1 -right-1 bg-[#3e4e9e] text-white text-[10px] px-1.5 rounded-full">{activeFiltersCount}</span>}
+            </button>
             <button type="button" onClick={() => setViewMode('grid')} aria-pressed={viewMode === 'grid'} aria-label="Vista cuadrícula"
               className="ui-flat-choice min-w-11 min-h-11 p-2 rounded-lg" title="Vista cuadrícula">
               <StateIcon icon="grid_view" filled={viewMode === 'grid'} className="text-xl" />
@@ -76,35 +82,9 @@ export const ExplorerView: React.FC = () => {
         </div>
       </section>
 
-      {/* Mobile Filter Toggle Button */}
-      <div className="lg:hidden flex items-center justify-between bg-white p-3 rounded-xl border border-[#e2e8f0]">
-        <button
-          type="button" aria-expanded={mobileFiltersOpen} aria-controls="inventory-filters"
-          onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
-          className="flex items-center gap-2 text-xs font-bold text-[#253685]"
-        >
-          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">filter_list</span>
-          <span>{mobileFiltersOpen ? 'Ocultar Filtros' : 'Mostrar Filtros de Búsqueda'}</span>
-          {activeFiltersCount > 0 && (
-            <span className="bg-[#3e4e9e] text-white text-[10px] px-2 py-0.5 rounded-full">
-              {activeFiltersCount}
-            </span>
-          )}
-        </button>
-
-        {activeFiltersCount > 0 && (
-          <button type="button"
-            onClick={handleClearFilters}
-            className="text-[11px] text-[#dd4c42] font-semibold hover:underline"
-          >
-            Limpiar
-          </button>
-        )}
-      </div>
-
       {/* Filters stay above both full-width result layouts. */}
-      <div className="flex flex-col gap-4 sm:gap-6 w-full min-w-0">
-        <ExplorerFilters visible={mobileFiltersOpen} filters={filters}
+      <div className={`flex flex-col w-full min-w-0 ${filtersOpen ? 'gap-4 sm:gap-6' : ''}`}>
+        <ExplorerFilters visible={filtersOpen} filters={filters}
           warehouses={almacenes} racks={estanterias} levels={niveles} boxes={cajas} categories={categoryOptions} categoryLabel={categoryLabel}
           onCategories={categories => changeFilters({ ...filters, categories })}
           onStock={stock => changeFilters({ ...filters, stock })}

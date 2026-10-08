@@ -1,6 +1,13 @@
 # Verificación de la refactorización local
 
 
+## Nombres de tarjetas arriba y filtros con icono compartido (8 de octubre de 2026)
+
+La cuadrícula mueve el recorte/altura de dos líneas del botón a un span interno y muestra el botón como bloque. Así el texto corto empieza arriba, manteniendo altura uniforme y acciones accesibles; lista conserva su formato. El icono de filtros comparte la barra con cuadrícula/lista, con tamaño de 44 px, estados de selección/hover, nombre accesible y contador. Se retira la barra móvil independiente. El panel inicia cerrado para móvil/tablet/PC, sin regla de apertura obligatoria en escritorio, conserva su distribución y selecciones al plegarse, aplica inert/aria-hidden y elimina el espacio extra del gap cerrado.
+
+Verificación: typecheck, lint, **163 unitarias + 34 de integración (197)** y build correctos. Pruebas existentes ampliadas para ocultar/reabrir filtros sin perder categorías y estructura de nombre en cuadrícula, manteniendo acciones de productos. Bundle confirma icono/etiquetas, panel inerte, eliminación de barra móvil/regla de escritorio y texto interno. Sin SQL, Supabase real, archivos privados ni navegador automatizado. Revisión de geometría física con el usuario; despliegue y recursos públicos se verifican por separado.
+
+
 ## Relleno de iconos al pasar el mouse en toda la aplicación (8 de octubre de 2026)
 
 La regla de hover deja de limitarse a los botones del detalle: todos los botones habilitados heredan --ui-icon-fill=1 al pasar el mouse con puntero fino y al pulsar. Material Symbols consume la misma variable y transición que StateIcon; los SVG conservan su transición de variantes. Al salir vuelve el contorno, salvo iconos con selección permanente. Se preservan colores, FILL explícito, botones disabled/aria-disabled, ausencia de hover persistente en táctiles y movimiento reducido.

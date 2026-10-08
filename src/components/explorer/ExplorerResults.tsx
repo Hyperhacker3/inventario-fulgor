@@ -93,8 +93,10 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                     {/* Card Content */}
                     <div className="p-3.5 sm:p-4 flex flex-col flex-1 gap-2">
                       <h3 className="font-bold text-base sm:text-lg leading-snug break-words">
-                        <button type="button" className="ui-product-open inventory-product-name w-full text-left" onClick={() => openItemDetail(item)}
-                          aria-label={`Ver detalles de ${item.codigo} · ${item.nombre}`} title={uppercaseName(item.nombre)}>{uppercaseName(item.nombre)}</button>
+                        <button type="button" className="ui-product-open block w-full text-left" onClick={() => openItemDetail(item)}
+                          aria-label={`Ver detalles de ${item.codigo} · ${item.nombre}`} title={uppercaseName(item.nombre)}>
+                          <span className="inventory-product-name">{uppercaseName(item.nombre)}</span>
+                        </button>
                       </h3>
 
                       {item.marca && <p className="text-xs text-slate-500 break-words">Marca: {uppercaseName(item.marca)}</p>}

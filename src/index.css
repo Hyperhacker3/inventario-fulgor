@@ -149,7 +149,6 @@ html:not([data-icons-ready='true']) .material-symbols-outlined { visibility: hid
 .filter-panel { display: grid; grid-template-rows: 0fr; opacity: 0; transform: translateY(-12px) scale(.97); visibility: hidden; transition: grid-template-rows var(--ui-motion-duration) ease, opacity var(--ui-motion-duration) ease, transform var(--ui-motion-duration) ease, visibility 0s var(--ui-motion-duration); }
 .filter-panel[data-expanded='true'] { grid-template-rows: 1fr; opacity: 1; transform: none; visibility: visible; transition-delay: 0s; }
 .filter-panel-inner { min-height: 0; overflow: hidden; border-radius: inherit; }
-@media (min-width: 1024px) { .filter-panel { grid-template-rows: 1fr; opacity: 1; transform: none; visibility: visible; } }
 .ui-screen-transition { position: relative; }
 .ui-screen-current { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .ui-screen-previous { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }

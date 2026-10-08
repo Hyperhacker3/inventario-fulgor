@@ -22,7 +22,7 @@ export function ExplorerFilters({ visible, filters, warehouses, racks, levels, b
   const warehouseNames = new Map(warehouses.map(warehouse => [warehouse.id, warehouse.nombre]));
   const rackNames = new Map(racks.map(rack => [rack.id, `${warehouseNames.get(rack.almacenId || '') || 'Sin almacén'} > ${rack.nombre || rack.codigo}`]));
   const levelNames = new Map(levels.map(level => [level.id, `Nivel ${level.nombre || level.codigo}`]));
-  return <section id="inventory-filters" aria-labelledby="inventory-filters-heading" data-expanded={visible} className="filter-panel bg-white border rounded-xl shadow-xs w-full min-w-0">
+  return <section id="inventory-filters" aria-labelledby="inventory-filters-heading" data-expanded={visible} aria-hidden={!visible} inert={!visible} className="filter-panel bg-white border rounded-xl shadow-xs w-full min-w-0">
     <div className="filter-panel-inner"><div className="p-4 sm:p-5">
       <div className="flex justify-between items-center gap-3 mb-4"><h3 id="inventory-filters-heading" className="font-bold">Filtros</h3>
         <button id="btn-clear-filters" type="button" onClick={onClear} className="text-[#3e4e9e] text-xs font-semibold">Limpiar</button></div>

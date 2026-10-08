@@ -67,9 +67,9 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
 const { createRoot } = await import('react-dom/client');
 const categoryLabel = (id: string) => id === 'CABLES' ? 'Cables' : 'Nueva categoría';
-function FilterPanel() {
+function FilterPanel({ visible = true }: { visible?: boolean }) {
   const [filters, setFilters] = useState(emptyInventoryFilters);
-  return h(ExplorerFilters, { visible: true, filters, warehouses, racks, levels: [], boxes, categories: ['CABLES', 'NUEVA_CATEGORIA'], categoryLabel,
+  return h(ExplorerFilters, { visible, filters, warehouses, racks, levels: [], boxes, categories: ['CABLES', 'NUEVA_CATEGORIA'], categoryLabel,
     onCategories: categories => setFilters(prev => ({ ...prev, categories })), onStock: stock => setFilters(prev => ({ ...prev, stock })),
     onWarehouse: id => setFilters(prev => changeWarehouse(prev, id)), onRack: id => setFilters(prev => changeRack(prev, id)),
     onLevel: levelId => setFilters({...filters,levelId,boxId: ALL_LOCATIONS}), onBox: boxId => setFilters(prev => ({ ...prev, boxId })), onClear: () => setFilters(emptyInventoryFilters()) });
@@ -111,6 +111,14 @@ test('the styled category picker adds several categories, prevents duplicates an
     await act(() => host.querySelector<HTMLButtonElement>('[aria-label="Quitar categoría Cables"]')!.click());
     assert.deepEqual(optionValues('inventory-category-filter'), ['', 'CABLES']);
     assert.equal((document.getElementById('inventory-category-filter') as HTMLButtonElement).disabled, false);
+    await act(() => root.render(h(FilterPanel, { visible: false })));
+    assert.equal(host.querySelector('#inventory-filters')!.getAttribute('aria-hidden'), 'true');
+    assert.equal(host.querySelector('#inventory-filters')!.hasAttribute('inert'), true);
+    await act(() => root.render(h(FilterPanel, { visible: true })));
+    assert.equal(host.querySelector('#inventory-filters')!.getAttribute('aria-hidden'), 'false');
+    assert.equal(host.querySelector('#inventory-filters')!.hasAttribute('inert'), false);
+    assert.equal(host.querySelectorAll('ul[aria-label="Categorías del filtro"] li').length, 1);
+    assert.ok(host.querySelector('[aria-label="Quitar categoría Nueva categoría"]'));
     await act(() => host.querySelector<HTMLButtonElement>('#btn-clear-filters')!.click());
     assert.equal(host.querySelector('ul[aria-label="Categorías del filtro"]'), null);
     assert.match(host.textContent!, /Todas las categorías/);

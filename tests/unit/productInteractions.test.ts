@@ -43,7 +43,12 @@ for (const mode of ['list', 'grid'] as const) {
         const component = surface.querySelector('td:nth-child(2)')!;
         assert.doesNotMatch(component.textContent!, /Fabricante|Otros materiales|dañados/);
         assert.equal(surface.querySelector('td:nth-child(3)')!.textContent, 'Otros materiales');
-      } else { assert.match(surface.textContent!, /Marca: FABRICANTE/); assert.ok(cart(surface).classList.contains('text-[#dd4c42]')); }
+      } else {
+        assert.match(surface.textContent!, /Marca: FABRICANTE/); assert.ok(cart(surface).classList.contains('text-[#dd4c42]'));
+        assert.equal(name.classList.contains('inventory-product-name'), false);
+        assert.equal(name.querySelector('.inventory-product-name')!.textContent, name.textContent);
+        assert.ok(name.classList.contains('block'));
+      }
       await Promise.resolve();
     }, products);
   });
