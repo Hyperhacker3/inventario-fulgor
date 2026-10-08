@@ -62,7 +62,7 @@ export interface Elemento {
   cajaId: string | null;
   stockMinimo: number;
   valorUnitario?: number;
-  estado?: 'BUENO' | 'MEDIO' | 'MAL ESTADO' | 'EN REPARACIÓN' | 'RETAZOS / BUENO' | string;
+  estado?: 'BUENO' | 'MEDIO' | 'MALO' | 'EN REPARACIÓN' | 'RETAZOS / BUENO' | string;
   cantidadDanados?: number;
   stockPendiente?: boolean;
   archived?: boolean;

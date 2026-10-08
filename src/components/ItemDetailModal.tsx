@@ -1,4 +1,5 @@
 import { StateIcon } from './ui/StateIcon';
+import { itemConditionOptions, normalizeItemCondition } from '../domain/itemCondition';
 import { ScreenTransition } from './ui/Motion';
 import { Select } from './ui/Select';
 import { useRef, useState, type FormEvent, type ReactNode } from 'react';
@@ -39,7 +40,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   const [minimum, setMinimum] = useState(item?.stockMinimo ?? 0);
   const [photo, setPhoto] = useState(item?.fotoUrl || '');
   const [additionalPhotos, setAdditionalPhotos] = useState<string[]>(item?.fotosAdicionales || []);
-  const [condition, setCondition] = useState(item?.estado || 'BUENO');
+  const [condition, setCondition] = useState(normalizeItemCondition(item?.estado));
   const [damaged, setDamaged] = useState(item?.cantidadDanados ?? 0);
   const [weight, setWeight] = useState(() => weightDraft(item?.pesoUnitario));
   const [location, setLocation] = useState(() => itemLocationDraft(item));
@@ -61,7 +62,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
 
   const startEdit = () => {
     setName(item.nombre); setBrand(item.marca || ''); setDescription(item.descripcion); setMinimum(item.stockMinimo);
-    setPhoto(item.fotoUrl || ''); setCondition(item.estado || 'BUENO'); setDamaged(item.cantidadDanados ?? 0);
+    setPhoto(item.fotoUrl || ''); setCondition(normalizeItemCondition(item.estado)); setDamaged(item.cantidadDanados ?? 0);
     setAdditionalPhotos(item.fotosAdicionales || []);
     setWeight(weightDraft(item.pesoUnitario));
     setLocation(itemLocationDraft(item));
@@ -129,8 +130,8 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
           <ItemValueField value={valorUnitario} onChange={setValorUnitario} unit={item.unidad} disabled={pending} />
           <label className="block text-sm font-semibold">Estado
             <Select value={condition} onChange={event => setCondition(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg">
-              {!['BUENO', 'REGULAR', 'MALO', 'REPARACION', 'RETAL'].includes(condition) && <option value={condition}>{condition}</option>}
-              {['BUENO', 'REGULAR', 'MALO', 'REPARACION', 'RETAL'].map(value => <option key={value}>{value}</option>)}
+              {!itemConditionOptions.some(option => option.value === condition) && <option value={condition}>{condition}</option>}
+              {itemConditionOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
             </Select>
           </label>
           <ItemPhotoPicker value={photo} additional={additionalPhotos} category={item.categoria} onChange={setPhoto} onAdditionalChange={setAdditionalPhotos} onBusyChange={setPhotoBusy} disabled={pending} />
@@ -147,7 +148,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
                 <div className="min-w-0"><dt className="text-xs text-slate-500">Código</dt><dd className="font-mono-code font-semibold mt-1 break-words">{item.codigo}</dd></div>
                 <div className="min-w-0"><dt className="text-xs text-slate-500">Categoría</dt><dd className="font-semibold mt-1 break-words">{categoryLabel(item.categoria)}</dd></div>
                 <div className="min-w-0"><dt className="text-xs text-slate-500">Marca</dt><dd className="mt-1 break-words">{item.marca || 'Sin declarar'}</dd></div>
-                <div className="min-w-0"><dt className="text-xs text-slate-500">Estado</dt><dd className="mt-1 break-words">{item.estado || 'BUENO'}</dd></div>
+                <div className="min-w-0"><dt className="text-xs text-slate-500">Estado</dt><dd className="mt-1 break-words">{normalizeItemCondition(item.estado)}</dd></div>
                 <div className="min-w-0 min-[400px]:col-span-2"><dt className="text-xs text-slate-500">Ubicación</dt><dd className="mt-1 break-words">{getLocationString(item)}</dd></div>
                 <div className="min-w-0"><dt className="text-xs text-slate-500">Peso por 1 {item.unidad.toUpperCase()}</dt><dd className={`mt-1 break-words ${item.pesoUnitario ? 'text-[#253685]' : 'text-amber-700'}`}>{formatUnitWeight(item.pesoUnitario)}</dd></div>
                 <div className="min-w-0"><dt className="text-xs text-slate-500">Valor por 1 {item.unidad.toUpperCase()}</dt><dd className="mt-1 break-words text-[#253685]">{formatCOP(item.valorUnitario || 0)}</dd></div>

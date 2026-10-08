@@ -127,8 +127,9 @@ test('editing includes existing levels and an editable brand; errors preserve th
     assert.equal(brandData.textContent, 'Fabricante');
     await act(()=>host.querySelector<HTMLButtonElement>('[aria-label="Editar"]')!.click());
     const conditionLabel=[...host.querySelectorAll('label')].find(label=>label.textContent?.startsWith('Estado'))!;
-    assert.equal(conditionLabel.querySelector('select')!.value,'OBSOLETO');
-    assert.match(conditionLabel.querySelector('[role="combobox"]')!.textContent!,/OBSOLETO/);
+    assert.equal(conditionLabel.querySelector('select')!.value,'MALO');
+    assert.match(conditionLabel.querySelector('[role="combobox"]')!.textContent!,/MALO/);
+    assert.deepEqual([...conditionLabel.querySelector('select')!.options].map(option=>option.value), ['BUENO','MEDIO','MALO','EN REPARACIÓN','RETAZOS / BUENO']);
     const label=[...host.querySelectorAll('label')].find(label=>label.textContent==='Nivel de estantería')!;
     const native=document.getElementById(`${label.htmlFor}-value`) as HTMLSelectElement;
     assert.equal(native.value,'L1');assert.deepEqual([...native.options].map(option=>option.value),['','L1','L2']);
@@ -136,7 +137,7 @@ test('editing includes existing levels and an editable brand; errors preserve th
     await act(()=>type(brandLabel.querySelector('input')!,'Otra marca'));
     await act(async()=>host.querySelector('form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true})));
     assert.equal(saved?.marca,'Otra marca');assert.equal(saved?.cantidad,undefined);assert.equal(saved?.nivelId,undefined);
-    assert.equal(saved?.estado,'OBSOLETO');
+    assert.equal(saved?.estado,'MALO');
     assert.match(host.querySelector('[role="alert"]')!.textContent!,/Sin conexión/);assert.equal(native.value,'L1');assert.equal(brandLabel.querySelector('input')!.value,'Otra marca');
     const remission=mapRemision({items:[{elementoId:product.id,codigo:product.codigo,nombre:product.nombre,marca:'Anterior',cantidad:1}]},new Map([[product.codigo,product]]));
     assert.equal(remission.items[0].marca,'Anterior');

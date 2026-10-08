@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Estados antiguos unificados y condición sobre la fotografía (8 de octubre de 2026)
+
+normalizeItemCondition reconoce OBSOLETO/MAL ESTADO → MALO, REGULAR → MEDIO y REPARACION/EN REPARACION → EN REPARACIÓN, con tolerancia a espacios, mayúsculas y acentos. Mapper y frontera de alta/edición usan la misma normalización; ambos formularios comparten las opciones canónicas. RETAL y estados desconocidos se conservan, sin inferir equivalencias ni alterar stock/dañados. No se inspeccionaron datos privados ni se ejecutaron escrituras en Supabase real; no requiere SQL. Los registros antiguos se normalizan en lectura y al guardarse en una edición ordinaria.
+
+ExplorerResults coloca la condición no BUENO arriba a la izquierda de la fotografía, en una fila con espacio independiente para disponibilidad a la derecha y envoltura para textos largos. Se retira la repetición inferior y se conserva el contador de dañados, fotos y acción de salida. Pruebas cubren alias, estados desconocidos, fallback de especificaciones, cantidades intactas, ubicación DOM sobre la imagen, apertura desde la etiqueta y opciones/borrador de edición.
+
+Verificación: typecheck, lint, **166 unitarias + 34 de integración (200)** y build correctos. Sin automatización de navegador; el usuario revisa la geometría física.
+
 
 ## Metadatos permanentes en cuadrícula y colores fijos de iconos (8 de octubre de 2026)
 

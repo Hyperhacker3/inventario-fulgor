@@ -23,6 +23,7 @@ import { roundCOP } from '../domain/money';
 import { displayCargo } from '../domain/userProfile';
 import { validateRemissionRoute, remissionDate, remissionCode, remissionSequence } from '../domain/remissionRoute';
 import { uppercaseName } from '../shared/uppercase';
+import { normalizeItemCondition } from '../domain/itemCondition';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
 const newId = (prefix: string) => `${prefix}-DEMO-${crypto.randomUUID()}`;
@@ -52,7 +53,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
   const addElemento = async (input: Omit<Elemento, 'id' | 'createdAt' | 'updatedAt'>,
     assignment: { prefixId: string; requestId: string }) => {
     requireAdmin();
-    const item = { ...input, codigo: input.codigo.trim().toUpperCase(), nombre: uppercaseName(input.nombre), marca: uppercaseName(input.marca) };
+    const item = { ...input, codigo: input.codigo.trim().toUpperCase(), nombre: uppercaseName(input.nombre), marca: uppercaseName(input.marca), estado: normalizeItemCondition(input.estado) };
     validateItem(item, data.almacenes, data.estanterias, data.cajas, data.niveles);
     const signature = JSON.stringify({ item: { ...item, codigo: '' }, prefix: assignment.prefixId });
     const persist = async (payload: Record<string, unknown>) => {
@@ -92,12 +93,12 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     const before = data.elementos.find(el => el.id === id);
     if (!before) throw new Error('Componente no encontrado.');
     if (updates.cantidad !== undefined && !isDemo) throw new Error('Use una entrada o ajuste para cambiar existencias.');
-    const next = { ...before, ...updates, nombre: uppercaseName(updates.nombre ?? before.nombre), marca: uppercaseName(updates.marca ?? before.marca) };
+    const next = { ...before, ...updates, nombre: uppercaseName(updates.nombre ?? before.nombre), marca: uppercaseName(updates.marca ?? before.marca), estado: normalizeItemCondition(updates.estado ?? before.estado) };
     validateItem(next, data.almacenes, data.estanterias, data.cajas, data.niveles);
     return saveGallery(next, before, { save: saveImage, remove: removeImage }, async gallery => {
       const photo = gallery.main;
       if (isDemo) {
-        setDemoData(prev => ({ ...prev, elementos: prev.elementos.map(el => el.id === id ? { ...el, ...updates, nombre: next.nombre, marca: next.marca, fotoUrl: photo, fotosAdicionales: gallery.additional, updatedAt: isoNow() } : el) }));
+        setDemoData(prev => ({ ...prev, elementos: prev.elementos.map(el => el.id === id ? { ...el, ...updates, nombre: next.nombre, marca: next.marca, estado: next.estado, fotoUrl: photo, fotosAdicionales: gallery.additional, updatedAt: isoNow() } : el) }));
         return;
       }
       const saved = await updateRow('elementos', id, {

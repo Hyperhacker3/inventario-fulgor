@@ -30,6 +30,26 @@ const product = (host: HTMLElement, item: Elemento) => host.querySelector<HTMLEl
 const cart = (surface: HTMLElement) => [...surface.querySelectorAll<HTMLButtonElement>('button')]
   .find(button => /add_shopping_cart|shopping_cart_checkout/.test(button.textContent!))!;
 
+test('grid conditions appear on the image opposite stock, normalize legacy labels and keep damaged counts', async () => {
+  const products = ['OBSOLETO', 'REGULAR', 'EN REPARACIÓN', 'RETAL', 'BUENO'].map((estado, index) => ({
+    ...items[0], id: `condition-${index}`, estado, cantidadDanados: 1,
+  }));
+  await withResults('grid', async (host, opened) => {
+    for (const [index, item] of products.entries()) {
+      const surface = product(host, item), image = surface.firstElementChild!, content = surface.lastElementChild!;
+      const badge = surface.querySelector<HTMLElement>('[title^="Estado del material:"]');
+      if (item.estado === 'BUENO') assert.equal(badge, null);
+      else {
+        assert.equal(badge!.textContent, ['MALO', 'MEDIO', 'EN REPARACIÓN', 'RETAL'][index]);
+        assert.ok(image.contains(badge)); assert.equal(content.contains(badge), false);
+        assert.match(badge!.parentElement!.parentElement!.textContent!, /12 DISP/);
+        await click(badge!); assert.equal(opened.at(-1), item);
+      }
+      assert.match(content.textContent!, /1 dañados/); assert.equal(cart(surface).disabled, false);
+    }
+  }, products);
+});
+
 for (const mode of ['list', 'grid'] as const) {
   test(`${mode}: inventory emphasizes uppercase names with only the requested metadata and a single red dispatch action`, async () => {
     const products = [{ ...items[0], nombre: 'Cable solar largo con descripción', marca: 'Fabricante', pesoUnitario: { valor: 2, unidad: 'kg' as const } }];

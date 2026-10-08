@@ -3,6 +3,7 @@ import { useInventory } from '../../context/InventoryContext';
 import { ItemImage } from '../ItemImage';
 import { isDemo } from '../../lib/supabase';
 import { available } from '../../domain/inventory';
+import { normalizeItemCondition } from '../../domain/itemCondition';
 import { itemPhotos } from '../../domain/photos';
 import { uppercaseName } from '../../shared/uppercase';
 import { openProductSurface } from '../../shared/productInteraction';
@@ -22,7 +23,7 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
   const renderStockBadge = (item: Elemento) => {
     if (item.cantidad === 0) {
       return (
-        <div className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-white/95 backdrop-blur-xs text-[#dd4c42] text-[11px] font-bold rounded-md flex items-center gap-1.5 shadow-2xs border border-[#ffdad6]">
+        <div className="px-2.5 py-1 bg-white/95 backdrop-blur-xs text-[#dd4c42] text-[11px] font-bold rounded-md flex items-center gap-1.5 shadow-2xs border border-[#ffdad6]">
           <span className="w-2 h-2 rounded-full bg-[#dd4c42]"></span>
           <span>0 AGOTADO</span>
         </div>
@@ -30,14 +31,14 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
     }
     if (item.cantidad <= item.stockMinimo) {
       return (
-        <div className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-white/95 backdrop-blur-xs text-[#755b00] text-[11px] font-bold rounded-md flex items-center gap-1.5 shadow-2xs border border-[#ffdf90]">
+        <div className="px-2.5 py-1 bg-white/95 backdrop-blur-xs text-[#755b00] text-[11px] font-bold rounded-md flex items-center gap-1.5 shadow-2xs border border-[#ffdf90]">
           <span className="w-2 h-2 rounded-full bg-[#f2c43a]"></span>
           <span>{item.cantidad} BAJO</span>
         </div>
       );
     }
     return (
-      <div className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-white/95 backdrop-blur-xs text-[#10b981] text-[11px] font-bold rounded-md flex items-center gap-1.5 shadow-2xs border border-[#e6f4ea]">
+      <div className="px-2.5 py-1 bg-white/95 backdrop-blur-xs text-[#10b981] text-[11px] font-bold rounded-md flex items-center gap-1.5 shadow-2xs border border-[#e6f4ea]">
         <span className="w-2 h-2 rounded-full bg-[#10b981]"></span>
         <span>{item.cantidad} DISP</span>
       </div>
@@ -56,6 +57,7 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
             <div className="inventory-card-grid grid gap-4 sm:gap-5">
               {items.map((item) => {
                 const photoCount = itemPhotos(item).length;
+                const condition = normalizeItemCondition(item.estado);
 
                 return (
                   <article
@@ -76,7 +78,15 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                           loading="lazy"
                           referrerPolicy="no-referrer"
                         />
-                      {renderStockBadge(item)}
+                      <div className="absolute top-2.5 inset-x-2.5 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                        <div className="min-w-0">
+                          {condition !== 'BUENO' && <span
+                            className="inline-block max-w-full break-words text-[10px] font-semibold text-[#755b00] bg-[#fef7e0] px-2 py-1 rounded-md shadow-2xs"
+                            title={`Estado del material: ${condition}`}
+                          >{condition}</span>}
+                        </div>
+                        {renderStockBadge(item)}
+                      </div>
                       {photoCount > 1 && <span className="absolute bottom-2.5 left-2.5 px-2 py-1 rounded-md bg-white/90 text-[#253685] text-xs font-semibold">{photoCount} fotos</span>}
                       {canOperate && <button
                         type="button"
@@ -104,15 +114,10 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                         <dt>CÓDIGO</dt><dd className="min-w-0 break-words font-mono-code">{item.codigo?.trim() || 'Sin especificar'}</dd>
                         <dt>UBICACIÓN</dt><dd className="min-w-0 break-words">{getAlmacenById(item.almacenId)?.nombre?.trim() || 'Sin especificar'}</dd>
                       </dl>
-                      {((item.cantidadDanados || 0) > 0 || item.estado && item.estado !== 'BUENO') && <div className="flex items-center gap-1.5 flex-wrap">
+                      {(item.cantidadDanados || 0) > 0 && <div className="flex items-center gap-1.5 flex-wrap">
                         {(item.cantidadDanados || 0) > 0 && (
                           <span className="text-[10px] font-bold text-[#c5221f] bg-[#fce8e6] px-1.5 py-0.5 rounded border border-[#ffdad6]" title={`${item.cantidadDanados} unidades reportadas con daño`}>
                             {item.cantidadDanados} dañados
-                          </span>
-                        )}
-                        {item.estado && item.estado !== 'BUENO' && (
-                          <span className="text-[10px] font-semibold text-[#755b00] bg-[#fef7e0] px-1.5 py-0.5 rounded">
-                            {item.estado}
                           </span>
                         )}
                       </div>}

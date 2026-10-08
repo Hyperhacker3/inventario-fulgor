@@ -1,4 +1,5 @@
 import { mapTransport } from '../domain/remissionTransport';
+import { normalizeItemCondition } from '../domain/itemCondition';
 import { mapWeight } from '../domain/weight';
 import type { Almacen, NivelEstanteria, Caja, Elemento, Estanteria, HistorialMovimiento, Proyecto, Remision, DetalleRemision, TipoMovimiento } from '../types';
 import { normalizeUnit } from '../domain/catalogs';
@@ -46,7 +47,7 @@ export const mapElemento = (row: DbRow): Elemento => {
     valorUnitario: mapUnitValue(specs.valor_unitario_cop),
     fotoUrl: str(row.foto_url), almacenId: id(row.almacen_id), estanteriaId: id(row.estanteria_id), nivelId: id(row.nivel_id), cajaId: id(row.caja_id),
     fotosAdicionales: uniquePhotos(specs.fotos_adicionales).filter(photo => photo !== str(row.foto_url)),
-    stockMinimo: numeric(row.stock_minimo, 10), estado: str(row.estado || specs.estado_material, 'BUENO'),
+    stockMinimo: numeric(row.stock_minimo, 10), estado: normalizeItemCondition(str(row.estado || specs.estado_material, 'BUENO')),
     cantidadDanados: numeric(row.cantidad_danados ?? specs.cantidad_danados),
     stockPendiente: Boolean(row.stock_pendiente), especificaciones: specs,
     archived: row.archived === true, createdAt: str(row.created_at), updatedAt: str(row.updated_at),

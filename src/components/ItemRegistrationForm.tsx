@@ -1,4 +1,5 @@
 import { Select } from './ui/Select';
+import { itemConditionOptions, normalizeItemCondition } from '../domain/itemCondition';
 import { isMobileCameraDevice } from '../shared/cameraDevices';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useInventory } from '../context/InventoryContext';
@@ -60,7 +61,7 @@ export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props
   const [weight, setWeight] = useState(() => weightDraft(item?.pesoUnitario));
   const [valorUnitario, setValorUnitario] = useState(item?.valorUnitario || 0);
   const [stockMinimo, setStockMinimo] = useState<number>(0);
-  const [estado, setEstado] = useState<string>(item?.estado || 'BUENO');
+  const [estado, setEstado] = useState<string>(normalizeItemCondition(item?.estado));
   const [cantidadDanados, setCantidadDanados] = useState<number>(item?.cantidadDanados || 0);
   const [fotoUrl, setFotoUrl] = useState<string>('');
   const [fotosAdicionales, setFotosAdicionales] = useState<string[]>([]);
@@ -288,11 +289,8 @@ export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props
               onChange={(e) => setEstado(e.target.value)}
               className="w-full px-3.5 py-2 rounded-lg border border-[#e2e8f0] bg-white text-xs font-semibold text-[#131b2e]"
             >
-              <option value="BUENO">Bueno / Óptimo (Nuevo o 100% operativo)</option>
-              <option value="MEDIO">Medio / Aceptable (Desgaste superficial)</option>
-              <option value="MAL ESTADO">Mal Estado / Dañado (Averiado)</option>
-              <option value="EN REPARACIÓN">En Reparación / En Taller</option>
-              <option value="RETAZOS / BUENO">Retazos / Sobrantes Buenos</option>
+              {!itemConditionOptions.some(option => option.value === estado) && <option value={estado}>{estado}</option>}
+              {itemConditionOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
             </Select>
           </div>
 
