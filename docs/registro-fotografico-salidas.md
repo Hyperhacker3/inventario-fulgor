@@ -25,7 +25,7 @@ Los borradores de imagen y las referencias preparadas se mantienen solo en memor
 
 ## Consultar
 
-En **Historial**, cada movimiento asociado a una remisión muestra dos acciones:
+En **Remisiones**, cada tarjeta tiene PDF y Fotos en la cabecera junto al código. En **Historial**, cada movimiento asociado a una remisión también muestra dos acciones:
 
 - **PDF** abre la remisión habitual.
 - **Fotos** abre el registro fotográfico de la salida, con navegación y contador.
@@ -39,3 +39,11 @@ Las fotos se almacenan separadas de la plantilla de impresión: **no aparecen en
 Administradores y operadores pueden subir fotos para sus propias salidas. Las cuentas de consulta pueden ver las fotografías ya asociadas a una salida, pero no los archivos temporales de otros usuarios. El bucket `outgoing-images` es privado; las políticas impiden sobrescribir o borrar fotos ya asociadas. Las fotos de productos siguen en `item-images` con sus permisos anteriores.
 
 Archivar o eliminar un producto conserva las remisiones, sus movimientos y el registro fotográfico de las salidas. Esta actualización no añade edición ni eliminación de fotografías de salidas ya confirmadas.
+
+## Cámara recordada y capturas consecutivas
+
+La cámara o lente seleccionado y abierto correctamente se guarda en localStorage con la clave el_turpial_camera_device. Se comparte entre cámaras de producto y salida en este navegador y se recupera al abrir, incluso tras recargar. Solo se guarda el identificador de cámara, nunca imágenes. Si el almacenamiento está bloqueado, la captura sigue disponible. Si la cámara recordada ya no existe o no cumple las restricciones, se intenta la predeterminada, manteniendo la exigencia de lente trasero en móviles; no se sustituyen errores de permisos por otra cámara.
+
+En Salidas, Capturar abre la vista previa. Repetir descarta esa vista previa; Añadir y tomar otra agrega la foto y vuelve a la cámara usando el mismo lente. Añadir y terminar agrega la última y cierra. Terminar o cerrar conserva las fotos ya añadidas, mientras una vista previa sin aceptar no se agrega. Se puede quitar cualquier foto desde el borrador. Las fotos de productos mantienen su confirmación individual con Usar foto.
+
+La cámara tiene desplazamiento cuando falta altura y Capturar conserva todo el ancho de su fila en móvil. Ayuda y guía incluye estos controles y el resto de funciones, sin instrucciones de instalación.

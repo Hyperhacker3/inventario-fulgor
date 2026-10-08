@@ -24,6 +24,8 @@ Si falla la limpieza de fotos después de borrar el producto, queda una tarea en
 
 ## Entradas
 
+Entradas reúne recepción y alta de nuevos materiales. Sin selección, administración ve el formulario de alta completo con datos, estado, ubicación, creación de catálogos/ubicaciones, stock, peso, valor y fotos. Quitar selección devuelve ese formulario. Operadores reciben materiales existentes. Nuevo ítem no tiene acceso ni pantalla independiente; el enlace antiguo abre Entradas.
+
 Abra **Entradas** en el menú. El buscador muestra resultados al escribir y admite materiales sin stock. Seleccione un material, indique la cantidad recibida y el motivo o referencia de recepción, y pulse **Registrar entrada**. Las cantidades admiten hasta tres decimales y también pueden ajustarse con +/−.
 
 Supabase suma la cantidad al stock actual y registra el responsable autenticado, fecha, motivo y stock anterior y nuevo. La pantalla muestra una confirmación y queda lista para otra recepción. No genera PDF ni remisión. Para un stock pendiente de verificar, primero registre un ajuste de administración desde el detalle del material.
@@ -33,3 +35,11 @@ Si falla una solicitud, el formulario conserva sus datos y permite reintentar co
 ## Salidas
 
 El menú, botones, mensajes y remisiones usan la palabra **Salidas**. Se mantienen las claves internas de transporte y las funciones existentes para que las remisiones y borradores anteriores continúen funcionando.
+
+## Confirmaciones y remisiones
+
+Archivar utiliza una ventana con el tema de la aplicación y color violeta; los botones de cancelar son rojos. Errores desplazan al campo o mensaje y conservan el borrador; los guardados correctos vuelven al inicio. Editar es una ventana independiente sobre el detalle, y Retroceder cierra primero la ventana superior con transición de 360 ms.
+
+Salidas requiere lugares de remisión y destino; el código es REM-ORIGEN-DESTINO-AAAAMMDD-CONSECUTIVO. Nombres y lugares nuevos se registran en mayúsculas. El PDF incluye empresa/NIT y columnas separadas de peso unitario y total; la tarjeta de Remisiones muestra solo el número de materiales y PDF/Fotos arriba. Las fotos son opcionales, pueden capturarse consecutivamente y se consultan separadas del PDF.
+
+Consulte [Guía de funciones](guia-funciones.md), [Lugares y códigos](lugares-y-codigos-remision.md) y [Registro fotográfico](registro-fotografico-salidas.md).

@@ -6,7 +6,7 @@ La pantalla y el acceso Nuevo ítem se retiran. Entradas conserva Buscar materia
 
 `ItemRegistrationForm.tsx` conserva normalización, validación, reintentos e identidad de solicitud del alta y añade bloqueo inmediato frente a doble guardado. Búsqueda/cambio de selección esperan las operaciones pendientes. Recepción utiliza `EntryForm` y la RPC existente. No hay formularios anidados ni migración adicional; errores/éxito conservan el desplazamiento automático.
 
-Actualizado el 7 de octubre de 2026.
+Actualizado el 8 de octubre de 2026.
 
 ## Nivel duplicado
 
@@ -18,7 +18,7 @@ Nuevo ítem mostraba dos selectores de Nivel después de cambiar la ubicación p
 
 Entradas (alta y recepción) y Salidas desplazan la pantalla al primer campo que falla la validación nativa o al mensaje de error de validación/guardado. Los errores de crear prefijos, categorías, estanterías, niveles, cajas o preparar fotografías también se hacen visibles. Los mensajes reciben foco; los selectores personalizados desplazan su botón visible, manteniendo validación nativa.
 
-Una escritura confirmada vuelve al inicio del área principal. Un fallo conserva borradores y reintentos; una actualización de datos o un formulario que se cierra no desplaza otra pantalla. Movimiento reducido usa desplazamiento inmediato. Salidas mantiene la apertura del PDF tras guardar. Entradas conserva el buscador y el producto seleccionado, con la confirmación dentro de Datos de la entrada.
+Una escritura confirmada vuelve al inicio del área principal. Un fallo conserva borradores y reintentos; una actualización de datos o un formulario que se cierra no desplaza otra pantalla. Movimiento reducido usa desplazamiento inmediato. Salidas mantiene la apertura del PDF tras guardar. Entradas conserva el buscador y el producto seleccionado, con la confirmación en el formulario de recepción, sin el antiguo panel Datos de la entrada.
 
 ## Presentación de Inventario
 
@@ -26,11 +26,11 @@ En lista, el nombre aparece en mayúsculas, negrita y 16 px en móvil / 18 px de
 
 En cuadrícula, el nombre también reserva dos líneas y usa elipsis y conserva marca, código, ubicación y el indicador de disponibilidad/condición. Se retiran categoría, peso y unidad del contenido. Se elimina Detalles; el único botón independiente es Agregar a la salida, con icono rojo, nombre accesible y superficie táctil de 44 px sobre la esquina inferior derecha de la fotografía, sin fila propia debajo. No aparece para consulta y se deshabilita sin disponibilidad. Pulsarlo no abre simultáneamente la ficha.
 
-La ubicación visible en lista y cuadrícula se limita al nombre del almacén, sin estantería, nivel ni caja. La columna de lista se llama Almacén; si no hay uno asignado, se muestra Sin almacén asignado. La ficha y los filtros mantienen la jerarquía completa.
+La ubicación visible en lista y cuadrícula se limita al nombre del almacén, sin estantería, nivel ni caja. La columna de lista se llama Almacén; si no hay uno asignado, se muestra Sin almacén asignado. En cuadrícula, MARCA, CÓDIGO y UBICACIÓN siempre tienen etiqueta y muestran Sin especificar ante datos vacíos; etiquetas en tinta y valores azules. La ficha y los filtros mantienen la jerarquía completa.
 
 ## Guardado en mayúsculas y activación
 
-Inventario se ordena por última modificación descendente, con ID ascendente en empates, antes de paginar. Altas, edición, entradas/salidas y Realtime utilizan las fechas existentes, sin SQL nuevo. El nombre se limita a dos líneas con elipsis, reservando igual altura en lista/cuadrícula; el texto completo continúa en título, nombre accesible y ficha. En lista móvil bajo 640 px solo se ven nombre, stock/unidad y salida, sin código/foto ni scroll horizontal. Tablet/PC mantienen el código, que también se oculta en cuadrícula móvil. Buscar/Limpiar se retiran de buscadores; filtros conservan su reinicio.
+Inventario se ordena por última modificación descendente, con ID ascendente en empates, antes de paginar. Altas, edición, entradas/salidas y Realtime utilizan las fechas existentes, sin SQL nuevo. El nombre se limita a dos líneas con elipsis, reservando igual altura en lista/cuadrícula; el texto completo continúa en título, nombre accesible y ficha. En lista móvil bajo 640 px solo se ven nombre, stock/unidad y salida, sin código/foto ni scroll horizontal. Tablet/PC mantienen el código, mientras cuadrícula muestra CÓDIGO también en móvil. Buscar/Limpiar se retiran de buscadores y una X permite borrar el texto; filtros conservan su reinicio.
 
 Las altas y ediciones desde la app normalizan nombre y marca al guardar, conservando tildes. Los nombres existentes se presentan en mayúsculas en Inventario sin una modificación masiva de la base. Descripciones, observaciones, identificadores, fotos, unidades y valores conservan su tratamiento.
 
@@ -45,3 +45,11 @@ Se ensayó con PostgreSQL embebido; **no se ejecutó en Supabase real** porque e
 Pasaron typecheck, lint, **163 pruebas unitarias y 34 de integración (197 en total)** y build. Se comprueban alta/recepción en la misma pantalla, borradores/reintentos, doble guardado, bloqueo de búsqueda pendiente, permisos y enlaces antiguos, además de errores repetidos, validación, foco, desplazamiento, ubicaciones, mayúsculas y conservación histórica. Sin computer use, automatización de navegador ni escrituras en Supabase real. La geometría y el desplazamiento físico se revisan con el usuario.
 
 Comprobar en teléfono y PC: cambiar estantería/nivel, provocar errores de creación/guardado, repetirlos y completar un guardado. Revisar nombres largos en lista/cuadrícula y la acción roja independiente. Tras activar SQL, comprobar mayúsculas de nuevas altas/salidas y conservación de documentos anteriores, sin usar existencias reales para pruebas ficticias.
+
+## Estado vigente de formularios y ficha
+
+Los estados son BUENO, REGULAR, MALO, EN REPARACIÓN y RETAZOS. Los antiguos MEDIO, OBSOLETO y RETAL se normalizan a REGULAR, MALO y RETAZOS. El inventario puede filtrarse por estado; su etiqueta aparece sobre la foto arriba a la izquierda. Los filtros empiezan ocultos en todos los tamaños y se abren junto a lista/cuadrícula.
+
+La ficha agrupa etiquetas en mayúsculas/tinta y valores azules. Editar abre una ventana encima, desde arriba y con lápiz/X propios; cerrar o guardar devuelve la ficha conservando su scroll. Las cinco acciones quedan hundidas mientras sus ventanas están abiertas; Archivar es violeta y usa una confirmación con el tema, Cancelar rojo y Confirmar/Guardar el color de la función. El cierre dura 360 ms; Retroceder cierra solo la ventana superior. Los guardados pendientes bloquean los cierres.
+
+Ayuda y guía describe únicamente las funciones actuales, sin instalación. Consulte [Guía de funciones](guia-funciones.md) y [Registro fotográfico](registro-fotografico-salidas.md) para cámara recordada y capturas múltiples de salida.

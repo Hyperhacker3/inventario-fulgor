@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { cameraInputs, isMobileCameraDevice, isRearCamera } from './cameraDevices';
+import { readCameraPreference, saveCameraPreference } from './cameraPreference';
 
-export function useCamera(enabled: boolean, deviceId = '', aspectRatio = 1) {
+export function useCamera(enabled: boolean, deviceId = '', aspectRatio = 1, rememberSelection = false) {
   const rearOnly = isMobileCameraDevice(typeof navigator === 'undefined' ? {} : navigator);
   const videoRef = useRef<HTMLVideoElement>(null);
   const verifiedRearIds = useRef(new Set<string>());
@@ -25,14 +26,24 @@ export function useCamera(enabled: boolean, deviceId = '', aspectRatio = 1) {
     const start = async () => {
       if (cancelled) return;
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('La cámara requiere un navegador compatible y una conexión segura.');
-      const acquired = await navigator.mediaDevices.getUserMedia({ video: { ...(rearOnly ? { facingMode: { exact: 'environment' } } : {}), ...(deviceId ? { deviceId: { exact: deviceId } } : {}), width: { ideal: 1280 }, aspectRatio: { ideal: aspectRatio } }, audio: false });
+      let requestedId = deviceId;
+      const acquire = () => navigator.mediaDevices.getUserMedia({ video: { ...(rearOnly ? { facingMode: { exact: 'environment' } } : {}), ...(requestedId ? { deviceId: { exact: requestedId } } : {}), width: { ideal: 1280 }, aspectRatio: { ideal: aspectRatio } }, audio: false });
+      let acquired: MediaStream;
+      try { acquired = await acquire(); }
+      catch (cause) {
+        const unavailable = cause instanceof Error && ['OverconstrainedError', 'NotFoundError'].includes(cause.name);
+        if (cancelled || !rememberSelection || !requestedId || requestedId !== readCameraPreference() || !unavailable) throw cause;
+        saveCameraPreference('');
+        requestedId = '';
+        acquired = await acquire();
+      }
       if (cancelled) { acquired.getTracks().forEach(track => track.stop()); return; }
       stream = acquired;
       const track = acquired.getVideoTracks()[0];
       const settings = track?.getSettings();
       if (!track) throw new Error('No se pudo abrir la cámara. Puede subir una foto desde Elegir archivo.');
       if (rearOnly && !isRearCamera(track.label || '', settings?.facingMode)) throw new Error('No se pudo identificar una cámara trasera. Puede subir una foto desde Elegir archivo.');
-      rearDeviceId = settings?.deviceId || deviceId;
+      rearDeviceId = settings?.deviceId || requestedId;
       if (rearOnly && rearDeviceId) verifiedRearIds.current.add(rearDeviceId);
       if (!cancelled) {
         setCurrentDeviceId(rearDeviceId);
@@ -42,7 +53,10 @@ export function useCamera(enabled: boolean, deviceId = '', aspectRatio = 1) {
         activeVideo.srcObject = acquired;
         await activeVideo.play();
       }
-      if (!cancelled) { setReady(true); setLoading(false); }
+      if (!cancelled) {
+        if (rememberSelection && rearDeviceId) saveCameraPreference(rearDeviceId);
+        setReady(true); setLoading(false);
+      }
       await refreshDevices();
     };
     Promise.resolve().then(() => { if (cancelled) return; setLoading(true); setError(''); setReady(false); setCameras([]); setCurrentDeviceId(''); return start(); })
@@ -54,6 +68,6 @@ export function useCamera(enabled: boolean, deviceId = '', aspectRatio = 1) {
     return () => { cancelled = true; stream?.getTracks().forEach(track => track.stop());
       navigator.mediaDevices?.removeEventListener('devicechange', refreshDevices);
       if (activeVideo) activeVideo.srcObject = null; };
-  }, [enabled, deviceId, aspectRatio, rearOnly]);
+  }, [enabled, deviceId, aspectRatio, rearOnly, rememberSelection]);
   return { videoRef, loading, error, ready, cameras, currentDeviceId, rearOnly };
 }
