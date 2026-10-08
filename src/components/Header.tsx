@@ -1,4 +1,5 @@
 import { StockAlerts } from './StockAlerts';
+import { registerDialogBack } from '../shared/dialogHistory';
 import { SearchInput } from './ui/SearchInput';
 import { Presence } from './ui/Motion';
 import React, { useEffect, useState } from 'react';
@@ -20,7 +21,7 @@ export const Header: React.FC = () => {
     openItemDetail,
     globalSearch,
     setGlobalSearch,
-    activeView,
+    navigationView: activeView,
     setActiveView,
     setIsHelpModalOpen,
     dispatchCart, company
@@ -45,9 +46,10 @@ export const Header: React.FC = () => {
   }, []);
   useEffect(() => {
     if (!showNotifications) return;
+    const unregisterBack = registerDialogBack(window, () => setShowNotifications(false), () => false);
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setShowNotifications(false); };
     document.addEventListener('keydown', escape);
-    return () => document.removeEventListener('keydown', escape);
+    return () => { unregisterBack(); document.removeEventListener('keydown', escape); };
   }, [showNotifications]);
 
   // Dynamic stock alerts

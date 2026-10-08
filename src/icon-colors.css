@@ -28,6 +28,6 @@
   :root[data-ui-style] :is([role='tab'][id^='data-tab-'], #data-section-select, #data-section-select-options) [data-icon='layers'] { --ui-icon-ink: var(--ui-icon-levels); }
   :root[data-ui-style] :is([role='tab'][id^='data-tab-'], #data-section-select, #data-section-select-options) [data-icon='inventory_2'] { --ui-icon-ink: var(--ui-icon-history); }
   :root[data-ui-style] :is([role='tab'][id^='data-tab-'], #data-section-select, #data-section-select-options) [data-icon='folder_open'] { --ui-icon-ink: var(--ui-icon-success); }
-  :root[data-ui-style] :is([role='tab'][id^='data-tab-'], #data-section-select, #data-section-select-options) [data-icon='archive'] { --ui-icon-ink: var(--ui-icon-danger); }
+  :root[data-ui-style] :is([role='tab'][id^='data-tab-'], #data-section-select, #data-section-select-options) [data-icon='archive'] { --ui-icon-ink: var(--ui-icon-archive); }
   :root[data-ui-style] :is([role='tab'][id^='data-tab-'], #data-section-select, #data-section-select-options) [data-icon='settings'] { --ui-icon-ink: var(--ui-icon-data); }
 }

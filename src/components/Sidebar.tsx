@@ -8,7 +8,7 @@ import { DEFAULT_COMPANY } from '../domain/company';
 
 export const Sidebar: React.FC = () => {
   const { signOut } = useAuth();
-  const { activeView, setActiveView, dispatchCart, setIsHelpModalOpen, user, company } = useInventory();
+  const { navigationView: activeView, setActiveView, dispatchCart, setIsHelpModalOpen, user, company } = useInventory();
 
   const navItems = navigationItems(user.role, dispatchCart.length, isDemo);
 

@@ -54,7 +54,7 @@ function useInventoryValue() {
     setIsHelpModalOpen(false);
     setDispatchSelection(null);
   }, []);
-  const { activeView, setActiveView } = useViewNavigation(closeNavigationOverlays);
+  const { activeView, navigationView, setActiveView } = useViewNavigation(closeNavigationOverlays);
   const cartKey = `fulgor_cart_v4_${user?.email || 'anonymous'}`;
   const [cartLines, setCartLines] = useState<CartLine[]>(() => loadCart(cartKey));
   useEffect(() => { localStorage.setItem(cartKey, JSON.stringify(cartLines)); }, [cartKey, cartLines]);
@@ -126,7 +126,7 @@ function useInventoryValue() {
   return {
     elementos: data.elementos, almacenes: data.almacenes, estanterias: data.estanterias, niveles: data.niveles, cajas: data.cajas,
     proyectos: data.proyectos, remisiones: data.remisiones, historial: data.historial,
-    user: user!, activeView, dispatchCart, selectedItemForDetail, selectedRemisionForPdf, quickMovementItem,
+    user: user!, activeView, navigationView, dispatchCart, selectedItemForDetail, selectedRemisionForPdf, quickMovementItem,
     selectedOutgoingPhotosId, openOutgoingPhotos, closeOutgoingPhotos,
     quickMovementType, isHelpModalOpen, globalSearch, isCloudConnected: data.isCloudConnected,
     dispatchSelection, dispatchSelectionItem, closeDispatchSelection, dispatchFeedback,

@@ -71,13 +71,13 @@ test('navigation retains the visible screen while lazy views load, handles rapid
   const Explorer = lazy(() => explorer.promise), History = lazy(() => history.promise), NewItem = lazy(() => newItem.promise);
   const screen = (name: string) => () => createElement('h2', null, name);
   function Navigation() {
-    const { activeView, setActiveView } = useViewNavigation();
+    const { activeView, navigationView, setActiveView } = useViewNavigation();
     const [draft, setDraft] = useState('');
     const view = activeView === 'explorer' ? createElement(Explorer) : activeView === 'history' ? createElement(History)
       : activeView === 'entries' ? createElement(NewItem) : createElement('section', null,
         createElement('h2', null, 'Inicio'), createElement('input', { value: draft, onChange: event => setDraft(event.currentTarget.value) }));
     return createElement('main', null,
-      createElement('button', { onClick: () => setActiveView('explorer'), id: 'go-explorer' }, 'Inventario'),
+      createElement('button', { onClick: () => setActiveView('explorer'), id: 'go-explorer', 'data-selected': navigationView === 'explorer' }, 'Inventario'),
       createElement('button', { onClick: () => setActiveView('history'), id: 'go-history' }, 'Historial'),
       createElement(ScreenTransition, { screen: activeView, children: view }));
   }
@@ -90,6 +90,7 @@ test('navigation retains the visible screen while lazy views load, handles rapid
     await act(() => { Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value')!.set!.call(input, '42');
       input.dispatchEvent(new dom.window.Event('input', { bubbles: true })); });
     await navigate('go-explorer');
+    assert.equal(host.querySelector('#go-explorer')!.getAttribute('data-selected'), 'true');
     assert.equal(window.location.hash, '#/explorer'); assert.match(current().textContent!, /Inicio/);
     assert.equal(input.value, '42'); assert.equal(host.querySelector('.app-spinner'), null);
     assert.equal(host.querySelector('main')!.style.display, '');

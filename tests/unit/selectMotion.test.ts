@@ -174,6 +174,7 @@ test('a closing portaled quantity dialog becomes inert immediately and cannot ad
     assert.ok(document.querySelector('[role="dialog"]'));
     await act(() => root.render(h(Presence, { open: false, children: null })));
     const form = document.querySelector<HTMLFormElement>('[role="dialog"]')!;
+    assert.equal(form.closest<HTMLElement>('.ui-modal-layer')!.dataset.motionOpen, 'false');
     assert.ok(form.closest('[inert][aria-hidden="true"]'));
     await act(() => form.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true })));
     assert.equal(added, 0); await settle(); assert.equal(document.querySelector('[role="dialog"]'), null);

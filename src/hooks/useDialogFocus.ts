@@ -1,4 +1,5 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
+import { registerDialogBack } from '../shared/dialogHistory';
 import { useMotionActive } from '../components/ui/Motion';
 import { isMobileCameraDevice } from '../shared/cameraDevices';
 
@@ -7,11 +8,21 @@ export function useDialogFocus(container: RefObject<HTMLElement | null>, onClose
   const active = useMotionActive();
   const close = useRef(onClose);
   useEffect(() => { close.current = onClose; }, [onClose]);
+  useLayoutEffect(() => {
+    const layer = container.current?.closest<HTMLElement>('.ui-modal-layer, .print-layer');
+    if (layer) {
+      layer.dataset.motionOpen = String(open && active);
+      layer.inert = !open || !active;
+      if (!open || !active) layer.setAttribute('aria-hidden', 'true');
+      else layer.removeAttribute('aria-hidden');
+    }
+  }, [container, open, active]);
   useEffect(() => {
     if (!open || !active) return;
     const previous = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    const unregisterBack = registerDialogBack(window, () => close.current(), () => container.current?.getAttribute('aria-busy') === 'true' || !!container.current?.querySelector('[aria-busy="true"]'));
     const selector = isMobileCameraDevice(window.navigator) ? '[data-dialog-close]' : desktopInitialFocus;
     container.current?.querySelector<HTMLElement>(selector)?.focus({ preventScroll: true });
     const keyboard = (event: KeyboardEvent) => {
@@ -28,6 +39,7 @@ export function useDialogFocus(container: RefObject<HTMLElement | null>, onClose
     };
     document.addEventListener('keydown', keyboard, true);
     return () => {
+      unregisterBack();
       document.body.style.overflow = overflow;
       document.removeEventListener('keydown', keyboard, true);
       // Restoring an input on a phone would reopen the keyboard as the dialog closes.

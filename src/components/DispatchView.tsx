@@ -257,6 +257,7 @@ export const DispatchView: React.FC = () => {
             <button
               type="submit"
               id="btn-process-dispatch"
+              data-action="dispatch"
               disabled={dispatchCart.length === 0 || pending || photoBusy || !automaticReady || !photosReady || !routeReady}
               className={`w-full px-3 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all shadow-sm ${
                 dispatchCart.length > 0

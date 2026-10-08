@@ -26,7 +26,7 @@ export function ArchivedItemActions({ item, onRestore, onDelete }: Props) {
   if (!item.archived) return null;
   return <fieldset disabled={pending !== null} aria-busy={pending !== null} className="space-y-3">
     {onRestore && <div className="space-y-2">
-      <button type="button" onClick={() => { void restore(); }} className="px-3 py-2 rounded-lg bg-[#253685] text-white text-sm font-semibold disabled:opacity-40">{pending === 'restore' ? 'Desarchivando…' : 'Desarchivar'}</button>
+      <button type="button" data-action="archive" onClick={() => { void restore(); }} className="px-3 py-2 rounded-lg text-sm font-semibold disabled:opacity-40">{pending === 'restore' ? 'Desarchivando…' : 'Desarchivar'}</button>
       <p className="text-xs text-slate-600">Volverá al inventario activo conservando su código, stock, fotos e historial.</p>
     </div>}
     {error && <p role="alert" className="text-sm text-red-700">{error}</p>}

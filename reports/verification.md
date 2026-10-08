@@ -1,5 +1,15 @@
 # Verificación de la refactorización local
 
+## Detalle, ventanas, historial y acciones coherentes (8 de octubre de 2026)
+
+La ficha muestra etiquetas en tinta/mayúsculas y valores azules; sus cinco acciones reutilizan ui-flat-choice y se elimina la escala de la navegación lateral. navigationView actualiza la selección al clic, mientras activeView conserva las transiciones y la pantalla anterior durante carga diferida. Cada ventana global tiene un límite de Suspense independiente, evitando ocultar la ficha al cargar Entrada/Ajuste. Editar restablece el desplazamiento al inicio y enfoca el título; edición, entrada, ajuste y salida incluyen iconos en sus títulos.
+
+useDialogFocus sincroniza data-motion-open/inert en la capa real del portal, habilitando la animación de salida y desactivando interacción inmediatamente. Presence conserva ConfirmDialog durante el cierre. dialogHistory utiliza una entrada temporal compartida para que Retroceder cierre solo la ventana superior; contempla ventanas anidadas, edición, selectores/calendario, notificaciones, cierre manual seguido de reapertura, bloqueos de escritura y selección de pantallas desde el menú móvil. Al salir de las ventanas se conserva la navegación de páginas.
+
+Archivar/Archivados pasan a violeta con icono fijo en ambas paletas y texto legible en oscuro. Cancelar es rojo; confirmar entrada verde, salida roja y Guardar edición azul. Los botones de edición en catálogos, proyectos y ubicaciones incorporan el lápiz SVG; se retira el subrayado visual de los botones mediante CSS común.
+
+Verificación: typecheck, lint, **176 unitarias + 34 de integración (210)** y build correctos. Las pruebas nuevas verifican historial anidado, cierre/reapertura, guardados bloqueados, navegación del menú, edición desde arriba, lápiz/acciones planas, portal inactivo durante salida y selección inmediata mientras carga una vista. Sin automatización de navegador, SQL nuevo ni acceso al Supabase real; geometría y animación física se revisan con el usuario.
+
 ## Condiciones actuales, filtro físico, archivo temático y accesos de búsqueda/fotos (8 de octubre de 2026)
 
 El usuario sustituye MEDIO por REGULAR y pide retirar RETAL. Las opciones actuales son BUENO, REGULAR, MALO, EN REPARACIÓN y RETAZOS. Se normalizan MEDIO → REGULAR y RETAL/RETAZOS / BUENO → RETAZOS en lectura/edición; los alias previos de malo/reparación se mantienen. RETAL solo existe como alias de compatibilidad en código/pruebas, no como etiqueta u opción de interfaz. No se consultó ni escribió en Supabase real; no hay migración masiva ni alteración de stock/dañados.

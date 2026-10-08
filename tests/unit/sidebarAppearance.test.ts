@@ -4,7 +4,7 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 
 // JSDOM cannot exercise pointer media or paint hover. Attribute states test the CSS cascade only.
-const css = ['appearance.css', 'controls.css', 'interactions.css', 'sidebar.css']
+const css = ['appearance.css', 'controls.css', 'interactions.css', 'sidebar.css', 'action-ui.css']
   .map(file => fs.readFileSync(new URL(`../../src/${file}`, import.meta.url), 'utf8')).join('\n')
   .replaceAll('@media screen and (hover: hover) and (pointer: fine)', '@media screen')
   .replaceAll(':hover', '[data-test-hover]').replaceAll(':active', '[data-test-active]');
@@ -61,6 +61,7 @@ test('hover adds relief only to inactive sidebar actions, selection and press st
       assert.equal(computed('selected').boxShadow, 'var(--ui-inset-shadow)');
       document.getElementById('nav')!.setAttribute('data-test-active', '');
       assert.equal(computed('nav').boxShadow, 'var(--ui-inset-shadow)');
+      assert.equal(computed('nav').transform, 'none');
       for (const id of ['brand', 'mobile-brand']) {
         document.getElementById(id)!.setAttribute('data-test-active', '');
         assert.equal(computed(id).boxShadow, 'none'); assert.equal(computed(id).transform, 'none');

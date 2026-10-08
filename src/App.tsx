@@ -35,6 +35,7 @@ const OutgoingPhotoModal = lazy(() => import('./components/history/OutgoingPhoto
 const MainLayout: React.FC = () => {
   const {
     activeView,
+    navigationView,
     setActiveView,
     dispatchCart,
     selectedRemisionForPdf,
@@ -91,9 +92,9 @@ const MainLayout: React.FC = () => {
       <div className="flex-1 flex flex-col h-full xl:pl-64 overflow-hidden">
         <Header />
         <main ref={pageScroll} className={`app-main flex-1 min-h-0 overflow-y-auto relative ${keyboardOpen ? 'keyboard-open' : ''}`}>
-          <ScreenTransition screen={activeView} className="app-screen min-h-full">{renderActiveView()}</ScreenTransition>
+          <Suspense fallback={<p role="status" className="p-6">Cargando pantalla…</p>}><ScreenTransition screen={activeView} className="app-screen min-h-full">{renderActiveView()}</ScreenTransition></Suspense>
         </main>
-        <MobileBottomNav items={mobileNavItems} activeView={activeView} keyboardOpen={keyboardOpen} onNavigate={setActiveView} />
+        <MobileBottomNav items={mobileNavItems} activeView={navigationView} keyboardOpen={keyboardOpen} onNavigate={setActiveView} />
       </div>
 
       {/* Global Modals */}
@@ -101,14 +102,15 @@ const MainLayout: React.FC = () => {
       <Suspense fallback={null}><Presence open={!!selectedRemisionForPdf}>{selectedRemisionForPdf && <PdfRemissionModal
         remision={selectedRemisionForPdf}
         onClose={closePdfRemision}
-      />}</Presence>
+      />}</Presence></Suspense>
+      <Suspense fallback={null}>
       <Presence open={!!selectedItemForDetail}>{selectedItemForDetail && <ItemDetailModal
         key={selectedItemForDetail.id}
         item={selectedItemForDetail}
         onClose={closeItemDetail}
-      />}</Presence>
-      <Presence open={!!quickMovementItem}>{quickMovementItem && <QuickMovementModal item={quickMovementItem} movementType={quickMovementType} key={`${quickMovementItem.id}:${quickMovementType}`} />}</Presence>
-      <Presence open={isHelpModalOpen}>{isHelpModalOpen && <HelpModal />}</Presence></Suspense>
+      />}</Presence></Suspense>
+      <Suspense fallback={null}><Presence open={!!quickMovementItem}>{quickMovementItem && <QuickMovementModal item={quickMovementItem} movementType={quickMovementType} key={`${quickMovementItem.id}:${quickMovementType}`} />}</Presence></Suspense>
+      <Suspense fallback={null}><Presence open={isHelpModalOpen}>{isHelpModalOpen && <HelpModal />}</Presence></Suspense>
       <Suspense fallback={<div role="status" className="no-print fixed inset-0 z-[70] bg-black/60 grid place-items-center"><p className="bg-white rounded-xl p-6">Abriendo fotografías…</p></div>}><Presence open={!!selectedOutgoingPhotosId}>{selectedOutgoingPhotosId && <OutgoingPhotoModal key={selectedOutgoingPhotosId} remissionId={selectedOutgoingPhotosId} onClose={closeOutgoingPhotos} />}</Presence></Suspense>
       <Suspense fallback={<div role="status" className="fixed inset-0 z-[60] bg-black/60 grid place-items-center"><p className="bg-white p-6 rounded-xl">Preparando selección de cantidad…</p></div>}><Presence open={!!dispatchSelection && !!dispatchSelectionItem}>{dispatchSelection && dispatchSelectionItem && <DispatchQuantityModal key={dispatchSelection.token} item={dispatchSelectionItem} inCart={dispatchCart.find(line => line.elemento.id === dispatchSelectionItem.id)?.cantidad || 0} onClose={closeDispatchSelection} onConfirm={quantity => addToDispatchCart(dispatchSelectionItem, quantity)} />}</Presence></Suspense>
     </div>

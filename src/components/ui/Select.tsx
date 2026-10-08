@@ -1,4 +1,5 @@
 import { StateIcon } from './StateIcon';
+import { registerDialogBack } from '../../shared/dialogHistory';
 import { Children, Fragment, isValidElement, useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type SelectHTMLAttributes } from 'react';
 import { createPortal } from 'react-dom';
 import { Presence, useMotionActive } from './Motion';
@@ -41,6 +42,9 @@ export function Select({ children, className = '', id, style, onChange, onInvali
   const [position, setPosition] = useState({ left: 0, top: 0, width: 0, maxHeight: 320 });
   if (open && (!active || props.disabled)) setOpen(false);
   const expanded = open && active && !props.disabled;
+  useEffect(() => {
+    if (expanded) return registerDialogBack(window, () => { setOpen(false); trigger.current?.focus({ preventScroll: true }); }, () => false);
+  }, [expanded]);
   const place = useCallback(() => {
     const rect = trigger.current!.getBoundingClientRect();
     const viewport = window.visualViewport;

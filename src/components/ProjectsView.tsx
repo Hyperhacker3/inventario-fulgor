@@ -1,3 +1,4 @@
+import { StateIcon } from './ui/StateIcon';
 import { useMemo, useRef, useState, type FormEvent } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import type { Proyecto, ProjectSpending } from '../types';
@@ -66,7 +67,7 @@ export function ProjectsManager({ embedded = false, proyectos, user, addProyecto
         </fieldset>
         <div className="flex flex-wrap gap-4 items-center">
           <button disabled={busy} className="bg-[#253685] text-white px-4 py-2 rounded-lg">{busy ? 'Guardando…' : 'Guardar proyecto'}</button>
-          <button type="button" disabled={busy} onClick={close} className="border rounded-lg px-4 py-2">Cancelar</button>
+          <button data-action="cancel" type="button" disabled={busy} onClick={close} className="border rounded-lg px-4 py-2">Cancelar</button>
           <button type="button" disabled={busy} className="text-[#253685] underline" onClick={() => { void run(addExampleProjects, 'Los dos proyectos de ejemplo están guardados en Supabase.'); }}>Añadir dos proyectos de ejemplo</button>
         </div>
       </form></FormDialog>}</Presence>
@@ -79,7 +80,7 @@ export function ProjectsManager({ embedded = false, proyectos, user, addProyecto
         <p className="text-xl font-bold text-[#253685] break-words mt-1">{spendingState === 'ready' ? formatCOP(costIndex.get(project.id)?.totalCOP || 0) : spendingState === 'loading' ? 'Consultando…' : 'No disponible'}</p>
         {spendingState === 'ready' && <p className="text-xs text-slate-500 mt-1">{costIndex.get(project.id)?.salidas || 0} salida(s) confirmada(s). Se conserva el valor registrado en cada salida.</p>}
       </div>
-      {admin && <div className="flex gap-4 text-sm"><button disabled={busy} onClick={() => edit(project)} className="text-[#253685]">Editar</button>
+      {admin && <div className="flex gap-4 text-sm"><button data-action="edit" disabled={busy} onClick={() => edit(project)} className="text-[#253685]"><StateIcon icon="edit" />Editar</button>
         <button disabled={busy} onClick={() => { void run(() => updateProyecto(project.id, { ...project, estado: project.estado === 'ACTIVO' ? 'FINALIZADO' : 'ACTIVO' }), project.estado === 'ACTIVO' ? 'Proyecto quitado de las salidas.' : 'Proyecto reactivado.'); }} className="text-[#253685]">{project.estado === 'ACTIVO' ? 'Quitar de salidas' : 'Reactivar'}</button></div>}
     </article>)}</div>
   </div>;

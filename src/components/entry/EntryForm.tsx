@@ -44,7 +44,7 @@ export function EntryForm({ item, responsible, onSave, onBusyChange }: Props) {
       </label>
       <label className="block text-sm font-semibold">Motivo o referencia de recepción<textarea autoComplete="off" autoCorrect="off" spellCheck={false} required rows={3} maxLength={500} value={reason} onChange={event => setReason(event.target.value)} placeholder="Compra, devolución de obra, recepción de material…" className="block w-full mt-2 p-3 border rounded-xl" /></label>
       <p className="text-sm break-words text-slate-600">Responsable: <strong>{responsible}</strong>. Quedará registrado con su cuenta.</p>
-      <button type="submit" className="w-full rounded-xl py-3 bg-[#137333] text-white font-bold">{pending ? 'Registrando entrada…' : 'Registrar entrada'}</button>
+      <button type="submit" data-action="entry" className="w-full rounded-xl py-3 bg-[#137333] text-white font-bold">{pending ? 'Registrando entrada…' : 'Registrar entrada'}</button>
     </fieldset>
   </form>;
 }

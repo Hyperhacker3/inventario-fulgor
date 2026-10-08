@@ -1,9 +1,10 @@
 import { StateIcon } from './ui/StateIcon';
 import { ConfirmDialog } from './ui/ConfirmDialog';
 import { itemConditionOptions, normalizeItemCondition } from '../domain/itemCondition';
-import { ScreenTransition } from './ui/Motion';
+import { Presence, ScreenTransition, useMotionActive } from './ui/Motion';
 import { Select } from './ui/Select';
-import { useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { registerDialogBack } from '../shared/dialogHistory';
 import { useInventory } from '../context/InventoryContext';
 import type { Elemento } from '../types';
 import { isDemo } from '../lib/supabase';
@@ -32,6 +33,7 @@ type DetailInventory = Pick<ReturnType<typeof useInventory>, 'user' | 'getLocati
   | 'updateElemento' | 'deleteElemento' | 'categoryLabel' | 'almacenes' | 'estanterias' | 'cajas' | 'niveles'>
   & Partial<Pick<ReturnType<typeof useInventory>, 'addEstanteria' | 'addNivel' | 'addCaja'>>;
 export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore, inventory, history }: Props & { inventory: DetailInventory; history?: ReactNode }) {
+  const active = useMotionActive();
   const { user, getLocationString, openQuickMovement, addToDispatchCart,
     updateElemento, deleteElemento, categoryLabel, almacenes, estanterias, cajas, niveles, addEstanteria, addNivel, addCaja } = inventory;
   const [editing, setEditing] = useState(false);
@@ -53,11 +55,21 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   const [locationBusy, setLocationBusy] = useState(false);
   const [locationDraft, setLocationDraft] = useState(false);
   const dialog = useRef<HTMLElement>(null);
+  const scroll = useRef<HTMLDivElement>(null);
   const saving = useRef(false);
   const canAdmin = isDemo || user.role === 'admin';
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
 
   const busy = pending || photoBusy || locationBusy;
+  const busyRef = useRef(busy);
+  useLayoutEffect(() => { busyRef.current = busy; }, [busy]);
+  useLayoutEffect(() => {
+    if (scroll.current) scroll.current.scrollTop = 0;
+    if (editing) dialog.current?.querySelector<HTMLElement>('#item-edit-heading')?.focus({ preventScroll: true });
+  }, [editing]);
+  useEffect(() => {
+    if (editing && active) return registerDialogBack(window, () => { if (!busyRef.current) setEditing(false); }, () => busyRef.current);
+  }, [editing, active]);
   const close = () => { if (!busy && !archiveConfirm) onClose(); };
   useDialogFocus(dialog, close);
   if (!item) return null;
@@ -97,20 +109,21 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   return <div className="ui-modal-layer fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-6" role="presentation"
     onClick={event => { if (event.target === event.currentTarget) close(); }}>
     <section ref={dialog} role="dialog" aria-modal="true" aria-labelledby="item-detail-heading"
+      aria-busy={busy}
       inert={archiveConfirm} aria-hidden={archiveConfirm || undefined}
       className="ui-dialog-panel ui-panel-enter relative bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] shadow-2xl border flex flex-col overflow-hidden">
       <button data-dialog-close type="button" onClick={close} disabled={busy} aria-label="Cerrar detalle" title="Cerrar detalle"
         className="item-detail-close absolute top-6 right-6 sm:top-8 sm:right-8 z-20 w-11 h-11 rounded-xl flex items-center justify-center text-[#253685]">
         <span className="material-symbols-outlined text-2xl" aria-hidden="true">close</span>
       </button>
-      <div className="item-detail-scroll flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">
+      <div ref={scroll} className="item-detail-scroll flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">
         {error && <p role="alert" className="text-red-700 text-sm">{error}</p>}
         {item.archived && <p className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm">Elemento archivado. No admite entradas, salidas ni edición.</p>}
         {item.stockPendiente && <p role="status" className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
           Stock pendiente de verificar desde el Excel. No disponible para salida hasta que administración registre el ajuste.
         </p>}
         <ScreenTransition screen={editing ? "edit" : "detail"}>{editing ? <form autoComplete="off" id="item-edit-form" onSubmit={save} className="space-y-4">
-          <h2 id="item-detail-heading" className="text-xl font-bold pr-14">Editar {item.codigo}</h2>
+          <h2 id="item-detail-heading" data-action="edit" className="text-xl font-bold pr-14 flex items-center gap-3"><StateIcon icon="edit" /><span id="item-edit-heading" tabIndex={-1}>Editar {item.codigo}</span></h2>
           <label className="block text-sm font-semibold">Nombre
             <input autoComplete="off" autoCorrect="off" spellCheck={false} required value={name} onChange={event => setName(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg" />
           </label>
@@ -140,8 +153,8 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
           </label>
           <ItemPhotoPicker value={photo} additional={additionalPhotos} category={item.categoria} onChange={setPhoto} onAdditionalChange={setAdditionalPhotos} onBusyChange={setPhotoBusy} disabled={pending} />
           <div className="grid grid-cols-2 gap-4 pt-2">
-            <button type="button" onClick={() => setEditing(false)} disabled={busy} className="px-4 py-2 border rounded-lg text-sm">Cancelar</button>
-            <button type="submit" disabled={busy || locationDraft} className="px-4 py-2 bg-[#3e4e9e] text-white rounded-lg text-sm font-semibold">{pending ? 'Guardando…' : 'Guardar'}</button>
+            <button type="button" data-action="cancel" onClick={() => setEditing(false)} disabled={busy} className="px-4 py-2 border rounded-lg text-sm">Cancelar</button>
+            <button type="submit" data-action="edit" disabled={busy || locationDraft} className="px-4 py-2 rounded-lg text-sm font-semibold">{pending ? 'Guardando…' : 'Guardar'}</button>
           </div>
         </form> : <div className="item-detail-summary flex flex-col gap-6">
           <div className="flex flex-col gap-5">
@@ -160,19 +173,19 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
               </dl>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="item-detail-stock grid grid-cols-3 gap-4 text-center">
             <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-2xl sm:text-3xl break-words">{item.cantidad}</strong><span className="text-xs">Stock {item.unidad}</span></div>
             <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-2xl sm:text-3xl break-words">{available(item)}</strong><span className="text-xs">Disponible</span></div>
             <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-2xl sm:text-3xl break-words">{item.cantidadDanados ?? 0}</strong><span className="text-xs">Dañado</span></div>
           </div>
           <div className="item-detail-actions">
             {!item.archived && <>
-            {canAdmin && <button type="button" onClick={startEdit} aria-label="Editar" title="Editar" className="p-2 rounded-lg text-[#253685]"><StateIcon icon="edit" /></button>}
-            {canOperate && !item.stockPendiente && <button type="button" onClick={() => openQuickMovement(item, 'ENTRADA')} aria-label="Entrada" title="Entrada" className="p-2 rounded-lg text-[#137333]"><StateIcon icon="input" /></button>}
-            {(canAdmin || canOperate && !item.stockPendiente) && <button type="button" onClick={() => openQuickMovement(item, 'AJUSTE')} aria-label={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} title={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} className="p-2 rounded-lg text-[#755b00]"><StateIcon icon="tune" /></button>}
-            {canOperate && <button type="button" disabled={available(item) === 0} onClick={() => addToDispatchCart(item)} aria-label="Agregar a la salida" title="Agregar a la salida"
-              className="p-2 rounded-lg text-[#dd4c42] disabled:opacity-40"><StateIcon icon="add_shopping_cart" /></button>}
-            {canAdmin && <button type="button" disabled={busy} onClick={() => { setError(''); setArchiveConfirm(true); }} aria-label="Archivar" title="Archivar" className="p-2 rounded-lg text-red-700"><StateIcon icon="archive" /></button>}
+            {canAdmin && <button type="button" data-action="edit" onClick={startEdit} aria-label="Editar" title="Editar" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="edit" /></button>}
+            {canOperate && !item.stockPendiente && <button type="button" data-action="entry" onClick={() => openQuickMovement(item, 'ENTRADA')} aria-label="Entrada" title="Entrada" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="input" /></button>}
+            {(canAdmin || canOperate && !item.stockPendiente) && <button type="button" data-action="adjustment" onClick={() => openQuickMovement(item, 'AJUSTE')} aria-label={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} title={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="tune" /></button>}
+            {canOperate && <button type="button" data-action="dispatch" disabled={available(item) === 0} onClick={() => addToDispatchCart(item)} aria-label="Agregar a la salida" title="Agregar a la salida"
+              className="ui-flat-choice p-2 rounded-lg disabled:opacity-40"><StateIcon icon="add_shopping_cart" /></button>}
+            {canAdmin && <button type="button" data-action="archive" disabled={busy} onClick={() => { setError(''); setArchiveConfirm(true); }} aria-label="Archivar" title="Archivar" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="archive" /></button>}
             </>}
           </div>
           {item.archived && canAdmin && <ArchivedItemActions item={item} onDelete={onPermanentDelete} onRestore={onRestore} />}
@@ -180,7 +193,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
         {history}
       </div>
     </section>
-    {archiveConfirm && <ConfirmDialog title="Archivar producto" message={`¿Archivar ${item.codigo} · ${item.nombre}?`} pending={pending} error={error}
-      onCancel={() => { setArchiveConfirm(false); setError(''); }} onConfirm={() => { void archive(); }} />}
+    <Presence open={archiveConfirm}>{archiveConfirm && <ConfirmDialog title="Archivar producto" message={`¿Archivar ${item.codigo} · ${item.nombre}?`} pending={pending} error={error}
+      onCancel={() => { setArchiveConfirm(false); setError(''); }} onConfirm={() => { void archive(); }} />}</Presence>
   </div>;
 }

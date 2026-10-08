@@ -23,6 +23,6 @@ export function ArchivedItemDeletion({ item, onDelete }: Props) {
     <p className="text-sm text-red-900">Esta acción elimina el producto y retira sus fotos. No se puede deshacer. Se conservarán las remisiones y el historial.</p>
     {error && <p role="alert" className="text-red-800 text-sm">{error}</p>}
     <label className="block text-sm font-semibold">Escriba {item.codigo} para confirmar<input autoComplete="off" autoCorrect="off" spellCheck={false} required disabled={pending} value={code} onChange={event => setCode(event.target.value)} className="block mt-1 w-full p-2 border rounded-lg bg-white" /></label>
-    <div className="flex gap-3"><button type="button" disabled={pending} onClick={() => { setConfirming(false); setCode(''); setError(''); }} className="px-3 py-2 border rounded-lg">Cancelar</button><button type="submit" disabled={pending || code !== item.codigo} className="px-3 py-2 rounded-lg bg-red-700 text-white disabled:opacity-40">{pending ? 'Eliminando…' : 'Confirmar eliminación'}</button></div>
+    <div className="flex gap-3"><button data-action="cancel" type="button" disabled={pending} onClick={() => { setConfirming(false); setCode(''); setError(''); }} className="px-3 py-2 border rounded-lg">Cancelar</button><button type="submit" disabled={pending || code !== item.codigo} className="px-3 py-2 rounded-lg bg-red-700 text-white disabled:opacity-40">{pending ? 'Eliminando…' : 'Confirmar eliminación'}</button></div>
   </form>;
 }

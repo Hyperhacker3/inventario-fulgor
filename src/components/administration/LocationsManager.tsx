@@ -1,3 +1,4 @@
+import { StateIcon } from '../ui/StateIcon';
 import { Presence } from '../ui/Motion';
 import { Select } from '../ui/Select';
 import { useMemo, useState } from 'react';
@@ -51,7 +52,7 @@ export function LocationsManagerContent({ kind, almacenes, estanterias, niveles,
     <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">{entries.filter(row => warehouse || !parentId || row.parent === parentId).map(row => <article key={row.id} className="min-w-0 break-words bg-white border rounded-2xl p-5 space-y-2">
       <strong>{row.code}</strong><p>{row.name}</p>{!warehouse && <><p className="text-sm text-slate-600">{row.location}</p><p className="text-sm">{row.description}</p></>}
       <LocationValueSummary values={valueIndex.get(row.id)} />
-      {admin && <button className="text-[#253685] underline text-sm" onClick={() => setTarget({ kind, mode: 'edit', id: row.id })}>Editar</button>}
+      {admin && <button data-action="edit" className="text-[#253685] underline text-sm" onClick={() => setTarget({ kind, mode: 'edit', id: row.id })}><StateIcon icon="edit" />Editar</button>}
     </article>)}</div>
     <Presence open={!!target}>{target && <WarehouseFormModal target={target} onClose={() => setTarget(null)} onCreatedWarehouse={() => {}} />}</Presence>
   </section>;

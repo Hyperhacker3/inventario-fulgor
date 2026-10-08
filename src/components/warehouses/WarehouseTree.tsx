@@ -1,3 +1,4 @@
+import { StateIcon } from '../ui/StateIcon';
 import { useMemo } from 'react';
 import type { Almacen, Estanteria, NivelEstanteria, Caja, Elemento } from '../../types';
 import { useInventory } from '../../context/InventoryContext';
@@ -39,7 +40,7 @@ export function WarehouseTreeContent({ almacen, estanterias, niveles, cajas, ele
     <span className="block text-xs text-[#767682]">{label} · {item.cantidad} {item.unidad}{item.marca ? ` · ${item.marca}` : ''}</span></div>;
   const boxCard = (box: Caja) => <div key={box.id} className="min-w-0 border rounded-xl p-3 bg-[#f8fafc]">
     <div className="flex flex-wrap justify-between gap-2"><div className="font-bold text-sm">{box.codigoCaja}</div>
-      {canAdmin && <button onClick={() => onEditBox(box.id)} className="text-xs text-[#253685]">Editar</button>}</div>
+      {canAdmin && <button data-action="edit" onClick={() => onEditBox(box.id)} className="text-xs text-[#253685]"><StateIcon icon="edit" />Editar</button>}</div>
     <p className="text-xs text-[#767682]">{box.estado}</p>
     <LocationValueSummary values={values.boxes.get(box.id)} />
     <div className="space-y-3 mt-3">{(indexes.byBox.get(box.id) || []).map(item => itemLink(item, box.codigoCaja))}</div>
@@ -47,7 +48,7 @@ export function WarehouseTreeContent({ almacen, estanterias, niveles, cajas, ele
   return <section className="space-y-4">
     <div className="bg-white border rounded-2xl p-5 flex flex-wrap justify-between gap-3">
       <div><h3 className="text-xl font-bold">{almacen.nombre}</h3><p className="text-sm text-[#767682]">{almacen.codigo} · {almacen.ciudad} · {almacen.estado}</p></div>
-      {canAdmin && <div className="responsive-actions w-full sm:w-auto"><button className="border rounded-lg px-3 py-2 text-sm" onClick={onEditWarehouse}>Editar almacén</button>
+      {canAdmin && <div className="responsive-actions w-full sm:w-auto"><button data-action="edit" className="border rounded-lg px-3 py-2 text-sm" onClick={onEditWarehouse}><StateIcon icon="edit" />Editar almacén</button>
         <button className="bg-[#3e4e9e] text-white rounded-lg px-3 py-2 text-sm" onClick={onNewRack}>Nueva estantería</button></div>}
       <LocationValueSummary values={values.warehouses.get(almacen.id)} prominent />
       <p className="text-xs text-slate-500 w-full">{locationValueHint}</p>
@@ -59,12 +60,12 @@ export function WarehouseTreeContent({ almacen, estanterias, niveles, cajas, ele
       return <article key={rack.id} className="bg-white border rounded-2xl p-4 space-y-3">
         <div className="flex flex-col sm:flex-row justify-between gap-3"><div className="min-w-0 break-words"><h4 className="font-bold">{rack.nombre}</h4>
           <p className="text-xs text-[#767682]">{rack.codigo} · {items.length} artículos · {rackLevels.length} niveles · {rackBoxes.length} cajas</p></div>
-          {canAdmin && <div className="responsive-actions w-full sm:w-auto"><button onClick={() => onEditRack(rack.id)} className="border rounded-lg px-2 py-1 text-xs">Editar</button>
+          {canAdmin && <div className="responsive-actions w-full sm:w-auto"><button data-action="edit" onClick={() => onEditRack(rack.id)} className="border rounded-lg px-2 py-1 text-xs"><StateIcon icon="edit" />Editar</button>
             <button onClick={() => onNewLevel(rack.id)} className="border rounded-lg px-2 py-1 text-xs">Añadir nivel</button></div>}</div>
         <LocationValueSummary values={values.racks.get(rack.id)} />
         {rackLevels.map(level => <section key={level.id} data-level={level.id} className="border rounded-xl p-3 space-y-3">
           <div className="flex flex-col sm:flex-row justify-between gap-3"><div><h5 className="font-semibold">Nivel {level.nombre}</h5><p className="text-xs text-slate-500">{level.codigo} · {level.descripcion}</p></div>
-            {canAdmin && <div className="responsive-actions w-full sm:w-auto"><button onClick={() => onEditLevel(level.id)} className="border rounded-lg px-2 py-1 text-xs">Editar nivel</button>
+            {canAdmin && <div className="responsive-actions w-full sm:w-auto"><button data-action="edit" onClick={() => onEditLevel(level.id)} className="border rounded-lg px-2 py-1 text-xs"><StateIcon icon="edit" />Editar nivel</button>
               <button onClick={() => onNewBox(level.id)} className="border rounded-lg px-2 py-1 text-xs">Añadir caja</button></div>}</div>
           <LocationValueSummary values={values.levels.get(level.id)} />
           <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">

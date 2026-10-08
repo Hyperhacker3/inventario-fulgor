@@ -5,7 +5,7 @@ const tabs = [
   { id: 'codes', label: 'Códigos', icon: 'tag', color: 'var(--ui-action)' }, { id: 'categories', label: 'Categorías', icon: 'category', color: 'var(--ui-nav-inventory)' },
   { id: 'warehouses', label: 'Almacenes', icon: 'warehouse', color: 'var(--ui-admin-warehouses)' },
   { id: 'racks', label: 'Estanterías', icon: 'shelves', color: 'var(--ui-admin-racks)' }, { id: 'levels', label: 'Niveles', icon: 'layers', color: 'var(--ui-admin-levels)' }, { id: 'boxes', label: 'Cajas', icon: 'inventory_2', color: 'var(--ui-nav-history)' },
-  { id: 'projects', label: 'Proyectos', icon: 'folder_open', color: 'var(--ui-success)' }, { id: 'archived', label: 'Archivados', icon: 'archive', color: 'var(--ui-danger)' },
+  { id: 'projects', label: 'Proyectos', icon: 'folder_open', color: 'var(--ui-success)' }, { id: 'archived', label: 'Archivados', icon: 'archive', color: 'var(--ui-archive)' },
   { id: 'company', label: 'Empresa', icon: 'settings', color: 'var(--ui-nav-data)' },
 ] as const;
 export type AdministrationTab = typeof tabs[number]['id'];

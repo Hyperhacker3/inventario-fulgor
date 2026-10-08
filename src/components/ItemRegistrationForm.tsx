@@ -324,7 +324,7 @@ export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props
 
         {/* Action Buttons */}
         {!item && <div className="pt-4 flex items-center justify-end gap-3 border-t border-[#e2e8f0]">
-          <button
+          <button data-action="cancel"
             type="button"
             onClick={() => setActiveView('dashboard')}
             className="px-5 py-2.5 rounded-lg border border-[#e2e8f0] text-sm font-semibold text-[#454651] hover:bg-[#f8fafc] transition-colors"
@@ -334,6 +334,7 @@ export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props
           <button
             type="submit"
             id="btn-submit-component"
+            data-action="entry"
             disabled={pending || photoBusy || boxBusy || categoryBusy || rackBusy || levelBusy || prefixBusy || prefixDraftPending || levelDraftPending || !catalogReady || !selectedPrefix}
             className="px-6 py-2.5 rounded-lg bg-[#3e4e9e] text-white text-sm font-bold hover:bg-[#323f80] active:scale-[0.98] transition-all shadow-sm flex items-center gap-2"
           >

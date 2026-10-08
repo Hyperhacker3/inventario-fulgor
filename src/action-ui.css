@@ -1,0 +1,23 @@
+:root { --ui-archive: #8b5aa6; --ui-icon-archive: #8b5aa6; }
+:root[data-theme='dark'] { --ui-archive: #d4b0ed; }
+@media screen {
+  :root[data-ui-style] button { text-decoration: none !important; }
+  :root[data-ui-style] button[data-action='edit']:has(> [data-icon='edit']) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  :root[data-ui-style] [data-action='edit'] { --ui-button-ink: var(--ui-action); --ui-icon-ink: var(--ui-icon-action); }
+  :root[data-ui-style] [data-action='entry'] { --ui-button-ink: var(--ui-success); --ui-icon-ink: var(--ui-icon-success); }
+  :root[data-ui-style] [data-action='adjustment'] { --ui-button-ink: var(--ui-warning); --ui-icon-ink: var(--ui-icon-warning); }
+  :root[data-ui-style] [data-action='dispatch'], :root[data-ui-style] [data-action='cancel'] { --ui-button-ink: var(--ui-danger); --ui-icon-ink: var(--ui-icon-danger); }
+  :root[data-ui-style] [data-action='archive'] { --ui-button-ink: var(--ui-archive); --ui-icon-ink: var(--ui-icon-archive); }
+  :root[data-ui-style] [data-action] { color: var(--ui-button-ink) !important; }
+  :root[data-ui-style] .item-detail-actions > button[data-action] { color: var(--ui-button-ink) !important; }
+  :root[data-ui-style] :is([data-icon='archive'], [data-tab='archived'], #data-tab-archived, #data-section-select-options [data-value='archived']) { --ui-icon-ink: var(--ui-icon-archive); color: var(--ui-archive) !important; }
+  :root[data-ui-style] .item-detail-data dt, :root[data-ui-style] .item-detail-stock span { color: var(--ui-ink) !important; text-transform: uppercase; font-weight: 600; }
+  :root[data-ui-style] .item-detail-data dd, :root[data-ui-style] .item-detail-stock strong { color: var(--ui-action) !important; }
+  :root[data-ui-style] button.ui-sidebar-action { transform: none !important; }
+  :root[data-ui-style] .item-detail-actions > button { transform: none !important; }
+  .ui-modal-layer[data-motion-open='false'] { animation: ui-backdrop-close var(--ui-motion-duration) ease both; pointer-events: none; }
+  .ui-modal-layer[data-motion-open='false'] .ui-panel-enter { animation: ui-open var(--ui-motion-duration) ease reverse both; pointer-events: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-modal-layer[data-motion-open='false'], .ui-modal-layer[data-motion-open='false'] .ui-panel-enter { animation: none !important; }
+}

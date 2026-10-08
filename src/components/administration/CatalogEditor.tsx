@@ -1,3 +1,4 @@
+import { StateIcon } from '../ui/StateIcon';
 import { useRef, useState, type FormEvent } from 'react';
 import { useInventory } from '../../context/InventoryContext';
 import { prefixPreview } from '../../domain/dataAdministration';
@@ -63,7 +64,7 @@ export function CatalogManager({ kind, prefijos, categorias, elementos, saveCata
           <label className="text-sm">Nombre<input autoComplete="off" autoCorrect="off" spellCheck={false} required maxLength={100} value={name} onChange={event => setName(event.target.value)} className="block border rounded-lg p-3 w-full mt-1" /></label>
           <label className="flex gap-2 items-center text-sm"><input autoComplete="off" autoCorrect="off" spellCheck={false} type="checkbox" checked={active} onChange={event => setActive(event.target.checked)} />Disponible para nuevos productos</label>
         </fieldset>
-        <div className="responsive-actions"><button type="button" disabled={busy} onClick={close} className="border rounded-lg px-4 py-2">Cancelar</button>
+        <div className="responsive-actions"><button data-action="cancel" type="button" disabled={busy} onClick={close} className="border rounded-lg px-4 py-2">Cancelar</button>
           <button disabled={busy} className="bg-[#253685] text-white px-4 py-2 rounded-lg">{busy ? 'Guardando…' : 'Guardar'}</button></div>
       </form></FormDialog>}</Presence>
     {!entries.length && <p className="text-slate-500">Todavía no hay {prefix ? 'prefijos' : 'categorías'} registrados.</p>}
@@ -77,7 +78,7 @@ export function CatalogManager({ kind, prefijos, categorias, elementos, saveCata
           <p className="col-span-2 sm:col-span-1 sm:col-start-2 sm:row-start-1 text-xs text-slate-500 break-words">{row.detail}</p>
           <span className={`col-start-2 row-start-1 sm:col-start-3 rounded-md px-2 py-1 text-[10px] font-semibold ${row.activo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{row.activo ? 'Activo' : 'Inactivo'}</span>
         </div>
-        {admin && <button type="button" disabled={busy} className="shrink-0 min-h-11 px-2 text-[#253685] text-xs font-semibold hover:underline disabled:opacity-50" onClick={() => { setId(row.id); setCode(row.code); setName(row.nombre); setActive(row.activo); setError(''); setMessage(''); setFormOpen(true); }}>Editar</button>}
+        {admin && <button data-action="edit" type="button" disabled={busy} className="shrink-0 min-h-11 px-2 text-[#253685] text-xs font-semibold hover:underline disabled:opacity-50" onClick={() => { setId(row.id); setCode(row.code); setName(row.nombre); setActive(row.activo); setError(''); setMessage(''); setFormOpen(true); }}><StateIcon icon="edit" />Editar</button>}
       </li>)}
     </ul>}
   </section>;
