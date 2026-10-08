@@ -1,4 +1,5 @@
 import { StockAlerts } from './StockAlerts';
+import { SearchInput } from './ui/SearchInput';
 import { Presence } from './ui/Motion';
 import React, { useEffect, useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
@@ -83,10 +84,12 @@ export const Header: React.FC = () => {
           {/* Quick Search bar (Desktop & Tablet) */}
           <div className="ui-search-field hidden sm:flex items-center bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-3.5 w-48 lg:w-80 transition-all shadow-2xs">
             <span className="material-symbols-outlined text-[18px] text-[#767682] mr-2">search</span>
-            <input autoComplete="off" autoCorrect="off" spellCheck={false}
+            <SearchInput
               id="header-search-input"
+              aria-label="Buscar en el inventario"
               type="text"
               value={globalSearch}
+              onClear={() => setGlobalSearch('')}
               onChange={(e) => setGlobalSearch(e.target.value)}
               onKeyDown={event => { if (event.key === 'Enter' && globalSearch.trim()) navigate('explorer'); }}
               placeholder="Buscar SKU, elemento..."

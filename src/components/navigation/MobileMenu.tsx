@@ -1,4 +1,5 @@
 import { StateIcon } from '../ui/StateIcon';
+import { SearchInput } from '../ui/SearchInput';
 import { useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { ActiveView } from '../../types';
@@ -23,7 +24,7 @@ export function MobileMenu({ open, onClose, items, activeView, onNavigate, searc
         <button type="button" data-dialog-close aria-label="Cerrar menú" onClick={onClose} className="w-11 h-11 rounded-xl hover:bg-slate-100"><span className="material-symbols-outlined">close</span></button>
       </div>
       <form autoComplete="off" className="ui-search-field flex shrink-0 items-center border rounded-xl bg-slate-50 px-3 mb-2" onSubmit={event => { event.preventDefault(); onNavigate('explorer'); }}>
-        <input autoComplete="off" autoCorrect="off" spellCheck={false} aria-label="Buscar en el inventario" type="search" value={search} onChange={event => onSearch(event.target.value)} placeholder="Buscar producto…" className="min-w-0 w-full bg-transparent py-2 outline-none" />
+        <SearchInput aria-label="Buscar en el inventario" value={search} onClear={() => onSearch('')} onChange={event => onSearch(event.target.value)} placeholder="Buscar producto…" className="min-w-0 w-full bg-transparent py-2 outline-none" />
         <span aria-hidden="true" className="material-symbols-outlined shrink-0">search</span>
       </form>
       <nav aria-label="Todas las pantallas" className="app-nav-scroll min-h-0 overflow-y-auto overscroll-contain flex flex-col">

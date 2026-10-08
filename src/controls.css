@@ -30,14 +30,17 @@
     border-radius: var(--ui-control-radius);
     box-shadow: var(--ui-inset-shadow);
   }
-  :root[data-ui-style] .ui-search-field > input { height: 100%; min-height: 0; }
+  :root[data-ui-style] .ui-search-field > .ui-search-input-wrap { height: 100%; }
+  :root[data-ui-style] .ui-search-field > input,
+  :root[data-ui-style] .ui-search-field > .ui-search-input-wrap > input { height: 100%; min-height: 0; }
   :root[data-ui-style] .ui-search-field > button { min-height: 32px; height: 32px; flex-shrink: 0; }
   :root[data-ui-style] :is(input:not(:where([type='hidden'], [type='checkbox'], [type='radio'], [type='file'])), textarea, select:not(.select-form-value), .app-select-trigger):focus:not(:where(.a4-print-container *, .rm-measure *)) {
     outline: none !important;
     box-shadow: var(--ui-field-focus-shadow) !important;
   }
   :root[data-ui-style] .ui-search-field:focus-within { box-shadow: var(--ui-field-focus-shadow); }
-  :root[data-ui-style] .ui-search-field > input:focus { box-shadow: none !important; }
+  :root[data-ui-style] .ui-search-field > input:focus,
+  :root[data-ui-style] .ui-search-field > .ui-search-input-wrap > input:focus { box-shadow: none !important; }
   :root[data-ui-style] textarea:not(:where(.a4-print-container *, .rm-measure *)) {
     box-sizing: border-box;
     min-height: var(--ui-field-height) !important;

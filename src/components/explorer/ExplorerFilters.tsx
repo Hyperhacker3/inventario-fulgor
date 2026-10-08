@@ -1,4 +1,5 @@
 import { Select } from '../ui/Select';
+import { itemConditionOptions } from '../../domain/itemCondition';
 import { CategoryFilter } from './CategoryFilter';
 import { ALL_LOCATIONS, NO_LOCATION, locationChoices, type InventoryFilters, type StockFilter } from '../../domain/explorer';
 import type { Almacen, Estanteria, NivelEstanteria, Caja } from '../../types';
@@ -10,6 +11,7 @@ interface Props {
   categories: string[]; categoryLabel: (id: string) => string;
   onCategories: (categories: string[]) => void;
   onStock: (value: StockFilter) => void;
+  onCondition: (value: string) => void;
   onWarehouse: (id: string) => void;
   onRack: (id: string) => void;
   onLevel: (id: string) => void;
@@ -17,7 +19,7 @@ interface Props {
   onClear: () => void;
 }
 export function ExplorerFilters({ visible, filters, warehouses, racks, levels, boxes, categories, categoryLabel,
-  onCategories, onStock, onWarehouse, onRack, onLevel, onBox, onClear }: Props) {
+  onCategories, onStock, onCondition, onWarehouse, onRack, onLevel, onBox, onClear }: Props) {
   const locations = locationChoices(racks, boxes, filters.warehouseId, filters.rackId, levels, filters.levelId);
   const warehouseNames = new Map(warehouses.map(warehouse => [warehouse.id, warehouse.nombre]));
   const rackNames = new Map(racks.map(rack => [rack.id, `${warehouseNames.get(rack.almacenId || '') || 'Sin almacén'} > ${rack.nombre || rack.codigo}`]));
@@ -28,13 +30,19 @@ export function ExplorerFilters({ visible, filters, warehouses, racks, levels, b
         <button id="btn-clear-filters" type="button" onClick={onClear} className="text-[#3e4e9e] text-xs font-semibold">Limpiar</button></div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 items-start">
         <div className="min-w-0 lg:col-span-2"><CategoryFilter options={categories} selected={filters.categories} label={categoryLabel} onChange={onCategories} /></div>
-        <fieldset className="min-w-0 lg:col-span-2"><legend className="text-xs font-bold text-[#454651] uppercase mb-2">Estado de stock</legend>
+        <fieldset className="min-w-0"><legend className="text-xs font-bold text-[#454651] uppercase mb-2">Estado de stock</legend>
           <div className="flex flex-wrap gap-1.5">
             {(['todos', 'disponible', 'bajo', 'agotado'] as StockFilter[]).map(value =>
               <button key={value} type="button" onClick={() => onStock(value)}
                 aria-pressed={filters.stock === value} className="ui-flat-choice min-h-11 px-2.5 py-1 rounded-xl text-xs capitalize">{value}</button>)}
           </div>
         </fieldset>
+        <label className="block min-w-0 text-xs font-bold text-[#454651] uppercase">Estado del material
+          <Select id="inventory-condition-filter" value={filters.condition} onChange={event => onCondition(event.target.value)} className="block w-full mt-2 p-2 border rounded-lg bg-white text-sm font-normal normal-case">
+            <option value="todos">Todos los estados</option>
+            {itemConditionOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </Select>
+        </label>
         <label className="block min-w-0 text-xs font-bold text-[#454651] uppercase">Almacén
           <Select id="inventory-warehouse-filter" value={filters.warehouseId} onChange={event => onWarehouse(event.target.value)} className="block w-full mt-2 p-2 border rounded-lg bg-white text-sm font-normal normal-case">
             <option value={ALL_LOCATIONS}>Todos los almacenes</option>

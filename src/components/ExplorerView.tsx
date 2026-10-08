@@ -5,6 +5,7 @@ import { ExplorerResults } from './explorer/ExplorerResults';
 import { ExplorerFilters } from './explorer/ExplorerFilters';
 import { useInventoryViewMode } from '../state/useInventoryViewMode';
 import { StateIcon } from './ui/StateIcon';
+import { SearchInput } from './ui/SearchInput';
 
 export const ExplorerView: React.FC = () => {
   const {
@@ -26,6 +27,7 @@ export const ExplorerView: React.FC = () => {
     setSearchQuery(''); setGlobalSearch('');
   };
   const activeFiltersCount = Number(filters.categories.length > 0) + Number(filters.stock !== 'todos')
+    + Number(filters.condition !== 'todos')
     + Number(filters.warehouseId !== ALL_LOCATIONS) + Number(filters.rackId !== ALL_LOCATIONS)
     + Number(filters.levelId !== ALL_LOCATIONS) + Number(filters.boxId !== ALL_LOCATIONS) + Number(!!effectiveSearch.trim());
   const filteredItems = useMemo(() => orderInventoryByActivity(filterInventory(elementos, filters, effectiveSearch, getLocationString)),
@@ -47,14 +49,15 @@ export const ExplorerView: React.FC = () => {
 
         <div className="inventory-toolbar grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 sm:gap-4">
           <div className="relative min-w-0 col-span-2 lg:col-span-1 flex items-center">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#767682]">
+            <div className="absolute inset-y-0 left-0 z-10 pl-3.5 flex items-center pointer-events-none text-[#767682]">
               <span className="material-symbols-outlined text-[20px] sm:text-[22px]" aria-hidden="true">search</span>
             </div>
-            <input autoComplete="off" autoCorrect="off" spellCheck={false}
+            <SearchInput
               id="explorer-prominent-search"
               aria-label="Buscar productos por código, nombre o atributos"
               type="text"
               value={effectiveSearch}
+              onClear={() => { setSearchQuery(''); setGlobalSearch(''); setPage(1); }}
               onChange={(e) => { setSearchQuery(e.target.value); setGlobalSearch(''); setPage(1); }}
               placeholder="Buscar código (ej. PAN550) o nombre..."
               className="w-full pl-10 sm:pl-12 pr-3 py-2.5 sm:py-3.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl text-xs sm:text-base text-[#131b2e] focus:outline-hidden focus:ring-2 focus:ring-[#3e4e9e] focus:border-transparent focus:bg-white transition-all shadow-inner"
@@ -88,6 +91,7 @@ export const ExplorerView: React.FC = () => {
           warehouses={almacenes} racks={estanterias} levels={niveles} boxes={cajas} categories={categoryOptions} categoryLabel={categoryLabel}
           onCategories={categories => changeFilters({ ...filters, categories })}
           onStock={stock => changeFilters({ ...filters, stock })}
+          onCondition={condition => changeFilters({ ...filters, condition })}
           onWarehouse={id => changeFilters(changeWarehouse(filters, id))}
           onRack={id => changeFilters(changeRack(filters, id))}
           onLevel={id => changeFilters(changeLevel(filters, id))}

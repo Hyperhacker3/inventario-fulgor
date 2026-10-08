@@ -28,6 +28,11 @@
   font-family: 'JetBrains Mono', monospace;
 }
 
+.ui-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 /* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 6px;

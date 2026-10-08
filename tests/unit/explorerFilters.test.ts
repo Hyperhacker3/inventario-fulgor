@@ -42,6 +42,20 @@ test('categories use inclusive multi-selection and intersect with stock, search 
   assert.deepEqual(ids(filterInventory(items, defaults, 'sur', location)), ['three']);
 });
 
+test('physical condition filters normalize old labels and intersect with stock, category, location and search', () => {
+  const products = [
+    { ...items[0], estado: 'MEDIO' }, { ...items[1], estado: 'REGULAR' },
+    { ...items[2], estado: 'RETAL' }, { ...items[3], estado: 'OBSOLETO' },
+  ];
+  const defaults = emptyInventoryFilters();
+  assert.deepEqual(ids(filterInventory(products, { ...defaults, condition: 'REGULAR' }, '', location)), ['one', 'two']);
+  assert.deepEqual(ids(filterInventory(products, { ...defaults, condition: 'REGULAR', stock: 'bajo', warehouseId: 'w1', categories: ['NUEVA_CATEGORIA'] }, 'tor001', location)), ['two']);
+  assert.deepEqual(ids(filterInventory(products, { ...defaults, condition: 'RETAZOS' }, '', location)), ['three']);
+  assert.deepEqual(ids(filterInventory(products, { ...defaults, condition: 'MALO' }, '', location)), ['four']);
+  assert.deepEqual(ids(filterInventory(products, { ...defaults, condition: 'BUENO' }, '', location)), []);
+  assert.equal(filterInventory(products, defaults, '', location).length, 4);
+});
+
 test('rack and box filters also work across warehouses and include unassigned materials', () => {
   const defaults = emptyInventoryFilters();
   assert.deepEqual(ids(filterInventory(items, { ...defaults, rackId: 'r3' }, '', location)), ['three']);
@@ -72,6 +86,7 @@ function FilterPanel({ visible = true }: { visible?: boolean }) {
   return h(ExplorerFilters, { visible, filters, warehouses, racks, levels: [], boxes, categories: ['CABLES', 'NUEVA_CATEGORIA'], categoryLabel,
     onCategories: categories => setFilters(prev => ({ ...prev, categories })), onStock: stock => setFilters(prev => ({ ...prev, stock })),
     onWarehouse: id => setFilters(prev => changeWarehouse(prev, id)), onRack: id => setFilters(prev => changeRack(prev, id)),
+    onCondition: condition => setFilters(prev => ({ ...prev, condition })),
     onLevel: levelId => setFilters({...filters,levelId,boxId: ALL_LOCATIONS}), onBox: boxId => setFilters(prev => ({ ...prev, boxId })), onClear: () => setFilters(emptyInventoryFilters()) });
 }
 const choose = async (id: string, value: string) => {
@@ -94,6 +109,19 @@ test('stock choices expose exactly one persistent pressed state and reset with t
       await act(() => button.click()); assert.deepEqual(selected(), [value]);
     }
     await act(() => host.querySelector<HTMLButtonElement>('#btn-clear-filters')!.click()); assert.deepEqual(selected(), ['todos']);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
+
+test('condition selector exposes the five current states and resets without affecting stock choices', async () => {
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  try {
+    await act(() => root.render(h(FilterPanel)));
+    assert.deepEqual(optionValues('inventory-condition-filter'), ['todos', 'BUENO', 'REGULAR', 'MALO', 'EN REPARACIÓN', 'RETAZOS']);
+    await choose('inventory-condition-filter', 'REGULAR');
+    assert.equal(selectedValue('inventory-condition-filter'), 'REGULAR');
+    assert.equal(host.querySelector('[aria-pressed="true"]')!.textContent, 'todos');
+    await act(() => host.querySelector<HTMLButtonElement>('#btn-clear-filters')!.click());
+    assert.equal(selectedValue('inventory-condition-filter'), 'todos');
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 

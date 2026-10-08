@@ -1,4 +1,5 @@
 import { Select } from './ui/Select';
+import { SearchInput } from './ui/SearchInput';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useInventory } from '../context/InventoryContext';
@@ -15,6 +16,7 @@ export const HistoryView: React.FC = () => {
     proyectos,
     openPdfRemision,
     globalSearch,
+    setGlobalSearch,
     user
   } = useInventory();
 
@@ -118,15 +120,18 @@ export const HistoryView: React.FC = () => {
         <div className="flex-1 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-3">
           {/* Search */}
           <div className="relative flex-1 min-w-0 w-full sm:min-w-[200px]">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#767682] text-[18px]">
+            <span aria-hidden="true" className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none text-[#767682] text-[18px]">
               search
             </span>
-            <input autoComplete="off" autoCorrect="off" spellCheck={false}
+            <SearchInput
               id="history-search-input"
+              aria-label="Buscar movimientos"
               type="text"
-              value={searchQuery}
+              value={globalSearch || searchQuery}
+              onClear={() => { setSearchQuery(''); setGlobalSearch(''); }}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
+                setGlobalSearch('');
               }}
               placeholder="Buscar por SKU, Proyecto..."
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-[#e2e8f0] text-xs sm:text-sm focus:ring-2 focus:ring-[#3e4e9e]"

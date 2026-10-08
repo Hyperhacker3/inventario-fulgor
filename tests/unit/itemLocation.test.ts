@@ -98,10 +98,8 @@ test('read-only and archived product details do not expose the edit form', async
 
 test('icon actions retain movement, dispatch and archive semantics and the single close control survives data refresh and scrolling', async () => {
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
-  const originalConfirm = window.confirm;
-  let closes = 0, archived = 0, accepted = false;
+  let closes = 0, archived = 0;
   const movements: string[] = [], dispatched: string[] = [];
-  window.confirm = () => accepted;
   const services = { ...inventory(async () => {}),
     openQuickMovement: (_item: Elemento, kind: string) => { movements.push(kind); },
     addToDispatchCart: (selected: Elemento) => { dispatched.push(selected.id); },
@@ -120,15 +118,43 @@ test('icon actions retain movement, dispatch and archive semantics and the singl
     await act(() => button(host, 'Agregar a la salida').click());
     assert.deepEqual(movements, ['ENTRADA', 'AJUSTE']); assert.deepEqual(dispatched, [item.id]);
     await act(() => button(host, 'Archivar').click()); assert.equal(archived, 0);
+    await act(() => document.querySelector<HTMLButtonElement>('[data-dialog-close]:not([aria-label])')!.click());
     const close = button(host, 'Cerrar detalle');
     await act(() => root.render(h(ItemDetailContent, { item: { ...item, cantidad: 15 }, onClose: () => { closes += 2; }, inventory: services })));
     const scroll = host.querySelector<HTMLElement>('.item-detail-scroll')!;
     await act(() => { scroll.scrollTop = 300; scroll.dispatchEvent(new dom.window.Event('scroll')); });
     assert.equal(button(host, 'Cerrar detalle'), close); assert.equal(scroll.contains(close), false);
     await act(() => close.click()); assert.equal(closes, 2);
-    accepted = true;
-    await act(async () => button(host, 'Archivar').click()); assert.equal(archived, 1); assert.equal(closes, 4);
-  } finally { window.confirm = originalConfirm; await act(() => root.unmount()); host.remove(); }
+    await act(() => button(host, 'Archivar').click());
+    await act(async () => [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find(button=>button.textContent==='Archivar producto')!.click()); assert.equal(archived, 1); assert.equal(closes, 4);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
+
+test('archive confirmation cancels safely, prevents duplicate writes and preserves errors for retry', async () => {
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  let calls = 0, closes = 0, fail = true, finish: (() => void) | undefined;
+  const services = { ...inventory(async () => {}), deleteElemento: async () => {
+    calls++; await new Promise<void>(resolve => { finish = resolve; }); if (fail) throw new Error('Sin conexión');
+  } };
+  const confirmation = () => document.querySelector<HTMLElement>('[aria-labelledby="archive-confirm-title"]')!;
+  const confirm = () => [...confirmation().querySelectorAll<HTMLButtonElement>('button')].find(control => control.textContent === 'Archivar producto')!;
+  try {
+    await act(() => root.render(h(ItemDetailContent, { item, onClose: () => { closes++; }, inventory: services })));
+    await act(() => button(host, 'Archivar').click());
+    assert.equal(host.querySelector('section')!.hasAttribute('inert'), true);
+    await act(() => document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    assert.equal(confirmation(), null); assert.equal(calls, 0); assert.equal(closes, 0);
+    await act(() => button(host, 'Archivar').click());
+    await act(() => { confirm().click(); confirm().click(); });
+    assert.equal(calls, 1); assert.equal(confirmation().getAttribute('aria-busy'), 'true');
+    await act(() => document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    assert.ok(confirmation()); assert.equal(closes, 0);
+    await act(async () => finish!());
+    assert.match(confirmation().querySelector('[role="alert"]')!.textContent!, /Sin conexión/);
+    assert.equal(confirm().disabled, false); assert.equal(closes, 0);
+    fail = false; await act(() => confirm().click()); await act(async () => finish!());
+    assert.equal(calls, 2); assert.equal(closes, 1); assert.equal(confirmation(), null);
+  } finally { await act(() => root.unmount()); host.remove(); }
 });
 
 test('product detail dismisses on outside click or touch-generated click but not on its content or a portaled selector', async () => {

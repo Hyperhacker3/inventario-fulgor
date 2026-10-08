@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useInventory } from '../../context/InventoryContext';
 import { available } from '../../domain/inventory';
 import { ItemImage } from '../ItemImage';
+import { SearchInput } from '../ui/SearchInput';
 import { Presence } from '../ui/Motion';
 
 export function AvailableInventory() {
@@ -20,8 +21,8 @@ export function AvailableInventory() {
   const visible = filtered.slice((currentPage - 1) * 5, currentPage * 5);
   return <section className="w-full bg-white border rounded-2xl p-4 shadow-xs">
     <div className="relative">
-      <span aria-hidden="true" className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 text-xl">search</span>
-      <input autoComplete="off" autoCorrect="off" spellCheck={false} id="dispatch-search-available" type="search" value={search} onChange={event => setSearch(event.target.value)}
+      <span aria-hidden="true" className="material-symbols-outlined absolute left-3 top-2.5 z-10 pointer-events-none text-slate-500 text-xl">search</span>
+      <SearchInput id="dispatch-search-available" value={search} onClear={() => setSearch('')} onChange={event => setSearch(event.target.value)}
         placeholder="Buscar material por código, nombre, marca o ubicación" aria-label="Buscar inventario para salida"
         aria-controls={query ? 'dispatch-search-results' : undefined}
         className="w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm" />

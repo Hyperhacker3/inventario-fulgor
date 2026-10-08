@@ -1,4 +1,5 @@
 import type { Caja, Elemento, Estanteria, NivelEstanteria } from '../types';
+import { normalizeItemCondition } from './itemCondition';
 
 export type StockFilter = 'todos' | 'disponible' | 'bajo' | 'agotado';
 export const ALL_LOCATIONS = 'ALL';
@@ -11,13 +12,14 @@ export function orderInventoryByActivity(items: Elemento[]) {
 export interface InventoryFilters {
   categories: string[];
   stock: StockFilter;
+  condition: string;
   warehouseId: string;
   rackId: string;
   levelId: string;
   boxId: string;
 }
 export const emptyInventoryFilters = (): InventoryFilters => ({
-  categories: [], stock: 'todos', warehouseId: ALL_LOCATIONS, rackId: ALL_LOCATIONS, levelId: ALL_LOCATIONS, boxId: ALL_LOCATIONS,
+  categories: [], stock: 'todos', condition: 'todos', warehouseId: ALL_LOCATIONS, rackId: ALL_LOCATIONS, levelId: ALL_LOCATIONS, boxId: ALL_LOCATIONS,
 });
 
 export function changeWarehouse(filters: InventoryFilters, warehouseId: string): InventoryFilters {
@@ -51,6 +53,7 @@ export function filterInventory(items: Elemento[], filters: InventoryFilters, se
   const categories = new Set(filters.categories);
   return items.filter(item => {
     if (categories.size && !categories.has(item.categoria)) return false;
+    if (filters.condition !== 'todos' && normalizeItemCondition(item.estado) !== filters.condition) return false;
     if (!matchesLocation(item.almacenId, filters.warehouseId) || !matchesLocation(item.estanteriaId, filters.rackId)
       || !matchesLocation(item.nivelId, filters.levelId) || !matchesLocation(item.cajaId, filters.boxId)) return false;
     if (filters.stock === 'disponible' && item.cantidad <= 0) return false;

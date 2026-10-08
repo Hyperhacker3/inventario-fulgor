@@ -4,9 +4,11 @@ import { useInventory } from '../context/InventoryContext';
 import { readRemisionesPage } from '../data/repository';
 import { isDemo } from '../lib/supabase';
 import { errorMessage } from '../shared/errors';
+import { SearchInput } from './ui/SearchInput';
+import { RemissionCard } from './remission/RemissionCard';
 
 export const RemissionView: React.FC = () => {
-  const { remisiones, openPdfRemision, setActiveView, user } = useInventory();
+  const { remisiones, openPdfRemision, openOutgoingPhotos, setActiveView, user } = useInventory();
   const [searchQuery, setSearchQuery] = useState('');
   const [remoteSearch, setRemoteSearch] = useState('');
   const [pageState, setPageState] = useState({ key: '', page: 1 });
@@ -56,18 +58,15 @@ export const RemissionView: React.FC = () => {
       {/* Search Bar */}
       <div className="bg-white border border-[#e2e8f0] rounded-2xl p-4 mb-6 shadow-xs flex items-center gap-3">
         <span className="material-symbols-outlined text-[#767682] text-[20px] pl-2">search</span>
-        <input autoComplete="off" autoCorrect="off" spellCheck={false}
+        <SearchInput
           type="text"
           value={searchQuery}
+          aria-label="Buscar remisiones"
+          onClear={() => setSearchQuery('')}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Buscar por código de remisión, proyecto o receptor..."
           className="w-full py-1 text-sm bg-transparent border-none focus:outline-hidden text-[#131b2e]"
         />
-        {searchQuery && (
-          <button onClick={() => setSearchQuery('')} className="text-[#767682] hover:text-[#131b2e]">
-            <span className="material-symbols-outlined text-[18px]">close</span>
-          </button>
-        )}
       </div>
 
       {/* Remissions Grid */}
@@ -75,37 +74,7 @@ export const RemissionView: React.FC = () => {
       {cloudPage.isPending && !isDemo && <p className="text-sm text-[#64748b] mb-3">Cargando remisiones…</p>}
       {total === 0 && (isDemo || !cloudPage.isPending) && <p className="text-sm text-[#64748b] mb-3">No hay remisiones para esta búsqueda.</p>}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {visibleRemisiones.map((rem) => {
-          return (
-            <article
-              key={rem.id}
-              className="min-w-0 bg-white border border-[#e2e8f0] rounded-2xl p-5 hover:shadow-md hover:border-[#cbd5e1] transition-all group"
-            >
-              <div>
-                <div className="flex flex-col items-start gap-2 mb-3">
-                  <div className="remission-card-heading grid grid-cols-[minmax(0,1fr)_44px] items-start gap-3 w-full">
-                    <span className="min-w-0 max-w-full justify-self-start break-words [overflow-wrap:anywhere] font-mono-code font-bold text-xs bg-[#fce8e6] text-[#dd4c42] border border-[#ffdad6] px-2.5 py-1 rounded-lg">
-                      {rem.numeroRemision}
-                    </span>
-                    <button type="button" onClick={() => openPdfRemision(rem)} title="Ver / Imprimir PDF"
-                      aria-label={`Ver / Imprimir PDF de ${rem.numeroRemision}`}
-                      className="w-11 h-11 rounded-xl text-[#253685] flex items-center justify-center">
-                      <span className="material-symbols-outlined text-2xl" aria-hidden="true">picture_as_pdf</span>
-                    </button>
-                  </div>
-                  <span className="text-xs text-[#767682] font-medium">{rem.fecha}</span>
-                </div>
-
-                <h3 className="font-bold text-base text-[#131b2e] leading-snug mb-1 group-hover:text-[#3e4e9e] transition-colors">
-                  {rem.proyectoNombre}
-                </h3>
-                <p className="text-xs text-[#454651] mb-3">{rem.cliente}</p>
-
-                <p className="text-sm text-[#454651]">Materiales de salida: <strong>{rem.items.length}</strong></p>
-              </div>
-            </article>
-          );
-        })}
+        {visibleRemisiones.map(rem => <RemissionCard key={rem.id} remission={rem} onPdf={() => openPdfRemision(rem)} onPhotos={() => openOutgoingPhotos(rem.id)} />)}
       </div>
       {pages > 1 && <nav aria-label="Páginas de remisiones" className="flex items-center justify-center gap-3 py-5 text-sm">
         <button disabled={page === 1} onClick={() => setPageState({ key: filterKey, page: page - 1 })} className="px-3 py-2 border rounded-lg disabled:opacity-40">Anterior</button>

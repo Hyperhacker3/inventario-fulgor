@@ -1,4 +1,5 @@
 import { StateIcon } from './ui/StateIcon';
+import { ConfirmDialog } from './ui/ConfirmDialog';
 import { itemConditionOptions, normalizeItemCondition } from '../domain/itemCondition';
 import { ScreenTransition } from './ui/Motion';
 import { Select } from './ui/Select';
@@ -34,6 +35,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   const { user, getLocationString, openQuickMovement, addToDispatchCart,
     updateElemento, deleteElemento, categoryLabel, almacenes, estanterias, cajas, niveles, addEstanteria, addNivel, addCaja } = inventory;
   const [editing, setEditing] = useState(false);
+  const [archiveConfirm, setArchiveConfirm] = useState(false);
   const [name, setName] = useState(item?.nombre || '');
   const [brand, setBrand] = useState(item?.marca || '');
   const [description, setDescription] = useState(item?.descripcion || '');
@@ -56,7 +58,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
 
   const busy = pending || photoBusy || locationBusy;
-  const close = () => { if (!busy) onClose(); };
+  const close = () => { if (!busy && !archiveConfirm) onClose(); };
   useDialogFocus(dialog, close);
   if (!item) return null;
 
@@ -84,16 +86,18 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
     finally { saving.current = false; setPending(false); }
   };
   const archive = async () => {
-    if (!window.confirm(`¿Archivar ${item.codigo} - ${item.nombre}?`)) return;
+    if (saving.current || busy || !canAdmin || item.archived) return;
+    saving.current = true;
     setError(''); setPending(true);
-    try { await deleteElemento(item.id); onClose(); }
+    try { await deleteElemento(item.id); setArchiveConfirm(false); onClose(); }
     catch (cause) { setError(errorMessage(cause)); }
-    finally { setPending(false); }
+    finally { saving.current = false; setPending(false); }
   };
 
   return <div className="ui-modal-layer fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-6" role="presentation"
     onClick={event => { if (event.target === event.currentTarget) close(); }}>
     <section ref={dialog} role="dialog" aria-modal="true" aria-labelledby="item-detail-heading"
+      inert={archiveConfirm} aria-hidden={archiveConfirm || undefined}
       className="ui-dialog-panel ui-panel-enter relative bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] shadow-2xl border flex flex-col overflow-hidden">
       <button data-dialog-close type="button" onClick={close} disabled={busy} aria-label="Cerrar detalle" title="Cerrar detalle"
         className="item-detail-close absolute top-6 right-6 sm:top-8 sm:right-8 z-20 w-11 h-11 rounded-xl flex items-center justify-center text-[#253685]">
@@ -168,7 +172,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
             {(canAdmin || canOperate && !item.stockPendiente) && <button type="button" onClick={() => openQuickMovement(item, 'AJUSTE')} aria-label={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} title={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} className="p-2 rounded-lg text-[#755b00]"><StateIcon icon="tune" /></button>}
             {canOperate && <button type="button" disabled={available(item) === 0} onClick={() => addToDispatchCart(item)} aria-label="Agregar a la salida" title="Agregar a la salida"
               className="p-2 rounded-lg text-[#dd4c42] disabled:opacity-40"><StateIcon icon="add_shopping_cart" /></button>}
-            {canAdmin && <button type="button" disabled={pending} onClick={archive} aria-label="Archivar" title="Archivar" className="p-2 rounded-lg text-red-700"><StateIcon icon="archive" /></button>}
+            {canAdmin && <button type="button" disabled={busy} onClick={() => { setError(''); setArchiveConfirm(true); }} aria-label="Archivar" title="Archivar" className="p-2 rounded-lg text-red-700"><StateIcon icon="archive" /></button>}
             </>}
           </div>
           {item.archived && canAdmin && <ArchivedItemActions item={item} onDelete={onPermanentDelete} onRestore={onRestore} />}
@@ -176,5 +180,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
         {history}
       </div>
     </section>
+    {archiveConfirm && <ConfirmDialog title="Archivar producto" message={`¿Archivar ${item.codigo} · ${item.nombre}?`} pending={pending} error={error}
+      onCancel={() => { setArchiveConfirm(false); setError(''); }} onConfirm={() => { void archive(); }} />}
   </div>;
 }

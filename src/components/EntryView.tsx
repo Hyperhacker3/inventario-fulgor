@@ -1,4 +1,5 @@
 import { Presence } from './ui/Motion';
+import { SearchInput } from './ui/SearchInput';
 import { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { ItemImage } from './ItemImage';
@@ -26,7 +27,8 @@ export function EntryContent({ inventory }: { inventory: RegistrationInventory &
       <div><h2 className="text-2xl md:text-3xl font-bold">Entradas</h2><p className="mt-2 text-slate-600">{canCreate ? 'Busque un material para registrar su recepción o complete el formulario para crear uno nuevo.' : 'Busque un material para registrar su recepción.'} Cada entrada se guarda en el historial.</p></div>
     </header>
     <section className="bg-white border rounded-2xl p-4 space-y-3">
-      <label className="block text-sm font-semibold">Buscar material<input autoComplete="off" autoCorrect="off" spellCheck={false} type="search" disabled={busy} value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Código, nombre, marca o ubicación" className="block w-full mt-2 p-3 rounded-xl border" /></label>
+      <label htmlFor="entry-material-search" className="block text-sm font-semibold">Buscar material</label>
+      <SearchInput id="entry-material-search" disabled={busy} value={search} onClear={() => { setSearch(''); setPage(1); }} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Código, nombre, marca o ubicación" className="block w-full p-3 rounded-xl border" />
       <Presence open={!!query}><div className="ui-panel-enter space-y-3">
         <p role="status" className="text-xs text-slate-600">{matches.length} resultado(s){syncStatus === 'syncing' ? ' · Actualizando inventario…' : ''}</p>
         <div className="space-y-2">{matches.slice((currentPage - 1) * 5, currentPage * 5).map(result => <div key={result.id} className="entry-result-row grid w-full items-center gap-3 p-3 text-left border rounded-xl">

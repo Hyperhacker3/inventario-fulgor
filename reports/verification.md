@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Condiciones actuales, filtro físico, archivo temático y accesos de búsqueda/fotos (8 de octubre de 2026)
+
+El usuario sustituye MEDIO por REGULAR y pide retirar RETAL. Las opciones actuales son BUENO, REGULAR, MALO, EN REPARACIÓN y RETAZOS. Se normalizan MEDIO → REGULAR y RETAL/RETAZOS / BUENO → RETAZOS en lectura/edición; los alias previos de malo/reparación se mantienen. RETAL solo existe como alias de compatibilidad en código/pruebas, no como etiqueta u opción de interfaz. No se consultó ni escribió en Supabase real; no hay migración masiva ni alteración de stock/dañados.
+
+Inventario incorpora condición física independiente del stock, combinable con categoría, ubicación y consulta, con reset de página/contador de filtros. Archivar sustituye window.confirm por ConfirmDialog con foco, Escape/cancelación exterior, tema, estado pendiente, detalle inert, protección contra doble escritura y reintento de errores. SearchInput unifica la X de borrado en todos los buscadores y conserva foco/disabled/sin submit; cabecera/menú mantienen el campo envolvente. RemissionCard ofrece PDF y Fotos arriba, con acciones independientes; usa openOutgoingPhotos y el visor global existente, incluido el mensaje de ausencia de fotos.
+
+Verificación: typecheck, lint, **171 unitarias + 34 de integración (205)** y build. Pruebas cubren filtro físico/alias/intersección/reset, cancelación de archivo y errores/clics repetidos, borrado sin submit/foco/disabled y PDF/Fotos por remisión. Sin automatización de navegador; revisión visual física con el usuario.
+
 ## Estados antiguos unificados y condición sobre la fotografía (8 de octubre de 2026)
 
 normalizeItemCondition reconoce OBSOLETO/MAL ESTADO → MALO, REGULAR → MEDIO y REPARACION/EN REPARACION → EN REPARACIÓN, con tolerancia a espacios, mayúsculas y acentos. Mapper y frontera de alta/edición usan la misma normalización; ambos formularios comparten las opciones canónicas. RETAL y estados desconocidos se conservan, sin inferir equivalencias ni alterar stock/dañados. No se inspeccionaron datos privados ni se ejecutaron escrituras en Supabase real; no requiere SQL. Los registros antiguos se normalizan en lectura y al guardarse en una edición ordinaria.

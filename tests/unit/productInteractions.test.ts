@@ -40,7 +40,7 @@ test('grid conditions appear on the image opposite stock, normalize legacy label
       const badge = surface.querySelector<HTMLElement>('[title^="Estado del material:"]');
       if (item.estado === 'BUENO') assert.equal(badge, null);
       else {
-        assert.equal(badge!.textContent, ['MALO', 'MEDIO', 'EN REPARACIÓN', 'RETAL'][index]);
+        assert.equal(badge!.textContent, ['MALO', 'REGULAR', 'EN REPARACIÓN', 'RETAZOS'][index]);
         assert.ok(image.contains(badge)); assert.equal(content.contains(badge), false);
         assert.match(badge!.parentElement!.parentElement!.textContent!, /12 DISP/);
         await click(badge!); assert.equal(opened.at(-1), item);
