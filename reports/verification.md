@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Editor independiente encima del detalle (8 de octubre de 2026)
+
+ItemEditDialog utiliza un portal con capa superior z-index 60, título con lápiz y X propios, cabecera fuera del scroll y contenido adaptable que empieza arriba. ItemDetailContent mantiene el resumen completo e historial debajo en el mismo DOM y sin modificar su desplazamiento; queda inert/aria-hidden mientras editing. Se elimina el reemplazo de contenido con ScreenTransition y el registro manual de edición en dialogHistory, sustituido por useDialogFocus del diálogo real. Editar permanece hundido; los cinco botones pertenecen únicamente a la ficha.
+
+X, Cancelar, fondo, Escape y Retroceder cierran solo el editor, conservando el detalle. Guardar cierra al confirmar la escritura; fallos conservan datos/ubicaciones/marca/fotos y errores dentro del editor, y guardar/leer fotos/crear ubicaciones bloquea su cierre. Presence mantiene el cierre de 360 ms, también en portal, con interacción desactivada inmediatamente y movimiento reducido.
+
+Verificación: typecheck, lint, **178 unitarias + 34 de integración (212)** y build. Pruebas comprueban diálogos separados, detalle intacto/scroll independiente, bloqueo del fondo, cierre por X/Cancelar/Escape/Retroceder, selección de Editar, animación inactiva al salir, guardados y creación de ubicaciones sin perder borradores. Sin automatización de navegador, SQL nuevo ni acceso al Supabase real.
+
 ## Selección de acciones mientras la ventana está abierta y cierre más lento (8 de octubre de 2026)
 
 Los cinco botones del detalle usan aria-pressed/StateIcon filled según la ventana abierta. Entrada/Ajuste y Salida observan el estado real del contexto y el ID de producto; Editar y Archivar sus estados locales. La fila de acciones se conserva durante edición, pulsar Editar de nuevo no descarta el borrador y las otras operaciones quedan bloqueadas hasta salir. Cerrar/cancelar/confirmar restablece el reposo, sin seleccionar ventanas de otro producto.
