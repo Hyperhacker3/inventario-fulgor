@@ -24,6 +24,10 @@ Object.assign(globalThis, { window: dom.window, document: dom.window.document, H
   HTMLInputElement: dom.window.HTMLInputElement, IS_REACT_ACT_ENVIRONMENT: true });
 const { createRoot } = await import('react-dom/client');
 const button = (host: HTMLElement, text: string) => [...host.querySelectorAll<HTMLButtonElement>('button')].find(value => (value.getAttribute('aria-label') || value.textContent?.trim()) === text)!;
+const until = async (condition: () => boolean) => {
+  for (let attempt = 0; attempt < 100 && !condition(); attempt++) await new Promise(resolve => setTimeout(resolve, 10));
+  assert.ok(condition(), 'The browser history event must finish before continuing');
+};
 const field = (host: HTMLElement, label: string) => {
   const target = [...host.querySelectorAll<HTMLLabelElement>('label')].find(value => value.textContent === label)!;
   return document.getElementById(target.htmlFor) as HTMLButtonElement;
@@ -97,11 +101,36 @@ test('editing starts at the top with the pencil title and flat semantic actions'
     await act(() => button(host, 'Editar').click());
     assert.equal(scroll.scrollTop, 0); assert.ok(host.querySelector('h2 [data-icon="edit"]'));
     assert.equal(document.activeElement?.id, 'item-edit-heading');
+    assert.equal(button(host, 'Editar').getAttribute('aria-pressed'), 'true');
+    assert.equal(button(host, 'Editar').querySelector('[data-icon]')!.getAttribute('data-filled'), 'true');
+    assert.equal(button(host, 'Entrada').disabled, true);
     assert.equal(button(host, 'Cancelar').getAttribute('data-action'), 'cancel');
     assert.equal(button(host, 'Guardar').getAttribute('data-action'), 'edit');
-    await act(async () => { window.history.back(); await new Promise(resolve => setTimeout(resolve, 30)); });
+    await act(async () => { window.history.back(); await until(() => !host.querySelector('.ui-screen-current #item-edit-form')); });
     assert.equal(host.querySelector('.ui-screen-current #item-edit-form'), null);
     assert.ok(host.querySelector('.ui-screen-current .item-detail-data'));
+    assert.equal(button(host, 'Editar').getAttribute('aria-pressed'), 'false');
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
+
+test('detail actions stay selected only while their matching window is open', async () => {
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  const services = inventory(async () => {});
+  const render = (overlays: { quickMovementItem?: Elemento | null; quickMovementType?: 'ENTRADA' | 'AJUSTE'; dispatchSelection?: { itemId: string; token: string } | null } = {}) =>
+    act(() => root.render(h(ItemDetailContent, { item, onClose() {}, inventory: { ...services, ...overlays } })));
+  const selected = () => [...host.querySelectorAll('.item-detail-actions [aria-pressed="true"]')].map(control => control.getAttribute('data-action'));
+  try {
+    await render(); assert.deepEqual(selected(), []);
+    await render({ quickMovementItem: item, quickMovementType: 'ENTRADA' });
+    assert.deepEqual(selected(), ['entry']); assert.equal(button(host, 'Entrada').querySelector('[data-icon]')!.getAttribute('data-filled'), 'true');
+    await render(); assert.deepEqual(selected(), []);
+    await render({ quickMovementItem: item, quickMovementType: 'AJUSTE' }); assert.deepEqual(selected(), ['adjustment']);
+    await render({ quickMovementItem: { ...item, id: 'OTHER' }, quickMovementType: 'AJUSTE' }); assert.deepEqual(selected(), []);
+    await render({ dispatchSelection: { itemId: item.id, token: 'quantity' } }); assert.deepEqual(selected(), ['dispatch']);
+    await render({ dispatchSelection: { itemId: 'OTHER', token: 'quantity' } }); assert.deepEqual(selected(), []);
+    await render(); await act(() => button(host, 'Archivar').click()); assert.deepEqual(selected(), ['archive']);
+    await act(() => document.querySelector<HTMLButtonElement>('[data-dialog-close]:not([aria-label])')!.click());
+    assert.deepEqual(selected(), []);
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
@@ -161,12 +190,17 @@ test('archive confirmation cancels safely, prevents duplicate writes and preserv
     await act(() => root.render(h(ItemDetailContent, { item, onClose: () => { closes++; }, inventory: services })));
     await act(() => button(host, 'Archivar').click());
     assert.equal(host.querySelector('section')!.hasAttribute('inert'), true);
-    await act(async () => { window.history.back(); await new Promise(resolve => setTimeout(resolve, 30)); });
+    await act(async () => { window.history.back(); await until(() => !confirmation()); });
     assert.equal(confirmation(), null); assert.equal(calls, 0); assert.equal(closes, 0);
     await act(() => button(host, 'Archivar').click());
     await act(() => { confirm().click(); confirm().click(); });
     assert.equal(calls, 1); assert.equal(confirmation().getAttribute('aria-busy'), 'true');
-    await act(async () => { window.history.back(); await new Promise(resolve => setTimeout(resolve, 30)); });
+    const pushState = window.history.pushState;
+    let restored = false;
+    window.history.pushState = (...args) => { pushState.apply(window.history, args); restored = true; };
+    try {
+      await act(async () => { window.history.back(); await until(() => restored); });
+    } finally { window.history.pushState = pushState; }
     assert.ok(confirmation()); assert.equal(closes, 0);
     await act(async () => finish!());
     assert.match(confirmation().querySelector('[role="alert"]')!.textContent!, /Sin conexión/);

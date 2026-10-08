@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 import { JSDOM } from 'jsdom';
+import { CLOSE_DURATION } from '../../src/components/ui/Motion';
 import { act, createElement as h } from 'react';
 import { CatalogManager } from '../../src/components/administration/CatalogEditor';
 import { ProjectsManager } from '../../src/components/ProjectsView';
@@ -17,7 +18,7 @@ const change = (input: HTMLInputElement, value: string) => {
   Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value')!.set!.call(input, value);
   input.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
 };
-const settle = () => act(async () => { await new Promise(resolve => setTimeout(resolve, 210)); });
+const settle = () => act(async () => { await new Promise(resolve => setTimeout(resolve, CLOSE_DURATION + 30)); });
 const submit = () => document.querySelector('form')!.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
 
 for (const kind of ['prefijo', 'categoria'] as const) test(`${kind} opens only on request, preserves failed edits and closes after a confirmed save`, async () => {

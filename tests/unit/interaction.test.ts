@@ -3,6 +3,7 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import { act, createElement, useState } from 'react';
 import { NumberInput } from '../../src/components/NumberInput';
+import { CLOSE_DURATION } from '../../src/components/ui/Motion';
 import { useViewNavigation } from '../../src/state/useViewNavigation';
 import { useInventoryViewMode } from '../../src/state/useInventoryViewMode';
 import { sessionIdentity, shouldClearSessionCache } from '../../src/domain/session';
@@ -155,7 +156,7 @@ test('inline category creation follows the placeholder, selects the saved catego
     await act(() => { host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); });
     assert.equal(calls,1); assert.deepEqual(selected,[]);
     await act(async () => complete({id:'MATERIALES_ELECTRICOS',nombre:'Materiales eléctricos',activo:true}));
-    assert.deepEqual(selected,['MATERIALES_ELECTRICOS']); assert.equal(host.querySelector('input')?.closest('[inert]') !== null,true); await act(async () => { await new Promise(resolve => setTimeout(resolve,200)); }); assert.equal(host.querySelector('input'),null);
+    assert.deepEqual(selected,['MATERIALES_ELECTRICOS']); assert.equal(host.querySelector('input')?.closest('[inert]') !== null,true); await act(async () => { await new Promise(resolve => setTimeout(resolve,CLOSE_DURATION + 30)); }); assert.equal(host.querySelector('input'),null);
     assert.match(host.querySelector('[role="status"]')!.textContent!,/guardada en Supabase y seleccionada/);
   } finally { await act(() => root.unmount()); host.remove(); }
 });
@@ -185,7 +186,7 @@ test('inline box selection saves in the selected rack, blocks double creation an
     await act(async () => complete({ id:'BOX-SERVER',estanteriaId:'RACK-1',nivelId:'LEVEL-1',codigoCaja:'CAJ-025',estado:'Parcial' }));
     assert.deepEqual(selected,['BOX-SERVER']); assert.deepEqual(busy,[true,false]); assert.deepEqual(drafts,[true,false]);
     assert.match(host.querySelector('[role="status"]')!.textContent!,/creada en Supabase/);
-    assert.equal(host.querySelector('input')?.closest('[inert]') !== null,true); await act(async () => { await new Promise(resolve => setTimeout(resolve,200)); }); assert.equal(host.querySelector('input'),null);
+    assert.equal(host.querySelector('input')?.closest('[inert]') !== null,true); await act(async () => { await new Promise(resolve => setTimeout(resolve,CLOSE_DURATION + 30)); }); assert.equal(host.querySelector('input'),null);
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
@@ -242,7 +243,7 @@ test('inline racks require a warehouse, keep failed drafts and select a confirme
     assert.equal(host.querySelectorAll('input')[1].value,'Zona eléctrica');
     fail=false;
     await act(async () => { host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); });
-    assert.equal(calls,2); assert.deepEqual(selected,['RACK-SERVER']); assert.equal(host.querySelector('input')?.closest('[inert]') !== null,true); await act(async () => { await new Promise(resolve => setTimeout(resolve,200)); }); assert.equal(host.querySelector('input'),null);
+    assert.equal(calls,2); assert.deepEqual(selected,['RACK-SERVER']); assert.equal(host.querySelector('input')?.closest('[inert]') !== null,true); await act(async () => { await new Promise(resolve => setTimeout(resolve,CLOSE_DURATION + 30)); }); assert.equal(host.querySelector('input'),null);
     assert.match(host.querySelector('[role="status"]')!.textContent!,/creada en Supabase y seleccionada/);
   } finally { await act(() => root.unmount()); host.remove(); }
 });

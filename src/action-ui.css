@@ -15,8 +15,8 @@
   :root[data-ui-style] .item-detail-data dd, :root[data-ui-style] .item-detail-stock strong { color: var(--ui-action) !important; }
   :root[data-ui-style] button.ui-sidebar-action { transform: none !important; }
   :root[data-ui-style] .item-detail-actions > button { transform: none !important; }
-  .ui-modal-layer[data-motion-open='false'] { animation: ui-backdrop-close var(--ui-motion-duration) ease both; pointer-events: none; }
-  .ui-modal-layer[data-motion-open='false'] .ui-panel-enter { animation: ui-open var(--ui-motion-duration) ease reverse both; pointer-events: none; }
+  .ui-modal-layer[data-motion-open='false'] { animation: ui-backdrop-close var(--ui-close-duration) ease both; pointer-events: none; }
+  .ui-modal-layer[data-motion-open='false'] .ui-panel-enter { animation: ui-open var(--ui-close-duration) ease reverse both; pointer-events: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .ui-modal-layer[data-motion-open='false'], .ui-modal-layer[data-motion-open='false'] .ui-panel-enter { animation: none !important; }

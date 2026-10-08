@@ -1,5 +1,13 @@
 # Verificación de la refactorización local
 
+## Selección de acciones mientras la ventana está abierta y cierre más lento (8 de octubre de 2026)
+
+Los cinco botones del detalle usan aria-pressed/StateIcon filled según la ventana abierta. Entrada/Ajuste y Salida observan el estado real del contexto y el ID de producto; Editar y Archivar sus estados locales. La fila de acciones se conserva durante edición, pulsar Editar de nuevo no descarta el borrador y las otras operaciones quedan bloqueadas hasta salir. Cerrar/cancelar/confirmar restablece el reposo, sin seleccionar ventanas de otro producto.
+
+Presence mantiene el contenido durante 360 ms con CLOSE_DURATION, sincronizado con --ui-close-duration para panel, fondo, portales y selectores. El menú móvil usa también 360 ms al cerrar. Apertura, interacciones y ScreenTransition conservan 180 ms; movimiento reducido elimina la espera y los elementos salientes quedan inert inmediatamente.
+
+Verificación: typecheck, lint, **177 unitarias + 34 de integración (211)** y build. Pruebas cubren selección/restablecimiento, tipo de movimiento y aislamiento por producto, selección de Editar durante edición y conservación del contenido después de la duración de apertura hasta finalizar el cierre. Sin automatización de navegador, acceso a Supabase real ni SQL nuevo.
+
 ## Detalle, ventanas, historial y acciones coherentes (8 de octubre de 2026)
 
 La ficha muestra etiquetas en tinta/mayúsculas y valores azules; sus cinco acciones reutilizan ui-flat-choice y se elimina la escala de la navegación lateral. navigationView actualiza la selección al clic, mientras activeView conserva las transiciones y la pantalla anterior durante carga diferida. Cada ventana global tiene un límite de Suspense independiente, evitando ocultar la ficha al cargar Entrada/Ajuste. Editar restablece el desplazamiento al inicio y enfoca el título; edición, entrada, ajuste y salida incluyen iconos en sus títulos.

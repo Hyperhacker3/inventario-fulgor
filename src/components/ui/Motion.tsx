@@ -1,9 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode, type SyntheticEvent } from 'react';
 
 export const MOTION_DURATION = 180;
+export const CLOSE_DURATION = 360;
 const MotionActive = createContext(true);
 export const useMotionActive = () => useContext(MotionActive);
-const duration = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : MOTION_DURATION;
+const duration = (milliseconds: number) => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : milliseconds;
 
 /** Keep the last content during closing, but immediately disable its interactions. */
 export function Presence({ open, children }: { open: boolean; children: ReactNode }) {
@@ -14,7 +15,7 @@ export function Presence({ open, children }: { open: boolean; children: ReactNod
   }
   useEffect(() => {
     if (open || !state.present) return;
-    const timer = window.setTimeout(() => setState(current => current.open ? current : { ...current, present: false }), duration());
+    const timer = window.setTimeout(() => setState(current => current.open ? current : { ...current, present: false }), duration(CLOSE_DURATION));
     return () => window.clearTimeout(timer);
   }, [open, state.present]);
   if (!state.present) return null;
@@ -33,7 +34,7 @@ export function ScreenTransition({ screen, children, className = '' }: { screen:
   const previousScreen = state.previous?.screen;
   useEffect(() => {
     if (!previousScreen) return;
-    const timer = window.setTimeout(() => setState(current => ({ ...current, previous: null })), duration());
+    const timer = window.setTimeout(() => setState(current => ({ ...current, previous: null })), duration(MOTION_DURATION));
     return () => window.clearTimeout(timer);
   }, [previousScreen, screen]);
   const entries = [...(state.previous ? [state.previous] : []), { screen: state.screen, content: state.content }];

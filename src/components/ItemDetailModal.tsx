@@ -31,7 +31,7 @@ export function ItemDetailModal(props: Props) {
 }
 type DetailInventory = Pick<ReturnType<typeof useInventory>, 'user' | 'getLocationString' | 'openQuickMovement' | 'addToDispatchCart'
   | 'updateElemento' | 'deleteElemento' | 'categoryLabel' | 'almacenes' | 'estanterias' | 'cajas' | 'niveles'>
-  & Partial<Pick<ReturnType<typeof useInventory>, 'addEstanteria' | 'addNivel' | 'addCaja'>>;
+  & Partial<Pick<ReturnType<typeof useInventory>, 'addEstanteria' | 'addNivel' | 'addCaja' | 'quickMovementItem' | 'quickMovementType' | 'dispatchSelection'>>;
 export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore, inventory, history }: Props & { inventory: DetailInventory; history?: ReactNode }) {
   const active = useMotionActive();
   const { user, getLocationString, openQuickMovement, addToDispatchCart,
@@ -73,8 +73,12 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   const close = () => { if (!busy && !archiveConfirm) onClose(); };
   useDialogFocus(dialog, close);
   if (!item) return null;
+  const entryOpen = inventory.quickMovementItem?.id === item.id && inventory.quickMovementType === 'ENTRADA';
+  const adjustmentOpen = inventory.quickMovementItem?.id === item.id && inventory.quickMovementType === 'AJUSTE';
+  const dispatchOpen = inventory.dispatchSelection?.itemId === item.id;
 
   const startEdit = () => {
+    if (editing || busy) return;
     setName(item.nombre); setBrand(item.marca || ''); setDescription(item.descripcion); setMinimum(item.stockMinimo);
     setPhoto(item.fotoUrl || ''); setCondition(normalizeItemCondition(item.estado)); setDamaged(item.cantidadDanados ?? 0);
     setAdditionalPhotos(item.fotosAdicionales || []);
@@ -178,18 +182,16 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
             <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-2xl sm:text-3xl break-words">{available(item)}</strong><span className="text-xs">Disponible</span></div>
             <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-2xl sm:text-3xl break-words">{item.cantidadDanados ?? 0}</strong><span className="text-xs">Dañado</span></div>
           </div>
-          <div className="item-detail-actions">
-            {!item.archived && <>
-            {canAdmin && <button type="button" data-action="edit" onClick={startEdit} aria-label="Editar" title="Editar" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="edit" /></button>}
-            {canOperate && !item.stockPendiente && <button type="button" data-action="entry" onClick={() => openQuickMovement(item, 'ENTRADA')} aria-label="Entrada" title="Entrada" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="input" /></button>}
-            {(canAdmin || canOperate && !item.stockPendiente) && <button type="button" data-action="adjustment" onClick={() => openQuickMovement(item, 'AJUSTE')} aria-label={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} title={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="tune" /></button>}
-            {canOperate && <button type="button" data-action="dispatch" disabled={available(item) === 0} onClick={() => addToDispatchCart(item)} aria-label="Agregar a la salida" title="Agregar a la salida"
-              className="ui-flat-choice p-2 rounded-lg disabled:opacity-40"><StateIcon icon="add_shopping_cart" /></button>}
-            {canAdmin && <button type="button" data-action="archive" disabled={busy} onClick={() => { setError(''); setArchiveConfirm(true); }} aria-label="Archivar" title="Archivar" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="archive" /></button>}
-            </>}
-          </div>
           {item.archived && canAdmin && <ArchivedItemActions item={item} onDelete={onPermanentDelete} onRestore={onRestore} />}
         </div>}</ScreenTransition>
+        {!item.archived && <div className="item-detail-actions">
+          {canAdmin && <button type="button" data-action="edit" aria-pressed={editing} disabled={busy} onClick={startEdit} aria-label="Editar" title="Editar" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="edit" filled={editing} /></button>}
+          {canOperate && !item.stockPendiente && <button type="button" data-action="entry" aria-pressed={entryOpen} disabled={busy || editing} onClick={() => openQuickMovement(item, 'ENTRADA')} aria-label="Entrada" title="Entrada" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="input" filled={entryOpen} /></button>}
+          {(canAdmin || canOperate && !item.stockPendiente) && <button type="button" data-action="adjustment" aria-pressed={adjustmentOpen} disabled={busy || editing} onClick={() => openQuickMovement(item, 'AJUSTE')} aria-label={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} title={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="tune" filled={adjustmentOpen} /></button>}
+          {canOperate && <button type="button" data-action="dispatch" aria-pressed={dispatchOpen} disabled={busy || editing || available(item) === 0} onClick={() => addToDispatchCart(item)} aria-label="Agregar a la salida" title="Agregar a la salida"
+            className="ui-flat-choice p-2 rounded-lg disabled:opacity-40"><StateIcon icon="add_shopping_cart" filled={dispatchOpen} /></button>}
+          {canAdmin && <button type="button" data-action="archive" aria-pressed={archiveConfirm} disabled={busy || editing} onClick={() => { setError(''); setArchiveConfirm(true); }} aria-label="Archivar" title="Archivar" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="archive" filled={archiveConfirm} /></button>}
+        </div>}
         {history}
       </div>
     </section>

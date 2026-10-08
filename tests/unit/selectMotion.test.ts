@@ -3,7 +3,7 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import { act, createElement as h, useRef, useState } from 'react';
 import { Select } from '../../src/components/ui/Select';
-import { Presence, ScreenTransition } from '../../src/components/ui/Motion';
+import { CLOSE_DURATION, MOTION_DURATION, Presence, ScreenTransition } from '../../src/components/ui/Motion';
 import { useDialogFocus } from '../../src/hooks/useDialogFocus';
 import { DispatchQuantityModal } from '../../src/components/dispatch/DispatchQuantityModal';
 import { mapElemento } from '../../src/data/mappers';
@@ -14,7 +14,7 @@ Object.assign(globalThis, { window: dom.window, document: dom.window.document, H
 const { createRoot } = await import('react-dom/client');
 const option = (value: string, label: string, disabled = false) => h('option', { value, disabled, key: value }, label);
 const key = (element: HTMLElement, value: string) => element.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: value, bubbles: true, cancelable: true }));
-const settle = async () => { await act(async () => { await new Promise(resolve => setTimeout(resolve, 210)); }); };
+const settle = async () => { await act(async () => { await new Promise(resolve => setTimeout(resolve, CLOSE_DURATION + 30)); }); };
 
 function Field({ disabled = false }: { disabled?: boolean }) {
   const [value, setValue] = useState('');
@@ -129,7 +129,10 @@ test('closing a panel disables it immediately, keeps the last content during the
     assert.ok(host.querySelector('button')!.closest('[inert][aria-hidden="true"]'));
     await act(() => root.render(h(Presence, { open: true, children: content }))); await settle();
     assert.ok(host.querySelector('button')); assert.equal(host.querySelector('[inert]'), null);
-    await act(() => root.render(h(Presence, { open: false, children: null }))); await settle();
+    await act(() => root.render(h(Presence, { open: false, children: null })));
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, MOTION_DURATION + 30)); });
+    assert.ok(host.querySelector('button')!.closest('[inert]'));
+    await settle();
     assert.equal(host.textContent, '');
   } finally { await act(() => root.unmount()); host.remove(); }
 });
