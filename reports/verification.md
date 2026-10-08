@@ -1,6 +1,13 @@
 # Verificación de la refactorización local
 
 
+## Relleno de iconos al pasar el mouse en toda la aplicación (8 de octubre de 2026)
+
+La regla de hover deja de limitarse a los botones del detalle: todos los botones habilitados heredan --ui-icon-fill=1 al pasar el mouse con puntero fino y al pulsar. Material Symbols consume la misma variable y transición que StateIcon; los SVG conservan su transición de variantes. Al salir vuelve el contorno, salvo iconos con selección permanente. Se preservan colores, FILL explícito, botones disabled/aria-disabled, ausencia de hover persistente en táctiles y movimiento reducido.
+
+Verificación: typecheck, lint, **163 unitarias + 34 de integración (197)** y build correctos. Bundle CSS confirma hover general con guardas, variable compartida, transición y selección persistente. Cambio reversible de estilos sin nuevas pruebas que dupliquen las reglas; no SQL, Supabase real, archivos privados ni navegador automatizado. Revisión visual física con el usuario; despliegue y recursos públicos se comprueban por separado.
+
+
 ## Inventario con filtros superiores y barra unificada (7 de octubre de 2026)
 
 ExplorerView reúne búsqueda, contador formateado es-CO y vista lista/cuadrícula en el panel de cabecera. PC los muestra en una fila y móvil/tablet adapta la búsqueda a una fila propia. ExplorerFilters pasa encima del listado, con categorías/stock en la primera fila y almacén/estantería/nivel/caja en cuatro columnas, dos o una según ancho. Se retiran la columna lateral de 256 px, el panel de resultados duplicado y el límite de 1400 px. Lista y cuadrícula aprovechan todo el contenido disponible; se conserva el scroll principal, filtros compactos plegables y categorías múltiples con eliminación/prevención de duplicados.

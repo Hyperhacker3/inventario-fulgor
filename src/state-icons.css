@@ -8,11 +8,11 @@ svg.ui-state-icon { width: 1em; height: 1em; }
 .ui-icon-outline { opacity: calc(1 - var(--ui-icon-fill, 0)); }
 .ui-icon-solid { opacity: var(--ui-icon-fill, 0); }
 .ui-icon-outline, .ui-icon-solid { transition: opacity var(--ui-motion-duration) ease; }
-:is(.ui-sidebar-action, .ui-flat-choice, .app-select-option, .item-detail-actions > button):active:not(:disabled),
+button:active:not(:disabled):not([aria-disabled='true']),
 .item-detail-actions > button:focus-visible:not(:disabled) { --ui-icon-fill: 1; }
 @media (hover: hover) and (pointer: fine) {
-  .item-detail-actions > button:hover:not(:disabled) { --ui-icon-fill: 1; }
+  button:hover:not(:disabled):not([aria-disabled='true']) { --ui-icon-fill: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ui-state-icon, .ui-icon-outline, .ui-icon-solid { transition: none !important; }
+  .material-symbols-outlined, .ui-state-icon, .ui-icon-outline, .ui-icon-solid { transition: none !important; }
 }
