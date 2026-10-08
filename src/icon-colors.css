@@ -1,0 +1,33 @@
+/* Icon hues stay fixed while text and surfaces follow the selected theme. */
+:root {
+  --ui-icon-action: #3e4e9e; --ui-icon-success: #137333;
+  --ui-icon-danger: #ba1a1a; --ui-icon-warning: #755b00;
+  --ui-icon-inventory: #7755b6; --ui-icon-history: #9b6c04;
+  --ui-icon-data: #606985; --ui-icon-remissions: #a24778; --ui-icon-help: #276d9c;
+  --ui-icon-warehouses: #82603a; --ui-icon-racks: #087f8c; --ui-icon-levels: #2563a8;
+  --ui-icon-muted: #767682; --ui-icon-ink: var(--ui-icon-action);
+}
+@media screen {
+  :root[data-ui-style] button { --ui-icon-ink: var(--ui-icon-action); }
+  :root[data-ui-style] :is([class*='text-green-'], [class*='text-emerald-'], [class*='bg-green-'], [class*='bg-emerald-'], [class~='bg-[#137333]'], [class~='text-[#137333]'], [class~='bg-[#e6f4ea]']) { --ui-icon-ink: var(--ui-icon-success); }
+  :root[data-ui-style] :is([class*='text-amber-'], [class*='text-yellow-'], [class*='bg-amber-'], [class*='bg-yellow-'], [class~='text-[#755b00]'], [class~='bg-[#fef7e0]']) { --ui-icon-ink: var(--ui-icon-warning); }
+  :root[data-ui-style] :is([class*='text-red-'], [class*='text-rose-'], [class*='bg-red-'], [class*='bg-rose-'], [class~='bg-[#dd4c42]'], [class~='bg-[#ba1a1a]'], [class~='text-[#ba1a1a]'], [class~='text-[#c5221f]'], [class~='text-[#dd4c42]']) { --ui-icon-ink: var(--ui-icon-danger); }
+  :root[data-ui-style] :is([class~='text-[#253685]'], [class~='text-[#3e4e9e]'], .text-indigo-600) { --ui-icon-ink: var(--ui-icon-action); }
+  :root[data-ui-style] :is([class~='text-[#767682]'], [class~='text-[#64748b]'], .text-slate-500) { --ui-icon-ink: var(--ui-icon-muted); }
+  :root[data-ui-style] :is(.material-symbols-outlined, .ui-state-icon, button svg):not(:where(.a4-print-container *, .rm-measure *)) { color: var(--ui-icon-ink) !important; }
+  :root[data-ui-style] [data-nav-view='explorer'] { --ui-icon-ink: var(--ui-icon-inventory); }
+  :root[data-ui-style] [data-nav-view='entries'] { --ui-icon-ink: var(--ui-icon-success); }
+  :root[data-ui-style] :is([data-nav-view='dispatch'], [data-nav-view='logout']) { --ui-icon-ink: var(--ui-icon-danger); }
+  :root[data-ui-style] [data-nav-view='history'] { --ui-icon-ink: var(--ui-icon-history); }
+  :root[data-ui-style] [data-nav-view='data-admin'] { --ui-icon-ink: var(--ui-icon-data); }
+  :root[data-ui-style] [data-nav-view='remissions'] { --ui-icon-ink: var(--ui-icon-remissions); }
+  :root[data-ui-style] [data-nav-view='help'] { --ui-icon-ink: var(--ui-icon-help); }
+  :root[data-ui-style] :is([role='tab'][id^='data-tab-'], #data-section-select, #data-section-select-options) [data-icon='category'] { --ui-icon-ink: var(--ui-icon-inventory); }
+  :root[data-ui-style] :is([role='tab'][id^='data-tab-'], #data-section-select, #data-section-select-options) [data-icon='warehouse'] { --ui-icon-ink: var(--ui-icon-warehouses); }
+  :root[data-ui-style] :is([role='tab'][id^='data-tab-'], #data-section-select, #data-section-select-options) [data-icon='shelves'] { --ui-icon-ink: var(--ui-icon-racks); }
+  :root[data-ui-style] :is([role='tab'][id^='data-tab-'], #data-section-select, #data-section-select-options) [data-icon='layers'] { --ui-icon-ink: var(--ui-icon-levels); }
+  :root[data-ui-style] :is([role='tab'][id^='data-tab-'], #data-section-select, #data-section-select-options) [data-icon='inventory_2'] { --ui-icon-ink: var(--ui-icon-history); }
+  :root[data-ui-style] :is([role='tab'][id^='data-tab-'], #data-section-select, #data-section-select-options) [data-icon='folder_open'] { --ui-icon-ink: var(--ui-icon-success); }
+  :root[data-ui-style] :is([role='tab'][id^='data-tab-'], #data-section-select, #data-section-select-options) [data-icon='archive'] { --ui-icon-ink: var(--ui-icon-danger); }
+  :root[data-ui-style] :is([role='tab'][id^='data-tab-'], #data-section-select, #data-section-select-options) [data-icon='settings'] { --ui-icon-ink: var(--ui-icon-data); }
+}

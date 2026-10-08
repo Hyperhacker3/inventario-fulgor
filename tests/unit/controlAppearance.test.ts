@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 import { JSDOM } from 'jsdom';
 
-const css = ['appearance.css', 'controls.css', 'interactions.css', 'calendar.css'].map(file => fs.readFileSync(new URL(`../../src/${file}`, import.meta.url), 'utf8')).join('\n');
+const css = ['appearance.css', 'controls.css', 'interactions.css', 'calendar.css', 'sidebar.css', 'icon-colors.css'].map(file => fs.readFileSync(new URL(`../../src/${file}`, import.meta.url), 'utf8')).join('\n');
 function fixture(style: string, theme: string) {
   return new JSDOM(`<html data-ui-style="${style}" data-theme="${theme}"><head><style>${css}</style></head><body>
     <input id="quantity" type="number" class="ui-number-input" style="padding-top: 8px">
@@ -19,11 +19,14 @@ function fixture(style: string, theme: string) {
     <input id="date-value" type="date" class="date-form-value">
     <button id="dot" class="ui-photo-dot"><span></span></button><button id="dot-active" class="ui-photo-dot" aria-current="true"><span></span></button>
     <button id="page" class="border rounded-lg">Anterior</button>
-    <button id="save" class="bg-[#3e4e9e] text-white rounded-lg">Guardar</button>
-    <button id="entry" class="bg-[#e6f4ea] text-[#137333] rounded-lg">Entrada</button>
-    <button id="adjust" class="bg-[#fef7e0] text-[#755b00] rounded-lg">Ajuste</button>
-    <button id="dispatch" class="bg-[#dd4c42] text-white rounded-lg">Agregar a la salida</button>
+    <button id="save" class="bg-[#3e4e9e] text-white rounded-lg">Guardar<span id="save-icon" class="material-symbols-outlined">save</span></button>
+    <button id="entry" class="bg-[#e6f4ea] text-[#137333] rounded-lg">Entrada<span id="entry-icon" class="material-symbols-outlined">input</span></button>
+    <button id="adjust" class="bg-[#fef7e0] text-[#755b00] rounded-lg">Ajuste<span id="adjust-icon" class="material-symbols-outlined">tune</span></button>
+    <button id="dispatch" class="bg-[#dd4c42] text-white rounded-lg">Agregar a la salida<span id="dispatch-icon" class="material-symbols-outlined">add_shopping_cart</span></button>
     <button id="delete" class="bg-red-700 text-white rounded-lg" disabled>Eliminar</button>
+    <button id="nav-inventory" data-nav-view="explorer" class="ui-sidebar-action"><span id="nav-icon" class="ui-state-icon material-symbols-outlined">inventory_2</span></button>
+    <button id="data-tab-company" role="tab"><span style="color: var(--ui-nav-data)"><svg id="company-icon" class="ui-state-icon" data-icon="settings"></svg></span></button>
+    <dl class="inventory-card-metadata"><dt id="card-label">MARCA</dt><dd id="card-value">Sin especificar</dd></dl>
     <button id="option" class="app-select-option">Opción completa</button>
     <button id="backdrop" class="ui-backdrop">Cerrar fuera</button>
     <div class="a4-print-container"><button id="print" aria-pressed="true" disabled style="color: black; background: white">Documento</button><input id="print-input" style="height: 12px"><textarea id="print-textarea" style="min-height: 12px; resize: none"></textarea></div>
@@ -108,6 +111,18 @@ test('previously filled actions use the pagination material and semantic text wi
       assert.equal(computed('adjust').getPropertyValue('--ui-button-ink'), 'var(--ui-warning)');
       assert.equal(computed('dispatch').getPropertyValue('--ui-button-ink'), 'var(--ui-danger)');
       assert.equal(computed('delete').opacity, '0.45');
+      const palette = dom.window.getComputedStyle(document.documentElement);
+      for (const [token, color] of [['action', '#3e4e9e'], ['success', '#137333'], ['danger', '#ba1a1a'], ['warning', '#755b00'], ['inventory', '#7755b6'], ['data', '#606985']]) {
+        assert.equal(palette.getPropertyValue(`--ui-icon-${token}`).trim(), color);
+      }
+      for (const id of ['save-icon', 'entry-icon', 'adjust-icon', 'dispatch-icon', 'nav-icon', 'company-icon']) assert.equal(computed(id).color, 'var(--ui-icon-ink)');
+      assert.equal(computed('entry').getPropertyValue('--ui-icon-ink'), 'var(--ui-icon-success)');
+      assert.equal(computed('adjust').getPropertyValue('--ui-icon-ink'), 'var(--ui-icon-warning)');
+      assert.equal(computed('dispatch').getPropertyValue('--ui-icon-ink'), 'var(--ui-icon-danger)');
+      assert.equal(computed('nav-inventory').getPropertyValue('--ui-icon-ink'), 'var(--ui-icon-inventory)');
+      assert.equal(computed('company-icon').getPropertyValue('--ui-icon-ink'), 'var(--ui-icon-data)');
+      assert.equal(computed('card-label').color, 'var(--ui-ink)');
+      assert.equal(computed('card-value').color, 'var(--ui-action)');
       for (const id of ['option', 'backdrop', 'print']) assert.notEqual(computed(id).backgroundColor, reference.backgroundColor);
       assert.equal(computed('print').color, 'rgb(0, 0, 0)');
       assert.notEqual(computed('print').boxShadow, 'var(--ui-inset-shadow)');

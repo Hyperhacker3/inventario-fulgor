@@ -1,6 +1,15 @@
 # Verificación de la refactorización local
 
 
+## Metadatos permanentes en cuadrícula y colores fijos de iconos (8 de octubre de 2026)
+
+ExplorerResults muestra MARCA/CÓDIGO/UBICACIÓN como dt/dd en todas las tarjetas y tamaños, con etiquetas en tinta y valores azules. Marca/código vacíos o de espacios y almacén ausente muestran Sin especificar. Ubicación sigue mostrando solo el almacén; código vuelve a estar visible en cuadrícula móvil. Se mantienen nombre de dos líneas, estados/dañados y acción de salida independiente; lista conserva su disposición.
+
+icon-colors.css separa la paleta fija de iconos de la paleta variable del texto/superficies: navegación, Administración/selector compacto, acciones semánticas, Material Symbols y SVG de botones conservan las tonalidades de claro en oscuro. Relleno/hover, disabled y colores del texto en oscuro permanecen, y las reglas de iconos excluyen la impresión.
+
+Verificación: typecheck, lint, **163 unitarias + 34 de integración (197)** y build correctos. Pruebas existentes ampliadas para campos completos/ausentes, apertura desde metadatos, tokens de iconos iguales en ambas paletas y aplicación a navegación, administración, acciones y SVG. Bundle confirma etiquetas/fallback/paleta fija. Sin SQL, Supabase real, archivos privados ni navegador automatizado. Geometría/contraste físicos con el usuario; despliegue y recursos públicos se verifican por separado.
+
+
 ## Nombres de tarjetas arriba y filtros con icono compartido (8 de octubre de 2026)
 
 La cuadrícula mueve el recorte/altura de dos líneas del botón a un span interno y muestra el botón como bloque. Así el texto corto empieza arriba, manteniendo altura uniforme y acciones accesibles; lista conserva su formato. El icono de filtros comparte la barra con cuadrícula/lista, con tamaño de 44 px, estados de selección/hover, nombre accesible y contador. Se retira la barra móvil independiente. El panel inicia cerrado para móvil/tablet/PC, sin regla de apertura obligatoria en escritorio, conserva su distribución y selecciones al plegarse, aplica inert/aria-hidden y elimina el espacio extra del gap cerrado.

@@ -99,11 +99,12 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                         </button>
                       </h3>
 
-                      {item.marca && <p className="text-xs text-slate-500 break-words">Marca: {uppercaseName(item.marca)}</p>}
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="hidden sm:inline-block font-mono-code text-xs font-semibold text-[#3e4e9e] bg-[#eaedff] px-2 py-0.5 rounded-md w-fit">
-                          {item.codigo}
-                        </span>
+                      <dl className="inventory-card-metadata grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-xs">
+                        <dt>MARCA</dt><dd className="min-w-0 break-words">{uppercaseName(item.marca?.trim() || '') || 'Sin especificar'}</dd>
+                        <dt>CÓDIGO</dt><dd className="min-w-0 break-words font-mono-code">{item.codigo?.trim() || 'Sin especificar'}</dd>
+                        <dt>UBICACIÓN</dt><dd className="min-w-0 break-words">{getAlmacenById(item.almacenId)?.nombre?.trim() || 'Sin especificar'}</dd>
+                      </dl>
+                      {((item.cantidadDanados || 0) > 0 || item.estado && item.estado !== 'BUENO') && <div className="flex items-center gap-1.5 flex-wrap">
                         {(item.cantidadDanados || 0) > 0 && (
                           <span className="text-[10px] font-bold text-[#c5221f] bg-[#fce8e6] px-1.5 py-0.5 rounded border border-[#ffdad6]" title={`${item.cantidadDanados} unidades reportadas con daño`}>
                             {item.cantidadDanados} dañados
@@ -114,16 +115,7 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                             {item.estado}
                           </span>
                         )}
-                      </div>
-
-                      <div className="mt-auto pt-2 flex flex-col gap-1 text-[#454651] text-xs">
-                        <div className="flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[15px] text-[#767682] shrink-0">location_on</span>
-                          <span className="truncate">
-                            {warehouseName(item)}
-                          </span>
-                        </div>
-                      </div>
+                      </div>}
 
                     </div>
                   </article>

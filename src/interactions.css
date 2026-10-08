@@ -13,6 +13,8 @@
     border: 0; border-radius: 0; padding: 0; min-height: 0;
     text-decoration: none !important; transform: none !important; outline: none;
   }
+  .inventory-card-metadata dt { color: var(--ui-ink); font-weight: 600; }
+  .inventory-card-metadata dd { color: var(--ui-action); }
   .inventory-list-table, .ui-product-table { border-collapse: separate; border-spacing: 0 12px; }
   .inventory-product-name {
     display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;

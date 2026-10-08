@@ -13,14 +13,14 @@ const { createRoot } = await import('react-dom/client');
 const items = [1, 2].map(index => mapElemento({ id: `item-${index}`, codigo: `MAT00${index}`,
   nombre: `Material ${index}`, categoria: 'OTROS', cantidad: 12, stock_minimo: 2, unidad: 'UND' }));
 
-async function withResults(mode: 'grid' | 'list', check: (host: HTMLElement, opened: Elemento[], dispatched: Elemento[]) => Promise<void>, products = items) {
+async function withResults(mode: 'grid' | 'list', check: (host: HTMLElement, opened: Elemento[], dispatched: Elemento[]) => Promise<void>, products = items, warehouseName: string | null = 'Almacén de prueba') {
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
   const opened: Elemento[] = [], dispatched: Elemento[] = [];
   try {
     await act(() => root.render(h(ExplorerResultsContent, { items: products, mode, inventory: {
       user: { name: 'Operador', email: 'operator@app.test', role: 'operador', avatar: '' },
       openItemDetail: item => { opened.push(item); }, addToDispatchCart: item => { dispatched.push(item); },
-      categoryLabel: () => 'Otros materiales', getAlmacenById: () => ({ id: 'warehouse-test', nombre: 'Almacén de prueba', codigo: 'TEST', ciudad: 'Ciudad de prueba', capacidadPorcentaje: 0, estado: 'Operativo' as const }),
+      categoryLabel: () => 'Otros materiales', getAlmacenById: () => warehouseName ? ({ id: 'warehouse-test', nombre: warehouseName, codigo: 'TEST', ciudad: 'Ciudad de prueba', capacidadPorcentaje: 0, estado: 'Operativo' as const }) : undefined,
     } })));
     await check(host, opened, dispatched);
   } finally { document.getSelection()?.removeAllRanges(); await act(() => root.unmount()); host.remove(); }
@@ -44,19 +44,28 @@ for (const mode of ['list', 'grid'] as const) {
         assert.doesNotMatch(component.textContent!, /Fabricante|Otros materiales|dañados/);
         assert.equal(surface.querySelector('td:nth-child(3)')!.textContent, 'Otros materiales');
       } else {
-        assert.match(surface.textContent!, /Marca: FABRICANTE/); assert.ok(cart(surface).classList.contains('text-[#dd4c42]'));
+        assert.deepEqual([...surface.querySelectorAll('dt')].map(node => node.textContent), ['MARCA', 'CÓDIGO', 'UBICACIÓN']);
+        assert.deepEqual([...surface.querySelectorAll('dd')].map(node => node.textContent), ['FABRICANTE', products[0].codigo, 'Almacén de prueba']); assert.ok(cart(surface).classList.contains('text-[#dd4c42]'));
         assert.equal(name.classList.contains('inventory-product-name'), false);
         assert.equal(name.querySelector('.inventory-product-name')!.textContent, name.textContent);
         assert.ok(name.classList.contains('block'));
       }
       await Promise.resolve();
     }, products);
+    if (mode === 'grid') {
+      const unspecified = [{ ...items[0], marca: '  ', codigo: '  ', almacenId: null }];
+      await withResults(mode, async host => {
+        const surface = product(host, unspecified[0]);
+        assert.deepEqual([...surface.querySelectorAll('dt')].map(node => node.textContent), ['MARCA', 'CÓDIGO', 'UBICACIÓN']);
+        assert.deepEqual([...surface.querySelectorAll('dd')].map(node => node.textContent), ['Sin especificar', 'Sin especificar', 'Sin especificar']);
+      }, unspecified, null);
+    }
   });
   test(`${mode}: the entire product opens its own detail, including code, location, stock, image and free surface`, async () => {
     await withResults(mode, async (host, opened, dispatched) => {
       for (const item of items) {
         const surface = product(host, item);
-        const text = (value: string) => [...surface.querySelectorAll<HTMLElement>('span, td')]
+        const text = (value: string) => [...surface.querySelectorAll<HTMLElement>('span, td, dd')]
           .find(node => node.textContent?.trim() === value)!;
         const image = mode === 'grid' ? surface.firstElementChild as HTMLElement : surface.querySelector<HTMLElement>('td:nth-child(2) .shrink-0')!;
         const stock = mode === 'grid' ? text('12 DISP') : text('12');
