@@ -48,7 +48,8 @@ Estas instrucciones se aplican a todo el repositorio. Recogen las decisiones doc
 - Mantener navegación móvil superpuesta, cierre exterior, espacio para la barra inferior y tratamiento del teclado.
 - Mostrar el spinner global solo durante el arranque inicial; los cambios de pantalla no deben volver a ocultar la aplicación con él.
 - Conservar selección de texto y acceso por teclado en productos clicables; las acciones internas deben seguir siendo independientes.
-- Las cantidades permiten escritura manual y decimales. Conservar los controles −/+ de una unidad y sus límites, sin flechas nativas internas.
+- Las cantidades permiten escritura manual y decimales, sin flechas nativas internas. Stock inicial usa solo el campo de escritura, sin −/+; los controles de cantidad de otras operaciones mantienen sus botones y límites.
+- En móvil, tablet y PC, el alta dispone filas de dos columnas adaptables: prefijo/categoría, unidad de medida/stock inicial, stock mínimo/valor por unidad y unidad del peso/peso. El alta no muestra unidades dañadas/merma. La ficha muestra peso y valor antes de ubicación y un único dato de stock; conserva los cálculos internos de disponibilidad y daños.
 
 ## Verificación
 

@@ -9,7 +9,6 @@ import { ItemLocationFieldsContent } from './item/ItemLocationFields';
 import { ItemCategorySelector } from './item/ItemCategorySelector';
 import { ItemStockFields } from './item/ItemStockFields';
 import { errorMessage } from '../shared/errors';
-import { NumberInput } from './NumberInput';
 import { ItemWeightFields } from './item/ItemWeightFields';
 import { parseWeightDraft, weightDraft } from '../domain/weight';
 import { prefixPreview } from '../domain/dataAdministration';
@@ -62,7 +61,6 @@ export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props
   const [valorUnitario, setValorUnitario] = useState(item?.valorUnitario || 0);
   const [stockMinimo, setStockMinimo] = useState<number>(0);
   const [estado, setEstado] = useState<string>(normalizeItemCondition(item?.estado));
-  const [cantidadDanados, setCantidadDanados] = useState<number>(item?.cantidadDanados || 0);
   const [fotoUrl, setFotoUrl] = useState<string>('');
   const [fotosAdicionales, setFotosAdicionales] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -169,7 +167,7 @@ export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props
         cajaId: selectedCajaId || null,
         stockMinimo: Number(stockMinimo),
         estado,
-        cantidadDanados: Number(cantidadDanados)
+        cantidadDanados: 0
       };
       // The preview can change after a refresh; it is not part of request identity.
       const signature = JSON.stringify({ ...input, codigo: '', prefixId });
@@ -186,7 +184,7 @@ export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props
       setNombre(''); setMarca(''); setDescripcion(''); setNivelId(''); setCajaId('');
       setCantidad(0); setUnidad('UND'); setWeight(weightDraft()); setStockMinimo(0);
       setValorUnitario(0);
-      setEstado('BUENO'); setCantidadDanados(0); setFotoUrl(''); setFotosAdicionales([]);
+      setEstado('BUENO'); setFotoUrl(''); setFotosAdicionales([]);
       request.current = null;
       // Remount editable numeric/photo/box fields to clear their internal drafts too.
       setFormVersion(version => version + 1);
@@ -225,17 +223,20 @@ export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props
       <FormShell autoComplete={item ? undefined : 'off'} onSubmit={item ? undefined : handleSubmit} className="bg-white border border-[#e2e8f0] rounded-2xl p-4 sm:p-6 md:p-8 shadow-xs flex flex-col gap-6">
         {item && <p className="text-sm text-slate-600">Material seleccionado. Registre la cantidad recibida al final del formulario; sus datos de catálogo se conservan.</p>}
         <fieldset key={formVersion} disabled={!!item || !canCreate || pending || boxBusy || categoryBusy || rackBusy || levelBusy || prefixBusy} className="contents">
-        {/* Row 1: Code and Name */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="space-y-2">
+        <div className="item-form-pair item-code-category">
           <div>
             {item ? <label className="block text-xs font-bold text-[#454651] uppercase">Código<input value={codigo} readOnly className="block w-full mt-2 px-3.5 py-2.5 rounded-lg border font-mono-code" /></label> : <><ItemPrefixSelector value={prefixId} prefixes={prefijos} onChange={setPrefixId} onCreate={createPrefijo}
-              onBusyChange={setPrefixBusy} onDraftChange={setPrefixDraftPending} disabled={!catalogReady} />
-            <span className="text-[11px] text-[#767682] mt-1 block">
-              {codigo && !prefixDraftPending ? `Código estimado: ${codigo}. El definitivo se asigna al guardar.` : 'El número se asigna automáticamente en Supabase.'}
-            </span></>}
+              onBusyChange={setPrefixBusy} onDraftChange={setPrefixDraftPending} disabled={!catalogReady} /></>}
           </div>
-
-          <div className="md:col-span-2">
+          {item ? <label className="block text-xs font-bold text-[#454651] uppercase">Categoría<input value={categoryLabel(categoria)} readOnly className="block w-full mt-2 px-3.5 py-2.5 rounded-lg border" /></label> : <ItemCategorySelector value={categoria} categories={categorias} onChange={setCategoria}
+            onCreate={createCategoria} onBusyChange={setCategoryBusy} onDraftChange={setCategoryDraftPending} disabled={!catalogReady} />}
+        </div>
+        {!item && <p className="text-[11px] text-[#767682]">
+          {codigo && !prefixDraftPending ? `Código estimado: ${codigo}. El definitivo se asigna al guardar.` : 'El número se asigna automáticamente en Supabase.'}
+        </p>}
+        </div>
+          <div>
             <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-2">
               NOMBRE DEL COMPONENTE <span className="text-[#dd4c42]">*</span>
             </label>
@@ -250,19 +251,13 @@ export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props
               required
             />
           </div>
-        </div>
 
         <label className="block text-xs font-bold text-[#454651] uppercase">Marca
           <input autoComplete="off" autoCorrect="off" spellCheck={false} id="input-marca" maxLength={100} value={marca} onChange={event => setMarca(event.target.value)}
             placeholder="Marca del fabricante (opcional)" className="block w-full mt-2 px-3.5 py-2.5 rounded-lg border text-sm" />
         </label>
 
-        {/* Row 2: Category and Description */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          {item ? <label className="block text-xs font-bold text-[#454651] uppercase">Categoría<input value={categoryLabel(categoria)} readOnly className="block w-full mt-2 px-3.5 py-2.5 rounded-lg border" /></label> : <ItemCategorySelector value={categoria} categories={categorias} onChange={setCategoria}
-            onCreate={createCategoria} onBusyChange={setCategoryBusy} onDraftChange={setCategoryDraftPending} disabled={!catalogReady} />}
-
-          <div className="md:col-span-2">
+          <div>
             <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-2">
               DESCRIPCIÓN Y ESPECIFICACIONES TÉCNICAS
             </label>
@@ -275,10 +270,8 @@ export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props
               className="w-full px-3.5 py-2.5 rounded-lg border border-[#e2e8f0] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#3e4e9e] text-[#131b2e]"
             />
           </div>
-        </div>
 
-        {/* Material Status and Damage Units */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl">
+        <div className="p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl">
           <div>
             <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-1.5">
               ESTADO DEL MATERIAL / CONDICIÓN FÍSICA
@@ -294,20 +287,6 @@ export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props
             </Select>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-1.5">
-              CANTIDAD DE UNIDADES DAÑADAS / MERMA
-            </label>
-            <NumberInput
-              required
-              min="0"
-              step="0.001"
-              value={cantidadDanados}
-              onValueChange={setCantidadDanados}
-              placeholder="0 unidades dañadas"
-              className="w-full px-3.5 py-2 rounded-lg border border-[#e2e8f0] bg-white text-xs font-mono-code font-bold text-[#131b2e]"
-            />
-          </div>
         </div>
 
         {item ? <ItemExistingLocationFields value={{ warehouseId: item.almacenId || '', rackId: item.estanteriaId || '', levelId: item.nivelId || '', boxId: item.cajaId || '' }} onChange={() => {}}
@@ -318,9 +297,10 @@ export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props
         {item ? <ItemImage compact source={item.fotoUrl} category={item.categoria} alt={item.nombre} className="w-20 h-20 rounded-xl" /> : <ItemPhotoPicker value={fotoUrl} additional={fotosAdicionales} category={categoria} onChange={setFotoUrl} onAdditionalChange={setFotosAdicionales} onBusyChange={setPhotoBusy} disabled={pending} />}
 
         {!item && <ItemStockFields quantity={cantidad} unit={unidad} minimum={stockMinimo}
-          onQuantity={setCantidad} onUnit={setUnidad} onMinimum={setStockMinimo} />}
+          onQuantity={setCantidad} onUnit={setUnidad} onMinimum={setStockMinimo}
+          valueField={<ItemValueField value={valorUnitario} onChange={setValorUnitario} unit={unidad} disabled={pending} />} />}
         <ItemWeightFields value={weight} onChange={setWeight} stockUnit={unidad} disabled={pending} />
-        <ItemValueField value={valorUnitario} onChange={setValorUnitario} unit={unidad} disabled={pending} />
+        {item && <ItemValueField value={valorUnitario} onChange={setValorUnitario} unit={unidad} disabled={pending} />}
 
         {/* Action Buttons */}
         {!item && <div className="pt-4 flex items-center justify-end gap-3 border-t border-[#e2e8f0]">

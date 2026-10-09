@@ -1,10 +1,14 @@
 # Continuidad de Inventario EL TURPIAL
 
-Actualizado: **8 de octubre de 2026**, zona horaria America/Bogota.
+Actualizado: **9 de octubre de 2026**, zona horaria America/Bogota.
 
 Este documento resume el estado para continuar en otro chat. Las secciones anteriores de `reports/verification.md` y `PLAN_REFACTORIZACION.md` son registros históricos; sus conteos y pendientes no sustituyen este estado actual.
 
 ## Formularios e inventario simplificado
+
+Verificación del 9 de octubre: typecheck, lint, 183 pruebas unitarias y 34 de integración (217) y build correctos. La primera ejecución simultánea con otras comprobaciones tuvo un fallo de temporización en dialogHistory (espera fija de 30 ms); la repetición completa sin otras comprobaciones pasó. Runtime local Node 24.19.0 / pnpm 11.25.0 frente a Node 22.x / pnpm 11.19.0 declarados. Sin pruebas visuales automatizadas ni operaciones en Supabase real.
+
+El alta de materiales y la ficha se reorganizan para móvil, tablet y PC (9 de octubre de 2026). El alta usa pares de columnas fluidas: prefijo/categoría, unidad de medida/stock inicial, stock mínimo/valor por unidad y unidad del peso/peso. Stock inicial se escribe directamente, sin −/+; se retira unidades dañadas/merma del alta y los nuevos registros envían 0 daños, sin deducirlos de la condición. Los datos existentes y la edición de daños permanecen. La ficha sitúa peso/valor antes de ubicación y muestra un único dato de stock total con unidad. Se conservan validación, decimales, borradores, permisos, cálculo de disponibilidad, límites de salida y acciones. Ayuda y guía están sincronizadas. Sin SQL ni cambios de inventario real. La revisión visual corresponde al usuario.
 
 Última revisión verificada (8 de octubre): cámara/lente recordado en localStorage, capturas consecutivas en Salidas, alertas sin encogerse y espacio para sombras, Ayuda y guía solo con funciones y documentación completa sincronizada en docs/guia-funciones.md. Pasaron typecheck, lint, 183 pruebas unitarias + 34 de integración (217) y build. Sin SQL nuevo ni inventario real. Los registros de comprobaciones anteriores conservan sus conteos históricos.
 

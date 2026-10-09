@@ -126,17 +126,13 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
                 <div className="min-w-0"><dt className="text-xs text-slate-500">Categoría</dt><dd className="font-semibold mt-1 break-words">{categoryLabel(item.categoria)}</dd></div>
                 <div className="min-w-0"><dt className="text-xs text-slate-500">Marca</dt><dd className="mt-1 break-words">{item.marca || 'Sin declarar'}</dd></div>
                 <div className="min-w-0"><dt className="text-xs text-slate-500">Estado</dt><dd className="mt-1 break-words">{normalizeItemCondition(item.estado)}</dd></div>
-                <div className="min-w-0 min-[400px]:col-span-2"><dt className="text-xs text-slate-500">Ubicación</dt><dd className="mt-1 break-words">{getLocationString(item)}</dd></div>
                 <div className="min-w-0"><dt className="text-xs text-slate-500">Peso por 1 {item.unidad.toUpperCase()}</dt><dd className={`mt-1 break-words ${item.pesoUnitario ? 'text-[#253685]' : 'text-amber-700'}`}>{formatUnitWeight(item.pesoUnitario)}</dd></div>
                 <div className="min-w-0"><dt className="text-xs text-slate-500">Valor por 1 {item.unidad.toUpperCase()}</dt><dd className="mt-1 break-words text-[#253685]">{formatCOP(item.valorUnitario || 0)}</dd></div>
+                <div className="min-w-0 min-[400px]:col-span-2"><dt className="text-xs text-slate-500">Ubicación</dt><dd className="mt-1 break-words">{getLocationString(item)}</dd></div>
+                <div className="item-detail-stock min-w-0 min-[400px]:col-span-2"><dt className="text-xs text-slate-500">Stock</dt><dd className="mt-1 break-words"><strong className="text-2xl sm:text-3xl">{item.cantidad}</strong> {item.unidad}</dd></div>
                 {item.descripcion && <div className="min-w-0 min-[400px]:col-span-2"><dt className="text-xs text-slate-500">Descripción / comentarios</dt><dd className="mt-1 whitespace-pre-wrap break-words">{item.descripcion}</dd></div>}
               </dl>
             </div>
-          </div>
-          <div className="item-detail-stock grid grid-cols-3 gap-4 text-center">
-            <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-2xl sm:text-3xl break-words">{item.cantidad}</strong><span className="text-xs">Stock {item.unidad}</span></div>
-            <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-2xl sm:text-3xl break-words">{available(item)}</strong><span className="text-xs">Disponible</span></div>
-            <div className="min-w-0 p-2 sm:p-3 rounded-xl bg-[#f8fafc]"><strong className="block text-2xl sm:text-3xl break-words">{item.cantidadDanados ?? 0}</strong><span className="text-xs">Dañado</span></div>
           </div>
           {item.archived && canAdmin && <ArchivedItemActions item={item} onDelete={onPermanentDelete} onRestore={onRestore} />}
         </div>
