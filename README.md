@@ -4,6 +4,8 @@ Aplicación de inventario fotovoltaico con React, TypeScript, Vite y Supabase. I
 
 ## Estado actual y continuidad
 
+Entradas sitúa Ubicación en almacén como última sección de datos, después de fotos, stock, valor y peso, antes de Guardar/Cancelar. Se retira el texto auxiliar de valor por unidad, también del editor compartido. La ficha muestra Stock a la izquierda y VALOR DE STOCK a la derecha en móvil, tablet y PC, con cantidad total × valor unitario, redondeado a dos decimales y moneda al final (25.600 COP). Incluye unidades dañadas en el valor total; stock pendiente muestra Pendiente de verificar. Sin SQL ni cambios de inventario real.
+
 El alta de materiales y la ficha se reorganizan para móvil, tablet y PC (9 de octubre de 2026). El alta usa pares de columnas fluidas: prefijo/categoría, unidad de medida/stock inicial, stock mínimo/valor por unidad y unidad del peso/peso. Stock inicial se escribe directamente, sin −/+; se retira unidades dañadas/merma del alta y los nuevos registros envían 0 daños, sin deducirlos de la condición. Los datos existentes y la edición de daños permanecen. La ficha sitúa peso/valor antes de ubicación y muestra un único dato de stock total con unidad. Se conservan validación, decimales, borradores, permisos, cálculo de disponibilidad, límites de salida y acciones. Ayuda y guía están sincronizadas. Sin SQL ni cambios de inventario real. La revisión visual corresponde al usuario.
 
 Uso completo actualizado al 9 de octubre de 2026: [Guía de funciones](docs/guia-funciones.md), sincronizada con Ayuda y guía. Ayuda describe solo funciones de la aplicación; instalación y activación permanecen en esta documentación técnica.

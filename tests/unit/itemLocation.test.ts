@@ -48,6 +48,24 @@ function inventory(updateElemento: (id: string, updates: Partial<Elemento>) => P
     updateElemento, deleteElemento: async () => {}, getLocationString: () => 'Norte > A > Caja A', categoryLabel: (id: string) => id,
     openQuickMovement: () => {}, addToDispatchCart: () => {} };
 }
+
+test('detail values total stock including damaged units, rounds cents and leaves unverified counts pending', async () => {
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  try {
+    const render = async (changes: Partial<Elemento>) => act(() => root.render(h(ItemDetailContent, {
+      item: { ...item, ...changes }, onClose() {}, inventory: inventory(async () => {}),
+    })));
+    await render({ cantidad: 16, cantidadDanados: 4, valorUnitario: 1600 });
+    assert.match(host.querySelector('.item-detail-stock')!.textContent!, /16/);
+    assert.equal(host.querySelector('.item-detail-stock-value dd')!.textContent, '25.600 COP');
+    await render({ cantidad: 0.001, valorUnitario: 12.34 });
+    assert.equal(host.querySelector('.item-detail-stock-value dd')!.textContent, '0,01 COP');
+    await render({ valorUnitario: 0 });
+    assert.equal(host.querySelector('.item-detail-stock-value dd')!.textContent, '0 COP');
+    await render({ stockPendiente: true, cantidad: 16, valorUnitario: 1600 });
+    assert.equal(host.querySelector('.item-detail-stock-value dd')!.textContent, 'Pendiente de verificar');
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
 test('editing preselects the current location, offers only existing compatible locations and cancel discards relocation', async () => {
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
   let saves = 0;

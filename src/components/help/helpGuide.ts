@@ -10,7 +10,7 @@ export const helpGuide = [
     'Los nombres muestran hasta dos líneas. La lista móvil prioriza nombre, cantidad/unidad y salida; tablet y PC conservan el código. En cuadrícula aparecen MARCA, CÓDIGO y UBICACIÓN (solo almacén), con Sin especificar para datos vacíos.',
   ] },
   { title: 'Detalle y edición del producto', items: [
-    'Abra un producto para consultar sus fotos, nombre completo, código, categoría, marca, estado, ubicación completa, peso, valor, comentarios y el stock total con su unidad. Peso y valor aparecen antes de la ubicación.',
+    'Abra un producto para consultar sus fotos, nombre completo, código, categoría, marca, estado, ubicación completa, peso, valor, comentarios y el stock total con su unidad. A su derecha, Valor de stock muestra cantidad total por valor unitario en COP. Peso y valor aparecen antes de la ubicación.',
     'Las cinco acciones son Editar (lápiz azul), Entrada (verde), Ajuste (amarillo), Agregar a la salida (rojo) y Archivar (violeta), según permisos. El botón permanece hundido mientras su ventana está abierta.',
     'Editar abre una ventana encima de la ficha. Guardar, cancelar o cerrar vuelve al detalle conservando su posición. Puede crear estanterías, niveles y cajas; cambiar una ubicación superior limpia las selecciones dependientes.',
     'La X permanece visible al desplazarse. También puede cerrar tocando fuera, con Escape o con Retroceder: primero se cierra la ventana superior. Los cierres se bloquean durante un guardado pendiente.',
@@ -19,7 +19,7 @@ export const helpGuide = [
     'Busque y seleccione un producto existente, indique cantidad y motivo y registre la entrada. Se suma al stock y se guarda responsable, fecha y movimiento, sin generar remisión.',
     'Sin selección, administración puede registrar un material nuevo en esta misma pantalla: código, categoría, nombre, marca, estado, ubicación, fotos, cantidad inicial, mínimo, peso y valor. Quitar selección vuelve al alta.',
     'Puede crear prefijos, categorías, estanterías, niveles y cajas desde el formulario. El código estimado se confirma al guardar. Nombre y marca se guardan en mayúsculas.',
-    'Si hay un error, la pantalla se desplaza al campo o mensaje y conserva el borrador. Tras guardar correctamente vuelve al inicio. El stock inicial se escribe directamente, sin botones −/+ ni flechas internas. En móvil, tablet y PC se agrupan prefijo/categoría, unidad/stock inicial, mínimo/valor y unidad del peso/peso en filas de dos columnas.',
+    'Si hay un error, la pantalla se desplaza al campo o mensaje y conserva el borrador. Tras guardar correctamente vuelve al inicio. El stock inicial se escribe directamente, sin botones −/+ ni flechas internas. En móvil, tablet y PC se agrupan prefijo/categoría, unidad/stock inicial, mínimo/valor y unidad del peso/peso en filas de dos columnas. Ubicación es la última sección de datos antes de guardar.',
   ] },
   { title: 'Ajustes de stock', items: [
     'Ajuste permite registrar una variación positiva o negativa con motivo y responsable. Administradores y operadores pueden ajustar productos con stock conocido. Solo administración puede resolver stock pendiente indicando la cantidad comprobada. La operación queda en el historial.',

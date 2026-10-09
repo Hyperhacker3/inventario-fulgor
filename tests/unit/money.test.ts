@@ -42,7 +42,7 @@ test('the COP field lets users clear the default zero, enter cents and validates
     const type = (value: string) => { Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value')!.set!.call(input, value); input.dispatchEvent(new dom.window.Event('input', { bubbles: true })); };
     await act(() => type('')); assert.equal(input.value, ''); assert.equal(host.querySelector('form')!.checkValidity(), false);
     await act(() => type('12500.50')); assert.equal(input.value, '12500.50'); assert.equal(host.querySelector('form')!.checkValidity(), true);
-    assert.match(host.textContent!, /12\.500,5/); assert.match(host.textContent!, /COP/);
+    assert.match(host.textContent!, /COP/); assert.equal(host.querySelector('p'), null);
     await act(() => type('-1')); assert.equal(host.querySelector('form')!.checkValidity(), false);
   } finally { await act(() => root.unmount()); host.remove(); }
 });

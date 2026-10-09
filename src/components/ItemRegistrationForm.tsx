@@ -289,11 +289,6 @@ export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props
 
         </div>
 
-        {item ? <ItemExistingLocationFields value={{ warehouseId: item.almacenId || '', rackId: item.estanteriaId || '', levelId: item.nivelId || '', boxId: item.cajaId || '' }} onChange={() => {}}
-          warehouses={almacenes} racks={estanterias} levels={niveles} boxes={cajas} disabled /> : <ItemLocationFieldsContent inventory={inventory} warehouseId={selectedAlmacenId} rackId={selectedEstanteriaId} levelId={selectedNivelId} boxId={selectedCajaId}
-          onWarehouse={setAlmacenId} onRack={setEstanteriaId} onLevel={setNivelId} onBox={setCajaId} onBoxBusyChange={setBoxBusy} onBoxDraftChange={setBoxDraftPending}
-          rackDraftPending={rackDraftPending} levelDraftPending={levelDraftPending} onLevelBusyChange={setLevelBusy} onLevelDraftChange={setLevelDraftPending} onRackBusyChange={setRackBusy} onRackDraftChange={setRackDraftPending} />}
-
         {item ? <ItemImage compact source={item.fotoUrl} category={item.categoria} alt={item.nombre} className="w-20 h-20 rounded-xl" /> : <ItemPhotoPicker value={fotoUrl} additional={fotosAdicionales} category={categoria} onChange={setFotoUrl} onAdditionalChange={setFotosAdicionales} onBusyChange={setPhotoBusy} disabled={pending} />}
 
         {!item && <ItemStockFields quantity={cantidad} unit={unidad} minimum={stockMinimo}
@@ -301,6 +296,11 @@ export function ItemRegistrationContent({ item, onBusyChange, inventory }: Props
           valueField={<ItemValueField value={valorUnitario} onChange={setValorUnitario} unit={unidad} disabled={pending} />} />}
         <ItemWeightFields value={weight} onChange={setWeight} stockUnit={unidad} disabled={pending} />
         {item && <ItemValueField value={valorUnitario} onChange={setValorUnitario} unit={unidad} disabled={pending} />}
+
+        {item ? <ItemExistingLocationFields value={{ warehouseId: item.almacenId || '', rackId: item.estanteriaId || '', levelId: item.nivelId || '', boxId: item.cajaId || '' }} onChange={() => {}}
+          warehouses={almacenes} racks={estanterias} levels={niveles} boxes={cajas} disabled /> : <ItemLocationFieldsContent inventory={inventory} warehouseId={selectedAlmacenId} rackId={selectedEstanteriaId} levelId={selectedNivelId} boxId={selectedCajaId}
+          onWarehouse={setAlmacenId} onRack={setEstanteriaId} onLevel={setNivelId} onBox={setCajaId} onBoxBusyChange={setBoxBusy} onBoxDraftChange={setBoxDraftPending}
+          rackDraftPending={rackDraftPending} levelDraftPending={levelDraftPending} onLevelBusyChange={setLevelBusy} onLevelDraftChange={setLevelDraftPending} onRackBusyChange={setRackBusy} onRackDraftChange={setRackDraftPending} />}
 
         {/* Action Buttons */}
         {!item && <div className="pt-4 flex items-center justify-end gap-3 border-t border-[#e2e8f0]">

@@ -20,7 +20,7 @@ Actualizada el 9 de octubre de 2026. Esta guía coincide con Ayuda y guía dentr
 
 ## Detalle y edición del producto
 
-- Abra un producto para consultar sus fotos, nombre completo, código, categoría, marca, estado, ubicación completa, peso, valor, comentarios y el stock total con su unidad. Peso y valor aparecen antes de la ubicación.
+- Abra un producto para consultar sus fotos, nombre completo, código, categoría, marca, estado, ubicación completa, peso, valor, comentarios y el stock total con su unidad. A su derecha, Valor de stock muestra cantidad total por valor unitario en COP. Peso y valor aparecen antes de la ubicación.
 
 - Las cinco acciones son Editar (lápiz azul), Entrada (verde), Ajuste (amarillo), Agregar a la salida (rojo) y Archivar (violeta), según permisos. El botón permanece hundido mientras su ventana está abierta.
 
@@ -36,7 +36,7 @@ Actualizada el 9 de octubre de 2026. Esta guía coincide con Ayuda y guía dentr
 
 - Puede crear prefijos, categorías, estanterías, niveles y cajas desde el formulario. El código estimado se confirma al guardar. Nombre y marca se guardan en mayúsculas.
 
-- Si hay un error, la pantalla se desplaza al campo o mensaje y conserva el borrador. Tras guardar correctamente vuelve al inicio. El stock inicial se escribe directamente, sin botones −/+ ni flechas internas. En móvil, tablet y PC se agrupan prefijo/categoría, unidad/stock inicial, mínimo/valor y unidad del peso/peso en filas de dos columnas.
+- Si hay un error, la pantalla se desplaza al campo o mensaje y conserva el borrador. Tras guardar correctamente vuelve al inicio. El stock inicial se escribe directamente, sin botones −/+ ni flechas internas. En móvil, tablet y PC se agrupan prefijo/categoría, unidad/stock inicial, mínimo/valor y unidad del peso/peso en filas de dos columnas. Ubicación es la última sección de datos antes de guardar.
 
 ## Ajustes de stock
 
