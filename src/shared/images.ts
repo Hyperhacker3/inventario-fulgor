@@ -2,12 +2,12 @@ import { requireSupabase } from '../lib/supabase';
 import { squareCanvas } from './squareImage';
 import { uploadItemImage } from './itemImageUpload';
 import { imagePaths } from './imagePaths';
+import { encodePhoto } from './photoEncoding';
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const cache = new Map<string, { url: string; expires: number }>();
 export function clearImageCache() { cache.clear(); }
 export function isStoredImage(value: string) { return value.startsWith('storage://'); }
-export function isOptimizedImage(value: string) { return isStoredImage(value) && value.endsWith('/full.jpg'); }
 export async function removeImage(value: string): Promise<void> {
   if (!isStoredImage(value)) return;
   const paths = imagePaths(value.slice('storage://'.length));
@@ -30,8 +30,7 @@ export async function resolveImage(value: string): Promise<string> {
 }
 
 export async function saveImage(value: string): Promise<string> {
-  if (!value || isOptimizedImage(value)) return value;
-  if (isStoredImage(value)) value = await resolveImage(value);
+  if (!value || isStoredImage(value)) return value;
   if (!/^(data:image\/|blob:|https?:\/\/)/i.test(value)) throw new Error('Suba un archivo de imagen o use una URL válida.');
   const db = requireSupabase();
   let response: Response;
@@ -43,8 +42,7 @@ export async function saveImage(value: string): Promise<string> {
   const bitmap = await createImageBitmap(source);
   try {
     const canvas = squareCanvas(bitmap, bitmap.width, bitmap.height);
-    const encode = (image: HTMLCanvasElement, quality: number) => new Promise<Blob>((resolve, reject) => image.toBlob(blob => blob ? resolve(blob) : reject(new Error('No se pudo procesar la imagen.')), 'image/jpeg', quality));
-    const jpeg = await encode(canvas, 0.78);
-    return await uploadItemImage(db, jpeg);
+    const photo = await encodePhoto(canvas);
+    return await uploadItemImage(db, photo, () => encodePhoto(canvas, 'image/jpeg'));
   } finally { bitmap.close(); }
 }

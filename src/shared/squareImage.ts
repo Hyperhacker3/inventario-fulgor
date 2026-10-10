@@ -1,10 +1,12 @@
-export function squareCrop(width: number, height: number, maxSize = 600) {
+import { PRODUCT_IMAGE_SIZE } from './photoEncoding';
+
+export function squareCrop(width: number, height: number, maxSize = PRODUCT_IMAGE_SIZE) {
   if (width <= 0 || height <= 0) throw new Error('La imagen no tiene dimensiones válidas.');
   const side = Math.min(width, height);
   return { x: (width - side) / 2, y: (height - side) / 2, side, size: Math.min(side, maxSize) };
 }
 
-export function squareCanvas(source: CanvasImageSource, width: number, height: number, maxSize = 600, mirror = false) {
+export function squareCanvas(source: CanvasImageSource, width: number, height: number, maxSize = PRODUCT_IMAGE_SIZE, mirror = false) {
   const crop = squareCrop(width, height, maxSize);
   const canvas = document.createElement('canvas');
   canvas.width = crop.size;

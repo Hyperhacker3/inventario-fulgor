@@ -6,9 +6,9 @@ import { evidenceSize } from '../../src/shared/evidenceCanvas';
 import { uploadOutgoingImage } from '../../src/shared/outgoingImageUpload';
 import { isDatabaseRejection } from '../../src/data/databaseErrors';
 
-test('evidence keeps the entire portrait or landscape frame within 600 pixels without upscaling',()=>{
-  assert.deepEqual(evidenceSize(1600,900),{width:600,height:338});
-  assert.deepEqual(evidenceSize(900,1600),{width:338,height:600});
+test('evidence keeps the entire portrait or landscape frame within 1200 pixels without upscaling',()=>{
+  assert.deepEqual(evidenceSize(1600,900),{width:1200,height:675});
+  assert.deepEqual(evidenceSize(900,1600),{width:675,height:1200});
   assert.deepEqual(evidenceSize(200,300),{width:200,height:300});
   assert.throws(()=>evidenceSize(0,300),/dimensiones/);
 });
@@ -18,6 +18,27 @@ test('outgoing uploads use a separate bucket, signed-in owner and stable dispatc
   const ref=await uploadOutgoingImage(db,new Blob(['test'],{type:'image/jpeg'}),'request');
   assert.equal(calls[0].bucket,'outgoing-images'); assert.match(calls[0].path,/^account\/request\/[0-9a-f-]+\.jpg$/);
   assert.equal(ref,`outgoing://${calls[0].path}`); assert.deepEqual(calls[0].options,{contentType:'image/jpeg',upsert:false});
+});
+
+test('outgoing WebP uploads keep their request folder and use JPEG only for an explicit MIME rejection', async () => {
+  const calls: { path: string; type: string; options: unknown }[] = [];
+  let denyWebp = false, permissionError = false;
+  const db = { auth: { getUser: async () => ({ data: { user: { id: 'account' } }, error: null }) },
+    storage: { from: () => ({ upload: async (path: string, image: Blob, options: unknown) => {
+      calls.push({ path, type: image.type, options });
+      return { error: permissionError ? { message: 'No autorizado' } : denyWebp && image.type === 'image/webp' ? { message: 'mime type image/webp is not supported', statusCode: '415' } : null };
+    } }) } } as unknown as Pick<SupabaseClient, 'auth' | 'storage'>;
+  const webp = new Blob(['photo'], { type: 'image/webp' }), jpeg = new Blob(['photo'], { type: 'image/jpeg' });
+  let fallbackCalls = 0;
+  const fallback = async () => { fallbackCalls++; return jpeg; };
+  assert.match(await uploadOutgoingImage(db, webp, 'request', fallback), /^outgoing:\/\/account\/request\/[\da-f-]+\.webp$/);
+  assert.deepEqual(calls[0].options, { contentType: 'image/webp', upsert: false });
+  denyWebp = true;
+  assert.match(await uploadOutgoingImage(db, webp, 'request', fallback), /\.jpg$/);
+  assert.equal(fallbackCalls, 1);
+  permissionError = true;
+  await assert.rejects(uploadOutgoingImage(db, webp, 'request', fallback), /No autorizado/);
+  assert.equal(fallbackCalls, 1);
 });
 test('a lost dispatch response preserves evidence and retries the exact files without reuploading',async()=>{
   const submission=new OutgoingPhotoSubmission<string>();

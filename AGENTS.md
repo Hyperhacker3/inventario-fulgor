@@ -40,7 +40,7 @@ Estas instrucciones se aplican a todo el repositorio. Recogen las decisiones doc
 - Conservar pesos g/kg, valores COP y las copias históricas de cantidades, pesos, precios y empresa en remisiones. Editar la empresa no cambia documentos anteriores; los reintentos conservan la copia original.
 - Mantener entradas, salidas, proyectos, historial, remisiones, archivado y desarchivado. La eliminación corresponde únicamente a productos archivados y respeta permisos.
 - Conservar dashboard, valores por ubicación, material dañado e inversión por proyecto.
-- Mantener fotografías múltiples de productos, cuadradas de hasta 600 × 600 y con almacenamiento privado; el registro fotográfico de salidas sigue separado del PDF y consultable desde el historial.
+- Mantener fotografías múltiples de productos, con nuevas fotos cuadradas de hasta 1200 × 1200 en WebP y almacenamiento privado. Conservar las fotos existentes sin convertirlas y usar el mismo archivo en tarjetas y detalle, sin generar nuevas miniaturas; el registro fotográfico de salidas sigue separado del PDF y consultable desde el historial.
 - Mantener cámaras disponibles según dispositivo: todas en PC y únicamente traseras identificadas en móvil/tablet; conservar la elección de lente y las capturas consecutivas.
 - Conservar búsqueda, filtros por stock, condición y ubicación, selección de varias categorías, orden por actividad y paginación. La preferencia lista/cuadrícula debe recordarse.
 - Estados actuales: BUENO, REGULAR, MALO, EN REPARACIÓN y RETAZOS. Usar la normalización compartida: MEDIO → REGULAR, OBSOLETO/MAL ESTADO → MALO y RETAL/RETAZOS / BUENO → RETAZOS; no realizar una migración masiva por un cambio visual.

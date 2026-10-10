@@ -13,7 +13,7 @@ Requiere las migraciones anteriores, incluida la de elementos archivados. No mod
 
 En **Salidas**, la sección **Registro fotográfico de la salida** permite tomar fotos con la cámara o seleccionar varios archivos. Puede quitar cualquier foto del borrador antes de guardar. El registro es opcional; una salida puede tener varias fotografías o ninguna.
 
-Las fotos conservan el encuadre completo y se comprimen en JPEG con un máximo de 600 píxeles en el lado mayor. Las vistas previas usan la misma foto, sin generar archivos de miniatura. Las fotos de productos mantienen su recorte cuadrado habitual.
+Las fotos nuevas conservan el encuadre completo y se comprimen en WebP con un máximo de 1200 píxeles en el lado mayor; JPEG se conserva como compatibilidad. Las fotos ya guardadas permanecen sin cambios. Para activar WebP aplique la migración indicada en [Formato de fotografías](fotografias-webp.md). Las vistas previas usan la misma foto, sin generar archivos de miniatura. Las fotos de productos mantienen su recorte cuadrado habitual.
 
 En teléfonos y tablets, el selector de cámara y Cambiar cámara utilizan únicamente lentes traseros identificados por el navegador. Las cámaras frontales no aparecen y no se usan como alternativa. Si solo hay un lente trasero, el botón de cambio queda deshabilitado; si no se puede abrir una cámara trasera, se puede usar Elegir archivo. Los lentes con nombres genéricos solo se incluyen después de que el navegador confirme que son traseros.
 

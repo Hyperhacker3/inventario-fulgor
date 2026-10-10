@@ -30,10 +30,11 @@ export function CameraCaptureModal({ isOpen, onClose, onPhotoCaptured, title = '
   const snap = () => {
     const video = videoRef.current;
     if (!active || !isOpen || !ready || !video || !video.videoWidth) return;
-    const canvas = square ? squareCanvas(video, video.videoWidth, video.videoHeight, 600)
+    const canvas = square ? squareCanvas(video, video.videoWidth, video.videoHeight)
       : evidenceCanvas(video, video.videoWidth, video.videoHeight);
     acceptedPhoto.current = null;
-    setPhoto(canvas.toDataURL('image/jpeg', 0.78));
+    // Keep the capture lossless until the final WebP/JPEG conversion on save.
+    setPhoto(canvas.toDataURL('image/png'));
   };
   const selectFile = (file?: File) => {
     if (!file) return;

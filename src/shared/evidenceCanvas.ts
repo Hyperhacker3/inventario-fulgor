@@ -1,4 +1,4 @@
-export function evidenceSize(width: number, height: number, maxSize = 600) {
+export function evidenceSize(width: number, height: number, maxSize = 1200) {
   if (width <= 0 || height <= 0) throw new Error('La imagen no tiene dimensiones válidas.');
   const scale = Math.min(1, maxSize / Math.max(width, height));
   return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };

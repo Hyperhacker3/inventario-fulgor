@@ -27,7 +27,7 @@ export function useCamera(enabled: boolean, deviceId = '', aspectRatio = 1, reme
       if (cancelled) return;
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('La cámara requiere un navegador compatible y una conexión segura.');
       let requestedId = deviceId;
-      const acquire = () => navigator.mediaDevices.getUserMedia({ video: { ...(rearOnly ? { facingMode: { exact: 'environment' } } : {}), ...(requestedId ? { deviceId: { exact: requestedId } } : {}), width: { ideal: 1280 }, aspectRatio: { ideal: aspectRatio } }, audio: false });
+      const acquire = () => navigator.mediaDevices.getUserMedia({ video: { ...(rearOnly ? { facingMode: { exact: 'environment' } } : {}), ...(requestedId ? { deviceId: { exact: requestedId } } : {}), width: { ideal: 1920 }, height: { ideal: 1440 }, aspectRatio: { ideal: aspectRatio } }, audio: false });
       let acquired: MediaStream;
       try { acquired = await acquire(); }
       catch (cause) {

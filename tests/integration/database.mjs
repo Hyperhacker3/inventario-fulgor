@@ -18,6 +18,7 @@ const levelsMigration = fs.readFileSync(new URL('../../supabase/migrations/20261
 const companyMigration = fs.readFileSync(new URL('../../supabase/migrations/20261007000100_company_profile.sql', import.meta.url), 'utf8');
 const routeMigration = fs.readFileSync(new URL('../../supabase/migrations/20261007000200_remission_route.sql', import.meta.url), 'utf8');
 const uppercaseMigration = fs.readFileSync(new URL('../../supabase/migrations/20261007000300_uppercase_registration.sql', import.meta.url), 'utf8');
+const webpMigration = fs.readFileSync(new URL('../../supabase/migrations/20261010000100_webp_photos.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 const warehouseProfile = fs.readFileSync(new URL('../../supabase/configure_warehouse_profile.sql', import.meta.url), 'utf8');
@@ -61,6 +62,48 @@ const itemStock = async db => Number((await db.query("SELECT cantidad FROM publi
 const routeSql = 'SELECT public.dispatch_inventory_with_route($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb,$11,$12) AS rem';
 const routeArgs = (request, origin = 'Honda', destination = 'Bogotá') => [request,'PROY-001','Entrega','Operador','Recibe','Residente','',
   JSON.stringify([{ elementoId:'ELM-001',cantidad:1 }]),'{}','[]',origin,destination];
+
+test('WebP migration preserves inventory and permissions, supports secured outgoing evidence and preserves photo cleanup', async () => {
+  const db = await database({ uppercase: true });
+  try {
+    await db.exec("INSERT INTO storage.buckets VALUES('item-images','item-images',false,8388608,ARRAY['image/jpeg','image/png'])");
+    const before = (await db.query('SELECT * FROM public.elementos ORDER BY id')).rows;
+    const policies = (await db.query("SELECT policyname,qual FROM pg_policies WHERE schemaname='storage' AND policyname IN ('outgoing_images_read','outgoing_images_delete') ORDER BY policyname")).rows;
+    await db.exec(webpMigration); await db.exec(webpMigration);
+    assert.deepEqual((await db.query('SELECT * FROM public.elementos ORDER BY id')).rows, before);
+    assert.deepEqual((await db.query("SELECT policyname,qual FROM pg_policies WHERE schemaname='storage' AND policyname IN ('outgoing_images_read','outgoing_images_delete') ORDER BY policyname")).rows, policies);
+    const buckets = (await db.query('SELECT * FROM storage.buckets ORDER BY id')).rows;
+    assert.ok(buckets.every(bucket => !bucket.public && Number(bucket.file_size_limit) === 8388608 && bucket.allowed_mime_types.includes('image/webp') && bucket.allowed_mime_types.includes('image/jpeg')));
+    assert.ok(buckets.find(bucket => bucket.id === 'item-images').allowed_mime_types.includes('image/png'));
+    assert.equal((await db.query("SELECT has_function_privilege('authenticated','public.dispatch_inventory_with_photos(uuid,text,text,text,text,text,text,jsonb,jsonb,jsonb)','execute') AS allowed")).rows[0].allowed, false);
+    const user = '00000000-0000-0000-0000-000000000001', request = '15b144be-6612-4dbe-8eba-95e4e8fe2f91';
+    const path = `${user}/${request}/6710eed9-3d28-4935-8b6d-edf604a0e5e0.webp`;
+    await role(db, 'consulta');
+    await assert.rejects(() => db.query("INSERT INTO storage.objects VALUES('outgoing-images',$1)", [path]), /row-level security/);
+    await asOwner(db); await role(db, 'operador');
+    await assert.rejects(() => db.query("INSERT INTO storage.objects VALUES('outgoing-images',$1)", [path.replace('.webp','.png')]), /row-level security/);
+    await assert.rejects(() => db.query("INSERT INTO storage.objects VALUES('outgoing-images',$1)", [path.replace(user,'00000000-0000-0000-0000-000000000002')]), /row-level security/);
+    const jpgPath = path.replace('6710eed9-3d28-4935-8b6d-edf604a0e5e0.webp', '769eb4f1-a6e2-4598-9391-4b2310ade78c.jpg');
+    await db.query("INSERT INTO storage.objects VALUES('outgoing-images',$1),('outgoing-images',$2)", [path, jpgPath]);
+    const refs = [`outgoing://${path}`, `outgoing://${jpgPath}`];
+    const args = routeArgs(request); args[9] = JSON.stringify(refs);
+    const remission = (await db.query(routeSql, args)).rows[0].rem;
+    assert.deepEqual(remission.fotos_salida, refs);
+    assert.deepEqual((await db.query(routeSql, args)).rows[0].rem, remission);
+    assert.equal((await db.query("DELETE FROM storage.objects WHERE name=$1 RETURNING name", [path])).rows.length, 0);
+    await asOwner(db);
+    await db.query("INSERT INTO public.inventario_eliminaciones(id,codigo,nombre,actor_id,fotos) VALUES('webp-cleanup','WEB001','Foto',$1,$2::jsonb)", [user, JSON.stringify([`storage://${user}/photo/full.webp`])]);
+    const full = `${user}/photo/full.webp`;
+    await db.query("INSERT INTO storage.objects VALUES('item-images',$1)", [full]);
+    await role(db, 'operador');
+    await assert.rejects(() => db.query("SELECT public.complete_inventory_image_cleanup('webp-cleanup')"), /No autorizado/);
+    await asOwner(db); await role(db, 'admin');
+    await assert.rejects(() => db.query("SELECT public.complete_inventory_image_cleanup('webp-cleanup')"), /Quedan fotos/);
+    await asOwner(db); await db.query("DELETE FROM storage.objects WHERE name=$1", [full]);
+    await role(db, 'admin');
+    assert.equal((await db.query("SELECT public.complete_inventory_image_cleanup('webp-cleanup') AS done")).rows[0].done, true);
+  } finally { await db.close(); }
+});
 
 test('uppercase registration preserves previous records and stock while new outputs snapshot uppercase names, locations and signed-in users', async () => {
   const db=await database({route:true});

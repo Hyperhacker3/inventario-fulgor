@@ -1,6 +1,7 @@
 import { requireSupabase } from '../lib/supabase';
 import { evidenceCanvas } from './evidenceCanvas';
 import { uploadOutgoingImage } from './outgoingImageUpload';
+import { encodePhoto } from './photoEncoding';
 
 const bucket = 'outgoing-images';
 const prefix = 'outgoing://';
@@ -14,9 +15,9 @@ export async function saveOutgoingImage(source: string, requestId: string): Prom
   if (!blob.type.startsWith('image/') || blob.size > 8 * 1024 * 1024) throw new Error('Cada imagen debe pesar hasta 8 MB.');
   const image = await createImageBitmap(blob);
   try {
-    const jpeg = blob.type === 'image/jpeg' && image.width <= 600 && image.height <= 600 ? blob
-      : await new Promise<Blob>((resolve, reject) => evidenceCanvas(image, image.width, image.height).toBlob(value => value ? resolve(value) : reject(new Error('No se pudo comprimir la foto.')), 'image/jpeg', 0.78));
-    return await uploadOutgoingImage(requireSupabase(), jpeg, requestId);
+    const canvas = evidenceCanvas(image, image.width, image.height);
+    const photo = await encodePhoto(canvas);
+    return await uploadOutgoingImage(requireSupabase(), photo, requestId, () => encodePhoto(canvas, 'image/jpeg'));
   } finally { image.close(); }
 }
 export async function removeOutgoingImage(source: string): Promise<void> {

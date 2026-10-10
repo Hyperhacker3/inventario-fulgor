@@ -73,7 +73,7 @@ export function ItemPhotoPicker({ value, additional, onChange, onAdditionalChang
       </div>
     </div>
     <input autoComplete="off" autoCorrect="off" spellCheck={false} type="url" value={/^(data:|storage:|blob:)/.test(value) ? '' : value} onChange={event => onChange(event.target.value)} placeholder="URL opcional para la imagen principal" aria-label="URL de la imagen principal" className="w-full mt-4 px-3 py-2 rounded-lg border text-sm" />
-    <p className="text-xs text-slate-500 mt-3">Fotos cuadradas de hasta 600 × 600. Se suben a Supabase al guardar. Puedes seleccionar varios archivos adicionales.</p>
+    <p className="text-xs text-slate-500 mt-3">Fotos nuevas cuadradas de hasta 1200 × 1200. Se suben a Supabase al guardar. Puedes seleccionar varios archivos adicionales.</p>
     {!value && additional.length > 0 && <p className="text-xs text-[#3e4e9e] mt-2">La primera foto adicional se usará como principal al guardar.</p>}
     {reading && <p role="status" className="text-xs mt-2">Preparando fotos…</p>}
     {error && <p role="alert" className="text-red-700 text-xs mt-2">{error}</p>}

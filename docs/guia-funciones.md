@@ -1,6 +1,6 @@
 # Guía de funciones de la aplicación
 
-Actualizada el 9 de octubre de 2026. Esta guía coincide con Ayuda y guía dentro de la aplicación. La instalación y activación técnica se documentan por separado en README y en las guías de administración.
+Actualizada el 10 de octubre de 2026. Esta guía coincide con Ayuda y guía dentro de la aplicación. La instalación y activación técnica se documentan por separado en README y en las guías de administración.
 
 ## Inicio y notificaciones
 
@@ -56,7 +56,7 @@ Actualizada el 9 de octubre de 2026. Esta guía coincide con Ayuda y guía dentr
 
 - La cámara o lente elegido se recuerda en este navegador para las siguientes fotos de productos y salidas, incluso tras recargar. Si deja de estar disponible, se intenta abrir la predeterminada. En móviles se usan lentes traseros identificados; en PC puede elegir cámaras integradas o USB.
 
-- Las fotos de productos usan un recorte cuadrado de 600 píxeles. Puede añadir fotos adicionales, cambiar la principal y quitar imágenes del borrador. Las fotos de salida conservan el encuadre completo, con un máximo de 600 píxeles en el lado mayor.
+- Las fotos nuevas de productos usan un recorte cuadrado de hasta 1200 × 1200 píxeles. Puede añadir fotos adicionales, cambiar la principal y quitar imágenes del borrador. Las fotos nuevas de salida conservan el encuadre completo, con hasta 1200 píxeles en el lado mayor. Las fotos anteriores se conservan y se usa la misma imagen en tarjetas y detalle.
 
 - Capturar ocupa toda su fila en móvil. Use Elegir archivo si la cámara no está disponible. Las imágenes pendientes se conservan durante la sesión; solo la elección de cámara se guarda como preferencia local.
 

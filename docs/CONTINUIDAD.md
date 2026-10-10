@@ -1,8 +1,16 @@
 # Continuidad de Inventario EL TURPIAL
 
-Actualizado: **9 de octubre de 2026**, zona horaria America/Bogota.
+Actualizado: **10 de octubre de 2026**, zona horaria America/Bogota.
 
 Este documento resume el estado para continuar en otro chat. Las secciones anteriores de `reports/verification.md` y `PLAN_REFACTORIZACION.md` son registros históricos; sus conteos y pendientes no sustituyen este estado actual.
+
+## Fotografías nuevas en WebP
+
+Las fotos nuevas se preparan en WebP: productos cuadrados de hasta 1200 × 1200 y salidas con hasta 1200 píxeles en el lado mayor, sin ampliar originales pequeños. Las fotos existentes conservan archivos y referencias, también al editar un producto. Tarjetas y detalle usan la misma foto, sin nuevas miniaturas. Para activar WebP en Supabase, el usuario debe aplicar `20261010000100_webp_photos.sql`; mientras el bucket solo admite JPEG se guarda JPG automáticamente. No se transforma inventario ni fotografías anteriores. [Formato y activación](fotografias-webp.md).
+
+Verificación del cambio: typecheck y lint correctos; 189 pruebas unitarias y 35 de integración (224) pasan. Se usa Node 22.23.3 y pnpm 11.19.0. La primera ejecución tuvo cuatro fallos de temporización en dialogHistory (espera fija de 30 ms); la repetición completa pasó sin modificar código de navegación. Build correcto. La publicación se comprueba por separado en Vercel y recursos públicos antes de entregar.
+
+La migración está preparada y comprobada localmente con PGlite; no está confirmada en Supabase de producción. Conserva privacidad, límite de 8 MB, MIME anteriores, permisos, stock y referencias. Admite JPG/WebP en las salidas y conserva el acceso público únicamente mediante la RPC de ruta. Los reintentos mantienen las fotos originales de la solicitud. La revisión en dispositivos corresponde al usuario.
 
 ## Formularios e inventario simplificado
 
