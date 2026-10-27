@@ -1,16 +1,24 @@
 # Continuidad de Inventario EL TURPIAL
 
-Actualizado: **10 de octubre de 2026**, zona horaria America/Bogota.
+Actualizado: **27 de octubre de 2026**, zona horaria America/Bogota.
 
 Este documento resume el estado para continuar en otro chat. Las secciones anteriores de `reports/verification.md` y `PLAN_REFACTORIZACION.md` son registros históricos; sus conteos y pendientes no sustituyen este estado actual.
 
+## Salidas y remisión: remitente y destinatario
+
+Salidas separa proyecto y fechas, remitente (entrega en bodega, cargo y teléfono), destinatario (nombre y teléfono) y transportador/vehículo (nombre, cédula, teléfono y placa). Crear un proyecto desde Salidas exige nombre y ubicación; los proyectos anteriores se conservan. El PDF y las tarjetas muestran el destinatario declarado, con cliente histórico como alternativa solo si no hay destinatario. Se retira Entregar a y el cargo de quien recibe del formulario/documento, sin borrar datos históricos. Cabecera con tres columnas iguales: logo alineado a la izquierda, datos de empresa centrados y formato/fecha a la derecha; el código completo ocupa debajo una fila a la izquierda, a 18 px. Remitente y destinatario tienen contenedores separados. Sin SQL nuevo. [Uso y conservación](remitente-destinatario-remisiones.md).
+
+Se reutilizan recibido_por, cargo_entregado y los teléfonos de datos_transporte. El cliente del proyecto y cargo_recibido antiguos siguen almacenados y mapeados; no se reconstruyen documentos desde proyectos o empresa actuales. Se conservan solicitud, RPC, fotos, pesos, importes, firmas y paginación medida. Las remisiones guardadas solo cambian de presentación. La revisión visual corresponde al usuario, sin automatización de navegador.
+
+Verificación del 27 de octubre: typecheck, lint, 193 pruebas unitarias y 35 de integración (228 en total), y build correctos con Node 22.23.3 / pnpm 11.19.0. La primera suite también detectó la espera fija de 30 ms de dialogHistory y una expectativa antigua de nombre/cargo en una línea; se actualizó esa expectativa para la nueva presentación y la repetición completa pasó. No cambió la navegación. Sin automatización de navegador ni operaciones de prueba en Supabase real; geometría e impresión pendientes de revisión del usuario.
+
 ## Fotografías nuevas en WebP
 
-Las fotos nuevas se preparan en WebP: productos cuadrados de hasta 1200 × 1200 y salidas con hasta 1200 píxeles en el lado mayor, sin ampliar originales pequeños. Las fotos existentes conservan archivos y referencias, también al editar un producto. Tarjetas y detalle usan la misma foto, sin nuevas miniaturas. Para activar WebP en Supabase, el usuario debe aplicar `20261010000100_webp_photos.sql`; mientras el bucket solo admite JPEG se guarda JPG automáticamente. No se transforma inventario ni fotografías anteriores. [Formato y activación](fotografias-webp.md).
+Las fotos nuevas se preparan en WebP: productos cuadrados de hasta 1200 × 1200 y salidas con hasta 1200 píxeles en el lado mayor, sin ampliar originales pequeños. Las fotos existentes conservan archivos y referencias, también al editar un producto. Tarjetas y detalle usan la misma foto, sin nuevas miniaturas. El usuario confirmó la ejecución de `20261010000100_webp_photos.sql` desde su cuenta; JPEG permanece como compatibilidad cuando el navegador o bucket no admite WebP. No se transforma inventario ni fotografías anteriores. [Formato y activación](fotografias-webp.md).
 
 Verificación del cambio: typecheck y lint correctos; 189 pruebas unitarias y 35 de integración (224) pasan. Se usa Node 22.23.3 y pnpm 11.19.0. La primera ejecución tuvo cuatro fallos de temporización en dialogHistory (espera fija de 30 ms); la repetición completa pasó sin modificar código de navegación. Build correcto. La publicación se comprueba por separado en Vercel y recursos públicos antes de entregar.
 
-La migración está preparada y comprobada localmente con PGlite; no está confirmada en Supabase de producción. Conserva privacidad, límite de 8 MB, MIME anteriores, permisos, stock y referencias. Admite JPG/WebP en las salidas y conserva el acceso público únicamente mediante la RPC de ruta. Los reintentos mantienen las fotos originales de la solicitud. La revisión en dispositivos corresponde al usuario.
+La migración se comprobó localmente con PGlite. El usuario informó «Success. No rows returned» tras ejecutar el SQL de WebP desde su cuenta; la activación se registra según su confirmación, sin una inspección administrativa adicional del agente. Conserva privacidad, límite de 8 MB, MIME anteriores, permisos, stock y referencias. Admite JPG/WebP en las salidas y conserva el acceso público únicamente mediante la RPC de ruta. Los reintentos mantienen las fotos originales de la solicitud. La revisión en dispositivos corresponde al usuario.
 
 ## Formularios e inventario simplificado
 
@@ -88,7 +96,7 @@ La actualización de remisiones añade lugares de remisión/origen y destino, ob
 
 El PDF A4 queda alineado arriba, con el mismo margen y paginación medida. NIT hereda Arial/11 px como los datos del encabezado. Origen, destino y ubicación del proyecto son campos independientes. Peso unitario (kg) es una columna inmediatamente anterior a Peso total (kg); la descripción conserva nombre/marca y retira el texto de peso unitario. Se usan snapshots y Pendiente para datos ausentes. Los códigos largos se ajustan en PDF/tarjetas. Pasaron typecheck, lint, **148 pruebas unitarias y 32 de integración**, y build; revisión visual pendiente con el usuario, sin browser automation, Supabase real ni archivos privados.
 
-La configuración de empresa añade **NIT: 800.176.581 inmediatamente debajo del logo** en cada página de la remisión. Administración de datos incorpora Empresa como octava sección: nombre, NIT, logo, dirección y teléfono compartidos entre cuentas. Solo `admin` guarda; los otros roles consultan. Los datos iniciales son EL TURPIAL, el NIT indicado y el logo aprobado, sin inventar dirección/teléfono. El nombre/logo se utilizan en navegación; los logos cargados conservan proporciones/transparencia y sus colores en oscuro.
+La configuración de empresa conserva el NIT de cada remisión, actualmente centrado con el resto de los datos de empresa en cada página. Administración de datos incorpora Empresa como octava sección: nombre, NIT, logo, dirección y teléfono compartidos entre cuentas. Solo `admin` guarda; los otros roles consultan. Los datos iniciales son EL TURPIAL, el NIT indicado y el logo aprobado, sin inventar dirección/teléfono. El nombre/logo se utilizan en navegación; los logos cargados conservan proporciones/transparencia y sus colores en oscuro.
 
 **Activación pendiente en Supabase real:** ejecutar completo `supabase/migrations/20261007000100_company_profile.sql`, después de las migraciones anteriores. El agente no tiene sesión administrativa ni ejecutó SQL en producción. La migración se ensayó en PGlite; conserva inventario, stocks y partidas. El NIT inicial aparece en PDF incluso sin aplicar el SQL; guardar empresa requiere las funciones nuevas. Procedimiento en `docs/datos-empresa.md`.
 

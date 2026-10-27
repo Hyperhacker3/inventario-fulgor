@@ -1,6 +1,6 @@
 # Datos de empresa y NIT en remisiones
 
-Actualizado el 7 de octubre de 2026. El NIT indicado por el usuario es **800.176.581**, y aparece inmediatamente debajo del logo en todas las páginas de la remisión de salida, tanto en la vista previa como en impresión/PDF. Se conserva EL TURPIAL y el logo aprobado como valores iniciales; dirección y teléfono quedan vacíos hasta declararlos.
+Actualizado el 27 de octubre de 2026. EL TURPIAL, el NIT **800.176.581** y el logo aprobado son los valores iniciales del 7 de octubre; dirección y teléfono se declaran desde Empresa. La remisión muestra la copia de empresa guardada al emitirla, con su NIT centrado junto al nombre y contactos, tanto en la vista previa como en impresión/PDF.
 
 ## Activación en Supabase
 
@@ -19,6 +19,10 @@ Solo el rol `admin` puede guardar. `operador` y `consulta` ven los datos con los
 
 Los borradores no se reemplazan cuando llegan datos actualizados de otra cuenta. Si otra persona guardó primero, se rechaza la versión antigua para evitar sobrescribirla. Conserve los cambios que necesite, pulse Actualizar datos guardados y luego Descartar cambios para cargar la versión vigente antes de editar de nuevo.
 
+## Presentación del documento
+
+Desde el 27 de octubre, el logo está a la izquierda; nombre, NIT, dirección y teléfono se centran en la columna del medio, y formato/fecha se alinean a la derecha. El código de remisión ocupa debajo una fila completa alineada a la izquierda y con fuente de 18 px. Cambia la distribución, conservando la copia de empresa guardada en cada documento.
+
 ## Documentos históricos
 
 Cada remisión nueva captura en el servidor el nombre, NIT, dirección, teléfono y logo vigentes al emitirla, independientemente de datos enviados desde el navegador. Una edición posterior de la empresa no modifica esos documentos. Reintentar la misma salida conserva la copia original y no vuelve a descontar existencias.
@@ -34,4 +38,4 @@ Las remisiones anteriores reciben los valores iniciales EL TURPIAL / 800.176.581
 - La migración crea `inventario_empresa`, funciones de lectura/guardado y el trigger de copia inmutable en `remisiones.empresa`. No concede acceso directo a la tabla a usuarios ni acceso anónimo a las funciones.
 - `RemissionHeader` imprime el bloque de empresa. La medición de paginación espera fuentes/logo y considera su altura antes de habilitar Imprimir / PDF.
 
-Se verifican permisos, validación, conflictos de versión, conservación de documentos/stock, reintentos, repetición de la migración, NIT debajo del logo, borradores y preparación de imágenes. La revisión visual en PDF y dispositivos queda a cargo del usuario; no se usó computer use ni automatización de navegador.
+Se verifican permisos, validación, conflictos de versión, conservación de documentos/stock, reintentos, repetición de la migración, NIT con los datos centrales de empresa, borradores y preparación de imágenes. La revisión visual en PDF y dispositivos queda a cargo del usuario; no se usó computer use ni automatización de navegador.

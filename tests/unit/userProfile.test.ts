@@ -19,8 +19,10 @@ test('missing or invalid names do not expose login emails and user metadata cann
   assert.equal(unknown.name, 'Administrador'); assert.equal(displayCargo(unknown), 'Administrador');
   assert.equal(displayCargo({ role: 'operador' }), 'Operador');
 });
-test('the printable remission shows the warehouse keeper name and job together', () => {
+test('the printable remission keeps the warehouse keeper name and job in the sender section', () => {
   const profile = profileForAccount({ email: 'login@example.test', app_metadata: { role: 'admin' }, user_metadata: { name: 'Andrés Castañeda', cargo: 'Almacenista' } });
   const markup = renderToStaticMarkup(h(RemissionHeader, { remision: mapRemision({ entregado_por: profile.name, cargo_entregado: displayCargo(profile) }) }));
-  assert.match(markup, /Andrés Castañeda · Almacenista/); assert.doesNotMatch(markup, /login@example|>admin</);
+  assert.match(markup, /Entrega en bodega<\/span><strong>Andrés Castañeda/);
+  assert.match(markup, /Cargo de quien entrega<\/span><strong>Almacenista/);
+  assert.doesNotMatch(markup, /login@example|>admin</);
 });

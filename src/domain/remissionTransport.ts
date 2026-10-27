@@ -1,14 +1,20 @@
 import type { DatosTransporte } from '../types';
 import { validQuantity } from './quantity';
-export const transportFields: { key: keyof DatosTransporte; label: string; type: string; maxLength: number }[] = [
-  { key: 'telefonoRemite', label: 'Teléfono de quien remite', type: 'tel', maxLength: 40 },
-  { key: 'telefonoRecibe', label: 'Teléfono de quien recibe', type: 'tel', maxLength: 40 },
-  { key: 'transportador', label: 'Entregado a / transportador', type: 'text', maxLength: 180 },
+type TransportField = { key: keyof DatosTransporte; label: string; type: string; maxLength: number };
+export const carrierFields: TransportField[] = [
+  { key: 'transportador', label: 'Nombre del transportador', type: 'text', maxLength: 180 },
   { key: 'cedulaTransportador', label: 'Cédula del transportador', type: 'text', maxLength: 40 },
   { key: 'telefonoTransportador', label: 'Teléfono del transportador', type: 'tel', maxLength: 40 },
   { key: 'placaVehiculo', label: 'Placa del vehículo', type: 'text', maxLength: 20 },
+];
+export const shipmentDateFields: TransportField[] = [
   { key: 'fechaDespacho', label: 'Fecha de salida', type: 'date', maxLength: 10 },
   { key: 'fechaDevolucion', label: 'Fecha de devolución (si aplica)', type: 'date', maxLength: 10 },
+];
+export const transportFields: TransportField[] = [
+  { key: 'telefonoRemite', label: 'Teléfono del remitente', type: 'tel', maxLength: 40 },
+  { key: 'telefonoRecibe', label: 'Teléfono del destinatario', type: 'tel', maxLength: 40 },
+  ...carrierFields, ...shipmentDateFields,
 ];
 export const emptyTransport = (): DatosTransporte => Object.fromEntries(transportFields.map(field => [field.key, ''])) as unknown as DatosTransporte;
 export function mapTransport(raw: unknown): DatosTransporte {

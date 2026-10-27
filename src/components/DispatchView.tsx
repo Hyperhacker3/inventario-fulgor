@@ -1,5 +1,6 @@
 import { ProjectSelector } from './dispatch/ProjectSelector';
-import { TransportFields } from './dispatch/TransportFields';
+import { DispatchPartiesFields } from './dispatch/DispatchPartiesFields';
+import { ShipmentDates, TransportFields } from './dispatch/TransportFields';
 import { emptyTransport } from '../domain/remissionTransport';
 import { useRemissionTransport, useUnitWeightDispatch, useOutgoingPhotos, useRemissionRoute } from '../state/useRemissionTransport';
 import { RemissionRouteFields } from './dispatch/RemissionRouteFields';
@@ -36,7 +37,6 @@ export const DispatchView: React.FC = () => {
   const [entregadoPor, setEntregadoPor] = useState(uppercaseName(user.name));
   const [cargoEntregado, setCargoEntregado] = useState(uppercaseName(displayCargo(user)));
   const [recibidoPor, setRecibidoPor] = useState('');
-  const [cargoRecibido, setCargoRecibido] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const reportError = (message: string) => { setErrorMsg(message); if (message) revealError(); };
@@ -81,7 +81,7 @@ export const DispatchView: React.FC = () => {
     }
 
     if (!recibidoPor.trim()) {
-      reportError('Debe ingresar el nombre del responsable que recibe en obra.');
+      reportError('Debe ingresar el destinatario de la remisión.');
       return;
     }
 
@@ -98,7 +98,7 @@ export const DispatchView: React.FC = () => {
     try {
       await processDispatch({ proyectoId: selectedProyectoId, entregadoPor, cargoEntregado,
         ...route,
-        recibidoPor, cargoRecibido, observaciones, requestId, fotosSalida: photos,
+        recibidoPor, observaciones, requestId, fotosSalida: photos,
         ...(transportReady && { datosTransporte: transport }) });
       setRequestId(crypto.randomUUID());
       setPhotos([]); setAttempted(false);
@@ -159,47 +159,16 @@ export const DispatchView: React.FC = () => {
               </div>
             )}
 
-            <ProjectSelector value={effectiveProjectId} onChange={setSelectedProyectoId} disabled={pending} />
-            <RemissionRouteFields value={route} onChange={setRoute} />
-
-            {/* Delivery & Receiver */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-1">
-                  ENTREGA EN BODEGA
-                </label>
-                <input autoComplete="off" autoCorrect="off" spellCheck={false}
-                  type="text"
-                  value={entregadoPor}
-                  onChange={(e) => setEntregadoPor(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-xs text-[#131b2e] uppercase"
-                  placeholder="Nombre responsable"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold tracking-wider text-[#454651] uppercase mb-1">
-                  RECIBE EN OBRA <span className="text-[#dd4c42]">*</span>
-                </label>
-                <input autoComplete="off" autoCorrect="off" spellCheck={false}
-                  type="text"
-                  value={recibidoPor}
-                  onChange={(e) => setRecibidoPor(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-xs text-[#131b2e] uppercase"
-                  placeholder="Ingeniero / Residente"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <label className="text-xs font-bold text-[#454651]">CARGO DE QUIEN ENTREGA
-                <input autoComplete="off" autoCorrect="off" spellCheck={false} value={cargoEntregado} onChange={event => setCargoEntregado(event.target.value)} className="block w-full mt-1 px-3 py-2 border rounded-lg text-xs uppercase" />
-              </label>
-              <label className="text-xs font-bold text-[#454651]">CARGO DE QUIEN RECIBE
-                <input autoComplete="off" autoCorrect="off" spellCheck={false} value={cargoRecibido} onChange={event => setCargoRecibido(event.target.value)} className="block w-full mt-1 px-3 py-2 border rounded-lg text-xs uppercase" />
-              </label>
-            </div>
+            <fieldset className="min-w-0 rounded-xl bg-slate-50 p-4 space-y-4">
+              <legend className="text-sm font-bold text-[#253685]">Datos del proyecto y salida</legend>
+              <ProjectSelector value={effectiveProjectId} onChange={setSelectedProyectoId} disabled={pending} />
+              <RemissionRouteFields value={route} onChange={setRoute} />
+              <ShipmentDates value={transport} onChange={setTransport} disabled={pending || !transportReady} />
+            </fieldset>
+            <DispatchPartiesFields sender={entregadoPor} onSenderChange={setEntregadoPor}
+              senderRole={cargoEntregado} onSenderRoleChange={setCargoEntregado}
+              recipient={recibidoPor} onRecipientChange={setRecibidoPor}
+              transport={transport} onTransportChange={setTransport} contactsDisabled={!transportReady} />
 
             <TransportFields value={transport} onChange={setTransport} disabled={pending || !transportReady} />
             {!transportReady && <p className="text-xs text-slate-600">Los campos de transporte requieren activar la actualización de remisiones. La salida habitual sigue disponible. <button type="button" className="underline" onClick={() => { void transportQuery.refetch(); }}>Comprobar de nuevo</button></p>}

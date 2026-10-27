@@ -21,7 +21,7 @@ export function RemissionCard({ remission: rem, onPdf, onPhotos }: {
       <span className="text-xs text-[#767682] font-medium">{rem.fecha}</span>
     </div>
     <h3 className="font-bold text-base text-[#131b2e] leading-snug mb-1 group-hover:text-[#3e4e9e] transition-colors">{rem.proyectoNombre}</h3>
-    <p className="text-xs text-[#454651] mb-3">{rem.cliente}</p>
+    <p className="text-xs text-[#454651] mb-3">{rem.recibidoPor || rem.cliente}</p>
     <p className="text-sm text-[#454651]">Materiales de salida: <strong>{rem.items.length}</strong></p>
   </article>;
 }

@@ -51,6 +51,8 @@ Estas instrucciones se aplican a todo el repositorio. Recogen las decisiones doc
 - Las cantidades permiten escritura manual y decimales, sin flechas nativas internas. Stock inicial usa solo el campo de escritura, sin −/+; los controles de cantidad de otras operaciones mantienen sus botones y límites.
 - En móvil, tablet y PC, el alta dispone filas de dos columnas adaptables: prefijo/categoría, unidad de medida/stock inicial, stock mínimo/valor por unidad y unidad del peso/peso. El alta no muestra unidades dañadas/merma; Ubicación es la última sección de datos, antes de Guardar/Cancelar. Valor por unidad no incluye texto auxiliar. La ficha muestra peso y valor antes de ubicación y una fila con Stock y Valor de stock (cantidad total × valor unitario, moneda al final); conserva los cálculos internos de disponibilidad y daños.
 
+- Salidas separa proyecto/fechas, remitente (nombre, cargo y teléfono), destinatario (nombre y teléfono) y transportador/vehículo. Crear proyectos desde Salidas exige ubicación. PDF y tarjetas muestran el destinatario declarado, con cliente histórico como alternativa si no hay receptor; no duplicar Entregar a ni pedir cargo del receptor. La cabecera usa logo a la izquierda, empresa centrada y formato/fecha a la derecha, con código completo debajo a todo el ancho, alineado a la izquierda y fuente de 18 px. Remitente y destinatario tienen contenedores separados. Conservar campos históricos, snapshots y reintentos.
+
 ## Verificación
 
 - Antes de publicar cambios de la aplicación, ejecutar `pnpm typecheck`, `pnpm lint`, `pnpm test` y `pnpm build` y corregir los fallos relacionados con el cambio.

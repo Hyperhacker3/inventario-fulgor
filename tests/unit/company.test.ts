@@ -27,13 +27,15 @@ test('company validates shared data, preserves text NIT and rejects unsafe logo 
   assert.equal(mapCompany({ ...custom, logo:'javascript:alert(1)' }).logo, DEFAULT_COMPANY.logo);
 });
 
-test('printed header places NIT directly beneath the logo for legacy and snapshotted remissions with company contact data', () => {
+test('printed header keeps saved company data in the central column with the logo separate on the left', () => {
   for (const company of [undefined, custom]) {
     const remission = mapRemision({ numero_remision:'REM-1', empresa:company, items:[] });
     const markup = renderToStaticMarkup(h(RemissionHeader, { remision:remission }));
     const document = new JSDOM(markup).window.document, brand = document.querySelector('.rm-company')!;
-    const image = brand.querySelector('img')!;
-    assert.equal(image.nextElementSibling!.textContent, `NIT: ${(company ?? DEFAULT_COMPANY).nit}`);
+    const image = document.querySelector('.rm-logo img')!;
+    assert.equal(brand.querySelector('.rm-company-nit')!.textContent, `NIT: ${(company ?? DEFAULT_COMPANY).nit}`);
+    assert.equal(brand.querySelector('img'), null);
+    assert.equal(image.closest('.rm-logo')!.nextElementSibling, brand);
     assert.equal(image.getAttribute('src'), (company ?? DEFAULT_COMPANY).logo);
     assert.match(brand.textContent!, new RegExp((company ?? DEFAULT_COMPANY).nombre));
     if (company) { assert.match(brand.textContent!, /Calle 20/); assert.match(brand.textContent!, /Tel.: \+57 1234/); }

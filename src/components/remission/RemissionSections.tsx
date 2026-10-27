@@ -10,15 +10,37 @@ export function RemissionHeader({ remision: r }: { remision: Remision }) {
   const details = r.datosTransporte;
   const company = mapCompany(r.empresa);
   return <header className="rm-header">
-    <div className="rm-brand"><div className="rm-company"><img src={company.logo} alt={company.nombre} width="303" height="131" />
-      <strong className="rm-company-nit">NIT: {company.nit}</strong><span className="rm-company-name">{company.nombre}</span>
-      {company.direccion && <span>{company.direccion}</span>}{company.telefono && <span>Tel.: {company.telefono}</span>}
-    </div><div><span className="rm-eyebrow">FORMATO DE REMISIÓN</span><h1>{r.numeroRemision}</h1><p>Fecha de remisión: <strong>{date(r.fecha)}</strong></p></div></div>
+    <div className="rm-brand">
+      <div className="rm-logo"><img src={company.logo} alt={company.nombre} width="303" height="131" /></div>
+      <div className="rm-company"><strong className="rm-company-name">{company.nombre}</strong>
+        <span className="rm-company-nit">NIT: {company.nit}</span>
+        {company.direccion && <span>{company.direccion}</span>}{company.telefono && <span>Tel.: {company.telefono}</span>}
+      </div>
+      <div className="rm-document-meta"><span className="rm-eyebrow">FORMATO DE REMISIÓN</span>
+        <p>Fecha de remisión: <strong>{date(r.fecha)}</strong></p>
+      </div>
+    </div>
+    <h1 className="rm-code">{r.numeroRemision}</h1>
     <p className="rm-declaration">Constancia de entrega de los materiales relacionados a continuación, en las cantidades indicadas. Las novedades se registran en las observaciones.</p>
-    <div className="rm-details"><Field label="Proyecto de obra" value={r.proyectoNombre} /><Field label="Cliente / destinatario" value={r.cliente} />
-      <Field label="Persona que realiza la remisión" value={[r.entregadoPor, r.cargoEntregado].filter(Boolean).join(' · ')} /><Field label="Entregar a" value={[r.recibidoPor, r.cargoRecibido].filter(Boolean).join(' · ')} />
-      <Field label="Lugar de remisión" value={r.lugarRemision} /><Field label="Lugar de destino" value={r.lugarDestino || r.ubicacion} />
-      <Field label="Ubicación del proyecto" value={r.ubicacion} /><Field label="Teléfono de quien recibe" value={details?.telefonoRecibe} /><Field label="Teléfono de quien remite" value={details?.telefonoRemite} /><Field label="Fecha de devolución (si aplica)" value={date(details?.fechaDevolucion)} /></div>
+    <section className="rm-data-section rm-project" aria-label="Datos del proyecto y salida">
+      <h2>Datos del proyecto y salida</h2><div className="rm-details">
+        <Field label="Proyecto de obra" value={r.proyectoNombre} /><Field label="Ubicación del proyecto" value={r.ubicacion} />
+        <Field label="Lugar de remisión" value={r.lugarRemision} /><Field label="Lugar de destino" value={r.lugarDestino || r.ubicacion} />
+        <Field label="Fecha de salida" value={date(details?.fechaDespacho) || date(r.fecha)} /><Field label="Fecha de devolución (si aplica)" value={date(details?.fechaDevolucion)} />
+      </div>
+    </section>
+    <div className="rm-parties">
+      <section className="rm-data-section rm-sender" aria-label="Datos del remitente"><h2>Datos del remitente</h2>
+        <div className="rm-party-fields"><Field label="Entrega en bodega" value={r.entregadoPor} />
+          <Field label="Cargo de quien entrega" value={r.cargoEntregado} /><Field label="Teléfono del remitente" value={details?.telefonoRemite} />
+        </div>
+      </section>
+      <section className="rm-data-section rm-recipient" aria-label="Datos del destinatario"><h2>Datos del destinatario</h2>
+        <div className="rm-party-fields"><Field label="Cliente / destinatario" value={r.recibidoPor || r.cliente} />
+          <Field label="Teléfono del destinatario" value={details?.telefonoRecibe} />
+        </div>
+      </section>
+    </div>
   </header>;
 }
 export function RemissionTable({ remision, indices }: { remision: Remision; indices: number[] }) {
@@ -35,9 +57,9 @@ export function RemissionClosing({ remision: r, notes, indices }: { remision: Re
   return <>{indices.map(index => {
     if (index === 0) return <div data-closing-block className="rm-summary" key={index}><strong>{r.items.length} referencias</strong><span>{[...totals].map(([unit, total]) => `${quantity(total)} ${unit}`).join(' · ')}<br />Peso {weights.pending ? 'parcial conocido' : 'total'}: {weights.known ? formatKg(weights.total) : 'Sin declarar'}{weights.pending > 0 && <><br />{weights.pending} material(es) con peso pendiente</>}</span></div>;
     if (index <= notes.length) return <div data-closing-block key={index} className="rm-note">{index === 1 && <h2>Observaciones</h2>}<p>{notes[index - 1]}</p></div>;
-    if (index === notes.length + 1) return <div data-closing-block key={index} className="rm-delivery"><h2>Datos de salida y transporte</h2><div className="rm-details"><Field label="Entregado a / transportador" value={details?.transportador} /><Field label="Número de cédula" value={details?.cedulaTransportador} /><Field label="Placa del vehículo" value={details?.placaVehiculo} /><Field label="Teléfono del transportador" value={details?.telefonoTransportador} /><Field label="Fecha de salida" value={date(details?.fechaDespacho) || date(r.fecha)} /></div></div>;
+    if (index === notes.length + 1) return <div data-closing-block key={index} className="rm-data-section rm-delivery"><h2>Datos del transportador y vehículo</h2><div className="rm-details"><Field label="Nombre del transportador" value={details?.transportador} /><Field label="Número de cédula" value={details?.cedulaTransportador} /><Field label="Placa del vehículo" value={details?.placaVehiculo} /><Field label="Teléfono del transportador" value={details?.telefonoTransportador} /></div></div>;
     return <div data-closing-block key={index} className="rm-signatures"><p>Favor devolver firmado por correo o en físico, con nombre legible de quien recibe.</p><div className="rm-signature-grid">
-      {['Proveedor / entrega', 'Transportador', 'Recibe a conformidad'].map((label, position) => <div key={label}><div className="rm-signature-space" /><h2>{label}</h2><strong>{[r.entregadoPor, details?.transportador, r.recibidoPor][position] || 'Nombre: ____________________'}</strong><span>{[r.cargoEntregado, details?.cedulaTransportador, r.cargoRecibido][position] || '\u00a0'}</span></div>)}
+      {['Remitente / entrega', 'Transportador', 'Destinatario / recibe a conformidad'].map((label, position) => <div key={label}><div className="rm-signature-space" /><h2>{label}</h2><strong>{[r.entregadoPor, details?.transportador, r.recibidoPor || r.cliente][position] || 'Nombre: ____________________'}</strong><span>{[r.cargoEntregado, details?.cedulaTransportador, details?.telefonoRecibe && `Tel.: ${details.telefonoRecibe}`][position] || '\u00a0'}</span></div>)}
     </div></div>;
   })}</>;
 }
