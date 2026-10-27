@@ -19,9 +19,9 @@ Cliente / destinatario del PDF y el destinatario de la tarjeta de Remisiones usa
 
 ## Cabecera y bloques del PDF
 
-Tres columnas iguales: logo totalmente a la izquierda dentro del margen imprimible; nombre, NIT, dirección y teléfono de empresa centrados respecto a la página; formato y fecha a la derecha. El código completo ocupa debajo una fila completa, alineada a la izquierda, a 18 px, y puede ajustar líneas sin cortar texto.
+Tres columnas iguales: logo totalmente a la izquierda dentro del margen imprimible; nombre, NIT, dirección y teléfono de empresa centrados respecto a la página; formato y fecha a la derecha. El bloque central tiene al menos 78 px de alto como el logo y distribuye verticalmente el texto, con fuente de 13 px y nombre a 14 px. No se añaden las líneas negras de referencia de la captura. El código completo ocupa debajo una fila completa, alineada a la izquierda, a 18 px, y puede ajustar líneas sin cortar texto.
 
-Proyecto/salida, remitente y destinatario están identificados; los dos últimos tienen contenedores independientes. Transporte conserva su bloque y las tres firmas permanecen separadas. Se conserva A4, margen, medición del logo/cabecera, paginación dinámica, materiales, cantidades, pesos, valores y observaciones. La vista previa mantiene su escala en móvil, tablet y PC.
+Proyecto/salida tiene tres columnas: Proyecto de obra, Lugar de remisión y Ubicación del proyecto en la primera fila; Lugar de destino, Fecha de salida y Fecha de devolución en la segunda. Remitente y destinatario tienen contenedores independientes: el remitente coloca entrega y teléfono en dos columnas, con el cargo debajo; el destinatario conserva su lista. Transporte conserva su bloque y las tres firmas permanecen separadas. Se conserva A4, margen, medición del logo/cabecera, paginación dinámica, materiales, cantidades, pesos, valores y observaciones. La vista previa mantiene su escala en móvil, tablet y PC.
 
 ## Datos y verificación
 

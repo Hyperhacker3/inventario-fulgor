@@ -24,15 +24,15 @@ export function RemissionHeader({ remision: r }: { remision: Remision }) {
     <p className="rm-declaration">Constancia de entrega de los materiales relacionados a continuación, en las cantidades indicadas. Las novedades se registran en las observaciones.</p>
     <section className="rm-data-section rm-project" aria-label="Datos del proyecto y salida">
       <h2>Datos del proyecto y salida</h2><div className="rm-details">
-        <Field label="Proyecto de obra" value={r.proyectoNombre} /><Field label="Ubicación del proyecto" value={r.ubicacion} />
-        <Field label="Lugar de remisión" value={r.lugarRemision} /><Field label="Lugar de destino" value={r.lugarDestino || r.ubicacion} />
+        <Field label="Proyecto de obra" value={r.proyectoNombre} /><Field label="Lugar de remisión" value={r.lugarRemision} />
+        <Field label="Ubicación del proyecto" value={r.ubicacion} /><Field label="Lugar de destino" value={r.lugarDestino || r.ubicacion} />
         <Field label="Fecha de salida" value={date(details?.fechaDespacho) || date(r.fecha)} /><Field label="Fecha de devolución (si aplica)" value={date(details?.fechaDevolucion)} />
       </div>
     </section>
     <div className="rm-parties">
       <section className="rm-data-section rm-sender" aria-label="Datos del remitente"><h2>Datos del remitente</h2>
         <div className="rm-party-fields"><Field label="Entrega en bodega" value={r.entregadoPor} />
-          <Field label="Cargo de quien entrega" value={r.cargoEntregado} /><Field label="Teléfono del remitente" value={details?.telefonoRemite} />
+          <Field label="Teléfono del remitente" value={details?.telefonoRemite} /><Field label="Cargo de quien entrega" value={r.cargoEntregado} />
         </div>
       </section>
       <section className="rm-data-section rm-recipient" aria-label="Datos del destinatario"><h2>Datos del destinatario</h2>

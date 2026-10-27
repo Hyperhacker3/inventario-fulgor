@@ -4,6 +4,14 @@ Actualizado: **27 de octubre de 2026**, zona horaria America/Bogota.
 
 Este documento resume el estado para continuar en otro chat. Las secciones anteriores de `reports/verification.md` y `PLAN_REFACTORIZACION.md` son registros históricos; sus conteos y pendientes no sustituyen este estado actual.
 
+## Alineación de empresa y columnas de remisión
+
+La remisión dispone Proyecto y salida en tres columnas: primera fila Proyecto de obra / Lugar de remisión / Ubicación del proyecto; segunda fila Lugar de destino / Fecha de salida / Fecha de devolución. Remitente usa dos columnas: Entrega en bodega / Teléfono del remitente y debajo Cargo de quien entrega. Destinatario mantiene su disposición. La empresa central ocupa al menos los mismos 78 px de alto del logo, con fuente de 13 px (nombre 14 px) y distribución vertical del texto. Las líneas negras de la captura solo marcaban altura, no se incorporan al diseño. Se conservan el código, los datos y la paginación medida; sin SQL adicional.
+
+Solo cambia el documento compartido por vista previa e impresión. El centro mantiene altura mínima en vez de recortar datos largos; la cabecera se sigue midiendo para paginar. La comprobación de geometría física corresponde al usuario.
+
+Verificación de columnas y altura: typecheck, lint, 194 pruebas unitarias y 37 de integración (231) y build correctos con Node 22.23.3 / pnpm 11.19.0. No se añadieron pruebas para este ajuste de presentación. La revisión de altura visual, textos largos y paginación impresa queda con el usuario; no se utilizó automatización de navegador ni se modificó Supabase real.
+
 ## Código con ciudad del proyecto
 
 El código de las nuevas remisiones usa REM-ORIGEN-CIUDAD_DEL_PROYECTO-AAAAMMDD-CONSECUTIVO. La ciudad procede de la ubicación guardada en el proyecto y de su copia al emitir; Lugar de destino conserva la dirección de entrega y no se incluye en el código. Crear/editar proyectos pide Ciudad del proyecto, de hasta 80 caracteres y sin dirección ni departamento. No se transforman ubicaciones anteriores ni se deducen ciudades. La activación requiere que el usuario ejecute `20261027000100_project_city_remission_code.sql`; el formulario comprueba esa versión antes de emitir. Los códigos anteriores y sus reintentos permanecen intactos. [Uso y activación](ciudad-del-proyecto-remision.md).

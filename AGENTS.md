@@ -55,6 +55,8 @@ Estas instrucciones se aplican a todo el repositorio. Recogen las decisiones doc
 
 - El código nuevo de remisión toma la ciudad del snapshot del proyecto (ubicacion), nunca el texto de Lugar de destino. Crear/editar proyectos pide solo Ciudad del proyecto. No extraer ni inventar ciudades a partir de direcciones guardadas: se corrigen manualmente antes de nuevas salidas. Mantener códigos y reintentos anteriores; activar la migración de ciudad desde la cuenta del usuario y comprobar disponibilidad antes de emitir.
 
+- En el PDF, Proyecto y salida usa tres columnas, en orden: proyecto/origen/ubicación y destino/fecha de salida/fecha de devolución. Remitente usa dos columnas: entrega/teléfono, con cargo debajo; destinatario conserva su lista. El texto central de empresa se distribuye en al menos 78 px de altura como el logo, con fuente de 13 px y nombre de 14 px, sin añadir líneas de referencia ni recortar datos largos.
+
 ## Verificación
 
 - Antes de publicar cambios de la aplicación, ejecutar `pnpm typecheck`, `pnpm lint`, `pnpm test` y `pnpm build` y corregir los fallos relacionados con el cambio.
