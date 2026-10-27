@@ -26,7 +26,7 @@ async function type(host: HTMLElement, selector: string, value: string) {
   });
 }
 
-test('inline project creation requires a location, preserves failed drafts and blocks double saves until the created project is selected', async () => {
+test('inline project creation requires a city, preserves failed drafts and blocks double saves until the created project is selected', async () => {
   const inputs: ProjectInput[] = []; let fail = true;
   let finish!: (project: Proyecto) => void;
   function Form() {
@@ -45,19 +45,19 @@ test('inline project creation requires a location, preserves failed drafts and b
     await act(() => root.render(h(Form)));
     await type(host, '#dispatch-project-name', ' Bogotá ');
     await act(() => createButton().click());
-    assert.equal(inputs.length, 0); assert.match(host.querySelector('[role="alert"]')!.textContent!, /ubicación/);
-    await type(host, '#dispatch-project-location', '  Bogotá, Calle 10  ');
+    assert.equal(inputs.length, 0); assert.match(host.querySelector('[role="alert"]')!.textContent!, /ciudad/);
+    await type(host, '#dispatch-project-location', '  Bogotá  ');
     await act(async () => { createButton().click(); });
     assert.match(host.querySelector('[role="alert"]')!.textContent!, /Sin conexión/);
-    assert.equal(host.querySelector<HTMLInputElement>('#dispatch-project-location')!.value, '  Bogotá, Calle 10  ');
+    assert.equal(host.querySelector<HTMLInputElement>('#dispatch-project-location')!.value, '  Bogotá  ');
     fail = false;
     await act(() => { const button = createButton(); button.click(); button.click(); });
     assert.equal(inputs.length, 2); assert.equal(host.querySelector('fieldset')!.disabled, true);
-    assert.deepEqual(inputs[1], { nombre: 'Bogotá', ubicacion: 'Bogotá, Calle 10', cliente: '', estado: 'ACTIVO' });
+    assert.deepEqual(inputs[1], { nombre: 'Bogotá', ubicacion: 'Bogotá', cliente: '', estado: 'ACTIVO' });
     await act(async () => { finish({ ...inputs[1], id: 'P-1', createdAt: '2026-10-27' }); });
     assert.equal(host.querySelector<HTMLSelectElement>('#select-dispatch-project-value')!.value, 'P-1');
     assert.equal(host.querySelector('#dispatch-project-location'), null);
-    assert.match(host.textContent!, /Bogotá, Calle 10/);
+    assert.match(host.textContent!, /Bogotá/);
     assert.equal(host.querySelector('form')!.checkValidity(), true);
   } finally { await act(() => root.unmount()); host.remove(); }
 });

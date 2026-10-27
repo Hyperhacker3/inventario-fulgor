@@ -2,7 +2,7 @@ import { ProjectSelector } from './dispatch/ProjectSelector';
 import { DispatchPartiesFields } from './dispatch/DispatchPartiesFields';
 import { ShipmentDates, TransportFields } from './dispatch/TransportFields';
 import { emptyTransport } from '../domain/remissionTransport';
-import { useRemissionTransport, useUnitWeightDispatch, useOutgoingPhotos, useRemissionRoute } from '../state/useRemissionTransport';
+import { useRemissionTransport, useUnitWeightDispatch, useOutgoingPhotos, useRemissionRoute, useProjectCityRemission } from '../state/useRemissionTransport';
 import { RemissionRouteFields } from './dispatch/RemissionRouteFields';
 import { validateRemissionRoute } from '../domain/remissionRoute';
 import { formatKg, formatUnitWeight, lineWeightKg, totalWeight } from '../domain/weight';
@@ -16,6 +16,7 @@ import { OutgoingPhotoPicker } from './dispatch/OutgoingPhotoPicker';
 import { displayCargo } from '../domain/userProfile';
 import { useFormScroll } from '../hooks/useFormScroll';
 import { uppercaseName } from '../shared/uppercase';
+import { projectCityIssue } from '../domain/projectCity';
 
 export const DispatchView: React.FC = () => {
   const { ref: pageRef, onInvalidCapture, revealError, scrollToStart } = useFormScroll();
@@ -52,11 +53,15 @@ export const DispatchView: React.FC = () => {
   const transportQuery = useRemissionTransport();
   const routeQuery = useRemissionRoute();
   const routeReady = routeQuery.data === true && !routeQuery.isError;
+  const cityCodeQuery = useProjectCityRemission();
+  const cityCodeReady = cityCodeQuery.data === true && !cityCodeQuery.isError;
   const automaticQuery = useUnitWeightDispatch();
   const automaticReady = automaticQuery.data === true && !automaticQuery.isError;
   const transportReady = transportQuery.data === true && !transportQuery.isError;
 
   const effectiveProjectId = proyectos.some(p => p.id === selectedProyectoId && p.estado === 'ACTIVO') ? selectedProyectoId : '';
+  const projectCity = proyectos.find(project => project.id === selectedProyectoId)?.ubicacion || '';
+  const cityIssue = projectCityIssue(projectCity);
 
   // Total units in cart
   const weightSummary = totalWeight(dispatchCart.map(line => ({ pesoTotalKg: lineWeightKg(line.elemento.pesoUnitario, line.cantidad) })));
@@ -66,6 +71,7 @@ export const DispatchView: React.FC = () => {
     if (sending.current || photoBusy) return;
     reportError('');
     if (!routeReady) { reportError('Active la actualización de lugares y códigos de remisión antes de registrar la salida.'); return; }
+    if (!cityCodeReady) { reportError('Active la actualización del código con ciudad del proyecto antes de registrar la salida.'); return; }
     try { validateRemissionRoute(route); } catch (cause) { reportError(errorMessage(cause)); return; }
     if (!photosReady) { reportError('Active la actualización de registro fotográfico antes de registrar la salida.'); return; }
     if (!automaticReady) { reportError('Active la actualización del cálculo automático de peso antes de generar la remisión.'); return; }
@@ -79,6 +85,8 @@ export const DispatchView: React.FC = () => {
       reportError('Debe seleccionar el proyecto de destino.');
       return;
     }
+
+    if (!attempted && cityIssue) { reportError(`${cityIssue} Administración puede corregirla en Proyectos.`); return; }
 
     if (!recibidoPor.trim()) {
       reportError('Debe ingresar el destinatario de la remisión.');
@@ -162,7 +170,7 @@ export const DispatchView: React.FC = () => {
             <fieldset className="min-w-0 rounded-xl bg-slate-50 p-4 space-y-4">
               <legend className="text-sm font-bold text-[#253685]">Datos del proyecto y salida</legend>
               <ProjectSelector value={effectiveProjectId} onChange={setSelectedProyectoId} disabled={pending} />
-              <RemissionRouteFields value={route} onChange={setRoute} />
+              <RemissionRouteFields value={route} onChange={setRoute} projectCity={projectCity} />
               <ShipmentDates value={transport} onChange={setTransport} disabled={pending || !transportReady} />
             </fieldset>
             <DispatchPartiesFields sender={entregadoPor} onSenderChange={setEntregadoPor}
@@ -221,13 +229,14 @@ export const DispatchView: React.FC = () => {
             {!automaticReady && <p role="status" className="text-xs text-amber-700">El cálculo automático de peso requiere activar la actualización de Supabase. <button type="button" className="underline" onClick={() => { void automaticQuery.refetch(); }}>Comprobar de nuevo</button></p>}
             {!photosReady && <p role="status" className="text-xs text-amber-700">El registro fotográfico requiere activar la actualización de Supabase. <button type="button" className="underline" onClick={() => { void photoQuery.refetch(); }}>Comprobar de nuevo</button></p>}
             {!routeReady && <p role="status" className="text-xs text-amber-700">Los lugares y el nuevo código requieren activar la actualización de remisiones. <button type="button" className="underline" onClick={() => { void routeQuery.refetch(); }}>Comprobar de nuevo</button></p>}
+            {!cityCodeReady && <p role="status" className="text-xs text-amber-700">El código con ciudad del proyecto requiere activar la actualización de Supabase. <button type="button" className="underline" onClick={() => { void cityCodeQuery.refetch(); }}>Comprobar de nuevo</button></p>}
 
             {/* Primary Action Dispatch Button (Red Coral from Mockup Image 1) */}
             <button
               type="submit"
               id="btn-process-dispatch"
               data-action="dispatch"
-              disabled={dispatchCart.length === 0 || pending || photoBusy || !automaticReady || !photosReady || !routeReady}
+              disabled={dispatchCart.length === 0 || pending || photoBusy || !automaticReady || !photosReady || !routeReady || !cityCodeReady || (!attempted && !!cityIssue)}
               className={`w-full px-3 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all shadow-sm ${
                 dispatchCart.length > 0
                   ? 'bg-[#dd4c42] hover:bg-[#b12c26] active:scale-[0.98]'

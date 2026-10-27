@@ -7,6 +7,7 @@ import { FormDialog } from './ui/FormDialog';
 import { Presence } from './ui/Motion';
 import { useProjectSpending } from '../state/useProjectSpending';
 import { formatCOP } from '../domain/money';
+import { normalizeProjectCity, PROJECT_CITY_MAX } from '../domain/projectCity';
 
 const empty: ProjectInput = { nombre: '', cliente: '', ubicacion: '', estado: 'ACTIVO' };
 type ProjectProps = Pick<ReturnType<typeof useInventory>, 'proyectos' | 'user' | 'addProyecto' | 'updateProyecto' | 'addExampleProjects' | 'syncStatus'> & {
@@ -43,7 +44,8 @@ export function ProjectsManager({ embedded = false, proyectos, user, addProyecto
     event.preventDefault();
     if (!formOpen) return;
     void run(async () => {
-      if (editing) await updateProyecto(editing, form); else await addProyecto(form);
+      const values = { ...form, ubicacion: normalizeProjectCity(form.ubicacion) };
+      if (editing) await updateProyecto(editing, values); else await addProyecto(values);
       setFormOpen(false); setEditing(null); setForm(empty);
     }, 'Proyecto guardado en Supabase.');
   };
@@ -61,8 +63,10 @@ export function ProjectsManager({ embedded = false, proyectos, user, addProyecto
         {message && <p role="status" className="text-green-700">{message}</p>}
         <fieldset disabled={busy} className="grid sm:grid-cols-3 gap-4">
           {(['nombre', 'cliente', 'ubicacion'] as const).map(field => <label key={field} className="text-sm space-y-1">
-            <span className="block">{{ nombre: 'Nombre *', cliente: 'Cliente', ubicacion: 'Ubicación' }[field]}</span>
-            <input autoComplete="off" autoCorrect="off" spellCheck={false} required={field === 'nombre'} value={form[field]} onChange={event => setForm({ ...form, [field]: event.target.value })} className="border border-slate-300 rounded-lg p-3 w-full" />
+            <span className="block">{{ nombre: 'Nombre *', cliente: 'Cliente', ubicacion: 'Ciudad del proyecto *' }[field]}</span>
+            <input autoComplete="off" autoCorrect="off" spellCheck={false} required={field !== 'cliente'} maxLength={field === 'ubicacion' ? PROJECT_CITY_MAX : undefined}
+              placeholder={field === 'ubicacion' ? 'Solo ciudad, ej. Bogotá' : undefined}
+              value={form[field]} onChange={event => setForm({ ...form, [field]: event.target.value })} className="border border-slate-300 rounded-lg p-3 w-full" />
           </label>)}
         </fieldset>
         <div className="flex flex-wrap gap-4 items-center">
@@ -74,7 +78,7 @@ export function ProjectsManager({ embedded = false, proyectos, user, addProyecto
     {!proyectos.length && <p>{syncStatus === 'syncing' ? 'Cargando proyectos…' : 'No hay proyectos registrados. Añada uno para comenzar a registrar una salida.'}</p>}
     <div className="grid md:grid-cols-2 gap-4">{[...proyectos].sort((a, b) => a.nombre.localeCompare(b.nombre)).map(project => <article key={project.id} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
       <div className="flex justify-between gap-3"><h3 className="font-bold break-words">{project.nombre}</h3><span className={`text-xs shrink-0 ${project.estado === 'ACTIVO' ? 'text-green-700' : 'text-slate-500'}`}>{project.estado === 'ACTIVO' ? 'Activo' : 'Finalizado'}</span></div>
-      <p className="text-sm text-slate-600">Cliente: {project.cliente || 'Sin especificar'}<br />Ubicación: {project.ubicacion || 'Sin especificar'}</p>
+      <p className="text-sm text-slate-600">Cliente: {project.cliente || 'Sin especificar'}<br />Ciudad del proyecto: {project.ubicacion || 'Sin especificar'}</p>
       <div className="rounded-xl bg-[#f8fafc] p-3">
         <p className="text-xs text-slate-500">Gasto acumulado en material</p>
         <p className="text-xl font-bold text-[#253685] break-words mt-1">{spendingState === 'ready' ? formatCOP(costIndex.get(project.id)?.totalCOP || 0) : spendingState === 'loading' ? 'Consultando…' : 'No disponible'}</p>

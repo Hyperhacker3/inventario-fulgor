@@ -41,3 +41,14 @@ export function useRemissionRoute() {
     },
   });
 }
+
+export function useProjectCityRemission() {
+  const { user } = useAuth();
+  return useQuery({ queryKey: ['fulgor', user?.email, 'project-city-remission-ready'], staleTime: 60_000, retry: false,
+    queryFn: async () => {
+      const result = await requireSupabase().rpc('project_city_remission_ready');
+      if (result.error) throw new Error('El código con ciudad del proyecto requiere activar la actualización de Supabase.');
+      return result.data === true;
+    },
+  });
+}

@@ -24,6 +24,7 @@ import { displayCargo } from '../domain/userProfile';
 import { validateRemissionRoute, remissionDate, remissionCode, remissionSequence } from '../domain/remissionRoute';
 import { uppercaseName } from '../shared/uppercase';
 import { normalizeItemCondition } from '../domain/itemCondition';
+import { normalizeProjectCity } from '../domain/projectCity';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
 const newId = (prefix: string) => `${prefix}-DEMO-${crypto.randomUUID()}`;
@@ -131,6 +132,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     if (!retrying) validateDispatch(cart, data.elementos);
     const project = data.proyectos.find(p => p.id === payload.proyectoId);
     if (!project || !retrying && project.estado !== 'ACTIVO') throw new Error('Seleccione un proyecto válido.');
+    if (!retrying) normalizeProjectCity(project.ubicacion);
     if (!payload.recibidoPor.trim()) throw new Error('Indique quién recibe.');
     if (payload.datosTransporte) validateTransport(payload.datosTransporte, {});
     if (!isDemo) {
@@ -155,7 +157,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     const now = isoNow();
     const issuedDate = remissionDate(new Date(now));
     const sequence = Math.max(0, ...data.remisiones.map(rem => remissionSequence(rem.numeroRemision, issuedDate.slice(0, 4)))) + 1;
-    const remissionNumber = remissionCode(route, issuedDate, sequence);
+    const remissionNumber = remissionCode(route, issuedDate, sequence, project.ubicacion);
     const remission: Remision = {
       id: remissionNumber, numeroRemision: remissionNumber, proyectoId: project.id,
       ...route,

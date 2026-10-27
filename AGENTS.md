@@ -53,6 +53,8 @@ Estas instrucciones se aplican a todo el repositorio. Recogen las decisiones doc
 
 - Salidas separa proyecto/fechas, remitente (nombre, cargo y teléfono), destinatario (nombre y teléfono) y transportador/vehículo. Crear proyectos desde Salidas exige ubicación. PDF y tarjetas muestran el destinatario declarado, con cliente histórico como alternativa si no hay receptor; no duplicar Entregar a ni pedir cargo del receptor. La cabecera usa logo a la izquierda, empresa centrada y formato/fecha a la derecha, con código completo debajo a todo el ancho, alineado a la izquierda y fuente de 18 px. Remitente y destinatario tienen contenedores separados. Conservar campos históricos, snapshots y reintentos.
 
+- El código nuevo de remisión toma la ciudad del snapshot del proyecto (ubicacion), nunca el texto de Lugar de destino. Crear/editar proyectos pide solo Ciudad del proyecto. No extraer ni inventar ciudades a partir de direcciones guardadas: se corrigen manualmente antes de nuevas salidas. Mantener códigos y reintentos anteriores; activar la migración de ciudad desde la cuenta del usuario y comprobar disponibilidad antes de emitir.
+
 ## Verificación
 
 - Antes de publicar cambios de la aplicación, ejecutar `pnpm typecheck`, `pnpm lint`, `pnpm test` y `pnpm build` y corregir los fallos relacionados con el cambio.

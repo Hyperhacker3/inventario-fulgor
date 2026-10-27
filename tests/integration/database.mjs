@@ -19,6 +19,7 @@ const companyMigration = fs.readFileSync(new URL('../../supabase/migrations/2026
 const routeMigration = fs.readFileSync(new URL('../../supabase/migrations/20261007000200_remission_route.sql', import.meta.url), 'utf8');
 const uppercaseMigration = fs.readFileSync(new URL('../../supabase/migrations/20261007000300_uppercase_registration.sql', import.meta.url), 'utf8');
 const webpMigration = fs.readFileSync(new URL('../../supabase/migrations/20261010000100_webp_photos.sql', import.meta.url), 'utf8');
+const projectCityMigration = fs.readFileSync(new URL('../../supabase/migrations/20261027000100_project_city_remission_code.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 const warehouseProfile = fs.readFileSync(new URL('../../supabase/configure_warehouse_profile.sql', import.meta.url), 'utf8');
@@ -62,6 +63,70 @@ const itemStock = async db => Number((await db.query("SELECT cantidad FROM publi
 const routeSql = 'SELECT public.dispatch_inventory_with_route($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb,$11,$12) AS rem';
 const routeArgs = (request, origin = 'Honda', destination = 'Bogotá') => [request,'PROY-001','Entrega','Operador','Recibe','Residente','',
   JSON.stringify([{ elementoId:'ELM-001',cantidad:1 }]),'{}','[]',origin,destination];
+
+test('project city codes preserve previous records and retries, read the authoritative city and continue the annual counter', async () => {
+  const db = await database({ uppercase: true });
+  try {
+    await db.exec("INSERT INTO storage.buckets VALUES('item-images','item-images',false,8388608,ARRAY['image/jpeg'])");
+    await db.exec(webpMigration);
+    await db.exec("UPDATE public.proyectos SET ubicacion='Dirección anterior 123' WHERE id='PROY-001'");
+    await role(db,'operador');
+    const oldArgs = routeArgs('27000000-0000-0000-0000-000000000001','Honda','Destino anterior');
+    const old = (await db.query(routeSql,oldArgs)).rows[0].rem;
+    await asOwner(db);
+    const before = (await db.query('SELECT * FROM public.elementos ORDER BY id')).rows;
+    const projectsBefore = (await db.query('SELECT * FROM public.proyectos ORDER BY id')).rows;
+    await db.exec(projectCityMigration); await db.exec(projectCityMigration);
+    assert.deepEqual((await db.query('SELECT * FROM public.elementos ORDER BY id')).rows,before);
+    assert.deepEqual((await db.query('SELECT * FROM public.proyectos ORDER BY id')).rows,projectsBefore);
+    const oldRow=(await db.query('SELECT * FROM public.remisiones WHERE id=$1',[old.id])).rows[0];
+    assert.deepEqual({...oldRow,created_at:new Date(oldRow.created_at).toISOString()},{...old,created_at:new Date(old.created_at).toISOString()});
+    await db.exec("UPDATE public.proyectos SET ubicacion='Bogotá' WHERE id='PROY-001'");
+    await db.query("UPDATE public.elementos SET especificaciones=especificaciones||$1::jsonb WHERE id='ELM-001'", [JSON.stringify({peso_unitario:{valor:40,unidad:'g'},valor_unitario_cop:6500})]);
+    const request='27000000-0000-0000-0000-000000000002';
+    const photo='outgoing://00000000-0000-0000-0000-000000000001/'+request+'/27000000-0000-0000-0000-000000000003.webp';
+    await db.query("INSERT INTO storage.objects VALUES('outgoing-images',$1)",[photo.slice(11)]);
+    await role(db,'operador');
+    assert.equal((await db.query('SELECT public.project_city_remission_ready() AS ready')).rows[0].ready,true);
+    const args=routeArgs(request,'Honda','Calle 40 # 12-34, bodega principal'); args[9]=JSON.stringify([photo]);
+    const issued=(await db.query(routeSql,args)).rows[0].rem;
+    assert.equal(issued.numero_remision,'REM-HONDA-BOGOTA-'+issued.fecha.replaceAll('-','')+'-002');
+    assert.equal(issued.ubicacion,'BOGOTÁ'); assert.equal(issued.lugar_destino,'CALLE 40 # 12-34, BODEGA PRINCIPAL');
+    assert.deepEqual(issued.fotos_salida,[photo]); assert.equal(issued.items[0].pesoTotalKg,0.04);
+    assert.equal(issued.items[0].valorUnitarioCOP,6500); assert.equal(issued.empresa.nit,'800.176.581');
+    await asOwner(db); await db.exec("UPDATE public.proyectos SET ubicacion='Medellín', estado='FINALIZADO' WHERE id='PROY-001'");
+    await role(db,'operador');
+    assert.deepEqual((await db.query(routeSql,args)).rows[0].rem,issued);
+    assert.deepEqual((await db.query(routeSql,oldArgs)).rows[0].rem,old);
+    assert.equal(await itemStock(db),182);
+    const changed=[...args]; changed[11]='Otra dirección'; await assert.rejects(() => db.query(routeSql,changed),/otros lugares/);
+    await asOwner(db); await db.exec("UPDATE public.proyectos SET estado='ACTIVO' WHERE id='PROY-001'"); await role(db,'operador');
+    const third=(await db.query(routeSql,routeArgs('27000000-0000-0000-0000-000000000004','Honda','Bodega 999'))).rows[0].rem;
+    assert.equal(third.numero_remision,'REM-HONDA-MEDELLIN-'+third.fecha.replaceAll('-','')+'-003');
+    const history=(await db.query('SELECT motivo FROM public.historial WHERE remision_id=$1',[issued.id])).rows;
+    assert.equal(history[0].motivo,'Remisión '+issued.numero_remision);
+  } finally { await db.close(); }
+});
+
+test('project city validation rolls back stock, documents and counters, with unchanged write permissions and no destination fallback', async () => {
+  const db=await database({uppercase:true});
+  try {
+    await db.exec(projectCityMigration);
+    const args=routeArgs('27000000-0000-0000-0000-000000000005','Honda','Bogotá');
+    await db.exec('SET ROLE anon'); await assert.rejects(() => db.query(routeSql,args),/permission denied/);
+    await assert.rejects(() => db.exec('SELECT public.project_city_remission_ready()'),/permission denied/); await asOwner(db);
+    await role(db,'consulta'); await assert.rejects(() => db.query(routeSql,args),/No autorizado/); await asOwner(db);
+    for(const city of ['', 'Bogotá, Calle 10', 'Calle Real', 'Vía Honda-Mariquita', 'Bogotá # 12', '123','---','東京','a'.repeat(81)]) {
+      await db.query("UPDATE public.proyectos SET ubicacion=$1 WHERE id='PROY-001'",[city]);
+      await role(db,'operador'); await assert.rejects(() => db.query(routeSql,args),/solo la ciudad/);
+      assert.equal(await itemStock(db),184); assert.equal((await db.query('SELECT count(*) AS n FROM public.remisiones')).rows[0].n,0);
+      await asOwner(db); assert.equal((await db.query('SELECT count(*) AS n FROM public.remision_consecutivos')).rows[0].n,0);
+      assert.equal((await db.query('SELECT count(*) AS n FROM public.historial WHERE remision_id IS NOT NULL')).rows[0].n,0);
+    }
+    for(const city of ['San Andrés', 'São José', 'Bogotá D.C.', 'Santa Rosa de Cabal']) assert.equal((await db.query('SELECT public.normalize_project_city($1) AS city',[city])).rows[0].city,city);
+    assert.equal((await db.query("SELECT has_function_privilege('authenticated','public.dispatch_inventory_with_photos(uuid,text,text,text,text,text,text,jsonb,jsonb,jsonb)','execute') AS allowed")).rows[0].allowed,false);
+  } finally { await db.close(); }
+});
 
 test('WebP migration preserves inventory and permissions, supports secured outgoing evidence and preserves photo cleanup', async () => {
   const db = await database({ uppercase: true });

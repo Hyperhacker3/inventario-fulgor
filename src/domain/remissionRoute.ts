@@ -1,5 +1,6 @@
 import type { RemissionRoute } from '../types';
 import { calendarDate } from './calendar';
+import { normalizeProjectCity } from './projectCity';
 
 export const routeCodeSegment = (place: string) => place.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
   .replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -15,10 +16,10 @@ export function remissionDate(value = new Date()) {
   const part = (type: string) => parts.find(part => part.type === type)!.value;
   return `${part('year')}-${part('month')}-${part('day')}`;
 }
-export function remissionCode(route: RemissionRoute, date: string, sequence: number) {
+export function remissionCode(route: RemissionRoute, date: string, sequence: number, projectCity: string) {
   const normalized = validateRemissionRoute(route);
   if (!calendarDate(date) || !Number.isSafeInteger(sequence) || sequence < 1) throw new Error('Fecha o consecutivo de remisión inválido.');
-  return `REM-${routeCodeSegment(normalized.lugarRemision)}-${routeCodeSegment(normalized.lugarDestino)}-${date.replaceAll('-', '')}-${String(sequence).padStart(3, '0')}`;
+  return `REM-${routeCodeSegment(normalized.lugarRemision)}-${routeCodeSegment(normalizeProjectCity(projectCity))}-${date.replaceAll('-', '')}-${String(sequence).padStart(3, '0')}`;
 }
 export function remissionSequence(code: string, year: string) {
   const legacy = code.match(/^REM-(\d{4})-(\d+)$/);

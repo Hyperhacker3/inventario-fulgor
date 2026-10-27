@@ -71,6 +71,12 @@ test('project creation and editing use a closed-by-default dialog, keep failed d
     assert.equal(document.querySelector('input'), null);
     await act(() => button(host, 'Crear proyecto').click());
     await act(() => change(document.querySelector<HTMLInputElement>('input')!, 'Proyecto nuevo'));
+    const city = document.querySelectorAll<HTMLInputElement>('[role="dialog"] input')[2];
+    assert.equal(city.required, true); assert.equal(city.maxLength, 80);
+    await act(() => change(city, 'Calle 10 # 20-30'));
+    await act(async () => submit()); assert.equal(added, 0);
+    assert.match(document.querySelector('[role="dialog"] [role="alert"]')!.textContent!, /solo la ciudad/);
+    await act(() => change(city, 'Bogotá'));
     await act(() => { submit(); submit(); }); assert.equal(added, 1);
     assert.equal(document.querySelector<HTMLButtonElement>('[data-dialog-close]')!.disabled, true);
     await act(() => document.activeElement!.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));

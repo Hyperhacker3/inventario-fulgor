@@ -4,9 +4,9 @@ Actualizado el 27 de octubre de 2026.
 
 ## Crear o elegir proyecto
 
-Seleccione uno activo o escriba un nombre nuevo. Administración debe indicar también la ubicación antes de Crear y seleccionar; un error conserva el borrador y el guardado bloquea clics repetidos. La ubicación puede incluir ciudad y dirección de la obra. Los otros roles eligen proyectos existentes.
+Seleccione uno activo o escriba un nombre nuevo. Administración debe indicar también la ciudad antes de Crear y seleccionar; un error conserva el borrador y el guardado bloquea clics repetidos. El campo pide solo ciudad, sin dirección ni departamento. La dirección de entrega se indica en Lugar de destino. Los otros roles eligen proyectos existentes.
 
-Los proyectos anteriores no se modifican ni se les inventa una dirección. Si Bogotá u otro proyecto ya creado quedó vacío, administración puede completar Ubicación en Administración de datos → Proyectos → Editar. Las remisiones futuras toman esa ubicación; las ya emitidas conservan la copia anterior.
+Los proyectos anteriores no se modifican ni se les inventa una dirección. Si Bogotá u otro proyecto ya creado quedó vacío, administración puede completar Ciudad del proyecto en Administración de datos → Proyectos → Editar. Las remisiones futuras toman esa ubicación; las ya emitidas conservan la copia anterior.
 
 ## Completar la salida
 
@@ -25,7 +25,7 @@ Proyecto/salida, remitente y destinatario están identificados; los dos últimos
 
 ## Datos y verificación
 
-No requiere SQL nuevo. Se reutilizan recibido_por, cargo_entregado y telefonoRemite/telefonoRecibe del JSON datos_transporte, ya admitidos por las RPC. La app deja de enviar cargo_recibido desde el formulario nuevo; la RPC lo recibe vacío como antes cuando no se declaraba. No se eliminan columnas, datos ni mapeos históricos. No se alteran fotografías ni stock por este cambio y no se reconstruyen copias de empresa/proyecto a partir del estado actual.
+La separación de remitente y destinatario no requiere SQL. El código con ciudad del proyecto requiere la migración adicional descrita en [Código por ciudad](ciudad-del-proyecto-remision.md). Se reutilizan recibido_por, cargo_entregado y telefonoRemite/telefonoRecibe del JSON datos_transporte, ya admitidos por las RPC. La app deja de enviar cargo_recibido desde el formulario nuevo; la RPC lo recibe vacío como antes cuando no se declaraba. No se eliminan columnas, datos ni mapeos históricos. No se alteran fotografías ni stock por este cambio y no se reconstruyen copias de empresa/proyecto a partir del estado actual.
 
 Se prueban creación con ubicación, borradores y errores, doble guardado, roles, separación de teléfonos, conservación del resto de datos de transporte, receptor en tarjeta/PDF, cliente alternativo y reglas de alineación CSS. DOM y pruebas unitarias no miden geometría, cortes de página físicos ni contraste; la revisión visual e impresión quedan con el usuario. No se usa computer use ni automatización de navegador ni se generan salidas ficticias en producción.
 

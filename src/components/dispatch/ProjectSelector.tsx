@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { useInventory } from '../../context/InventoryContext';
 import type { Proyecto } from '../../types';
 import type { ProjectInput } from '../../state/useProjectActions';
+import { normalizeProjectCity, projectCityIssue, PROJECT_CITY_MAX } from '../../domain/projectCity';
 
 type Props = { value: string; onChange: (id: string) => void; disabled: boolean };
 export function ProjectSelector(props: Props) {
@@ -25,15 +26,15 @@ export function ProjectSelectorFields({ value, onChange, disabled, projects, can
   const create = async () => {
     if (creating.current || disabled || !canCreate) return;
     if (!name.trim()) { setError('Escriba el nombre del proyecto.'); return; }
-    if (!match && !location.trim()) {
-      setError('Escriba la ubicación del proyecto antes de crearlo.');
+    if (!match && projectCityIssue(location)) {
+      setError(projectCityIssue(location)!);
       locationInput.current?.focus();
       return;
     }
     creating.current = true;
     setBusy(true); setError('');
     try {
-      const project = match || await onCreate({ nombre: name.trim(), cliente: '', ubicacion: location.trim(), estado: 'ACTIVO' });
+      const project = match || await onCreate({ nombre: name.trim(), cliente: '', ubicacion: normalizeProjectCity(location), estado: 'ACTIVO' });
       onChange(project.id); setName(project.nombre); setLocation('');
     } catch (err) { setError(err instanceof Error ? err.message : 'No se pudo guardar el proyecto.'); }
     finally { creating.current = false; setBusy(false); }
@@ -52,14 +53,17 @@ export function ProjectSelectorFields({ value, onChange, disabled, projects, can
       <option value="">{active.length ? 'Seleccione un proyecto' : 'No hay proyectos activos'}</option>
       {active.map(project => <option key={project.id} value={project.id}>{project.nombre}{project.cliente ? ` (${project.cliente})` : ''}</option>)}
     </Select>
-    {selected && <p className="text-xs text-slate-600">Ubicación del proyecto: {selected.ubicacion || 'Sin ubicación registrada. Administración puede completarla en Proyectos.'}</p>}
+    {selected && <p className="text-xs text-slate-600">Ciudad del proyecto: {selected.ubicacion || 'Sin ciudad registrada.'}
+      {projectCityIssue(selected.ubicacion) && ' Administración debe indicar solo la ciudad en Proyectos antes de una nueva salida.'}
+    </p>}
     {name.trim() && !selected && (canCreate
       ? <div className="space-y-3">
-        <label htmlFor="dispatch-project-location" className="block text-xs font-bold">UBICACIÓN DEL PROYECTO *
-          <input ref={locationInput} id="dispatch-project-location" autoComplete="off" value={location} required maxLength={240}
-            onChange={event => { setLocation(event.target.value); setError(''); }} placeholder="Ciudad y dirección de la obra"
+        <label htmlFor="dispatch-project-location" className="block text-xs font-bold">CIUDAD DEL PROYECTO *
+          <input ref={locationInput} id="dispatch-project-location" autoComplete="off" value={location} required maxLength={PROJECT_CITY_MAX}
+            onChange={event => { setLocation(event.target.value); setError(''); }} placeholder="Ej. Bogotá"
             className="block w-full mt-1 rounded-lg p-3 text-sm" />
         </label>
+        <p className="text-xs text-slate-600">Solo la ciudad, sin dirección ni departamento.</p>
         <button type="button" onClick={() => { void create(); }} className="text-sm font-semibold text-[#253685]">{busy ? 'Guardando…' : `Crear y seleccionar «${name.trim()}»`}</button>
       </div>
       : <p className="text-xs text-slate-600">Seleccione un proyecto existente o solicite a administración que lo cree.</p>)}

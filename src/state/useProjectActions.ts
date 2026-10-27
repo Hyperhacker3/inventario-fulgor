@@ -4,6 +4,7 @@ import { insertRow, updateRow, unwrap } from '../data/repository';
 import { mapProyecto } from '../data/mappers';
 import { requireSupabase } from '../lib/supabase';
 import type { Proyecto } from '../types';
+import { normalizeProjectCity } from '../domain/projectCity';
 
 export type ProjectInput = Omit<Proyecto, 'id' | 'createdAt'>;
 export function useProjectActions() {
@@ -17,19 +18,20 @@ export function useProjectActions() {
     client.setQueryData<Proyecto[]>(key, previous => [project, ...(previous || []).filter(p => p.id !== project.id)]);
     void client.invalidateQueries({ queryKey: ['fulgor', user?.email || '', 'project-spending'] });
   };
-  const values = (input: ProjectInput) => {
+  const values = (input: ProjectInput, validateCity: boolean) => {
     if (!input.nombre.trim()) throw new Error('Escriba el nombre del proyecto.');
-    return { nombre: input.nombre.trim(), cliente: input.cliente.trim(), ubicacion: input.ubicacion.trim(), estado: input.estado };
+    return { nombre: input.nombre.trim(), cliente: input.cliente.trim(), ubicacion: validateCity ? normalizeProjectCity(input.ubicacion) : input.ubicacion.trim(), estado: input.estado };
   };
   const addProyecto = async (input: ProjectInput) => {
     requireAdmin();
-    const project = await insertRow('proyectos', { id: `PROY-${crypto.randomUUID()}`, ...values(input) }, mapProyecto);
+    const project = await insertRow('proyectos', { id: `PROY-${crypto.randomUUID()}`, ...values(input, true) }, mapProyecto);
     remember(project);
     return project;
   };
   const updateProyecto = async (id: string, input: ProjectInput) => {
     requireAdmin();
-    const project = await updateRow('proyectos', id, values(input), mapProyecto);
+    const previous = client.getQueryData<Proyecto[]>(key)?.find(project => project.id === id);
+    const project = await updateRow('proyectos', id, values(input, !previous || previous.ubicacion !== input.ubicacion), mapProyecto);
     remember(project);
     return project;
   };

@@ -26,7 +26,7 @@ export const helpGuide = [
   ] },
   { title: 'Preparar una salida', items: [
     'Use el carrito rojo para agregar un producto a Salidas. En cuadrícula está sobre la foto, abajo a la derecha. Revise cantidades, disponibilidad y materiales; puede quitar productos antes de confirmar.',
-    'Seleccione proyecto, origen, destino y fechas. Crear un proyecto desde Salidas pide nombre y ubicación. Complete Datos del remitente (entrega en bodega, cargo y teléfono), Datos del destinatario (nombre y teléfono) y Datos del transportador y vehículo (nombre, cédula, teléfono y placa). El destinatario aparece como Cliente / destinatario en la remisión. Los nombres y lugares se registran en mayúsculas.',
+    'Seleccione proyecto, origen, destino y fechas. Crear un proyecto desde Salidas pide nombre y ciudad, sin dirección ni departamento. El código usa la ciudad del proyecto; Lugar de destino permite indicar la dirección de entrega. Complete Datos del remitente (entrega en bodega, cargo y teléfono), Datos del destinatario (nombre y teléfono) y Datos del transportador y vehículo (nombre, cédula, teléfono y placa). El destinatario aparece como Cliente / destinatario en la remisión. Los nombres y lugares se registran en mayúsculas.',
     'Las fotos son opcionales. Puede subir varios archivos o capturar varias seguidas: Capturar, revisar y Añadir y tomar otra; Añadir y terminar guarda la última y cierra. Repetir descarta solo la vista previa. Terminar conserva las fotos añadidas.',
     'Registrar salida y generar remisión confirma el descuento de stock y crea el documento. Agregar al carrito no descuenta unidades. Si falla la operación, se conservan los datos para corregir o reintentar.',
   ] },
@@ -36,14 +36,14 @@ export const helpGuide = [
     'Capturar ocupa toda su fila en móvil. Use Elegir archivo si la cámara no está disponible. Las imágenes pendientes se conservan durante la sesión; solo la elección de cámara se guarda como preferencia local.',
   ] },
   { title: 'Remisiones e historial', items: [
-    'Remisiones muestra código, fecha, proyecto, destinatario y número de materiales de salida. La cabecera de cada tarjeta incluye PDF y Fotos. El código sigue REM-ORIGEN-DESTINO-AAAAMMDD-006, con consecutivo anual.',
+    'Remisiones muestra código, fecha, proyecto, destinatario y número de materiales de salida. La cabecera de cada tarjeta incluye PDF y Fotos. El código sigue REM-ORIGEN-CIUDAD-AAAAMMDD-006, con la ciudad guardada en el proyecto y consecutivo anual.',
     'El PDF coloca el logo a la izquierda, los datos de empresa centrados y formato/fecha a la derecha. Debajo muestra el código completo alineado a la izquierda. Proyecto, remitente y destinatario tienen bloques separados, sin Entregar a duplicado. Conserva materiales, pesos, transporte, firmas y datos de emisión aunque después cambie el producto o la empresa.',
     'Historial permite consultar y filtrar movimientos. Los movimientos recientes del detalle también permiten abrir PDF y Fotos de sus salidas. El registro fotográfico tiene su propia galería y queda fuera del PDF.',
   ] },
   { title: 'Administración de datos', items: [
     'Reúne Códigos, Categorías, Almacenes, Estanterías, Niveles, Cajas, Proyectos, Archivados y Empresa. Cada sección tiene su propio color y la misma selección hundida que la navegación.',
     'Las ubicaciones usan tarjetas con código, nombre, valor total, valor del material dañado y Editar. Cree o edite almacén → estantería → nivel → caja. Las cajas anteriores sin nivel pueden asignarse al editar.',
-    'Gestione prefijos y categorías para nuevas altas, y cree, edite, finalice o reactive proyectos. Empresa permite cambiar nombre, NIT, logo, dirección y teléfono; el logo también aparece en la navegación.',
+    'Gestione prefijos y categorías para nuevas altas, y cree, edite, finalice o reactive proyectos indicando solo su ciudad como ubicación. Empresa permite cambiar nombre, NIT, logo, dirección y teléfono; el logo también aparece en la navegación.',
   ] },
   { title: 'Archivar, recuperar y permisos', items: [
     'Archivar abre una confirmación con el estilo de la aplicación y retira el producto del inventario activo. En Administración de datos → Archivados puede abrirlo y Desarchivar conservando código, cantidades, fotos e historial.',

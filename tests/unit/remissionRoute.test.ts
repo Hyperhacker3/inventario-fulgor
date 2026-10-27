@@ -8,6 +8,7 @@ import { remissionCode, remissionDate, remissionSequence, validateRemissionRoute
 import { RemissionRouteFields } from '../../src/components/dispatch/RemissionRouteFields';
 import { RemissionHeader, RemissionTable } from '../../src/components/remission/RemissionSections';
 import { mapRemision } from '../../src/data/mappers';
+import { normalizeProjectCity, projectCityIssue } from '../../src/domain/projectCity';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://app.test/' });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement,
@@ -17,8 +18,8 @@ const { createRoot } = await import('react-dom/client');
 test('route codes preserve display places, normalize code accents/spaces and use Bogotá emission date with an annual non-truncated sequence', () => {
   const route = validateRemissionRoute({ lugarRemision: ' Honda  ', lugarDestino: ' Bogotá   D.C. ' });
   assert.deepEqual(route, { lugarRemision: 'Honda', lugarDestino: 'Bogotá D.C.' });
-  assert.equal(remissionCode(route, '2026-10-07', 6), 'REM-HONDA-BOGOTA-D-C-20261007-006');
-  assert.equal(remissionCode({ lugarRemision: 'São José', lugarDestino: 'Bogotá' }, '2026-10-07', 1000), 'REM-SAO-JOSE-BOGOTA-20261007-1000');
+  assert.equal(remissionCode(route, '2026-10-07', 6, 'Bogotá D.C.'), 'REM-HONDA-BOGOTA-D-C-20261007-006');
+  assert.equal(remissionCode({ lugarRemision: 'São José', lugarDestino: 'Bogotá' }, '2026-10-07', 1000, 'Bogotá'), 'REM-SAO-JOSE-BOGOTA-20261007-1000');
   assert.equal(remissionDate(new Date('2027-01-01T02:00:00Z')), '2026-12-31');
   assert.equal(remissionDate(new Date('2027-01-01T05:00:00Z')), '2027-01-01');
   assert.equal(remissionSequence('REM-2026-0005', '2026'), 5);
@@ -27,13 +28,13 @@ test('route codes preserve display places, normalize code accents/spaces and use
   assert.throws(() => validateRemissionRoute({ lugarRemision: ' ', lugarDestino: 'Bogotá' }), /Lugar de remisión/);
   assert.throws(() => validateRemissionRoute({ lugarRemision: 'Honda', lugarDestino: '---' }), /Lugar de destino/);
   assert.throws(() => validateRemissionRoute({ lugarRemision: 'a'.repeat(81), lugarDestino: 'Bogotá' }), /80 caracteres/);
-  assert.throws(() => remissionCode(route, '2026-02-30', 1), /inválido/);
+  assert.throws(() => remissionCode(route, '2026-02-30', 1, 'Bogotá'), /inválido/);
 });
 
 test('departure asks for both required places, retains their text on refresh, and respects disabled forms', async () => {
   function Field() {
-    const [route, setRoute] = useState({ lugarRemision: 'Honda', lugarDestino: 'Bogotá' });
-    return h('form', null, h(RemissionRouteFields, { value: route, onChange: setRoute }));
+    const [route, setRoute] = useState({ lugarRemision: 'Honda', lugarDestino: 'Calle 40 # 12-34, bodega principal' });
+    return h('form', null, h(RemissionRouteFields, { value: route, onChange: setRoute, projectCity: 'Bogotá' }));
   }
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
   try {
@@ -42,10 +43,25 @@ test('departure asks for both required places, retains their text on refresh, an
     assert.equal(inputs.length, 2); assert.ok(inputs.every(input => input.required && input.maxLength === 80));
     assert.equal(host.querySelector('form')!.checkValidity(), true);
     assert.match(host.textContent!, /REM-HONDA-BOGOTA-\d{8}-…/);
+    assert.doesNotMatch(host.querySelector('p')!.textContent!, /CALLE-40/);
+    assert.equal(inputs[1].value, 'Calle 40 # 12-34, bodega principal');
     await act(() => root.render(h(Field))); assert.equal(host.querySelector<HTMLInputElement>('input')!.value, 'Honda');
     await act(() => root.render(h('fieldset', { disabled: true }, h(Field))));
     assert.ok([...host.querySelectorAll('input')].every(input => input.matches(':disabled')));
   } finally { await act(() => root.unmount()); host.remove(); }
+});
+
+test('the project city drives the code independently of the delivery address, with city-only validation and no destination fallback', () => {
+  assert.equal(normalizeProjectCity('  San   Andrés  '), 'San Andrés');
+  assert.equal(normalizeProjectCity('Bogota\u0301'), 'Bogotá');
+  for (const city of ['Bogotá D.C.', 'Santa Rosa de Cabal', 'São José', 'San Andrés']) assert.equal(projectCityIssue(city), null);
+  const route = { lugarRemision: 'Honda', lugarDestino: 'Calle 10 # 20-30, bodega del cliente' };
+  assert.equal(remissionCode(route, '2026-10-27', 8, 'Bogotá'), 'REM-HONDA-BOGOTA-20261027-008');
+  assert.equal(remissionCode({ ...route, lugarDestino: 'Otra dirección 123' }, '2026-10-27', 8, 'Bogotá'), 'REM-HONDA-BOGOTA-20261027-008');
+  for (const city of ['', 'Bogotá, Calle 10', 'Calle Real', 'Vía Honda-Mariquita', 'Bogotá # 12', '123', '---', '東京', 'a'.repeat(81)]) {
+    assert.ok(projectCityIssue(city));
+    assert.throws(() => remissionCode(route, '2026-10-27', 8, city), /ciudad/);
+  }
 });
 
 test('printed route retains historic destinations, places unit weights next to totals, and aligns the document above with inherited NIT type', () => {
