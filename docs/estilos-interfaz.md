@@ -6,6 +6,8 @@ Actualizado el 8 de octubre de 2026. **Neumorfismo es el único estilo de la apl
 
 ## Decisiones vigentes
 
+Ayuda y guía abre en un portal por encima del menú móvil y muestra solo los títulos en mayúsculas, inicialmente cerrados. Cada título es un botón desplegable independiente, con indicador, foco de teclado y contenido desplazable; conserva toda la guía. La restauración de navegación ignora eventos atrasados para el hash actual, evitando que cierren una ventana recién abierta al cerrar el menú; los cambios reales de ruta, Escape, X y Retroceder conservan su comportamiento.
+
 Editar producto tiene su propia ventana sobre el detalle, de ancho adaptable y hasta dos columnas en el formulario. La cabecera con lápiz y X permanece fuera de su scroll, que empieza arriba. El detalle conserva fotografía, datos, stock, cinco acciones e historial, junto con su posición de desplazamiento, y queda inactivo bajo la edición. Los controles de Cancelar/Guardar pertenecen solo al editor; los cinco botones siguen en la ficha. X, Cancelar, fondo, Escape y Retroceder cierran la edición con 360 ms y devuelven el detalle. Un guardado pendiente bloquea cierres y un error mantiene el borrador y el mensaje dentro del editor.
 
 Las acciones del detalle conservan la sombra interior y el icono relleno mientras su ventana esté abierta; al cerrarla vuelven al reposo. La selección depende del producto y del tipo de ventana, sin persistir después de confirmar/cancelar. La fila de cinco acciones permanece durante edición, con las otras operaciones bloqueadas para proteger el borrador. El cierre de ventanas, portales, selectores y menú móvil dura 360 ms; apertura, botones y cambios de pantalla mantienen 180 ms. Presence conserva el contenido durante todo el cierre y desactiva interacción inmediatamente; movimiento reducido elimina la espera.
@@ -121,6 +123,8 @@ La cabecera retira el acceso Supabase Activo. El avatar conserva la identidad de
 Empresa añade un formulario de dos columnas en escritorio y una en móvil, con campos de 44 px y logo sin contorno. El logo cargado conserva su proporción, transparencia y colores; solo el logo monocromo original se adapta al oscuro. La remisión imprime nombre, NIT y contactos centrados en cada página, separados del logo a la izquierda y formato/fecha a la derecha; el código va debajo a todo el ancho y se mide la altura para la paginación. Se conserva la copia de empresa de cada documento al emitirlo. Activación y uso en `docs/datos-empresa.md`.
 
 ## Implementación y verificación
+
+Verificación de Ayuda (28 de octubre): typecheck, lint, 205 pruebas unitarias y 39 de integración (244 en total), y build correctos con Node 22.23.3 / pnpm 11.19.0. Dos pruebas nuevas cubren títulos cerrados/mayúsculas, expansión independiente, foco/teclado, portal y apertura desde menú con carga diferida. La regresión de evento de hash sin cambio de ruta fallaba antes del guard y pasa después; se conserva Retroceder y la restauración de rutas reales. Es una simulación DOM, no una reproducción visual en el dispositivo: comprobación móvil y de animación pendiente del usuario. Sin SQL ni cambios en Supabase.
 
 Salidas y remisiones (27 de octubre): typecheck, lint, 193 pruebas unitarias + 35 de integración (228) y build correctos. La revisión visual sigue con el usuario. Detalles en [Remitente y destinatario](remitente-destinatario-remisiones.md).
 

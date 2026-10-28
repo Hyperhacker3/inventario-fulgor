@@ -4,6 +4,8 @@ Aplicación de inventario fotovoltaico con React, TypeScript, Vite y Supabase. I
 
 ## Estado actual y continuidad
 
+Ayuda y guía abre en un portal por encima del menú móvil y muestra solo los títulos en mayúsculas, inicialmente cerrados. Cada título es un botón desplegable independiente, con indicador, foco de teclado y contenido desplazable; conserva toda la guía. La restauración de navegación ignora eventos atrasados para el hash actual, evitando que cierren una ventana recién abierta al cerrar el menú; los cambios reales de ruta, Escape, X y Retroceder conservan su comportamiento.
+
 Informes incorpora filtros de almacén, estantería, nivel y caja, con limpieza de filtros dependientes y selección conservada. Nuevo informe guarda una copia inmutable en Supabase antes de abrir el PDF; Historial de informes permite consultar y volver a imprimir copias anteriores. La activación requiere ejecutar `supabase/migrations/20261028000100_inventory_report_history.sql` desde la cuenta del usuario. Hasta activarla, el formulario permite filtrar/seleccionar, pero no generar informes sin historial. No modifica inventario, movimientos ni remisiones.
 
 El nombre del producto aparece primero y con mayor tamaño en las tarjetas y el PDF. La columna Producto ocupa el 28 % del ancho y el nombre se imprime en negrita a 11 px, sin recortar textos largos. Se retira la condición/estado y se omite la línea de peso por unidad cuando no está declarado; el resumen conserva la indicación de pesos parciales para no presentar datos incompletos como totales completos.

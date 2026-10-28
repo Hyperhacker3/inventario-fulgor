@@ -4,6 +4,12 @@ Actualizado: **28 de octubre de 2026**, zona horaria America/Bogota.
 
 Este documento resume el estado para continuar en otro chat. Las secciones anteriores de `reports/verification.md` y `PLAN_REFACTORIZACION.md` son registros históricos; sus conteos y pendientes no sustituyen este estado actual.
 
+## Ayuda móvil y secciones desplegables
+
+Verificación de Ayuda (28 de octubre): typecheck, lint, 205 pruebas unitarias y 39 de integración (244 en total), y build correctos con Node 22.23.3 / pnpm 11.19.0. Dos pruebas nuevas cubren títulos cerrados/mayúsculas, expansión independiente, foco/teclado, portal y apertura desde menú con carga diferida. La regresión de evento de hash sin cambio de ruta fallaba antes del guard y pasa después; se conserva Retroceder y la restauración de rutas reales. Es una simulación DOM, no una reproducción visual en el dispositivo: comprobación móvil y de animación pendiente del usuario. Sin SQL ni cambios en Supabase.
+
+Ayuda y guía abre en un portal por encima del menú móvil y muestra solo los títulos en mayúsculas, inicialmente cerrados. Cada título es un botón desplegable independiente, con indicador, foco de teclado y contenido desplazable; conserva toda la guía. La restauración de navegación ignora eventos atrasados para el hash actual, evitando que cierren una ventana recién abierta al cerrar el menú; los cambios reales de ruta, Escape, X y Retroceder conservan su comportamiento.
+
 ## Informes de inventario
 
 Verificación de filtros e historial (28 de octubre): typecheck, lint, 203 pruebas unitarias y 39 de integración (242), y build correctos con Node 22.23.3 / pnpm 11.19.0. Las pruebas nuevas cubren cascada de ubicación, selección conservada, paginación/reapertura, errores, reintentos sin duplicados, permisos de los tres roles, acceso anónimo rechazado, inmutabilidad, repetición de migración, más de 1000 filas y stock/movimientos/remisiones intactos. Se corrigió la búsqueda del botón con icono en una prueba nueva; la suite completa posterior pasó. La migración se ensayó en PGlite, no se ejecutó en Supabase real. Revisión visual con el usuario, sin automatización de navegador.

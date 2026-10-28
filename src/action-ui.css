@@ -14,6 +14,9 @@
   :root[data-ui-style] .item-detail-data dt, :root[data-ui-style] .item-detail-stock span { color: var(--ui-ink) !important; text-transform: uppercase; font-weight: 600; }
   :root[data-ui-style] .item-detail-data dd, :root[data-ui-style] .item-detail-stock strong { color: var(--ui-action) !important; }
   :root[data-ui-style] button.ui-sidebar-action { transform: none !important; }
+  :root[data-ui-style] button.help-topic-toggle[aria-expanded='true'] {
+    background-color: var(--ui-surface) !important; box-shadow: var(--ui-inset-shadow) !important; color: var(--ui-action) !important;
+  }
   :root[data-ui-style] .item-detail-actions > button { transform: none !important; }
   .ui-modal-layer[data-motion-open='false'] { animation: ui-backdrop-close var(--ui-close-duration) ease both; pointer-events: none; }
   .ui-modal-layer[data-motion-open='false'] .ui-panel-enter { animation: ui-open var(--ui-close-duration) ease reverse both; pointer-events: none; }

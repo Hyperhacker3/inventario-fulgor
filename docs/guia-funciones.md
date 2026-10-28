@@ -2,6 +2,8 @@
 
 Actualizada el 28 de octubre de 2026. Esta guía coincide con Ayuda y guía dentro de la aplicación. La instalación y activación técnica se documentan por separado en README y en las guías de administración.
 
+Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título para desplegar su contenido y vuelva a tocarlo para ocultarlo; puede mantener varios abiertos. La X, Escape o Retroceder cierran la ayuda.
+
 ## Inicio y notificaciones
 
 - Consulte el resumen de existencias, valores del inventario, material dañado y proyectos. La campana reúne alertas de stock agotado o por debajo del mínimo configurado.

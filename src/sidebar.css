@@ -53,7 +53,7 @@
 }
 @media screen and (hover: hover) and (pointer: fine) {
   :root[data-ui-style] button.ui-sidebar-action:hover:not(:disabled):not(:active):not([aria-current='page']),
-  :root[data-ui-style] button.ui-flat-choice:hover:not(:disabled):not(:active):not([aria-pressed='true']):not([aria-selected='true']) {
+  :root[data-ui-style] button.ui-flat-choice:hover:not(:disabled):not(:active):not([aria-pressed='true']):not([aria-selected='true']):not([aria-expanded='true']) {
     background-color: var(--ui-subtle) !important;
     box-shadow: var(--ui-control-shadow) !important;
     --ui-sidebar-ink: var(--ui-action);

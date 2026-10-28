@@ -45,6 +45,7 @@ Estas instrucciones se aplican a todo el repositorio. Recogen las decisiones doc
 - Conservar búsqueda, filtros por stock, condición y ubicación, selección de varias categorías, orden por actividad y paginación. La preferencia lista/cuadrícula debe recordarse.
 - Estados actuales: BUENO, REGULAR, MALO, EN REPARACIÓN y RETAZOS. Usar la normalización compartida: MEDIO → REGULAR, OBSOLETO/MAL ESTADO → MALO y RETAL/RETAZOS / BUENO → RETAZOS; no realizar una migración masiva por un cambio visual.
 - Conservar navegación e historial del navegador, formularios al cambiar de pestaña, ventanas anidadas y cierre de la capa superior con Retroceder. Los cierres respetan operaciones pendientes.
+- Ayuda abre por encima del menú móvil, con títulos en mayúsculas y secciones inicialmente cerradas que se despliegan de forma independiente. Conservar contenido, accesibilidad de botones, foco, Escape/Retroceder y cierre animado. Los eventos de historial sin cambio real de hash no deben cerrar ventanas nuevas.
 - Mantener navegación móvil superpuesta, cierre exterior, espacio para la barra inferior y tratamiento del teclado.
 - Mostrar el spinner global solo durante el arranque inicial; los cambios de pantalla no deben volver a ocultar la aplicación con él.
 - Conservar selección de texto y acceso por teclado en productos clicables; las acciones internas deben seguir siendo independientes.

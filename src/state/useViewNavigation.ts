@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useEffect, useState } from 'react';
+import { startTransition, useCallback, useEffect, useRef, useState } from 'react';
 import type { ActiveView } from '../types';
 import { navigateWithDialogs } from '../shared/dialogHistory';
 
@@ -12,9 +12,14 @@ export function viewFromHash(hash: string): ActiveView {
 export function useViewNavigation(onRestore?: () => void) {
   const [activeView, setView] = useState(() => viewFromHash(window.location.hash));
   const [navigationView, setNavigationView] = useState(activeView);
+  const routeHash = useRef(window.location.hash || '#/dashboard');
   useEffect(() => {
     if (!window.location.hash) window.history.replaceState(null, '', '#/dashboard');
     const restore = () => {
+      // Dialog/menu history cleanup can emit a late event for the current route.
+      // Only a real route change should dismiss a newly opened overlay.
+      if (routeHash.current === window.location.hash) return;
+      routeHash.current = window.location.hash;
       const view = viewFromHash(window.location.hash);
       setNavigationView(view);
       startTransition(() => setView(view));
@@ -29,6 +34,7 @@ export function useViewNavigation(onRestore?: () => void) {
   }, [onRestore]);
   const setActiveView = useCallback((view: ActiveView) => {
     if (viewFromHash(window.location.hash) !== view) navigateWithDialogs(window, `#/${view}`);
+    routeHash.current = window.location.hash;
     setNavigationView(view);
     startTransition(() => setView(view));
   }, []);
