@@ -16,4 +16,10 @@
 .ir-table .ir-product-code { color: #253685; font-weight: 600; }
 .ir-summary-line { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 16px; padding: 7px 10px; background: #f5f7fc; border-bottom: 1px solid #e1e6f0; font-size: 10px; overflow-wrap: anywhere; }
 .ir-summary-line > span { text-align: right; }
-@media print { .ir-table tr, .ir-summary-line { break-inside: avoid; } }
+@media print {
+  .ir-table tr, .ir-summary-line { break-inside: avoid; }
+  /* Preserve cell clipping against the global print overflow reset. */
+  .print-layer .ir-table td { overflow: hidden !important; }
+  .print-layer .ir-table .ir-cell { overflow: hidden !important; max-height: 35px !important; }
+  .print-layer .ir-table .ir-cell-text { overflow: hidden !important; max-height: 32px !important; }
+}

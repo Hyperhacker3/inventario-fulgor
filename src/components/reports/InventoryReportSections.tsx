@@ -24,7 +24,7 @@ function ReportCell({ value, className, children, multiline = false }: { value: 
 }
 
 export function InventoryReportTable({ report, indices }: { report: InventoryReport; indices: number[] }) {
-  return <table className="ir-table"><colgroup>{[4, 7, 41, 7, 7, 9, 7, 18].map((width, index) => <col key={index} style={{ width: `${width}%` }} />)}</colgroup>
+  return <table className="ir-table"><colgroup>{[4, 7, 39, 9, 7, 9, 7, 18].map((width, index) => <col key={index} style={{ width: `${width}%` }} />)}</colgroup>
     <thead><tr><th>#</th><th>CÓDIGO</th><th>PRODUCTO</th><th>MARCA</th><th>CANTIDAD</th><th>VALOR UND</th><th>PESO UND</th><th>UBICACIÓN</th></tr></thead>
     <tbody>{indices.map(index => {
       const row = report.rows[index];
@@ -32,7 +32,7 @@ export function InventoryReportTable({ report, indices }: { report: InventoryRep
       return <tr data-report-row key={row.id}>
         <ReportCell value={String(index + 1)} /><ReportCell value={row.code} className="ir-product-code" />
         <ReportCell value={`${row.name}${damage}`} multiline><strong className="ir-product-name">{row.name}</strong>{damage && <small>{damage}</small>}</ReportCell>
-        <ReportCell value={row.brand || '—'} />
+        <ReportCell value={row.brand || '—'} multiline />
         <ReportCell value={row.quantity === null ? 'Pendiente' : `${reportQuantity(row.quantity)} ${row.unit}`} />
         <ReportCell value={formatCOP(row.unitValueCOP)} /><ReportCell value={row.unitWeight ? formatUnitWeight(row.unitWeight) : '—'} /><ReportCell value={row.location} multiline />
       </tr>;
