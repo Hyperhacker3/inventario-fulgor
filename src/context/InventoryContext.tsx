@@ -13,6 +13,7 @@ import { locationLabel, available, byId } from '../domain/inventory';
 import { MIN_QUANTITY, roundQuantity, validQuantity } from '../domain/quantity';
 import { isDemo } from '../lib/supabase';
 import type { DispatchCartItem, Elemento, Remision } from '../types';
+import type { InventoryReport } from '../domain/inventoryReport';
 import { INITIAL_ALMACENES, INITIAL_CAJAS, INITIAL_ELEMENTOS, INITIAL_ESTANTERIAS, INITIAL_HISTORIAL, INITIAL_PROYECTOS, INITIAL_REMISIONES } from '../data/initialData';
 
 type CartLine = { elementoId: string; cantidad: number };
@@ -35,6 +36,9 @@ function useInventoryValue() {
   const [globalSearch, setGlobalSearch] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [selectedRemisionForPdf, setSelectedRemisionForPdf] = useState<Remision | null>(null);
+  const [reportItemIds, setReportItemIds] = useState<string[]>([]);
+  const [reportFilters, setReportFilters] = useState({ search: '', category: '', warehouse: '', onlySelected: false, page: 1 });
+  const [selectedInventoryReport, setSelectedInventoryReport] = useState<InventoryReport | null>(null);
   const [selectedOutgoingPhotosId, setSelectedOutgoingPhotosId] = useState<string | null>(null);
   const [quickMovementId, setQuickMovementId] = useState<string | null>(null);
   const [quickMovementType, setQuickMovementType] = useState<'ENTRADA' | 'AJUSTE'>('ENTRADA');
@@ -49,6 +53,7 @@ function useInventoryValue() {
   const closeNavigationOverlays = useCallback(() => {
     setSelectedItemId(null);
     setSelectedRemisionForPdf(null);
+    setSelectedInventoryReport(null);
     setSelectedOutgoingPhotosId(null);
     setQuickMovementId(null);
     setIsHelpModalOpen(false);
@@ -102,6 +107,8 @@ function useInventoryValue() {
   const closeItemDetail = useCallback(() => setSelectedItemId(null), []);
   const openPdfRemision = useCallback((remission: Remision) => setSelectedRemisionForPdf(remission), []);
   const closePdfRemision = useCallback(() => setSelectedRemisionForPdf(null), []);
+  const openInventoryReport = useCallback((report: InventoryReport) => setSelectedInventoryReport(report), []);
+  const closeInventoryReport = useCallback(() => setSelectedInventoryReport(null), []);
   const openOutgoingPhotos = useCallback((id: string) => setSelectedOutgoingPhotosId(id), []);
   const closeOutgoingPhotos = useCallback(() => setSelectedOutgoingPhotosId(null), []);
   const openQuickMovement = (item: Elemento, type: 'ENTRADA' | 'AJUSTE') => { setQuickMovementId(item.id); setQuickMovementType(type); };
@@ -128,6 +135,7 @@ function useInventoryValue() {
     proyectos: data.proyectos, remisiones: data.remisiones, historial: data.historial,
     user: user!, activeView, navigationView, dispatchCart, selectedItemForDetail, selectedRemisionForPdf, quickMovementItem,
     selectedOutgoingPhotosId, openOutgoingPhotos, closeOutgoingPhotos,
+    reportItemIds, setReportItemIds, reportFilters, setReportFilters, selectedInventoryReport, openInventoryReport, closeInventoryReport,
     quickMovementType, isHelpModalOpen, globalSearch, isCloudConnected: data.isCloudConnected,
     dispatchSelection, dispatchSelectionItem, closeDispatchSelection, dispatchFeedback,
     syncStatus: data.syncStatus, setActiveView, setGlobalSearch, openItemDetail, closeItemDetail,

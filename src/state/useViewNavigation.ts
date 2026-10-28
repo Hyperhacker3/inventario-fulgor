@@ -2,7 +2,7 @@ import { startTransition, useCallback, useEffect, useState } from 'react';
 import type { ActiveView } from '../types';
 import { navigateWithDialogs } from '../shared/dialogHistory';
 
-const views: ActiveView[] = ['dashboard', 'explorer', 'dispatch', 'entries', 'history', 'warehouses', 'remissions', 'data-admin', 'projects'];
+const views: ActiveView[] = ['dashboard', 'explorer', 'dispatch', 'entries', 'history', 'warehouses', 'remissions', 'reports', 'data-admin', 'projects'];
 export function viewFromHash(hash: string): ActiveView {
   const view = hash.replace(/^#\/?/, '');
   if (view === 'new-item') return 'entries';

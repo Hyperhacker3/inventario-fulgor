@@ -1,8 +1,16 @@
 # Continuidad de Inventario EL TURPIAL
 
-Actualizado: **27 de octubre de 2026**, zona horaria America/Bogota.
+Actualizado: **28 de octubre de 2026**, zona horaria America/Bogota.
 
 Este documento resume el estado para continuar en otro chat. Las secciones anteriores de `reports/verification.md` y `PLAN_REFACTORIZACION.md` son registros históricos; sus conteos y pendientes no sustituyen este estado actual.
+
+## Informes de inventario
+
+Informes de inventario añade una sección de lectura para seleccionar varios productos activos y generar un PDF con cantidades, pesos, valores y ubicación completa. La selección y filtros se conservan al cambiar de página/pantalla. Generar vuelve a consultar productos, ubicaciones y empresa en Supabase; el documento mantiene una copia en memoria para imprimir/Guardar como PDF. Cantidades agrupadas por unidad, datos pendientes explícitos, stock total con daños declarados y precios cero identificados. No crea salidas ni modifica inventario, movimientos o remisiones; no requiere SQL adicional. [Uso y alcance](informes-inventario.md).
+
+Nuevo acceso #/reports en barra lateral/menú móvil para admin, operador y consulta; accesos rápidos inferiores conservan sus cuatro destinos. Se usa un icono SVG propio con variantes de estado y color teal. Lecturas por lotes de hasta 100 IDs evitan el límite de filas/longitud de solicitudes al seleccionar muchos productos; una selección con filas ausentes no produce un PDF incompleto. La copia no es una transacción simultánea entre consultas ni un registro histórico guardado en servidor. Cerrar o cambiar de pantalla conserva selección/filtros, y Retroceder cierra el PDF primero.
+
+Verificación del 28 de octubre: typecheck, lint, 200 pruebas unitarias y 37 de integración (237 en total) y build correctos con Node 22.23.3 / pnpm 11.19.0. Se añadieron seis pruebas de informes y se amplió la navegación para los tres roles. Sin escrituras de prueba en Supabase ni automatización de navegador; revisión visual de PDF/dispositivos pendiente del usuario.
 
 ## Alineación de empresa y columnas de remisión
 

@@ -3,7 +3,7 @@
   --ui-icon-action: #3e4e9e; --ui-icon-success: #137333;
   --ui-icon-danger: #ba1a1a; --ui-icon-warning: #755b00;
   --ui-icon-inventory: #7755b6; --ui-icon-history: #9b6c04;
-  --ui-icon-data: #606985; --ui-icon-remissions: #a24778; --ui-icon-help: #276d9c;
+  --ui-icon-reports: #087f8c; --ui-icon-data: #606985; --ui-icon-remissions: #a24778; --ui-icon-help: #276d9c;
   --ui-icon-warehouses: #82603a; --ui-icon-racks: #087f8c; --ui-icon-levels: #2563a8;
   --ui-icon-muted: #767682; --ui-icon-ink: var(--ui-icon-action);
 }
@@ -18,6 +18,7 @@
   :root[data-ui-style] [data-nav-view='explorer'] { --ui-icon-ink: var(--ui-icon-inventory); }
   :root[data-ui-style] [data-nav-view='entries'] { --ui-icon-ink: var(--ui-icon-success); }
   :root[data-ui-style] :is([data-nav-view='dispatch'], [data-nav-view='logout']) { --ui-icon-ink: var(--ui-icon-danger); }
+  :root[data-ui-style] [data-nav-view='reports'] { --ui-icon-ink: var(--ui-icon-reports); }
   :root[data-ui-style] [data-nav-view='history'] { --ui-icon-ink: var(--ui-icon-history); }
   :root[data-ui-style] [data-nav-view='data-admin'] { --ui-icon-ink: var(--ui-icon-data); }
   :root[data-ui-style] [data-nav-view='remissions'] { --ui-icon-ink: var(--ui-icon-remissions); }

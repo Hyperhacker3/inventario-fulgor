@@ -1,8 +1,10 @@
 # Inventario turpial
 
-Aplicación de inventario fotovoltaico con React, TypeScript, Vite y Supabase. Incluye almacenes, catálogo, entradas, salidas, remisiones, administración de datos e historial.
+Aplicación de inventario fotovoltaico con React, TypeScript, Vite y Supabase. Incluye almacenes, catálogo, entradas, salidas, remisiones, administración de datos, historial e informes PDF.
 
 ## Estado actual y continuidad
+
+Informes de inventario añade una sección de lectura para seleccionar varios productos activos y generar un PDF con cantidades, pesos, valores y ubicación completa. La selección y filtros se conservan al cambiar de página/pantalla. Generar vuelve a consultar productos, ubicaciones y empresa en Supabase; el documento mantiene una copia en memoria para imprimir/Guardar como PDF. Cantidades agrupadas por unidad, datos pendientes explícitos, stock total con daños declarados y precios cero identificados. No crea salidas ni modifica inventario, movimientos o remisiones; no requiere SQL adicional. [Uso y alcance](docs/informes-inventario.md).
 
 La remisión dispone Proyecto y salida en tres columnas: primera fila Proyecto de obra / Lugar de remisión / Ubicación del proyecto; segunda fila Lugar de destino / Fecha de salida / Fecha de devolución. Remitente usa dos columnas: Entrega en bodega / Teléfono del remitente y debajo Cargo de quien entrega. Destinatario mantiene su disposición. La empresa central ocupa al menos los mismos 78 px de alto del logo, con fuente de 13 px (nombre 14 px) y distribución vertical del texto. Las líneas negras de la captura solo marcaban altura, no se incorporan al diseño. Se conservan el código, los datos y la paginación medida; sin SQL adicional.
 
@@ -16,7 +18,7 @@ Entradas sitúa Ubicación en almacén como última sección de datos, después 
 
 El alta de materiales y la ficha se reorganizan para móvil, tablet y PC (9 de octubre de 2026). El alta usa pares de columnas fluidas: prefijo/categoría, unidad de medida/stock inicial, stock mínimo/valor por unidad y unidad del peso/peso. Stock inicial se escribe directamente, sin −/+; se retira unidades dañadas/merma del alta y los nuevos registros envían 0 daños, sin deducirlos de la condición. Los datos existentes y la edición de daños permanecen. La ficha sitúa peso/valor antes de ubicación y muestra un único dato de stock total con unidad. Se conservan validación, decimales, borradores, permisos, cálculo de disponibilidad, límites de salida y acciones. Ayuda y guía están sincronizadas. Sin SQL ni cambios de inventario real. La revisión visual corresponde al usuario.
 
-Uso completo actualizado al 27 de octubre de 2026: [Guía de funciones](docs/guia-funciones.md), sincronizada con Ayuda y guía. Ayuda describe solo funciones de la aplicación; instalación y activación permanecen en esta documentación técnica.
+Uso completo actualizado al 28 de octubre de 2026: [Guía de funciones](docs/guia-funciones.md), sincronizada con Ayuda y guía. Ayuda describe solo funciones de la aplicación; instalación y activación permanecen en esta documentación técnica.
 
 Las cámaras de productos y salidas recuerdan el lente elegido en este navegador. Salidas permite capturar varias fotos seguidas con Añadir y tomar otra o Añadir y terminar; cerrar conserva las fotos aceptadas. La preferencia local guarda solo la cámara, no las imágenes. Si una cámara guardada ya no está disponible, se intenta la predeterminada respetando los lentes traseros en móvil. Las alertas de stock tienen tarjetas sin encogerse y espacio para nombres completos y sombras.
 

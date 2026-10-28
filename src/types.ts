@@ -165,6 +165,7 @@ export type ActiveView =
   | 'history' 
   | 'warehouses' 
   | 'remissions'
+  | 'reports'
   | 'projects'
   | 'data-admin';
 

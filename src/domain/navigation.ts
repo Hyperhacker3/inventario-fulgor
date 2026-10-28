@@ -13,6 +13,7 @@ export function navigationItems(role: string, cartCount = 0, demo = false): Navi
     { id: 'history', label: 'Historial', icon: 'history' },
     { id: 'data-admin', label: 'Administración de datos', icon: 'settings' },
     { id: 'remissions', label: 'Remisiones', icon: 'picture_as_pdf' },
+    { id: 'reports', label: 'Informes', icon: 'assessment' },
   ];
 }
 export function quickNavigationItems(role: string, cartCount = 0, demo = false) {

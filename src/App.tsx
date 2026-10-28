@@ -26,6 +26,8 @@ const DispatchView = lazy(() => import('./components/DispatchView').then(m => ({
 const EntryView = lazy(() => import('./components/EntryView').then(m => ({ default: m.EntryView })));
 const HistoryView = lazy(() => import('./components/HistoryView').then(m => ({ default: m.HistoryView })));
 const RemissionView = lazy(() => import('./components/RemissionView').then(m => ({ default: m.RemissionView })));
+const InventoryReportsView = lazy(() => import('./components/InventoryReportsView').then(m => ({ default: m.InventoryReportsView })));
+const InventoryReportPdfModal = lazy(() => import('./components/reports/InventoryReportPdfModal').then(m => ({ default: m.InventoryReportPdfModal })));
 const PdfRemissionModal = lazy(() => import('./components/PdfRemissionModal').then(m => ({ default: m.PdfRemissionModal })));
 const ItemDetailModal = lazy(() => import('./components/ItemDetailModal').then(m => ({ default: m.ItemDetailModal })));
 const QuickMovementModal = lazy(() => import('./components/QuickMovementModal').then(m => ({ default: m.QuickMovementModal })));
@@ -40,6 +42,7 @@ const MainLayout: React.FC = () => {
     dispatchCart,
     selectedRemisionForPdf,
     closePdfRemision,
+    selectedInventoryReport, closeInventoryReport,
     selectedItemForDetail,
     closeItemDetail,
     quickMovementItem,
@@ -73,6 +76,8 @@ const MainLayout: React.FC = () => {
         return <DataAdministrationView />;
       case 'remissions':
         return <RemissionView />;
+      case 'reports':
+        return <InventoryReportsView />;
       default:
         return <DashboardView />;
     }
@@ -102,6 +107,9 @@ const MainLayout: React.FC = () => {
       <Suspense fallback={null}><Presence open={!!selectedRemisionForPdf}>{selectedRemisionForPdf && <PdfRemissionModal
         remision={selectedRemisionForPdf}
         onClose={closePdfRemision}
+      />}</Presence></Suspense>
+      <Suspense fallback={null}><Presence open={!!selectedInventoryReport}>{selectedInventoryReport && <InventoryReportPdfModal
+        report={selectedInventoryReport} onClose={closeInventoryReport}
       />}</Presence></Suspense>
       <Suspense fallback={null}>
       <Presence open={!!selectedItemForDetail}>{selectedItemForDetail && <ItemDetailModal

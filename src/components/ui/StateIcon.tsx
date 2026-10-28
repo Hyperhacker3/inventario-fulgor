@@ -3,6 +3,10 @@ import type { ReactNode } from 'react';
 // These line-based symbols need an explicit solid variant: the font's FILL axis
 // alone does not give their arrows, sliders and clock a visible selected state.
 const shapes: Record<string, { outline: ReactNode; solid: ReactNode }> = {
+  assessment: {
+    outline: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M7 16v-4m5 4V8m5 8v-6" /></>,
+    solid: <path fill="currentColor" stroke="none" fillRule="evenodd" d="M5 2h14a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3Zm1 10v5h2v-5Zm5-5v10h2V7Zm5 3v7h2v-7Z" />,
+  },
   edit: {
     outline: <path d="m16 3 5 5M4 15 16 3a2.1 2.1 0 0 1 5 5L9 20l-6 1 1-6Z" />,
     solid: <path d="m16 3 5 5M4 15 16 3a2.1 2.1 0 0 1 5 5L9 20l-6 1 1-6Z" fill="currentColor" />,

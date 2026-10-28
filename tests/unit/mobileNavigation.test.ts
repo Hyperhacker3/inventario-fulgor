@@ -47,7 +47,8 @@ test('quick navigation has at most four actions while the complete menu retains 
   assert.deepEqual(quickNavigationItems('admin', 3).map(item => item.id), ['dashboard','explorer','entries','dispatch']);
   assert.equal(quickNavigationItems('operador', 3).at(-1)?.badge, 3);
   assert.deepEqual(quickNavigationItems('consulta').map(item => item.id), ['dashboard','explorer']);
-  assert.equal(navigationItems('admin').length, 7);
+  assert.equal(navigationItems('admin').length, 8);
+  for (const role of ['admin', 'operador', 'consulta']) assert.equal(navigationItems(role).some(item => item.id === 'reports'), true);
   for (const role of ['admin', 'operador', 'consulta']) assert.equal(navigationItems(role).some(item => item.id === 'warehouses'), false);
   assert.equal(navigationItems('admin').some(item => item.label === 'Nuevo ítem'), false);
   assert.equal(navigationItems('operador').some(item => item.label === 'Nuevo ítem'), false);

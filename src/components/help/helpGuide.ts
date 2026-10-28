@@ -40,6 +40,12 @@ export const helpGuide = [
     'El PDF coloca el logo a la izquierda, los datos de empresa centrados y formato/fecha a la derecha. Debajo muestra el código completo alineado a la izquierda. Proyecto, remitente y destinatario tienen bloques separados, sin Entregar a duplicado. Conserva materiales, pesos, transporte, firmas y datos de emisión aunque después cambie el producto o la empresa.',
     'Historial permite consultar y filtrar movimientos. Los movimientos recientes del detalle también permiten abrir PDF y Fotos de sus salidas. El registro fotográfico tiene su propia galería y queda fuera del PDF.',
   ] },
+  { title: 'Informes de inventario', items: [
+    'Abra Informes desde el menú, busque por código, nombre o marca y filtre por categoría o almacén. Marque varios productos; Seleccionar resultados incluye todos los resultados filtrados, también los de otras páginas. Ver solo seleccionados facilita revisar la selección.',
+    'La selección y los filtros se conservan al cambiar de página o pantalla durante la sesión. Limpiar selección la vacía. Un producto archivado, eliminado o no disponible debe quitarse antes de generar.',
+    'Generar informe PDF consulta los datos actuales y abre la vista previa con cantidades, peso, valor unitario y total, marca, condición y ubicación completa. Las cantidades se agrupan por unidad y los datos pendientes quedan indicados. Incluye el stock total, con los daños declarados.',
+    'Use Imprimir / Guardar PDF y elija Guardar como PDF en la ventana de impresión. El informe no modifica existencias ni crea salidas o remisiones. Está disponible para administración, operadores y cuentas de consulta según sus permisos de lectura.',
+  ] },
   { title: 'Administración de datos', items: [
     'Reúne Códigos, Categorías, Almacenes, Estanterías, Niveles, Cajas, Proyectos, Archivados y Empresa. Cada sección tiene su propio color y la misma selección hundida que la navegación.',
     'Las ubicaciones usan tarjetas con código, nombre, valor total, valor del material dañado y Editar. Cree o edite almacén → estantería → nivel → caja. Las cajas anteriores sin nivel pueden asignarse al editar.',
