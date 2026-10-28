@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { InventoryReportHistory } from '../../src/components/reports/InventoryReportHistory';
 import { JSDOM } from 'jsdom';
 import { act, createElement as h, Fragment, useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { buildInventoryReport, reportQuantities, selectReportItems, type InventoryReport, type ReportFilters } from '../../src/domain/inventoryReport';
+import { generateSavedReport } from '../../src/domain/reportGeneration';
+import type { ReportSaveJob } from '../../src/domain/inventoryReport';
 import { readReportItems } from '../../src/data/inventoryReport';
 import { mapAlmacen, mapCaja, mapElemento, mapEstanteria, mapNivel } from '../../src/data/mappers';
 import { DEFAULT_COMPANY } from '../../src/domain/company';
@@ -89,7 +93,7 @@ async function type(host: HTMLElement, value: string) {
     input.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
   });
 }
-const filters: ReportFilters = { search: '', category: '', warehouse: '', onlySelected: false, page: 1 };
+const filters: ReportFilters = { search: '', category: '', warehouse: '', rack: '', level: '', box: '', onlySelected: false, page: 1 };
 
 test('report UI preserves selection across search and pages, prevents double generation and keeps drafts after a failed fresh read', async () => {
   const items = Array.from({ length: 26 }, (_, index) => product(String(index + 1)));
@@ -132,4 +136,91 @@ test('report UI requires removing missing products rather than silently printing
     await act(() => button(host, 'Quitar no disponibles').click());
     assert.deepEqual(selection, ['1']); assert.equal(generated, 0);
   } finally { await act(() => root.unmount()); host.remove(); }
+});
+
+test('saved report generation reuses a request and snapshot after a lost acknowledgement and blocks concurrent duplicates', async () => {
+  const holder: { current: ReportSaveJob | null } = { current: null };
+  const report = build([product('1')]); let reads = 0, saves = 0, fail = true;
+  const requests: string[] = [];
+  const prepare = async () => { reads++; return structuredClone(report); };
+  const save = async (id: string, snapshot: InventoryReport) => {
+    requests.push(id); saves++; assert.deepEqual(snapshot, report);
+    if (fail) throw new Error('Respuesta perdida');
+    return snapshot;
+  };
+  await assert.rejects(generateSavedReport(holder,['1'],prepare,save,async()=>{},()=> 'stable-id'),/Respuesta perdida/);
+  assert.equal(reads,1); assert.ok(holder.current?.report);
+  fail=false;
+  await generateSavedReport(holder,['1'],async()=>{throw new Error('No debe releer');},save,async()=>{},()=> 'wrong-id');
+  assert.deepEqual(requests,['stable-id','stable-id']); assert.equal(saves,2); assert.equal(holder.current,null);
+  let finish!: (value: InventoryReport) => void;
+  const wait = () => new Promise<InventoryReport>(resolve=>{ finish=resolve; });
+  const first = generateSavedReport(holder,['1'],wait,save,async()=>{},()=> 'next-id');
+  const duplicate = generateSavedReport(holder,['1'],prepare,save,async()=>{});
+  await assert.rejects(generateSavedReport(holder,['2'],prepare,save,async()=>{}),/Espere/);
+  await Promise.resolve(); finish(report);
+  assert.deepEqual(await first,report); assert.deepEqual(await duplicate,report);
+  assert.equal(requests.filter(id=>id==='next-id').length,1);
+  await assert.rejects(generateSavedReport(holder,['1'],prepare,save,async()=>{throw new Error('Activación pendiente');}),/Activación pendiente/);
+  assert.equal(reads,1);
+});
+
+test('report location filters cascade without losing selection and match individual boxes and unassigned locations', async () => {
+  const items=[product('1'),product('2',2,'und',100,{caja_id:'b2'}),product('3',2,'und',100,{almacen_id:null,estanteria_id:null,nivel_id:null,caja_id:null})];
+  const racks=[mapEstanteria({id:'r',almacen_id:'a',nombre:'Estante Uno'}),mapEstanteria({id:'other',almacen_id:'other',nombre:'Otro'})];
+  const levels=[mapNivel({id:'l',estanteria_id:'r',nombre:'Superior'})];
+  const boxes=[mapCaja({id:'b',estanteria_id:'r',nivel_id:'l',codigo:'CAJA-1'}),mapCaja({id:'b2',estanteria_id:'r',nivel_id:'l',codigo:'CAJA-2'})];
+  let current = {...filters,warehouse:'a',rack:'r',level:'l',box:'b'}, selected = ['1'];
+  function View() {
+    const [state,setState]=useState(current),[ids,setIds]=useState(selected);
+    return h(InventoryReportsManager,{items,warehouses:locations.warehouses,racks,levels,boxes,selectedIds:ids,
+      onSelectionChange:ids=>{selected=ids;setIds(ids);},filters:state,onFiltersChange:value=>{current=value;setState(value);},
+      categoryLabel:value=>value,locationLabel:()=> 'Completa',onGenerate:async()=>build(items,['1']),onOpen:()=>{}});
+  }
+  const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);
+  const change = async (id: string,value: string) => { await act(()=>{
+    const select=host.querySelector<HTMLSelectElement>('#report-'+id+'-value')!;
+    select.value=value; select.dispatchEvent(new dom.window.Event('change',{bubbles:true}));
+  }); };
+  try {
+    await act(()=>root.render(h(View)));
+    assert.equal(host.querySelectorAll('li').length,1);
+    assert.equal(host.querySelector<HTMLSelectElement>('#report-rack-value')!.querySelector('option[value="other"]'),null);
+    await change('box','b2'); assert.ok(host.querySelector('[aria-label="Seleccionar MAT2 Material repetido"]'));
+    assert.deepEqual(selected,['1']);
+    await change('warehouse','unassigned');
+    assert.equal(current.rack,''); assert.equal(current.level,''); assert.equal(current.box,''); assert.equal(current.page,1);
+    assert.ok(host.querySelector('[aria-label="Seleccionar MAT3 Material repetido"]')); assert.deepEqual(selected,['1']);
+    await change('warehouse','a'); await change('rack','r'); await change('level','l'); await change('box','b');
+    await change('level',''); assert.equal(current.box,''); assert.equal(current.rack,'r');
+    await change('rack',''); assert.equal(current.level,''); assert.equal(current.box,'');
+  } finally {await act(()=>root.unmount());host.remove();}
+});
+
+test('report history pages summaries, retries failed detail reads and opens the saved snapshot without regenerating it', async () => {
+  const report=build([product('1')]), opened: InventoryReport[]=[], pages: number[]=[], reads: string[]=[];
+  let fail=true, finish!: (value: InventoryReport)=>void;
+  const client=new QueryClient({defaultOptions:{queries:{retry:false,gcTime:0}}});
+  const readPage=async(page: number)=>{pages.push(page);return {rows:[{id:String(page),created_at:report.createdAt,generated_by:report.generatedBy,product_count:1,quantities:report.quantities,value_cop:200,pending_value:0}],total:21};};
+  const readReport=async(id: string)=>{reads.push(id);if(fail)throw new Error('Sin conexión al historial');return new Promise<InventoryReport>(resolve=>{finish=resolve;});};
+  const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);
+  const settle=async(check: ()=>boolean)=>{
+    for(let attempt=0;attempt<100;attempt++) {
+      await act(async()=>{await new Promise(resolve=>setTimeout(resolve,10));});
+      if(check())return;
+    }
+    assert.fail('El historial no terminó de cargar');
+  };
+  try {
+    await act(()=>root.render(h(QueryClientProvider,{client},h(InventoryReportHistory,{account:'consulta@test',onOpen:report=>opened.push(report),readPage,readReport}))));
+    await settle(()=>host.textContent!.includes('Página 1 de 2'));
+    assert.match(host.textContent!,/Persona autorizada/); assert.match(host.textContent!,/Página 1 de 2/);
+    await act(()=>button(host,'Siguiente').click()); await settle(()=>host.textContent!.includes('Referencia: 2')); assert.deepEqual(pages,[1,2]);
+    await act(async()=>[...host.querySelectorAll('button')].find(node=>node.textContent!.includes('Ver / Imprimir PDF'))!.click());
+    assert.match(host.querySelector('[role="alert"]')!.textContent!,/Sin conexión/); assert.equal(opened.length,0);
+    fail=false;
+    await act(()=>{const open=[...host.querySelectorAll('button')].find(node=>node.textContent!.includes('Ver / Imprimir PDF'))!;open.click();open.click();});
+    assert.deepEqual(reads,['2','2']);
+    await act(async()=>finish(report)); assert.deepEqual(opened,[report]);
+  } finally {await act(()=>root.unmount());host.remove();client.clear();}
 });

@@ -59,7 +59,7 @@ Estas instrucciones se aplican a todo el repositorio. Recogen las decisiones doc
 
 - En Informes, destacar el nombre antes del código en las tarjetas y el PDF; no mostrar condición/estado ni la línea de peso unitario sin declarar. Conservar los cálculos y la indicación de totales parciales en el resumen.
 
-- Informes es una sección de lectura (#/reports) para seleccionar productos activos y emitir un PDF de su stock total. Conservar selección/filtros entre páginas y pantallas. Consultar datos reales al generar, agrupar cantidades por unidad, indicar pendientes y precios cero, incluir ubicación completa y mantener una copia estable para imprimir. No generar salidas, movimientos ni cambios de stock. Respetar roles de lectura, impedir informes incompletos por productos no disponibles y no truncar selecciones grandes por límites de consulta.
+- Informes es una sección de lectura del inventario (#/reports) para seleccionar productos activos y emitir un PDF de su stock total. Conservar selección/filtros de almacén/estantería/nivel/caja entre páginas y pantallas, con limpieza de dependientes. Guardar cada informe en Supabase antes de abrir el PDF y permitir reabrir su copia inmutable desde un historial paginado compartido por los roles de lectura. Mantener ID y copia en reintentos; no generar documentos sin guardar si falta activar la migración. Consultar datos reales al generar, agrupar cantidades por unidad, indicar pendientes y precios cero, incluir ubicación completa y mantener una copia estable para imprimir. No generar salidas, movimientos ni cambios de stock. Respetar roles de lectura, impedir informes incompletos por productos no disponibles y no truncar selecciones grandes por límites de consulta.
 
 ## Verificación
 

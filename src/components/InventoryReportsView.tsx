@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useInventory } from '../context/InventoryContext';
-import { readInventoryReportSource } from '../data/inventoryReport';
-import { buildInventoryReport, reportQuantity, selectReportItems, type InventoryReport, type ReportFilters } from '../domain/inventoryReport';
+import { readInventoryReportSource, requireReportHistory, saveInventoryReport } from '../data/inventoryReport';
+import { buildInventoryReport, matchesReportLocation, reportQuantity, selectReportItems, type InventoryReport, type ReportFilters } from '../domain/inventoryReport';
+import { generateSavedReport } from '../domain/reportGeneration';
+import { locationChoices, ALL_LOCATIONS, NO_LOCATION } from '../domain/explorer';
+import { InventoryReportHistory } from './reports/InventoryReportHistory';
 import { formatCOP } from '../domain/money';
 import { formatUnitWeight } from '../domain/weight';
 import { errorMessage } from '../shared/errors';
@@ -10,28 +13,37 @@ import { SearchInput } from './ui/SearchInput';
 import { Select } from './ui/Select';
 import { StateIcon } from './ui/StateIcon';
 import { useMotionActive } from './ui/Motion';
-import type { Almacen, Elemento } from '../types';
+import type { Almacen, Caja, Elemento, Estanteria, NivelEstanteria } from '../types';
 
 export function InventoryReportsView() {
-  const { elementos, almacenes, reportItemIds, setReportItemIds, reportFilters, setReportFilters,
-    getLocationString, categoryLabel, user, openInventoryReport } = useInventory();
+  const { elementos, almacenes, estanterias, niveles, cajas, reportItemIds, setReportItemIds, reportFilters, setReportFilters,
+    getLocationString, categoryLabel, user, openInventoryReport, reportSaveJob } = useInventory();
+  const [tab, setTab] = useState<'new' | 'history'>('new');
   const client = useQueryClient();
   const generate = async (ids: string[]) => {
     try {
-      const source = await readInventoryReportSource(ids);
-      return buildInventoryReport(source.items, ids, source.locations, source.company, user.name, new Date(), categoryLabel);
-    } catch (cause) {
-      void client.invalidateQueries({ queryKey: ['fulgor', user.email, 'elementos'] });
-      throw cause;
-    }
+      const saved = await generateSavedReport(reportSaveJob, ids, async () => {
+        const source = await readInventoryReportSource(ids);
+        return buildInventoryReport(source.items, ids, source.locations, source.company, user.name, new Date(), categoryLabel);
+      }, saveInventoryReport, requireReportHistory);
+      void client.invalidateQueries({ queryKey: ['fulgor', user.email, 'inventory-reports'] });
+      return saved;
+    } catch (cause) { void client.invalidateQueries({ queryKey: ['fulgor', user.email, 'elementos'] }); throw cause; }
   };
-  return <InventoryReportsManager items={elementos} warehouses={almacenes} selectedIds={reportItemIds} onSelectionChange={setReportItemIds}
+  return <div className="w-full min-w-0">
+    <nav aria-label="Secciones de informes" className="flex flex-wrap gap-3 px-4 pt-4 md:px-8 md:pt-8">
+      <button type="button" className="ui-flat-choice rounded-xl px-4 min-h-11 text-[#087f8c]" aria-pressed={tab === 'new'} onClick={() => setTab('new')}>Nuevo informe</button>
+      <button type="button" className="ui-flat-choice rounded-xl px-4 min-h-11 text-[#087f8c]" aria-pressed={tab === 'history'} onClick={() => setTab('history')}>Historial de informes</button>
+    </nav>
+    {tab === 'history' ? <InventoryReportHistory account={user.email} onOpen={openInventoryReport} /> : <InventoryReportsManager items={elementos} warehouses={almacenes} racks={estanterias} levels={niveles} boxes={cajas} selectedIds={reportItemIds} onSelectionChange={setReportItemIds}
     filters={reportFilters} onFiltersChange={setReportFilters} categoryLabel={categoryLabel} locationLabel={getLocationString}
-    onGenerate={generate} onOpen={openInventoryReport} />;
+    onGenerate={generate} onOpen={openInventoryReport} />}
+  </div>;
 }
 
 interface Props {
   items: Elemento[]; warehouses: Almacen[]; selectedIds: string[]; onSelectionChange: (ids: string[]) => void;
+  racks?: Estanteria[]; levels?: NivelEstanteria[]; boxes?: Caja[];
   filters: ReportFilters; onFiltersChange: (filters: ReportFilters) => void;
   categoryLabel: (category: string) => string; locationLabel: (item: Elemento) => string;
   onGenerate: (ids: string[]) => Promise<InventoryReport>; onOpen: (report: InventoryReport) => void;
@@ -39,7 +51,7 @@ interface Props {
 const searchText = (value: string) => value.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es');
 const PAGE_SIZE = 24;
 
-export function InventoryReportsManager({ items, warehouses, selectedIds, onSelectionChange, filters, onFiltersChange,
+export function InventoryReportsManager({ items, warehouses, racks = [], levels = [], boxes = [], selectedIds, onSelectionChange, filters, onFiltersChange,
   categoryLabel, locationLabel, onGenerate, onOpen }: Props) {
   const [pending, setPending] = useState(false), [error, setError] = useState('');
   const generating = useRef(false), live = useRef(true);
@@ -52,7 +64,8 @@ export function InventoryReportsManager({ items, warehouses, selectedIds, onSele
   const filtered = useMemo(() => {
     const query = searchText(filters.search.trim());
     return availableItems.filter(item => (!filters.category || item.categoria === filters.category)
-      && (!filters.warehouse || (filters.warehouse === 'unassigned' ? !item.almacenId : item.almacenId === filters.warehouse))
+      && matchesReportLocation(item.almacenId, filters.warehouse) && matchesReportLocation(item.estanteriaId, filters.rack)
+      && matchesReportLocation(item.nivelId, filters.level) && matchesReportLocation(item.cajaId, filters.box)
       && (!filters.onlySelected || selected.has(item.id))
       && (!query || searchText(`${item.codigo} ${item.nombre} ${item.marca || ''}`).includes(query)))
       .sort((a, b) => a.codigo.localeCompare(b.codigo, 'es', { numeric: true }) || a.id.localeCompare(b.id));
@@ -61,6 +74,11 @@ export function InventoryReportsManager({ items, warehouses, selectedIds, onSele
   const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const categories = [...new Set(availableItems.map(item => item.categoria))].sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b)));
   const changeFilters = (patch: Partial<ReportFilters>) => onFiltersChange({ ...filters, page: 1, ...patch });
+  const locationFilter = (value: string) => !value ? ALL_LOCATIONS : value === 'unassigned' ? NO_LOCATION : value;
+  const choices = locationChoices(racks, boxes, locationFilter(filters.warehouse), locationFilter(filters.rack), levels, locationFilter(filters.level));
+  const warehouseNames = new Map(warehouses.map(row => [row.id, row.nombre]));
+  const rackNames = new Map(racks.map(row => [row.id, `${warehouseNames.get(row.almacenId || '') || 'Sin almacén'} > ${row.nombre || row.codigo}`]));
+  const levelNames = new Map(levels.map(row => [row.id, `Nivel ${row.nombre || row.codigo}`]));
   const choose = (ids: string[], checked: boolean) => { setError(''); onSelectionChange(selectReportItems(selectedIds, ids, checked)); };
   const allResultsSelected = filtered.length > 0 && filtered.every(item => selected.has(item.id));
   const generate = async () => {
@@ -75,6 +93,7 @@ export function InventoryReportsManager({ items, warehouses, selectedIds, onSele
   return <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6" aria-busy={pending}>
     <div><h2 className="text-2xl md:text-3xl font-bold">Informes de inventario</h2>
       <p className="text-sm text-slate-600 mt-2">Seleccione los productos para consultar su stock total, peso, valor y ubicación en un PDF.</p>
+      <p className="text-xs text-slate-500 mt-2">Cada informe generado se guarda en el historial. Si falla el guardado, reintentar la misma selección conserva sus datos originales.</p>
     </div>
     {error && <p role="alert" className="rounded-xl bg-red-50 p-4 text-red-700">{error}</p>}
     <fieldset disabled={pending} className="min-w-0 space-y-5">
@@ -90,9 +109,29 @@ export function InventoryReportsManager({ items, warehouses, selectedIds, onSele
             </Select>
           </label>
           <label className="text-sm min-w-0" htmlFor="report-warehouse">Almacén
-            <Select id="report-warehouse" value={filters.warehouse} onChange={event => changeFilters({ warehouse: event.target.value })} className="w-full rounded-xl p-3 mt-1">
+            <Select id="report-warehouse" value={filters.warehouse} onChange={event => changeFilters({ warehouse: event.target.value, rack: '', level: '', box: '' })} className="w-full rounded-xl p-3 mt-1">
               <option value="">Todos los almacenes</option><option value="unassigned">Sin almacén asignado</option>
               {warehouses.map(warehouse => <option key={warehouse.id} value={warehouse.id}>{warehouse.nombre}</option>)}
+            </Select>
+          </label>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <label className="text-sm min-w-0" htmlFor="report-rack">Estantería
+            <Select id="report-rack" value={filters.rack} onChange={event => changeFilters({ rack: event.target.value, level: '', box: '' })} className="w-full rounded-xl p-3 mt-1">
+              <option value="">Todas las estanterías</option><option value="unassigned">Sin estantería</option>
+              {choices.racks.map(row => <option key={row.id} value={row.id}>{filters.warehouse ? row.nombre || row.codigo : rackNames.get(row.id)}</option>)}
+            </Select>
+          </label>
+          <label className="text-sm min-w-0" htmlFor="report-level">Nivel
+            <Select id="report-level" value={filters.level} onChange={event => changeFilters({ level: event.target.value, box: '' })} className="w-full rounded-xl p-3 mt-1">
+              <option value="">Todos los niveles</option><option value="unassigned">Sin nivel asignado</option>
+              {choices.levels.map(row => <option key={row.id} value={row.id}>{!filters.rack ? `${rackNames.get(row.estanteriaId)} > ` : ''}{levelNames.get(row.id)}</option>)}
+            </Select>
+          </label>
+          <label className="text-sm min-w-0" htmlFor="report-box">Caja
+            <Select id="report-box" value={filters.box} onChange={event => changeFilters({ box: event.target.value })} className="w-full rounded-xl p-3 mt-1">
+              <option value="">Todas las cajas</option><option value="unassigned">Sin caja</option>
+              {choices.boxes.map(row => <option key={row.id} value={row.id}>{!filters.rack ? `${rackNames.get(row.estanteriaId || '') || 'Sin estantería'} > ` : ''}{!filters.level ? `${levelNames.get(row.nivelId || '') || 'Sin nivel'} > ` : ''}{row.codigoCaja}</option>)}
             </Select>
           </label>
         </div>

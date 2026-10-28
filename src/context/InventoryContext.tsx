@@ -4,7 +4,7 @@ import { useCompanyProfile } from '../state/useCompanyProfile';
 import { categoryChoices } from '../domain/dataAdministration';
 import { combinedInitialStatus } from '../domain/initialLoad';
 import { categories } from '../domain/catalogs';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, useRef, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useInventoryData } from '../state/useInventoryData';
 import { useInventoryActions } from '../state/useInventoryActions';
@@ -13,7 +13,7 @@ import { locationLabel, available, byId } from '../domain/inventory';
 import { MIN_QUANTITY, roundQuantity, validQuantity } from '../domain/quantity';
 import { isDemo } from '../lib/supabase';
 import type { DispatchCartItem, Elemento, Remision } from '../types';
-import type { InventoryReport } from '../domain/inventoryReport';
+import type { InventoryReport, ReportSaveJob } from '../domain/inventoryReport';
 import { INITIAL_ALMACENES, INITIAL_CAJAS, INITIAL_ELEMENTOS, INITIAL_ESTANTERIAS, INITIAL_HISTORIAL, INITIAL_PROYECTOS, INITIAL_REMISIONES } from '../data/initialData';
 
 type CartLine = { elementoId: string; cantidad: number };
@@ -37,7 +37,8 @@ function useInventoryValue() {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [selectedRemisionForPdf, setSelectedRemisionForPdf] = useState<Remision | null>(null);
   const [reportItemIds, setReportItemIds] = useState<string[]>([]);
-  const [reportFilters, setReportFilters] = useState({ search: '', category: '', warehouse: '', onlySelected: false, page: 1 });
+  const [reportFilters, setReportFilters] = useState({ search: '', category: '', warehouse: '', rack: '', level: '', box: '', onlySelected: false, page: 1 });
+  const reportSaveJob = useRef<ReportSaveJob | null>(null);
   const [selectedInventoryReport, setSelectedInventoryReport] = useState<InventoryReport | null>(null);
   const [selectedOutgoingPhotosId, setSelectedOutgoingPhotosId] = useState<string | null>(null);
   const [quickMovementId, setQuickMovementId] = useState<string | null>(null);
@@ -135,7 +136,7 @@ function useInventoryValue() {
     proyectos: data.proyectos, remisiones: data.remisiones, historial: data.historial,
     user: user!, activeView, navigationView, dispatchCart, selectedItemForDetail, selectedRemisionForPdf, quickMovementItem,
     selectedOutgoingPhotosId, openOutgoingPhotos, closeOutgoingPhotos,
-    reportItemIds, setReportItemIds, reportFilters, setReportFilters, selectedInventoryReport, openInventoryReport, closeInventoryReport,
+    reportSaveJob, reportItemIds, setReportItemIds, reportFilters, setReportFilters, selectedInventoryReport, openInventoryReport, closeInventoryReport,
     quickMovementType, isHelpModalOpen, globalSearch, isCloudConnected: data.isCloudConnected,
     dispatchSelection, dispatchSelectionItem, closeDispatchSelection, dispatchFeedback,
     syncStatus: data.syncStatus, setActiveView, setGlobalSearch, openItemDetail, closeItemDetail,

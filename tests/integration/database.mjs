@@ -20,6 +20,7 @@ const routeMigration = fs.readFileSync(new URL('../../supabase/migrations/202610
 const uppercaseMigration = fs.readFileSync(new URL('../../supabase/migrations/20261007000300_uppercase_registration.sql', import.meta.url), 'utf8');
 const webpMigration = fs.readFileSync(new URL('../../supabase/migrations/20261010000100_webp_photos.sql', import.meta.url), 'utf8');
 const projectCityMigration = fs.readFileSync(new URL('../../supabase/migrations/20261027000100_project_city_remission_code.sql', import.meta.url), 'utf8');
+const reportHistoryMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000100_inventory_report_history.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
 const warehouseProfile = fs.readFileSync(new URL('../../supabase/configure_warehouse_profile.sql', import.meta.url), 'utf8');
@@ -1016,4 +1017,72 @@ test('automatic item creation saves its full location and brand, and remissions 
     assert.equal((await db.query('SELECT items FROM public.remisiones WHERE id=$1',[first.id])).rows[0].items[0].marca,'Marca original');
     for(const marca of [123,'X'.repeat(101)]) await assert.rejects(()=>db.query("UPDATE public.elementos SET especificaciones=especificaciones||$1::jsonb WHERE id=$2",[JSON.stringify({marca}),created.id]),/marca/);
   } finally {await db.close();}
+});
+
+const reportPayload = () => ({
+  createdAt: '2026-10-28T15:00:00Z', generatedBy: 'Persona de la cuenta',
+  company: { nombre: 'EL TURPIAL', nit: '800.176.581', direccion: '', telefono: '', logo: '/logo-completo.png' },
+  rows: [{id:'ELM-001',code:'PAN001',name:'Producto del informe',brand:'Marca',category:'PANELES',condition:'BUENO',location:'Honda > Uno > Nivel Piso > CAJA-1',quantity:2,unit:'UND',damaged:0,unitWeight:{valor:250,unidad:'g'},weightKg:0.5,unitValueCOP:100,valueCOP:200}],
+  quantities:[{unit:'UND',quantity:2}],pendingQuantity:0,weightKg:0.5,pendingWeight:0,valueCOP:200,pendingValue:0,zeroPrice:0,
+});
+const reportSaveSql='SELECT public.save_inventory_report($1::uuid,$2::jsonb) AS report';
+test('report history saves immutable snapshots for read roles, retries once, preserves deleted products and never changes stock', async () => {
+  const db=await database();
+  try {
+    const before=(await db.query('SELECT * FROM public.elementos ORDER BY id')).rows;
+    const historyBefore=(await db.query('SELECT * FROM public.historial ORDER BY id')).rows;
+    const remissionsBefore=(await db.query('SELECT * FROM public.remisiones ORDER BY id')).rows;
+    await db.exec(reportHistoryMigration); await db.exec(reportHistoryMigration);
+    const payload=reportPayload(), request='28000000-0000-0000-0000-000000000001';
+    await role(db,'consulta');
+    assert.equal((await db.query('SELECT public.inventory_report_history_ready() AS ready')).rows[0].ready,true);
+    const saved=(await db.query(reportSaveSql,[request,JSON.stringify(payload)])).rows[0].report;
+    assert.equal(saved.generatedBy,payload.generatedBy); assert.deepEqual(saved.rows,payload.rows); assert.notEqual(saved.createdAt,payload.createdAt);
+    assert.deepEqual((await db.query(reportSaveSql,[request,JSON.stringify(payload)])).rows[0].report,saved);
+    await assert.rejects(()=>db.query(reportSaveSql,[request,JSON.stringify({...payload,valueCOP:999})]),/otro informe/);
+    for (const userRole of ['admin','operador','consulta']) {
+      await role(db,userRole);
+      assert.equal((await db.query('SELECT count(*) AS n FROM public.inventario_informes')).rows[0].n,1);
+      await assert.rejects(()=>db.exec('UPDATE public.inventario_informes SET product_count=99'),/permission denied/);
+      await assert.rejects(()=>db.exec('DELETE FROM public.inventario_informes'),/permission denied/);
+      await assert.rejects(()=>db.exec("INSERT INTO public.inventario_informes(id) VALUES(gen_random_uuid())"),/permission denied/);
+    }
+    await asOwner(db);
+    assert.deepEqual((await db.query('SELECT * FROM public.elementos ORDER BY id')).rows,before);
+    assert.deepEqual((await db.query('SELECT * FROM public.historial ORDER BY id')).rows,historyBefore);
+    assert.deepEqual((await db.query('SELECT * FROM public.remisiones ORDER BY id')).rows,remissionsBefore);
+    await assert.rejects(()=>db.exec('UPDATE public.inventario_informes SET product_count=99'),/no se pueden modificar/);
+    await db.exec("UPDATE public.elementos SET cantidad=999, nombre='Nombre actual', archived=true WHERE id='ELM-001'");
+    await db.query("UPDATE public.inventario_empresa SET perfil=jsonb_set(perfil,'{nombre}',$1::jsonb)",[JSON.stringify('Empresa actual')]);
+    await role(db,'operador');
+    assert.deepEqual((await db.query('SELECT snapshot FROM public.inventario_informes WHERE id=$1',[request])).rows[0].snapshot,saved);
+    await asOwner(db);
+    await db.exec("CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '00000000-0000-0000-0000-000000000002'::uuid $$");
+    await role(db,'operador');
+    await assert.rejects(()=>db.query(reportSaveSql,[request,JSON.stringify(payload)]),/otro informe/);
+  } finally { await db.close(); }
+});
+
+test('report history rejects unauthorized access and malformed snapshots and preserves more than 1000 report rows', async () => {
+  const db=await database();
+  try {
+    await db.exec(reportHistoryMigration);
+    await role(db,'sin_rol');
+    await assert.rejects(()=>db.query(reportSaveSql,['28000000-0000-0000-0000-000000000002',JSON.stringify(reportPayload())]),/No autorizado/);
+    assert.equal((await db.query('SELECT count(*) AS n FROM public.inventario_informes')).rows[0].n,0);
+    await asOwner(db); await db.exec('SET ROLE anon');
+    await assert.rejects(()=>db.query('SELECT * FROM public.inventario_informes'),/permission denied/);
+    await assert.rejects(()=>db.query(reportSaveSql,['28000000-0000-0000-0000-000000000002','{}']),/permission denied/);
+    await asOwner(db); await role(db,'admin');
+    const request='28000000-0000-0000-0000-000000000003';
+    for (const invalid of [{}, {...reportPayload(),rows:[]}, {...reportPayload(),rows:[reportPayload().rows[0],reportPayload().rows[0]]}, {...reportPayload(),pendingWeight:100}, {...reportPayload(),rows:[{...reportPayload().rows[0],unitWeight:{valor:-1,unidad:'g'}}]}]) {
+      await assert.rejects(()=>db.query(reportSaveSql,[request,JSON.stringify(invalid)]),/inválid|empresa/);
+    }
+    assert.equal((await db.query('SELECT count(*) AS n FROM public.inventario_informes')).rows[0].n,0);
+    const large=reportPayload(); large.rows=Array.from({length:1203},(_,index)=>({...large.rows[0],id:String(index)}));
+    large.quantities=[{unit:'UND',quantity:2406}]; large.weightKg=601.5; large.valueCOP=240600;
+    const saved=(await db.query(reportSaveSql,[request,JSON.stringify(large)])).rows[0].report;
+    assert.equal(saved.rows.length,1203);
+    assert.equal((await db.query('SELECT product_count FROM public.inventario_informes')).rows[0].product_count,1203);
+  } finally { await db.close(); }
 });

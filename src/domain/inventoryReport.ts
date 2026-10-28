@@ -6,7 +6,7 @@ import { validQuantity } from './quantity';
 import { mapCompany } from './company';
 
 export interface ReportLocations { warehouses: Almacen[]; racks: Estanteria[]; levels: NivelEstanteria[]; boxes: Caja[] }
-export interface ReportFilters { search: string; category: string; warehouse: string; onlySelected: boolean; page: number }
+export interface ReportFilters { search: string; category: string; warehouse: string; rack: string; level: string; box: string; onlySelected: boolean; page: number }
 export interface InventoryReportRow {
   id: string; code: string; name: string; brand: string; category: string; condition: string; location: string;
   quantity: number | null; unit: string; damaged: number; unitWeight: PesoUnitario | null;
@@ -61,3 +61,12 @@ export const reportQuantities = (report: Pick<InventoryReport, 'quantities'>) =>
 export const reportDate = (createdAt: string) => new Date(createdAt).toLocaleString('es-CO', {
   timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
 });
+
+export interface ReportSaveJob {
+  ids: string[]; requestId: string; report?: InventoryReport; task?: Promise<InventoryReport>;
+}
+export interface SavedReportSummary {
+  id: string; created_at: string; generated_by: string; product_count: number;
+  quantities: InventoryReport['quantities']; value_cop: number; pending_value: number;
+}
+export const matchesReportLocation = (id: string | null | undefined, filter: string) => !filter || (filter === 'unassigned' ? !id : id === filter);

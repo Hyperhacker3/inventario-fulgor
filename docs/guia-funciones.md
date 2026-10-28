@@ -70,13 +70,13 @@ Actualizada el 28 de octubre de 2026. Esta guía coincide con Ayuda y guía dent
 
 ## Informes de inventario
 
-- Abra Informes desde el menú, busque por código, nombre o marca y filtre por categoría o almacén. Marque varios productos; Seleccionar resultados incluye todos los resultados filtrados, también los de otras páginas. Ver solo seleccionados facilita revisar la selección.
+- Abra Informes desde el menú, busque por código, nombre o marca y filtre por categoría, almacén, estantería, nivel o caja. Marque varios productos; Seleccionar resultados incluye todos los resultados filtrados, también los de otras páginas. Ver solo seleccionados facilita revisar la selección.
 
 - La selección y los filtros se conservan al cambiar de página o pantalla durante la sesión. Limpiar selección la vacía. Un producto archivado, eliminado o no disponible debe quitarse antes de generar.
 
-- Generar informe PDF consulta los datos actuales y abre la vista previa con cantidades, peso, valor unitario y total, marca, condición y ubicación completa. Las cantidades se agrupan por unidad y los datos pendientes quedan indicados. Incluye el stock total, con los daños declarados.
+- Generar informe PDF consulta los datos actuales, guarda una copia en el historial y abre la vista previa con cantidades, peso, valor unitario y total, marca y ubicación completa. Las cantidades se agrupan por unidad y los datos pendientes quedan indicados. Incluye el stock total, con los daños declarados.
 
-- Use Imprimir / Guardar PDF y elija Guardar como PDF en la ventana de impresión. El informe no modifica existencias ni crea salidas o remisiones. Está disponible para administración, operadores y cuentas de consulta según sus permisos de lectura.
+- Historial de informes permite abrir e imprimir las copias originales aunque cambien los productos. Use Imprimir / Guardar PDF y elija Guardar como PDF en la ventana de impresión. El informe no modifica existencias ni crea salidas o remisiones. Está disponible para administración, operadores y cuentas de consulta según sus permisos de lectura.
 
 ## Administración de datos
 
