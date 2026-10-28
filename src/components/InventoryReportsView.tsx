@@ -122,15 +122,14 @@ export function InventoryReportsManager({ items, warehouses, selectedIds, onSele
           <div className="flex gap-3 items-start">
             <label className="shrink-0 min-w-11 min-h-11 grid place-items-center"><input type="checkbox" checked={selected.has(item.id)}
               aria-label={`Seleccionar ${item.codigo} ${item.nombre}`} onChange={event => choose([item.id], event.target.checked)} className="w-5 h-5" /></label>
-            <div className="min-w-0"><span className="text-xs font-bold text-[#3e4e9e]">{item.codigo}</span><h3 className="font-bold text-sm break-words uppercase">{item.nombre}</h3>
+            <div className="min-w-0"><h3 className="font-bold text-base break-words uppercase">{item.nombre}</h3><span className="text-xs font-bold text-[#3e4e9e]">{item.codigo}</span>
               {item.marca && <p className="text-xs text-slate-500 break-words">{item.marca}</p>}
             </div>
           </div>
           <dl className="grid grid-cols-2 gap-3 text-xs">
             <div><dt className="text-slate-500">Stock total</dt><dd className="font-bold">{item.stockPendiente ? 'Pendiente de verificar' : `${reportQuantity(item.cantidad)} ${item.unidad.toUpperCase()}`}</dd></div>
-            <div><dt className="text-slate-500">Peso por unidad</dt><dd>{formatUnitWeight(item.pesoUnitario)}</dd></div>
+            {item.pesoUnitario && <div><dt className="text-slate-500">Peso por unidad</dt><dd>{formatUnitWeight(item.pesoUnitario)}</dd></div>}
             <div><dt className="text-slate-500">Valor por unidad</dt><dd>{formatCOP(item.valorUnitario || 0)}</dd></div>
-            <div><dt className="text-slate-500">Condición</dt><dd>{item.estado || 'Sin especificar'}</dd></div>
             <div className="col-span-2 min-w-0"><dt className="text-slate-500">Ubicación</dt><dd className="break-words">{locationLabel(item)}</dd></div>
           </dl>
         </li>)}

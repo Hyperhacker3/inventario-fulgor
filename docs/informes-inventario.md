@@ -14,9 +14,11 @@ La selección y filtros se mantienen al cambiar de página o pantalla durante la
 
 ## Contenido y cálculos
 
+El nombre del producto aparece primero y con mayor tamaño en las tarjetas y el PDF. La columna Producto ocupa el 28 % del ancho y el nombre se imprime en negrita a 11 px, sin recortar textos largos. Se retira la condición/estado y se omite la línea de peso por unidad cuando no está declarado; el resumen conserva la indicación de pesos parciales para no presentar datos incompletos como totales completos.
+
 - Empresa, fecha/hora de generación en la zona horaria de Colombia y persona que genera el informe.
-- Código, nombre, marca, categoría, condición, cantidad y unidad de medida por producto. Cada fila del inventario se conserva por su ID, aunque comparta nombre o marca con otra.
-- Peso por unidad en g/kg y peso total convertido a kg con el cálculo compartido de la aplicación.
+- Nombre destacado antes del código, marca, categoría, cantidad y unidad de medida por producto, sin mostrar la condición/estado. Cada fila del inventario se conserva por su ID, aunque comparta nombre o marca con otra.
+- Peso por unidad en g/kg cuando está declarado y peso total convertido a kg con el cálculo compartido de la aplicación. No se muestra la línea «Peso por unidad: Pendiente de declarar».
 - Valor unitario COP y valor de stock: cantidad total por valor unitario, redondeado a dos decimales. Se suman los importes registrados; los productos con precio unitario cero se identifican en el resumen.
 - Ubicación completa: almacén → estantería → nivel → caja, o Sin ubicación asignada cuando no hay datos.
 - Resumen de productos, cantidades por unidad, peso y valor. No se suman metros, unidades, rollos o kilos como si fueran una misma unidad.
@@ -30,6 +32,8 @@ Admin, operador y consulta pueden usar Informes según las políticas existentes
 Las consultas de productos se realizan en lotes de hasta 100 IDs para evitar límites de URL o truncamientos del servidor en selecciones grandes. La selección del listado proviene del inventario completo cargado, no solo de una página remota limitada. Los datos se copian al generar: cambios posteriores no revalúan el PDF ya abierto. No es un registro histórico persistido ni una transacción simultánea entre todas las consultas; el informe refleja los datos obtenidos durante su generación.
 
 Las fotografías no se incorporan ni se convierten. El PDF se guarda desde el navegador por decisión del usuario; el servidor no crea archivos públicos de informes. Una nueva generación consulta los datos vigentes.
+
+Verificación del ajuste de nombres del 28 de octubre: typecheck, lint, 200 pruebas unitarias y 37 de integración (237), y build correctos con Node 22.23.3 / pnpm 11.19.0. La primera suite tuvo el fallo conocido de espera fija en dialogHistory; la repetición completa pasó. Sin pruebas nuevas para este cambio de presentación, automatización de navegador ni cambios en Supabase. La revisión visual de nombres largos y paginación queda con el usuario.
 
 ## Implementación y comprobación
 
