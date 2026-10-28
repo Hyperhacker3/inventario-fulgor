@@ -17,18 +17,17 @@ export function InventoryReportHeader({ report }: { report: InventoryReport }) {
 }
 
 export function InventoryReportTable({ report, indices }: { report: InventoryReport; indices: number[] }) {
-  return <table className="ir-table"><colgroup>{[4, 28, 10, 12, 12, 14, 20].map((width, index) => <col key={index} style={{ width: `${width}%` }} />)}</colgroup>
-    <thead><tr><th>#</th><th>Producto</th><th>Cantidad</th><th>Peso total (kg)</th><th>Valor unitario (COP)</th><th>Valor de stock (COP)</th><th>Ubicación</th></tr></thead>
+  return <table className="ir-table"><colgroup>{[4, 9, 24, 11, 10, 11, 10, 21].map((width, index) => <col key={index} style={{ width: `${width}%` }} />)}</colgroup>
+    <thead><tr><th>#</th><th>CÓDIGO</th><th>PRODUCTO</th><th>MARCA</th><th>CANTIDAD</th><th>VALOR UND</th><th>PESO UND</th><th>UBICACIÓN</th></tr></thead>
     <tbody>{indices.map(index => {
       const row = report.rows[index];
-      return <tr data-report-row key={row.id}><td>{index + 1}</td>
-        <td><strong className="ir-product-name">{row.name}</strong><small className="ir-product-code">{row.code}</small>{row.brand && <small>Marca: {row.brand}</small>}
-          <small>{row.category}</small>{row.unitWeight && <small>Peso por unidad: {formatUnitWeight(row.unitWeight)}</small>}
+      return <tr data-report-row key={row.id}><td>{index + 1}</td><td className="ir-product-code">{row.code}</td>
+        <td><strong className="ir-product-name">{row.name}</strong>
           {row.damaged > 0 && <small>Dañado declarado: {reportQuantity(row.damaged)} {row.unit}</small>}
         </td>
+        <td>{row.brand || '—'}</td>
         <td>{row.quantity === null ? 'Pendiente' : `${reportQuantity(row.quantity)} ${row.unit}`}</td>
-        <td>{row.weightKg === null ? 'Pendiente' : row.weightKg.toLocaleString('es-CO', { maximumFractionDigits: 9 })}</td>
-        <td>{formatCOP(row.unitValueCOP)}</td><td>{row.valueCOP === null ? 'Pendiente' : formatCOP(row.valueCOP)}</td><td>{row.location}</td>
+        <td>{formatCOP(row.unitValueCOP)}</td><td>{row.unitWeight ? formatUnitWeight(row.unitWeight) : '—'}</td><td>{row.location}</td>
       </tr>;
     })}</tbody>
   </table>;

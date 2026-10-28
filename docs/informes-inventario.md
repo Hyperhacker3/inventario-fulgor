@@ -24,12 +24,12 @@ La aplicación conserva el ID y la copia de un guardado fallido durante la sesi�
 
 ## Contenido y cálculos
 
-El nombre del producto aparece primero y con mayor tamaño en las tarjetas y el PDF. La columna Producto ocupa el 28 % del ancho y el nombre se imprime en negrita a 11 px, sin recortar textos largos. Se retira la condición/estado y se omite la línea de peso por unidad cuando no está declarado; el resumen conserva la indicación de pesos parciales para no presentar datos incompletos como totales completos.
+La tabla del PDF de Informes usa ocho columnas, en este orden: # / CÓDIGO / PRODUCTO / MARCA / CANTIDAD / VALOR UND / PESO UND / UBICACIÓN. Los encabezados están en mayúsculas; código y marca tienen sus propias celdas. Producto conserva el nombre destacado a 11 px, con el 24 % del ancho y ajuste de textos largos. Se retiran categoría, peso total y valor de stock de las filas. PESO UND muestra el peso de una unidad en g/kg o — si no está declarado, y VALOR UND muestra el precio de una unidad en COP. Se conservan los totales y avisos de datos parciales en el resumen, la paginación medida y los datos de las copias guardadas. No requiere SQL adicional.
 
 - Empresa, fecha/hora de generación en la zona horaria de Colombia y persona que genera el informe.
-- Nombre destacado antes del código, marca, categoría, cantidad y unidad de medida por producto, sin mostrar la condición/estado. Cada fila del inventario se conserva por su ID, aunque comparta nombre o marca con otra.
-- Peso por unidad en g/kg cuando está declarado y peso total convertido a kg con el cálculo compartido de la aplicación. No se muestra la línea «Peso por unidad: Pendiente de declarar».
-- Valor unitario COP y valor de stock: cantidad total por valor unitario, redondeado a dos decimales. Se suman los importes registrados; los productos con precio unitario cero se identifican en el resumen.
+- Código, nombre destacado, marca, cantidad y unidad de medida por producto, en columnas propias, sin mostrar categoría ni condición/estado. Cada fila del inventario se conserva por su ID, aunque comparta nombre o marca con otra.
+- PESO UND contiene el peso por unidad en g/kg; un peso ausente aparece como —. El resumen conserva el peso total convertido a kg con el cálculo compartido, sin columna de peso total por producto.
+- VALOR UND muestra el valor de una unidad en COP. El resumen conserva el valor total de stock: cantidad total por valor de una unidad, redondeado a dos decimales. Se suman los importes registrados; los productos con precio unitario cero se identifican en el resumen.
 - Ubicación completa: almacén → estantería → nivel → caja, o Sin ubicación asignada cuando no hay datos.
 - Resumen de productos, cantidades por unidad, peso y valor. No se suman metros, unidades, rollos o kilos como si fueran una misma unidad.
 
@@ -46,6 +46,8 @@ Las fotografías no se incorporan ni se convierten. El PDF se guarda desde el na
 Verificación del ajuste de nombres del 28 de octubre: typecheck, lint, 200 pruebas unitarias y 37 de integración (237), y build correctos con Node 22.23.3 / pnpm 11.19.0. La primera suite tuvo el fallo conocido de espera fija en dialogHistory; la repetición completa pasó. Sin pruebas nuevas para este cambio de presentación, automatización de navegador ni cambios en Supabase. La revisión visual de nombres largos y paginación queda con el usuario.
 
 ## Implementación y comprobación
+
+Verificación de las ocho columnas del informe (28 de octubre): typecheck, lint, 205 pruebas unitarias y 39 de integración (244), y build correctos con Node 22.23.3 / pnpm 11.19.0. La primera suite tuvo el fallo conocido de espera fija en dialogHistory al usar Avanzar; la repetición completa pasó. Sin pruebas nuevas para este ajuste de presentación, automatización de navegador ni cambios en Supabase. La geometría y paginación física del PDF quedan para revisión del usuario.
 
 Verificación de filtros e historial (28 de octubre): typecheck, lint, 203 pruebas unitarias y 39 de integración (242), y build correctos con Node 22.23.3 / pnpm 11.19.0. Las pruebas nuevas cubren cascada de ubicación, selección conservada, paginación/reapertura, errores, reintentos sin duplicados, permisos de los tres roles, acceso anónimo rechazado, inmutabilidad, repetición de migración, más de 1000 filas y stock/movimientos/remisiones intactos. Se corrigió la búsqueda del botón con icono en una prueba nueva; la suite completa posterior pasó. La migración se ensayó en PGlite, no se ejecutó en Supabase real. Revisión visual con el usuario, sin automatización de navegador.
 
