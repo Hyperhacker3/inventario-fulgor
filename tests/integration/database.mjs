@@ -20,6 +20,7 @@ const routeMigration = fs.readFileSync(new URL('../../supabase/migrations/202610
 const uppercaseMigration = fs.readFileSync(new URL('../../supabase/migrations/20261007000300_uppercase_registration.sql', import.meta.url), 'utf8');
 const webpMigration = fs.readFileSync(new URL('../../supabase/migrations/20261010000100_webp_photos.sql', import.meta.url), 'utf8');
 const projectCityMigration = fs.readFileSync(new URL('../../supabase/migrations/20261027000100_project_city_remission_code.sql', import.meta.url), 'utf8');
+const editUnitMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000200_edit_item_units.sql', import.meta.url), 'utf8');
 const reportHistoryMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000100_inventory_report_history.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
@@ -1085,4 +1086,39 @@ test('report history rejects unauthorized access and malformed snapshots and pre
     assert.equal(saved.rows.length,1203);
     assert.equal((await db.query('SELECT product_count FROM public.inventario_informes')).rows[0].product_count,1203);
   } finally { await db.close(); }
+});
+
+test('admin can correct item units without converting quantities or changing historical snapshots; future movements use the new unit', async () => {
+  const db=await database();
+  try {
+    const original=(await db.query('SELECT * FROM public.elementos ORDER BY id')).rows;
+    await db.exec(editUnitMigration);await db.exec(editUnitMigration);
+    assert.deepEqual((await db.query('SELECT * FROM public.elementos ORDER BY id')).rows,original);
+    await role(db,'admin');
+    assert.equal((await db.query('SELECT public.inventory_item_unit_edit_ready() AS ready')).rows[0].ready,true);
+    assert.equal((await db.query("SELECT has_column_privilege(current_user,'public.elementos','cantidad','UPDATE') AS allowed")).rows[0].allowed,false);
+    const dispatch='SELECT public.dispatch_inventory_with_photos($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb) AS rem';
+    const args=['29000000-0000-0000-0000-000000000001','PROY-001','Entrega','Admin','Recibe','','',JSON.stringify([{elementoId:'ELM-001',cantidad:1}]),'{}','[]'];
+    const first=(await db.query(dispatch,args)).rows[0].rem;
+    const before=(await db.query("SELECT * FROM public.elementos WHERE id='ELM-001'")).rows[0];
+    const history=(await db.query("SELECT * FROM public.historial WHERE elemento_id='ELM-001' ORDER BY id")).rows;
+    const changed=(await db.query("UPDATE public.elementos SET unidad='MTS' WHERE id='ELM-001' RETURNING *")).rows[0];
+    assert.equal(changed.unidad,'MTS');assert.equal(Number(changed.cantidad),Number(before.cantidad));
+    for(const invalid of ['', '   ', null, 'X'.repeat(41)]) await assert.rejects(()=>db.query("UPDATE public.elementos SET unidad=$1 WHERE id='ELM-001'",[invalid]),/Unidad de medida inválida/);
+    assert.deepEqual(changed.especificaciones,before.especificaciones);assert.equal(changed.cantidad_danados,before.cantidad_danados);
+    assert.deepEqual((await db.query("SELECT * FROM public.historial WHERE elemento_id='ELM-001' ORDER BY id")).rows,history);
+    assert.deepEqual((await db.query(dispatch,args)).rows[0].rem,first);
+    assert.deepEqual((await db.query('SELECT items FROM public.remisiones WHERE id=$1',[first.id])).rows[0].items,first.items);
+    for(const value of ['operador','consulta']){
+      await role(db,value);
+      await assert.rejects(()=>db.query('SELECT public.inventory_item_unit_edit_ready()'),/No autorizado/);
+      assert.equal((await db.query("UPDATE public.elementos SET unidad='KG' WHERE id='ELM-001' RETURNING id")).rows.length,0);
+    }
+    await role(db,'operador');
+    const next=[...args];next[0]='29000000-0000-0000-0000-000000000002';
+    const second=(await db.query(dispatch,next)).rows[0].rem;
+    assert.equal(second.items[0].unidad,'mts');assert.notEqual(first.items[0].unidad,second.items[0].unidad);
+    assert.equal(await itemStock(db),Number(before.cantidad)-1);
+    assert.equal((await db.query('SELECT unidad FROM public.historial WHERE remision_id=$1',[second.id])).rows[0].unidad,'MTS');
+  } finally {await db.close();}
 });

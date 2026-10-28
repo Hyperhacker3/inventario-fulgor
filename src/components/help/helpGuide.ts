@@ -13,6 +13,7 @@ export const helpGuide = [
     'Abra un producto para consultar sus fotos, nombre completo, código, categoría, marca, estado, ubicación completa, peso, valor, comentarios y el stock total con su unidad. A su derecha, Valor de stock muestra cantidad total por valor unitario en COP. Peso y valor aparecen antes de la ubicación.',
     'Las cinco acciones son Editar (lápiz azul), Entrada (verde), Ajuste (amarillo), Agregar a la salida (rojo) y Archivar (violeta), según permisos. El botón permanece hundido mientras su ventana está abierta.',
     'Editar abre una ventana encima de la ficha. Guardar, cancelar o cerrar vuelve al detalle conservando su posición. Puede crear estanterías, niveles y cajas; cambiar una ubicación superior limpia las selecciones dependientes.',
+    'En edición, Unidad de medida permite corregir cómo se registra el producto. El cambio conserva las cantidades y no convierte pesos ni precios; las etiquetas de peso y valor usan la unidad elegida. Las remisiones e informes anteriores conservan sus datos.',
     'La X permanece visible al desplazarse. También puede cerrar tocando fuera, con Escape o con Retroceder: primero se cierra la ventana superior. Los cierres se bloquean durante un guardado pendiente.',
   ] },
   { title: 'Entradas: recibir y registrar materiales', items: [

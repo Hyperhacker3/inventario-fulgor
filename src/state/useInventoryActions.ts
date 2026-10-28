@@ -96,6 +96,14 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     if (updates.cantidad !== undefined && !isDemo) throw new Error('Use una entrada o ajuste para cambiar existencias.');
     const next = { ...before, ...updates, nombre: uppercaseName(updates.nombre ?? before.nombre), marca: uppercaseName(updates.marca ?? before.marca), estado: normalizeItemCondition(updates.estado ?? before.estado) };
     validateItem(next, data.almacenes, data.estanterias, data.cajas, data.niveles);
+    if (updates.unidad !== undefined) {
+      const activation = 'Falta activar la edición de unidades en Supabase. Ejecute 20261028000200_edit_item_units.sql y vuelva a guardar.';
+      try { if (!await rpc<boolean>('inventory_item_unit_edit_ready', {})) throw new Error(activation); }
+      catch (cause) {
+        if (['42883', 'PGRST202'].includes((cause as { code?: string }).code || '')) throw new Error(activation, { cause });
+        throw cause;
+      }
+    }
     return saveGallery(next, before, { save: saveImage, remove: removeImage }, async gallery => {
       const photo = gallery.main;
       if (isDemo) {
@@ -104,6 +112,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       }
       const saved = await updateRow('elementos', id, {
         nombre: next.nombre, descripcion: next.descripcion, stock_minimo: next.stockMinimo,
+        ...(updates.unidad !== undefined ? { unidad: next.unidad.trim().toUpperCase() } : {}),
         ...itemLocationColumns(updates),
         foto_url: photo, estado: next.estado, cantidad_danados: next.cantidadDanados ?? 0,
         especificaciones: { ...next.especificaciones, marca: (next.marca || '').trim(), peso_unitario: next.pesoUnitario ?? null, valor_unitario_cop: next.valorUnitario ?? 0, fotos_adicionales: gallery.additional }, updated_at: isoNow(),

@@ -22,6 +22,8 @@ import { ItemExistingLocationFields } from './item/ItemExistingLocationFields';
 import { changedItemLocation, itemLocationDraft } from '../domain/itemLocation';
 import { ItemValueField } from './item/ItemValueField';
 import { formatCOP, roundCOP } from '../domain/money';
+import { normalizeUnit } from '../domain/catalogs';
+import { ItemUnitField } from './item/ItemUnitField';
 
 interface Props { item: Elemento | null; onClose: () => void; onPermanentDelete?: (item: Elemento) => Promise<void>; onRestore?: (item: Elemento) => Promise<void> }
 
@@ -41,6 +43,8 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   const [brand, setBrand] = useState(item?.marca || '');
   const [description, setDescription] = useState(item?.descripcion || '');
   const [minimum, setMinimum] = useState(item?.stockMinimo ?? 0);
+  const [unit, setUnit] = useState((item?.unidad || 'und').toUpperCase());
+  const originalUnit = useRef(item?.unidad || 'und');
   const [photo, setPhoto] = useState(item?.fotoUrl || '');
   const [additionalPhotos, setAdditionalPhotos] = useState<string[]>(item?.fotosAdicionales || []);
   const [condition, setCondition] = useState(normalizeItemCondition(item?.estado));
@@ -70,6 +74,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   const startEdit = () => {
     if (editing || busy) return;
     setName(item.nombre); setBrand(item.marca || ''); setDescription(item.descripcion); setMinimum(item.stockMinimo);
+    setUnit(item.unidad.toUpperCase()); originalUnit.current = item.unidad;
     setPhoto(item.fotoUrl || ''); setCondition(normalizeItemCondition(item.estado)); setDamaged(item.cantidadDanados ?? 0);
     setAdditionalPhotos(item.fotosAdicionales || []);
     setWeight(weightDraft(item.pesoUnitario));
@@ -85,6 +90,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
     setError(''); setPending(true);
     try {
       await updateElemento(item.id, { nombre: name.trim(), marca: brand.trim(), descripcion: description.trim(), stockMinimo: minimum,
+        ...(normalizeUnit(unit) !== normalizeUnit(originalUnit.current) ? { unidad: normalizeUnit(unit) } : {}),
         fotoUrl: photo.trim(), fotosAdicionales: additionalPhotos, estado: condition, cantidadDanados: damaged, pesoUnitario: parseWeightDraft(weight),
         valorUnitario, ...changedItemLocation(location, item) });
       setEditing(false);
@@ -164,6 +170,9 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
           </label>
           <ItemExistingLocationFields value={location} onChange={setLocation} warehouses={almacenes} racks={estanterias} levels={niveles} boxes={cajas} disabled={pending || photoBusy}
             onCreateRack={addEstanteria} onCreateLevel={addNivel} onCreateBox={addCaja} onBusyChange={setLocationBusy} onDraftChange={setLocationDraft} />
+          <div className="space-y-2"><ItemUnitField value={unit} onChange={setUnit} disabled={busy} />
+            <p className="text-xs text-slate-500">La cantidad no se convierte automáticamente al cambiar la unidad.</p>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <label className="text-sm font-semibold">Stock mínimo
               <NumberInput min="0" step="0.001" required value={minimum} onValueChange={setMinimum} className="block w-full mt-1 p-2.5 border rounded-lg" />
@@ -172,8 +181,8 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
               <NumberInput min="0" max={item.cantidad} step="0.001" required value={damaged} onValueChange={setDamaged} className="block w-full mt-1 p-2.5 border rounded-lg" />
             </label>
           </div>
-          <ItemWeightFields value={weight} onChange={setWeight} stockUnit={item.unidad} disabled={pending} />
-          <ItemValueField value={valorUnitario} onChange={setValorUnitario} unit={item.unidad} disabled={pending} />
+          <ItemWeightFields value={weight} onChange={setWeight} stockUnit={unit} disabled={pending} />
+          <ItemValueField value={valorUnitario} onChange={setValorUnitario} unit={unit} disabled={pending} />
           <label className="block text-sm font-semibold">Estado
             <Select value={condition} onChange={event => setCondition(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg">
               {!itemConditionOptions.some(option => option.value === condition) && <option value={condition}>{condition}</option>}

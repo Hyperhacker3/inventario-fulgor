@@ -17,8 +17,10 @@ export function InventoryReportHeader({ report }: { report: InventoryReport }) {
   </header>;
 }
 
-function ReportCell({ value, className, children }: { value: string; className?: string; children?: ReactNode }) {
-  return <td className={className}><span className="ir-cell" title={value}>{children ?? value}</span></td>;
+function ReportCell({ value, className, children, multiline = false }: { value: string; className?: string; children?: ReactNode; multiline?: boolean }) {
+  return <td className={className}><span className={`ir-cell${multiline ? ' ir-cell-multiline' : ''}`} title={value}>
+    {multiline ? <span className="ir-cell-text">{children ?? value}</span> : children ?? value}
+  </span></td>;
 }
 
 export function InventoryReportTable({ report, indices }: { report: InventoryReport; indices: number[] }) {
@@ -29,10 +31,10 @@ export function InventoryReportTable({ report, indices }: { report: InventoryRep
       const damage = row.damaged > 0 ? ` · Dañado declarado: ${reportQuantity(row.damaged)} ${row.unit}` : '';
       return <tr data-report-row key={row.id}>
         <ReportCell value={String(index + 1)} /><ReportCell value={row.code} className="ir-product-code" />
-        <ReportCell value={`${row.name}${damage}`}><strong className="ir-product-name">{row.name}</strong>{damage && <small>{damage}</small>}</ReportCell>
+        <ReportCell value={`${row.name}${damage}`} multiline><strong className="ir-product-name">{row.name}</strong>{damage && <small>{damage}</small>}</ReportCell>
         <ReportCell value={row.brand || '—'} />
         <ReportCell value={row.quantity === null ? 'Pendiente' : `${reportQuantity(row.quantity)} ${row.unit}`} />
-        <ReportCell value={formatCOP(row.unitValueCOP)} /><ReportCell value={row.unitWeight ? formatUnitWeight(row.unitWeight) : '—'} /><ReportCell value={row.location} />
+        <ReportCell value={formatCOP(row.unitValueCOP)} /><ReportCell value={row.unitWeight ? formatUnitWeight(row.unitWeight) : '—'} /><ReportCell value={row.location} multiline />
       </tr>;
     })}</tbody>
   </table>;

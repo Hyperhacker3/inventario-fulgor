@@ -326,3 +326,44 @@ test('editing creates rack, level and box in sequence, preserves failed drafts a
     assert.equal(saved[0].cantidad, undefined);
   } finally { await act(() => root.unmount()); host.remove(); }
 });
+
+test('editing measurement units preserves quantities, updates weight/value labels and retains failed drafts until save or cancel', async () => {
+  const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);
+  const payloads: Partial<Elemento>[]=[]; let reject!: (cause: Error)=>void;
+  const update=async(_id:string,updates:Partial<Elemento>)=>{payloads.push(updates);if(payloads.length===1)await new Promise<void>((_resolve,fail)=>{reject=fail;});};
+  const unitButton=()=>editor()!.querySelector<HTMLButtonElement>('button[aria-label="Unidad de medida"]')!;
+  const unitValue=()=>document.getElementById(unitButton().id+'-value') as HTMLSelectElement;
+  const selectUnit=async(value:string)=>{
+    const control=unitButton();await act(()=>control.click());
+    const option=[...document.getElementById(control.id+'-options')!.querySelectorAll<HTMLButtonElement>('[role="option"]')].find(row=>row.dataset.value===value)!;
+    await act(()=>option.click());
+  };
+  const submit=()=>editForm()!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));
+  try {
+    await act(()=>root.render(h(ItemDetailContent,{item,onClose:()=>{},inventory:inventory(update)})));
+    await act(()=>button(host,'Editar').click()); assert.equal(unitValue().value,'UND');
+    await selectUnit('MTS');
+    assert.match(editor()!.textContent!,/Peso por 1 MTS/);assert.match(editor()!.textContent!,/Valor por 1 MTS/);
+    await act(()=>{submit();submit();}); assert.equal(payloads.length,1);assert.equal(unitButton().disabled,true);
+    assert.equal(payloads[0].unidad,'mts');assert.equal(payloads[0].cantidad,undefined);assert.equal(item.cantidad,12);
+    await act(async()=>reject(new Error('Sin conexión')));
+    assert.equal(unitValue().value,'MTS');assert.match(editor()!.querySelector('[role="alert"]')!.textContent!,/Sin conexión/);
+    await act(()=>button(host,'Cancelar').click());await act(()=>button(host,'Editar').click());
+    assert.equal(unitValue().value,'UND');
+    await selectUnit('KG');await act(async()=>submit());
+    assert.equal(payloads.length,2);assert.equal(payloads[1].unidad,'kg');assert.equal(payloads[1].cantidad,undefined);
+  } finally {await act(()=>root.unmount());host.remove();}
+});
+
+test('editing preserves a legacy unit and omits unit changes when saving unrelated product fields', async () => {
+  const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);
+  let saved: Partial<Elemento>|undefined;
+  try {
+    await act(()=>root.render(h(ItemDetailContent,{item:{...item,unidad:'resma'},onClose:()=>{},inventory:inventory(async(_id,updates)=>{saved=updates;})})));
+    await act(()=>button(host,'Editar').click());
+    const control=editor()!.querySelector<HTMLButtonElement>('button[aria-label="Unidad de medida"]')!;
+    assert.equal((document.getElementById(control.id+'-value') as HTMLSelectElement).value,'RESMA');
+    await act(async()=>editForm()!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true})));
+    assert.ok(saved);assert.equal(saved.unidad,undefined);assert.equal(saved.cantidad,undefined);
+  } finally {await act(()=>root.unmount());host.remove();}
+});
