@@ -1,6 +1,7 @@
 import { reportDate, reportQuantity, type InventoryReport } from '../../domain/inventoryReport';
 import { formatKg, formatUnitWeight } from '../../domain/weight';
 import { formatCOP } from '../../domain/money';
+import type { ReactNode } from 'react';
 
 export function InventoryReportHeader({ report }: { report: InventoryReport }) {
   const company = report.company;
@@ -16,18 +17,22 @@ export function InventoryReportHeader({ report }: { report: InventoryReport }) {
   </header>;
 }
 
+function ReportCell({ value, className, children }: { value: string; className?: string; children?: ReactNode }) {
+  return <td className={className}><span className="ir-cell" title={value}>{children ?? value}</span></td>;
+}
+
 export function InventoryReportTable({ report, indices }: { report: InventoryReport; indices: number[] }) {
-  return <table className="ir-table"><colgroup>{[4, 9, 24, 11, 10, 11, 10, 21].map((width, index) => <col key={index} style={{ width: `${width}%` }} />)}</colgroup>
+  return <table className="ir-table"><colgroup>{[4, 7, 41, 7, 7, 9, 7, 18].map((width, index) => <col key={index} style={{ width: `${width}%` }} />)}</colgroup>
     <thead><tr><th>#</th><th>CÓDIGO</th><th>PRODUCTO</th><th>MARCA</th><th>CANTIDAD</th><th>VALOR UND</th><th>PESO UND</th><th>UBICACIÓN</th></tr></thead>
     <tbody>{indices.map(index => {
       const row = report.rows[index];
-      return <tr data-report-row key={row.id}><td>{index + 1}</td><td className="ir-product-code">{row.code}</td>
-        <td><strong className="ir-product-name">{row.name}</strong>
-          {row.damaged > 0 && <small>Dañado declarado: {reportQuantity(row.damaged)} {row.unit}</small>}
-        </td>
-        <td>{row.brand || '—'}</td>
-        <td>{row.quantity === null ? 'Pendiente' : `${reportQuantity(row.quantity)} ${row.unit}`}</td>
-        <td>{formatCOP(row.unitValueCOP)}</td><td>{row.unitWeight ? formatUnitWeight(row.unitWeight) : '—'}</td><td>{row.location}</td>
+      const damage = row.damaged > 0 ? ` · Dañado declarado: ${reportQuantity(row.damaged)} ${row.unit}` : '';
+      return <tr data-report-row key={row.id}>
+        <ReportCell value={String(index + 1)} /><ReportCell value={row.code} className="ir-product-code" />
+        <ReportCell value={`${row.name}${damage}`}><strong className="ir-product-name">{row.name}</strong>{damage && <small>{damage}</small>}</ReportCell>
+        <ReportCell value={row.brand || '—'} />
+        <ReportCell value={row.quantity === null ? 'Pendiente' : `${reportQuantity(row.quantity)} ${row.unit}`} />
+        <ReportCell value={formatCOP(row.unitValueCOP)} /><ReportCell value={row.unitWeight ? formatUnitWeight(row.unitWeight) : '—'} /><ReportCell value={row.location} />
       </tr>;
     })}</tbody>
   </table>;
