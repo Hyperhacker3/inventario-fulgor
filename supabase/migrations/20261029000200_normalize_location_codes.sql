@@ -30,7 +30,7 @@ ALTER TABLE pg_temp.plan_codigos_ubicaciones ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON pg_temp.plan_codigos_ubicaciones FROM PUBLIC,anon,authenticated;
 
 DO $$
-DECLARE r record;v_last bigint;v_parent text;v_problem record;
+DECLARE r record;v_last bigint;v_parent text;v_problem record;v_missing record;
 BEGIN
   FOR r IN SELECT * FROM (VALUES
     ('almacen','almacenes','ALM'),('estanteria','estanterias','EST'),
@@ -42,18 +42,18 @@ BEGIN
       WHEN 'nivel' THEN 'estanteria_id' ELSE 'coalesce(nivel_id,''SIN-NIVEL:''||estanteria_id)' END;
     EXECUTE format('INSERT INTO pg_temp.plan_codigos_ubicaciones
       (tipo,tabla,prefijo,ubicacion_id,codigo_anterior,padre_id,numero_anterior,codigo_temporal)
-      SELECT $1,$2,$3,id,codigo,%s,substring(substring(codigo from ''^[[:space:]]*([^[:space:]]+)'') from ''([0-9]+)$'')::numeric,
+      SELECT $1,$2,$3,id,codigo,%s,substring(substring(codigo from ''^[[:space:]]*([^[:space:]]+)'') from ''([0-9]+)[^0-9]*$'')::numeric,
         ''NORMALIZA-''||upper(gen_random_uuid()::text) FROM public.%I',v_parent,r.tabla)
       USING r.tipo,r.tabla,r.prefijo;
     SELECT ubicacion_id,codigo_anterior INTO v_problem FROM pg_temp.plan_codigos_ubicaciones
-      WHERE tipo=r.tipo AND (numero_anterior IS NULL OR numero_anterior>999999999999) LIMIT 1;
+      WHERE tipo=r.tipo AND numero_anterior>999999999999 LIMIT 1;
     IF FOUND THEN
-      RAISE EXCEPTION 'Código % de % (ID %) sin número compatible en el bloque de código. No se cambia ningún número; revise audit_location_codes_readonly.sql',v_problem.codigo_anterior,r.tipo,v_problem.ubicacion_id;
+      RAISE EXCEPTION 'El número del código % de % (ID %) supera el límite admitido. No se cambia ningún número; revise audit_location_codes_readonly.sql',v_problem.codigo_anterior,r.tipo,v_problem.ubicacion_id;
     END IF;
     UPDATE pg_temp.plan_codigos_ubicaciones SET codigo_nuevo=r.prefijo||lpad(numero_anterior::bigint::text,greatest(3,length(numero_anterior::bigint::text)),'0')
       WHERE tipo=r.tipo;
     SELECT padre_id,codigo_nuevo,array_agg(ubicacion_id ORDER BY ubicacion_id) AS ids INTO v_problem
-      FROM pg_temp.plan_codigos_ubicaciones WHERE tipo=r.tipo
+      FROM pg_temp.plan_codigos_ubicaciones WHERE tipo=r.tipo AND codigo_nuevo IS NOT NULL
       GROUP BY padre_id,codigo_nuevo HAVING count(*)>1 LIMIT 1;
     IF FOUND THEN
       RAISE EXCEPTION 'El código % quedaría repetido en el mismo padre % (IDs %). No se cambia ningún número; elimine o reubique la ubicación de prueba y repita',v_problem.codigo_nuevo,v_problem.padre_id,v_problem.ids;
@@ -61,6 +61,16 @@ BEGIN
     SELECT greatest(coalesce(max(numero_anterior),0),
       coalesce((SELECT ultimo FROM public.inventario_ubicacion_consecutivos WHERE prefijo=r.prefijo),0))::bigint
       INTO v_last FROM pg_temp.plan_codigos_ubicaciones WHERE tipo=r.tipo;
+    -- Solo los códigos sin número reciben uno nuevo, sobre el mayor ya reservado.
+    -- No deduplica ubicaciones ni cambia ningún número anterior.
+    FOR v_missing IN SELECT ubicacion_id FROM pg_temp.plan_codigos_ubicaciones
+      WHERE tipo=r.tipo AND numero_anterior IS NULL ORDER BY ubicacion_id COLLATE "C" LOOP
+      IF v_last>=999999999999 THEN RAISE EXCEPTION 'Se agotó el consecutivo de %; no se aplicó ningún cambio',r.tipo; END IF;
+      v_last:=v_last+1;
+      UPDATE pg_temp.plan_codigos_ubicaciones
+        SET codigo_nuevo=r.prefijo||lpad(v_last::text,greatest(3,length(v_last::text)),'0')
+        WHERE tipo=r.tipo AND ubicacion_id=v_missing.ubicacion_id;
+    END LOOP;
     INSERT INTO public.inventario_ubicacion_consecutivos(prefijo,ultimo) VALUES(r.prefijo,v_last)
       ON CONFLICT(prefijo) DO UPDATE SET ultimo=greatest(inventario_ubicacion_consecutivos.ultimo,excluded.ultimo);
 
@@ -131,6 +141,7 @@ NOTIFY pgrst,'reload schema';
 -- Resumen calculado sobre los datos reales, antes del COMMIT de la misma transacción.
 SELECT t.tipo,c.prefijo,count(p.ubicacion_id) AS ubicaciones,
   count(p.ubicacion_id) FILTER (WHERE p.codigo_anterior<>p.codigo_nuevo) AS codigos_actualizados,
+  count(p.ubicacion_id) FILTER (WHERE p.numero_anterior IS NULL) AS sin_numero_que_recibieron_consecutivo,
   max(p.numero_anterior) AS mayor_numero_actual,c.ultimo AS ultimo_reservado,
   CASE WHEN c.ultimo<999999999999 THEN c.prefijo||lpad((c.ultimo+1)::text,greatest(3,length((c.ultimo+1)::text)),'0') END AS siguiente_codigo
 FROM public.inventario_ubicacion_consecutivos c JOIN

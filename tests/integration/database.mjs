@@ -1258,16 +1258,16 @@ test('location normalization changes only prefixes and formatting, preserves eve
  }finally{await db.close();}
 });
 
-for(const problem of ['same-parent','missing-number'])test('location normalization rolls back without renumbering for '+problem,async()=>{
+for(const problem of ['same-parent','out-of-range'])test('location normalization rolls back without renumbering for '+problem,async()=>{
  const db=await database();try{
   await db.exec("INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('NORMALIZE-L','NIV-001','Nivel','EST-A01')");
   if(problem==='same-parent')await db.exec("INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('NORMALIZE-B1','CAJA-005','Uno','EST-A01','NORMALIZE-L'),('NORMALIZE-B2','CAJ005','Dos','EST-A01','NORMALIZE-L')");
-  else await db.exec("INSERT INTO public.estanterias(id,codigo,nombre,almacen_id) VALUES('NO-NUMBER','ESPECIAL ESTANTE 99','Sin número','ALM-BOG-01')");
+  else await db.exec("INSERT INTO public.estanterias(id,codigo,nombre,almacen_id) VALUES('OUT-OF-RANGE','ESPECIAL-1000000000000 ZONA','Fuera de límite','ALM-BOG-01')");
   await db.exec(automaticCodesMigration);
   const tables=['almacenes','estanterias','niveles_estanteria','cajas','elementos','historial'];
   const before=await Promise.all(tables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows));
   const counters=(await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows;
-  await assert.rejects(()=>db.exec(normalizeLocationCodesMigration),problem==='same-parent'?/repetido en el mismo padre/:/sin número compatible/);
+  await assert.rejects(()=>db.exec(normalizeLocationCodesMigration),problem==='same-parent'?/repetido en el mismo padre/:/supera el límite admitido/);
   await db.exec('ROLLBACK');
   for(const [index,table] of tables.entries())assert.deepEqual((await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows,before[index]);
   assert.deepEqual((await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows,counters);
@@ -1346,5 +1346,38 @@ test('location code parsing preserves numbers before trailing descriptions and i
   await role(db,'admin');
   const next=(await db.query(autoLocationSql,[autoId(401),'estanteria',JSON.stringify({nombre:'Nueva',parent_id:'LABEL-W'})])).rows[0].row;
   assert.equal(next.codigo,'EST005');
+ }finally{await db.close();}
+});
+
+test('locations without numbers receive consecutive codes above real and reserved maxima while existing numbers and identities remain unchanged',async()=>{
+ const db=await database();try{
+  await db.exec("INSERT INTO public.almacenes(id,codigo,nombre) VALUES('MISSING-W','FULGOR','Bodega conservada'),('NUMBER-W','CON-020','Veinte'); INSERT INTO public.estanterias(id,codigo,nombre,almacen_id) VALUES('MISSING-R1','FULGOR','Estantería conservada','MISSING-W'),('MISSING-R2','ESPECIAL ESTANTE 99','Otra estantería','MISSING-W'); INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('MISSING-L','PISO','Piso conservado','MISSING-R1'); INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('MISSING-B1','SIN-CODIGO','Caja conservada','MISSING-R1','MISSING-L'),('MISSING-B2','SIN-CODIGO','Caja conservada','MISSING-R1','MISSING-L')");
+  await db.exec(automaticCodesMigration);await db.exec("UPDATE public.inventario_ubicacion_consecutivos SET ultimo=100 WHERE prefijo='EST'");
+  const tables=['almacenes','estanterias','niveles_estanteria','cajas'];
+  const before=await Promise.all(tables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows));
+  const products=(await db.query('SELECT * FROM public.elementos ORDER BY id')).rows;
+  const audit=(await db.query(locationCodesAudit)).rows;
+  assert.equal(audit.find(row=>row.id==='MISSING-R1').numero,null);
+  assert.match(audit.find(row=>row.id==='MISSING-R1').resultado,/consecutivo nuevo/);
+  const result=await db.exec(normalizeLocationCodesMigration);
+  const summary=result.find(entry=>entry.rows?.some(row=>row.siguiente_codigo))?.rows;
+  assert.equal(Number(summary.find(row=>row.prefijo==='EST').sin_numero_que_recibieron_consecutivo),2);
+  for(const [table,id,code] of [['almacenes','MISSING-W','ALM021'],['estanterias','MISSING-R1','EST101'],['estanterias','MISSING-R2','EST102'],['niveles_estanteria','MISSING-L','NIV001'],['cajas','MISSING-B1','CAJ004'],['cajas','MISSING-B2','CAJ005']]){
+   assert.equal((await db.query('SELECT codigo FROM public.'+table+' WHERE id=$1',[id])).rows[0].codigo,code);
+  }
+  for(const [index,table] of tables.entries()){
+   const after=(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows;
+   assert.deepEqual(after.map(({codigo,...rest})=>rest),before[index].map(({codigo,...rest})=>rest));
+   for(const old of before[index]){
+    const number=old.codigo.split(/\s+/)[0].match(/([0-9]+)[^0-9]*$/)?.[1];
+    if(number)assert.equal(Number(after.find(row=>row.id===old.id).codigo.slice(3)),Number(number));
+   }
+  }
+  const normalized=await Promise.all(tables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows));
+  await db.exec(normalizeLocationCodesMigration);
+  for(const [index,table] of tables.entries())assert.deepEqual((await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows,normalized[index]);
+  assert.deepEqual((await db.query('SELECT * FROM public.elementos ORDER BY id')).rows,products);
+  await role(db,'admin');
+  const next=(await db.query(autoLocationSql,[autoId(501),'estanteria',JSON.stringify({nombre:'Nueva',parent_id:'MISSING-W'})])).rows[0].row;assert.equal(next.codigo,'EST103');
  }finally{await db.close();}
 });
