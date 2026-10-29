@@ -29,6 +29,21 @@ CREATE TEMP TABLE plan_codigos_ubicaciones (
 ALTER TABLE pg_temp.plan_codigos_ubicaciones ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON pg_temp.plan_codigos_ubicaciones FROM PUBLIC,anon,authenticated;
 
+-- Excepciones concretas autorizadas por el usuario, solo para el SQL administrativo.
+-- Por defecto no hay ninguna. Los IDs reales se configuran en un archivo privado.
+CREATE TEMP TABLE ajustes_codigos_ubicaciones (
+  tipo text NOT NULL CHECK(tipo IN ('almacen','estanteria','nivel','caja')),
+  ubicacion_id text NOT NULL,padre_id text NOT NULL,
+  numero numeric NOT NULL CHECK(numero BETWEEN 1 AND 999999999999 AND numero=trunc(numero)),
+  PRIMARY KEY(tipo,ubicacion_id)
+) ON COMMIT DROP;
+ALTER TABLE pg_temp.ajustes_codigos_ubicaciones ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON pg_temp.ajustes_codigos_ubicaciones FROM PUBLIC,anon,authenticated;
+INSERT INTO pg_temp.ajustes_codigos_ubicaciones(tipo,ubicacion_id,padre_id,numero)
+SELECT tipo,ubicacion_id,padre_id,numero FROM jsonb_to_recordset(
+  coalesce(nullif(current_setting('inventario.codigos_ubicaciones_autorizados',true),''),'[]')::jsonb
+) AS a(tipo text,ubicacion_id text,padre_id text,numero numeric);
+
 DO $$
 DECLARE r record;v_last bigint;v_parent text;v_problem record;v_missing record;
 BEGIN
@@ -52,19 +67,27 @@ BEGIN
     END IF;
     UPDATE pg_temp.plan_codigos_ubicaciones SET codigo_nuevo=r.prefijo||lpad(numero_anterior::bigint::text,greatest(3,length(numero_anterior::bigint::text)),'0')
       WHERE tipo=r.tipo;
+    SELECT a.ubicacion_id,a.padre_id INTO v_problem FROM pg_temp.ajustes_codigos_ubicaciones a
+      LEFT JOIN pg_temp.plan_codigos_ubicaciones p ON p.tipo=a.tipo AND p.ubicacion_id=a.ubicacion_id
+      WHERE a.tipo=r.tipo AND (p.ubicacion_id IS NULL OR p.padre_id IS DISTINCT FROM a.padre_id) LIMIT 1;
+    IF FOUND THEN
+      RAISE EXCEPTION 'El ajuste autorizado para % (ID %) no corresponde al padre esperado %. No se aplicó ningún cambio',r.tipo,v_problem.ubicacion_id,v_problem.padre_id;
+    END IF;
+    UPDATE pg_temp.plan_codigos_ubicaciones p SET codigo_nuevo=r.prefijo||lpad(a.numero::bigint::text,greatest(3,length(a.numero::bigint::text)),'0')
+      FROM pg_temp.ajustes_codigos_ubicaciones a WHERE a.tipo=r.tipo AND p.tipo=a.tipo AND p.ubicacion_id=a.ubicacion_id;
     SELECT padre_id,codigo_nuevo,array_agg(ubicacion_id ORDER BY ubicacion_id) AS ids INTO v_problem
       FROM pg_temp.plan_codigos_ubicaciones WHERE tipo=r.tipo AND codigo_nuevo IS NOT NULL
       GROUP BY padre_id,codigo_nuevo HAVING count(*)>1 LIMIT 1;
     IF FOUND THEN
       RAISE EXCEPTION 'El código % quedaría repetido en el mismo padre % (IDs %). No se cambia ningún número; elimine o reubique la ubicación de prueba y repita',v_problem.codigo_nuevo,v_problem.padre_id,v_problem.ids;
     END IF;
-    SELECT greatest(coalesce(max(numero_anterior),0),
+    SELECT greatest(coalesce(max(numero_anterior),0),coalesce(max(substring(codigo_nuevo from 4)::numeric),0),
       coalesce((SELECT ultimo FROM public.inventario_ubicacion_consecutivos WHERE prefijo=r.prefijo),0))::bigint
       INTO v_last FROM pg_temp.plan_codigos_ubicaciones WHERE tipo=r.tipo;
     -- Solo los códigos sin número reciben uno nuevo, sobre el mayor ya reservado.
     -- No deduplica ubicaciones ni cambia ningún número anterior.
     FOR v_missing IN SELECT ubicacion_id FROM pg_temp.plan_codigos_ubicaciones
-      WHERE tipo=r.tipo AND numero_anterior IS NULL ORDER BY ubicacion_id COLLATE "C" LOOP
+      WHERE tipo=r.tipo AND codigo_nuevo IS NULL ORDER BY ubicacion_id COLLATE "C" LOOP
       IF v_last>=999999999999 THEN RAISE EXCEPTION 'Se agotó el consecutivo de %; no se aplicó ningún cambio',r.tipo; END IF;
       v_last:=v_last+1;
       UPDATE pg_temp.plan_codigos_ubicaciones

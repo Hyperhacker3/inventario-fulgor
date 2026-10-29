@@ -1381,3 +1381,55 @@ test('locations without numbers receive consecutive codes above real and reserve
   const next=(await db.query(autoLocationSql,[autoId(501),'estanteria',JSON.stringify({nombre:'Nueva',parent_id:'MISSING-W'})])).rows[0].row;assert.equal(next.codigo,'EST103');
  }finally{await db.close();}
 });
+
+const normalizationWithOverrides=changes=>normalizeLocationCodesMigration.replace('BEGIN;',()=>"BEGIN;\nSET LOCAL inventario.codigos_ubicaciones_autorizados = '"+JSON.stringify(changes).replaceAll("'","''")+"';");
+test('explicit rack numbering changes only the authorized IDs, keeps all contents and names, reserves overridden numbers and is repeatable',async()=>{
+ for(const lastNumber of [3,103]){
+  const db=await database();try{
+   await db.exec("INSERT INTO public.estanterias(id,codigo,nombre,almacen_id) VALUES('AUTH-R1','EST-001','Contenedor de prueba','ALM-MED-02'),('AUTH-R2','EST-001 SIN ESTANTERÍA','Sin estantería de prueba','ALM-MED-02'),('AUTH-R3','GAB-001','Gabinete de prueba','ALM-MED-02'),('AUTH-R4','FULGOR','Otra ubicación','ALM-MED-02'); INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('AUTH-N1','NIV-001','Uno','AUTH-R1'),('AUTH-N2','NIV-002','Dos','AUTH-R2'); INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('AUTH-B1','CAJA-007','Caja uno','AUTH-R1','AUTH-N1'),('AUTH-B2','CAJA-008','Caja dos','AUTH-R2','AUTH-N2')");
+   await db.exec("UPDATE public.elementos SET almacen_id='ALM-MED-02',estanteria_id='AUTH-R1',nivel_id='AUTH-N1',caja_id='AUTH-B1' WHERE id='ELM-001'; UPDATE public.elementos SET almacen_id='ALM-MED-02',estanteria_id='AUTH-R2',nivel_id='AUTH-N2',caja_id='AUTH-B2' WHERE id='ELM-002'; UPDATE public.elementos SET almacen_id='ALM-MED-02',estanteria_id='AUTH-R3',nivel_id=NULL,caja_id=NULL WHERE id='ELM-003'");
+   await db.exec(automaticCodesMigration);
+   const tableNames=['elementos','historial','remisiones'];
+   const snapshots=await Promise.all(tableNames.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows));
+   const racks=(await db.query('SELECT * FROM public.estanterias ORDER BY id')).rows;
+   const levels=(await db.query('SELECT * FROM public.niveles_estanteria ORDER BY id')).rows;
+   const boxes=(await db.query('SELECT * FROM public.cajas ORDER BY id')).rows;
+   const changes=[1,2,lastNumber].map((numero,index)=>({tipo:'estanteria',ubicacion_id:'AUTH-R'+(index+1),padre_id:'ALM-MED-02',numero}));
+   const sql=normalizationWithOverrides(changes);await db.exec(sql);
+   const after=(await db.query('SELECT * FROM public.estanterias ORDER BY id')).rows;
+   for(const [index,number] of [1,2,lastNumber].entries())assert.equal(after.find(row=>row.id==='AUTH-R'+(index+1)).codigo,'EST'+String(number).padStart(3,'0'));
+   assert.equal(after.find(row=>row.id==='AUTH-R4').codigo,'EST'+String(Math.max(4,lastNumber)+1).padStart(3,'0'));
+   assert.deepEqual(after.map(({codigo,...rest})=>rest),racks.map(({codigo,...rest})=>rest));
+   for(const row of racks.filter(row=>!row.id.startsWith('AUTH-')))assert.equal(Number(after.find(value=>value.id===row.id).codigo.slice(3)),Number(row.codigo.match(/[0-9]+$/)[0]));
+   for(const [index,table] of tableNames.entries())assert.deepEqual((await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows,snapshots[index]);
+   assert.deepEqual((await db.query('SELECT * FROM public.niveles_estanteria ORDER BY id')).rows.map(({codigo,...rest})=>rest),levels.map(({codigo,...rest})=>rest));
+   assert.deepEqual((await db.query('SELECT * FROM public.cajas ORDER BY id')).rows.map(({codigo,...rest})=>rest),boxes.map(({codigo,...rest})=>rest));
+   await db.exec(sql);assert.deepEqual((await db.query('SELECT * FROM public.estanterias ORDER BY id')).rows,after);
+   await db.exec(normalizeLocationCodesMigration);assert.deepEqual((await db.query('SELECT * FROM public.estanterias ORDER BY id')).rows,after);
+   await role(db,'admin');
+   const next=(await db.query(autoLocationSql,[autoId(601),'estanteria',JSON.stringify({nombre:'Siguiente',parent_id:'ALM-MED-02'})])).rows[0].row;
+   assert.equal(Number(next.codigo.slice(3)),Math.max(4,lastNumber)+2);
+  }finally{await db.close();}
+ }
+});
+
+test('authorized code overrides reject unexpected parents, missing identities, duplicate targets and invalid numbers atomically',async()=>{
+ const db=await database();try{
+  await db.exec(automaticCodesMigration);
+  const tables=['almacenes','estanterias','niveles_estanteria','cajas','elementos','historial'];
+  const snapshots=await Promise.all(tables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows));
+  const counters=(await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows;
+  const valid={tipo:'estanteria',ubicacion_id:'EST-A01',padre_id:'ALM-BOG-01',numero:1};
+  for(const [changes,pattern] of [
+   [[{...valid,padre_id:'Otro padre'}],/padre esperado/],
+   [[{...valid,ubicacion_id:'No existe'}],/padre esperado/],
+   [[valid,{...valid,ubicacion_id:'EST-B02'}],/repetido en el mismo padre/],
+   [[{...valid,numero:1.5}],/check constraint/],
+   [[valid,valid],/duplicate key/],
+  ]){
+   await assert.rejects(()=>db.exec(normalizationWithOverrides(changes)),pattern);await db.exec('ROLLBACK');
+   for(const [index,table] of tables.entries())assert.deepEqual((await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows,snapshots[index]);
+   assert.deepEqual((await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows,counters);
+  }
+ }finally{await db.close();}
+});

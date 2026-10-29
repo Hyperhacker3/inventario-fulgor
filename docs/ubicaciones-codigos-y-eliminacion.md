@@ -13,6 +13,8 @@ Actualizado el 29 de octubre de 2026. La instrucción posterior del usuario cons
 
 ## Activación desde la cuenta del usuario
 
+Excepción autorizada por el usuario: tres estanterías que coincidían en 001 se asignan a EST001, EST002 y EST003 mediante sus IDs, sin cambiar productos, niveles, cajas, nombres ni padres. Las demás ubicaciones conservan sus números y los códigos sin número siguen recibiendo un consecutivo nuevo. Los ajustes se limitan a una lista explícita de IDs/padres/números en el SQL administrativo; una coincidencia ajena a esa autorización revierte la transacción. El contador incluye los números autorizados antes de asignar otros. El archivo con los IDs reales queda en .private_import/, fuera de Git y del frontend. El usuario debe ejecutarlo desde su cuenta; no se ha aplicado por el agente.
+
 Corrección del error FULGOR, confirmada por el usuario: los códigos sin número reciben un consecutivo nuevo. Vuelva a copiar el archivo actualizado del paso 3 y ejecute únicamente desde BEGIN; hasta COMMIT;, incluidas ambas líneas. El SQL conserva los números que ya existían y muestra cuántos códigos sin número recibieron uno nuevo.
 
 Corrección del error EST-001 SIN ESTANTERÍA: vuelva a copiar y ejecutar completo el archivo de normalización actualizado (paso 3). La ejecución fallida se revierte; no hay que repetir importaciones ni renumerar datos. La tabla temporal del plan ahora declara RLS explícitamente. La lectura de códigos descritos también se actualizó en la auditoría y en el SQL de eliminación para preservar los máximos al borrar un código antiguo antes de normalizar.
@@ -28,6 +30,8 @@ Si necesita revisar antes los datos, ejecute [audit_location_codes_readonly.sql]
 
 ## Conservación y reintentos
 
+El caso autorizado de las tres estanterías usa un SQL privado combinado: configura inventario.codigos_ubicaciones_autorizados con SET LOCAL dentro de la misma transacción y ejecuta la normalización completa. La configuración se elimina al terminar; el archivo genérico no incluye IDs de producción ni autoriza renumeraciones por defecto. Se validan tipo, ID, padre, números enteros admitidos y conflictos de destino antes de escribir. Repetir el archivo conserva la asignación y las equivalencias auditadas.
+
 Ambas migraciones son repetibles. El bloqueo de edición de código se suspende únicamente dentro de la transacción administrativa de normalización y se restaura antes de terminar. Una tabla privada, `inventario_ubicacion_codigos_normalizados`, conserva las equivalencias de códigos anteriores/nuevos por ID y no es accesible al frontend.
 
 Las solicitudes de creación anteriores mantienen actor, UUID y payload. Al reintentar devuelven la ubicación actual del mismo ID, con su código normalizado; no recuperan un código anterior de la respuesta almacenada. Si la ubicación se eliminó, el reintento de creación informa que ya no está disponible, sin recrearla. Repetir una eliminación confirmada del mismo ID devuelve confirmación y no borra otra ubicación.
@@ -35,6 +39,8 @@ Las solicitudes de creación anteriores mantienen actor, UUID y payload. Al rein
 La RPC de eliminación valida rol y tipo, bloquea la ubicación y comprueba sus referencias en Supabase, sin depender del listado paginado del frontend. No se concede DELETE directo a usuarios autenticados. El contador conserva como mínimo los números vistos antes de eliminar y no retrocede. Documentos históricos conservan sus textos anteriores.
 
 ## Comprobaciones
+
+Excepción de numeración verificada (29 de octubre): typecheck, lint, 210 pruebas unitarias y 52 de integración (262), y build correctos con Node 22.23.3 / pnpm 11.19.0. Dos pruebas nuevas comprueban la asignación explícita de tres IDs, conservación de nombres/padres/productos/niveles/cajas e historial, repetición sin cambios, contador que incluye la excepción antes de asignar códigos sin número y rollback ante padre/ID incorrectos, destinos repetidos o números inválidos. El SQL privado combinado se comprobó contra el mismo cuerpo ensayado y sus tres asignaciones; queda ignorado por Git. El usuario debe ejecutarlo en Supabase; no hay cambios aplicados por el agente en producción.
 
 Asignación a códigos sin número verificada (29 de octubre): typecheck, lint, 210 pruebas unitarias y 50 de integración (260), y build correctos con Node 22.23.3 / pnpm 11.19.0. Una nueva prueba reproduce FULGOR en los cuatro tipos y varias ubicaciones sin número; confirma códigos separados sobre máximos reales/reservados, conservación de los números anteriores y de nombres/IDs/padres/productos, orden estable y repetición sin nuevos números. Se conserva rollback ante coincidencias de números en el mismo padre y ante números fuera del límite admitido. La auditoría identifica los que recibirán un consecutivo nuevo. Sin cambios de interfaz ni SQL ejecutado por el agente en Supabase real; el usuario debe volver a ejecutar el archivo actualizado.
 
