@@ -88,4 +88,15 @@
   }
   .ui-photo-dot > span { background-color: var(--ui-muted); opacity: .35; }
   .ui-photo-dot[aria-current='true'] > span { background-color: var(--ui-action); opacity: 1; }
+  /* Location crumbs remain text links with a touch target and visible keyboard focus. */
+  :root[data-ui-style] button.item-location-link,
+  :root[data-ui-style] button.item-location-link:is(:hover, :active, :focus-visible) {
+    display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; padding: 0 2px;
+    line-height: 1.5; white-space: normal; overflow-wrap: anywhere;
+    user-select: text; -webkit-user-select: text;
+    background: transparent !important; box-shadow: none !important;
+    border: 0; border-radius: 4px; transform: none !important;
+    text-align: start; vertical-align: baseline; color: var(--ui-action) !important;
+  }
+  :root[data-ui-style] button.item-location-link:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
 }

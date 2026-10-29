@@ -21,6 +21,7 @@ const uppercaseMigration = fs.readFileSync(new URL('../../supabase/migrations/20
 const webpMigration = fs.readFileSync(new URL('../../supabase/migrations/20261010000100_webp_photos.sql', import.meta.url), 'utf8');
 const projectCityMigration = fs.readFileSync(new URL('../../supabase/migrations/20261027000100_project_city_remission_code.sql', import.meta.url), 'utf8');
 const automaticCodesMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000100_automatic_location_category_codes.sql', import.meta.url), 'utf8');
+const boxNamesMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000400_box_names.sql', import.meta.url), 'utf8');
 const normalizeLocationCodesMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000200_normalize_location_codes.sql', import.meta.url), 'utf8');
 const deleteLocationsMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000300_delete_empty_locations.sql', import.meta.url), 'utf8');
 const locationCodesAudit = fs.readFileSync(new URL('../../supabase/audit_location_codes_readonly.sql', import.meta.url), 'utf8');
@@ -1585,5 +1586,50 @@ test('automatic reassignment checks its original code and rejects incomplete or 
   for(const bad of [{...request,codigo_esperado:null},{...request,codigo_esperado:''},{...request,numero:4}]){
    await assert.rejects(()=>db.exec(normalizationWithOverrides([bad])),/check constraint/);await db.exec('ROLLBACK');
   }
+ }finally{await db.close();}
+});
+
+
+test('box names preserve existing inventory and automatic codes, accept optional names and keep requests idempotent after rename',async()=>{
+ const db=await database();try{
+  await db.exec(automaticCodesMigration);
+  const tables=['cajas','elementos','historial','remisiones','inventario_ubicacion_consecutivos'];
+  const before=await Promise.all(tables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY 1')).rows));
+  await db.exec(boxNamesMigration);await db.exec(boxNamesMigration);
+  for(const [index,table] of tables.entries())assert.deepEqual((await db.query('SELECT * FROM public.'+table+' ORDER BY 1')).rows,before[index]);
+  await role(db,'admin');
+  assert.equal((await db.query('SELECT public.inventory_box_names_ready() AS ready')).rows[0].ready,true);
+  const create=async(n,kind,payload)=>(await db.query(autoLocationSql,[autoId(900+n),kind,JSON.stringify(payload)])).rows[0].row;
+  const warehouse=await create(1,'almacen',{nombre:'Bodega nombres'});
+  const rack=await create(2,'estanteria',{nombre:'Estante',parent_id:warehouse.id});
+  const level=await create(3,'nivel',{nombre:'Piso',parent_id:rack.id});
+  const payload={nombre:' Herramientas ',parent_id:rack.id,nivel_id:level.id};
+  const box=await create(4,'caja',payload);assert.equal(box.nombre,'Herramientas');assert.match(box.codigo,/^CAJ[0-9]{3,}$/);
+  assert.deepEqual(await create(4,'caja',payload),box);
+  await asOwner(db);
+  const last=(await db.query("SELECT ultimo FROM public.inventario_ubicacion_consecutivos WHERE prefijo='CAJ'")).rows[0].ultimo;
+  await role(db,'admin');
+  await db.query("UPDATE public.cajas SET nombre='  Equipos  ' WHERE id=$1",[box.id]);
+  const renamed=await create(4,'caja',payload);assert.equal(renamed.nombre,'Equipos');assert.equal(renamed.codigo,box.codigo);assert.equal(renamed.id,box.id);
+  await asOwner(db);
+  assert.equal((await db.query("SELECT ultimo FROM public.inventario_ubicacion_consecutivos WHERE prefijo='CAJ'")).rows[0].ultimo,last);
+  await role(db,'admin');
+  await assert.rejects(()=>create(4,'caja',{...payload,nombre:'Cambio de solicitud'}),/otros datos/);
+  await assert.rejects(()=>create(5,'caja',{...payload,nombre:'x'.repeat(101)}),/100 caracteres/);
+  await assert.rejects(()=>db.query('UPDATE public.cajas SET nombre=$1 WHERE id=$2',['x'.repeat(101),box.id]),/100 caracteres/);
+  await assert.rejects(()=>db.query("UPDATE public.cajas SET codigo='CAJ999' WHERE id=$1",[box.id]),/no se puede modificar/);
+  const unnamed=await create(6,'caja',{parent_id:rack.id,nivel_id:level.id});assert.equal(unnamed.nombre,unnamed.codigo);
+  assert.equal(Number(unnamed.codigo.slice(3)),Number(box.codigo.slice(3))+1);
+  await db.query("UPDATE public.cajas SET nombre='' WHERE id=$1",[unnamed.id]);
+  assert.equal((await db.query('SELECT codigo FROM public.cajas WHERE id=$1',[unnamed.id])).rows[0].codigo,unnamed.codigo);
+  for(const [index,table] of ['elementos','historial','remisiones'].entries())assert.deepEqual((await db.query('SELECT * FROM public.'+table+' ORDER BY 1')).rows,before[index+1]);
+  for(const reader of ['operador','consulta']){
+   await role(db,reader);assert.equal((await db.query('SELECT nombre FROM public.cajas WHERE id=$1',[box.id])).rows[0].nombre,'Equipos');
+   assert.equal((await db.query('SELECT public.inventory_box_names_ready() AS ready')).rows[0].ready,false);
+   assert.equal((await db.query("UPDATE public.cajas SET nombre='No autorizado' WHERE id=$1 RETURNING id",[box.id])).rows.length,0);
+   await assert.rejects(()=>create(7,'caja',payload),/No autorizado/);
+  }
+  await asOwner(db);await db.exec('SET ROLE anon');
+  await assert.rejects(()=>db.query('SELECT public.inventory_box_names_ready()'),/permission denied/);
  }finally{await db.close();}
 });

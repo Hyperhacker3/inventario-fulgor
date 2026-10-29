@@ -41,6 +41,7 @@ export interface Caja {
   estanteriaId: string | null;
   nivelId?: string | null;
   codigoCaja: string; // e.g. 'CAJ1045'
+  nombre?: string;
   /** Legacy database metadata; occupancy is no longer displayed or edited. */
   estado?: 'Completa' | 'Parcial' | 'Vacia';
   descripcion?: string;

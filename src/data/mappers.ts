@@ -28,7 +28,7 @@ export const mapNivel = (row: DbRow): NivelEstanteria => ({
   id: str(row.id), estanteriaId: str(row.estanteria_id), codigo: str(row.codigo), nombre: str(row.nombre), descripcion: str(row.descripcion),
 });
 export const mapCaja = (row: DbRow): Caja => ({
-  id: str(row.id), estanteriaId: id(row.estanteria_id), nivelId: id(row.nivel_id), codigoCaja: str(row.codigo),
+  id: str(row.id), estanteriaId: id(row.estanteria_id), nivelId: id(row.nivel_id), codigoCaja: str(row.codigo), nombre: str(row.nombre),
   estado: /COMP/i.test(str(row.estado)) ? 'Completa' : /VAC/i.test(str(row.estado)) ? 'Vacia' : 'Parcial',
   descripcion: str(row.descripcion),
 });

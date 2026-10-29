@@ -1,3 +1,4 @@
+import { boxLabel } from '../domain/locationNavigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useInventory } from '../context/InventoryContext';
@@ -131,7 +132,7 @@ export function InventoryReportsManager({ items, warehouses, racks = [], levels 
           <label className="text-sm min-w-0" htmlFor="report-box">Caja
             <Select id="report-box" value={filters.box} onChange={event => changeFilters({ box: event.target.value })} className="w-full rounded-xl p-3 mt-1">
               <option value="">Todas las cajas</option><option value="unassigned">Sin caja</option>
-              {choices.boxes.map(row => <option key={row.id} value={row.id}>{!filters.rack ? `${rackNames.get(row.estanteriaId || '') || 'Sin estantería'} > ` : ''}{!filters.level ? `${levelNames.get(row.nivelId || '') || 'Sin nivel'} > ` : ''}{row.codigoCaja}</option>)}
+              {choices.boxes.map(row => <option key={row.id} value={row.id}>{!filters.rack ? `${rackNames.get(row.estanteriaId || '') || 'Sin estantería'} > ` : ''}{!filters.level ? `${levelNames.get(row.nivelId || '') || 'Sin nivel'} > ` : ''}{boxLabel(row)}</option>)}
             </Select>
           </label>
         </div>

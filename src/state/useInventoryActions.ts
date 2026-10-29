@@ -24,6 +24,7 @@ import { displayCargo } from '../domain/userProfile';
 import { validateRemissionRoute, remissionDate, remissionCode, remissionSequence } from '../domain/remissionRoute';
 import { uppercaseName } from '../shared/uppercase';
 import { normalizeItemCondition } from '../domain/itemCondition';
+import { ensureBoxNamesReady } from '../data/boxNames';
 import { AutomaticCodeRequests, automaticCodeRpc } from '../data/automaticCodes';
 import { normalizeProjectCity } from '../domain/projectCity';
 
@@ -287,7 +288,8 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
   const addCaja = async (input: Omit<Caja, 'id'>) => {
     requireAdmin();
     if (isDemo) { const value = { ...input, id: newId('CAJ') }; setDemoData(prev => ({ ...prev, cajas: [...prev.cajas, value] })); return value; }
-    const value = mapCaja(await createLocation('caja', { parent_id: input.estanteriaId, nivel_id: input.nivelId || null, descripcion: input.descripcion || '' }));
+    if (input.nombre?.trim()) await ensureBoxNamesReady();
+    const value = mapCaja(await createLocation('caja', { parent_id: input.estanteriaId, nivel_id: input.nivelId || null, nombre: input.nombre?.trim() || '', descripcion: input.descripcion || '' }));
     client.setQueryData<Caja[]>(['fulgor', user?.email || '', 'cajas'], previous =>
       [value, ...(previous || []).filter(box => box.id !== value.id)]);
     await syncAfterWrite(refresh('cajas')); return value;
@@ -297,7 +299,9 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     if (updates.codigoCaja !== undefined && updates.codigoCaja !== data.cajas.find(row => row.id === id)?.codigoCaja) throw new Error('El código de ubicación no se puede modificar.');
     if (isDemo) { setDemoData(prev => ({ ...prev, cajas: prev.cajas.map(c => c.id === id ? { ...c, ...updates } : c),
       elementos: updates.nivelId === undefined ? prev.elementos : prev.elementos.map(item => item.cajaId === id ? { ...item, nivelId: updates.nivelId, updatedAt: isoNow() } : item) })); return; }
+    if (updates.nombre !== undefined && updates.nombre !== data.cajas.find(row => row.id === id)?.nombre) await ensureBoxNamesReady();
     await updateRow('cajas', id, {
+      ...(updates.nombre !== undefined && { nombre: updates.nombre.trim() }),
       ...(updates.nivelId !== undefined && { nivel_id: updates.nivelId }),
       ...(updates.descripcion !== undefined && { descripcion: updates.descripcion }) }, mapCaja);
     await syncAfterWrite(refresh('cajas', 'elementos', 'historial'));

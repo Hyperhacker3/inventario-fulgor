@@ -25,7 +25,7 @@ export function WarehouseFormContent({ target, onClose, onCreatedWarehouse, inve
   const boxRackId = existing && 'estanteriaId' in existing ? existing.estanteriaId : inventory.niveles.find(level => level.id === target.parentId)?.estanteriaId;
   const boxLevels = inventory.niveles.filter(level => level.estanteriaId === boxRackId);
   const saving = useRef(false);
-  const [name, setName] = useState(existing && 'nombre' in existing ? existing.nombre : '');
+  const [name, setName] = useState(existing?.nombre || '');
   const code = existing ? 'codigoCaja' in existing ? existing.codigoCaja : existing.codigo : '';
   const [city, setCity] = useState(existing && 'ciudad' in existing ? existing.ciudad : '');
   const [descripcion, setDescription] = useState(existing?.descripcion || '');
@@ -49,8 +49,8 @@ export function WarehouseFormContent({ target, onClose, onCreatedWarehouse, inve
         else await inventory.addNivel({ estanteriaId: target.parentId || '', codigo: '', nombre: name.trim(), descripcion });
       } else {
         if (!levelId && target.mode === 'new') throw new Error('Seleccione un nivel de estantería para crear la caja.');
-        if (target.mode === 'edit' && target.id) await inventory.updateCaja(target.id, { nivelId: levelId || null, descripcion });
-        else await inventory.addCaja({ estanteriaId: inventory.niveles.find(level => level.id === levelId)?.estanteriaId || boxRackId || null, codigoCaja: '', nivelId: levelId || null, descripcion });
+        if (target.mode === 'edit' && target.id) await inventory.updateCaja(target.id, { nivelId: levelId || null, nombre: name.trim(), descripcion });
+        else await inventory.addCaja({ estanteriaId: inventory.niveles.find(level => level.id === levelId)?.estanteriaId || boxRackId || null, codigoCaja: '', nombre: name.trim(), nivelId: levelId || null, descripcion });
       }
       onClose();
     } catch (cause) { setError(errorMessage(cause)); }
@@ -66,7 +66,7 @@ export function WarehouseFormContent({ target, onClose, onCreatedWarehouse, inve
           <option value="">Sin nivel asignado</option>{boxLevels.map(level => <option key={level.id} value={level.id}>{level.codigo} · {level.nombre}</option>)}
         </Select></label>}
         {target.mode === 'edit' && <label className="text-sm block">Código<input readOnly value={code} className="block border rounded-lg p-2 w-full mt-1" /></label>}
-        {target.kind !== 'caja' && <label className="text-sm block">Nombre<input autoComplete="off" autoCorrect="off" spellCheck={false} required maxLength={100} value={name} onChange={e => setName(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
+        <label className="text-sm block">Nombre<input autoComplete="off" autoCorrect="off" spellCheck={false} required={target.kind !== 'caja'} maxLength={100} value={name} onChange={e => setName(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>
         {target.kind === 'almacen' && <label className="text-sm block">Ciudad<input autoComplete="off" autoCorrect="off" spellCheck={false} value={city} onChange={e => setCity(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
         {target.mode === 'edit' && <label className="text-sm block">Descripción<input autoComplete="off" autoCorrect="off" spellCheck={false} value={descripcion} onChange={e => setDescription(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
         {target.mode === 'edit' && target.kind === 'almacen' &&

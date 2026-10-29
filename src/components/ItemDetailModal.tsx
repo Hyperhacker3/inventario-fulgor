@@ -23,6 +23,7 @@ import { changedItemLocation, itemLocationDraft } from '../domain/itemLocation';
 import { ItemValueField } from './item/ItemValueField';
 import { formatCOP, roundCOP } from '../domain/money';
 import { normalizeUnit } from '../domain/catalogs';
+import { ItemLocationLinks } from './item/ItemLocationLinks';
 import { ItemUnitField } from './item/ItemUnitField';
 
 interface Props { item: Elemento | null; onClose: () => void; onPermanentDelete?: (item: Elemento) => Promise<void>; onRestore?: (item: Elemento) => Promise<void> }
@@ -33,7 +34,7 @@ export function ItemDetailModal(props: Props) {
 }
 type DetailInventory = Pick<ReturnType<typeof useInventory>, 'user' | 'getLocationString' | 'openQuickMovement' | 'addToDispatchCart'
   | 'updateElemento' | 'deleteElemento' | 'categoryLabel' | 'almacenes' | 'estanterias' | 'cajas' | 'niveles'>
-  & Partial<Pick<ReturnType<typeof useInventory>, 'addEstanteria' | 'addNivel' | 'addCaja' | 'quickMovementItem' | 'quickMovementType' | 'dispatchSelection'>>;
+  & Partial<Pick<ReturnType<typeof useInventory>, 'addEstanteria' | 'addNivel' | 'addCaja' | 'quickMovementItem' | 'quickMovementType' | 'dispatchSelection' | 'openLocationInventory'>>;
 export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore, inventory, history }: Props & { inventory: DetailInventory; history?: ReactNode }) {
   const { user, getLocationString, openQuickMovement, addToDispatchCart,
     updateElemento, deleteElemento, categoryLabel, almacenes, estanterias, cajas, niveles, addEstanteria, addNivel, addCaja } = inventory;
@@ -134,7 +135,8 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
                 <div className="min-w-0"><dt className="text-xs text-slate-500">Estado</dt><dd className="mt-1 break-words">{normalizeItemCondition(item.estado)}</dd></div>
                 <div className="min-w-0"><dt className="text-xs text-slate-500">Peso por 1 {item.unidad.toUpperCase()}</dt><dd className={`mt-1 break-words ${item.pesoUnitario ? 'text-[#253685]' : 'text-amber-700'}`}>{formatUnitWeight(item.pesoUnitario)}</dd></div>
                 <div className="min-w-0"><dt className="text-xs text-slate-500">Valor por 1 {item.unidad.toUpperCase()}</dt><dd className="mt-1 break-words text-[#253685]">{formatCOP(item.valorUnitario || 0)}</dd></div>
-                <div className="min-w-0 min-[400px]:col-span-2"><dt className="text-xs text-slate-500">Ubicación</dt><dd className="mt-1 break-words">{getLocationString(item)}</dd></div>
+                <div className="min-w-0 min-[400px]:col-span-2"><dt className="text-xs text-slate-500">Ubicación</dt><dd className="mt-1 break-words">{inventory.openLocationInventory ? <ItemLocationLinks item={item} warehouses={almacenes} racks={estanterias} levels={niveles} boxes={cajas}
+                  disabled={busy || editing || archiveConfirm} onNavigate={inventory.openLocationInventory} /> : getLocationString(item)}</dd></div>
                 <div className="col-span-full"><dt className="sr-only">Existencias y valor</dt><dd><dl className="item-form-pair">
                   <div className="item-detail-stock min-w-0"><dt className="text-xs text-slate-500">Stock</dt><dd className="mt-1 break-words"><strong className="text-2xl sm:text-3xl">{item.cantidad}</strong> {item.unidad}</dd></div>
                   <div className="item-detail-stock-value min-w-0"><dt className="text-xs text-slate-500">Valor de stock</dt><dd className="mt-1 break-words">{item.stockPendiente ? 'Pendiente de verificar' : <><strong className="text-2xl sm:text-3xl">{roundCOP(item.cantidad * (item.valorUnitario || 0)).toLocaleString('es-CO', { maximumFractionDigits: 2 })}</strong> COP</>}</dd></div>

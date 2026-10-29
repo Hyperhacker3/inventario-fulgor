@@ -172,14 +172,15 @@ test('inline box selection saves in the selected rack, blocks double creation an
     await act(() => root.render(createElement(ItemBoxSelector, { rackId:'RACK-1',levelId:'LEVEL-1',boxId:'',boxes:[],
       onBox:(id: string)=>selected.push(id),onBusyChange:(value: boolean)=>busy.push(value),onDraftChange:(value: boolean)=>drafts.push(value),
       onCreate:async (input: Omit<import('../../src/types').Caja,'id'>) => {
-        calls++; assert.equal(input.estanteriaId,'RACK-1'); assert.equal(input.nivelId,'LEVEL-1'); assert.equal(input.codigoCaja,''); assert.equal(input.estado,undefined); return saved;
+        calls++; assert.equal(input.estanteriaId,'RACK-1'); assert.equal(input.nivelId,'LEVEL-1'); assert.equal(input.codigoCaja,''); assert.equal(input.estado,undefined); assert.equal(input.nombre,'Herramientas'); return saved;
       } })));
     const select = host.querySelector('select')!;
     assert.equal(select.options[0].value,'');
     assert.equal(select.options[1].value,'__NEW_BOX__');
     await chooseVisible(host,'__NEW_BOX__');
     const input = host.querySelector('input')!;
-    assert.equal(input.readOnly,true);assert.match(input.value,/CAJ/);
+    assert.equal(input.readOnly,false);assert.equal(input.value,'');
+    await act(() => { Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!.call(input,'Herramientas'); input.dispatchEvent(new dom.window.Event('input',{bubbles:true})); });
     await act(() => { host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); });
     assert.equal(calls,1); assert.deepEqual(selected,[]); assert.equal(select.disabled,true); assert.deepEqual(busy,[true]);
     await act(async () => complete({ id:'BOX-SERVER',estanteriaId:'RACK-1',nivelId:'LEVEL-1',codigoCaja:'CAJ-025',estado:'Parcial' }));
@@ -201,9 +202,9 @@ test('automatic box creation keeps its failed intent and confirms the server-ass
   try {
     await act(() => root.render(createElement(ItemBoxSelector,props)));
     await chooseVisible(host,'__NEW_BOX__');
-    assert.equal(host.querySelector('input')!.readOnly,true);
+    assert.equal(host.querySelector('input')!.readOnly,false);
     await act(async () => host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click());
-    assert.deepEqual(selected,[]); assert.match(host.querySelector('input')!.value,/Se asigna/);
+    assert.deepEqual(selected,[]); assert.equal(host.querySelector('input')!.value,'');
     assert.match(host.querySelector('[role="alert"]')!.textContent!,/No se pudo conectar/);
     fail=false;
     // The request coordinator confirms the original intent even if another box becomes visible.
@@ -234,12 +235,12 @@ test('inline racks require a warehouse, keep failed drafts and select a confirme
     const setValue=Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
     await act(() => {
       const inputs=host.querySelectorAll('input');
-      assert.equal(inputs[0].readOnly,true);
-      setValue.call(inputs[1],'Zona eléctrica'); inputs[1].dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+      assert.equal(inputs.length,1);
+      setValue.call(inputs[0],'Zona eléctrica'); inputs[0].dispatchEvent(new dom.window.Event('input',{bubbles:true}));
     });
     await act(async () => host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click());
     assert.deepEqual(selected,[]); assert.match(host.querySelector('[role="alert"]')!.textContent!,/No se pudo guardar/);
-    assert.equal(host.querySelectorAll('input')[1].value,'Zona eléctrica');
+    assert.equal(host.querySelectorAll('input')[0].value,'Zona eléctrica');
     fail=false;
     await act(async () => { host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); });
     assert.equal(calls,2); assert.deepEqual(selected,['RACK-SERVER']); assert.equal(host.querySelector('input')?.closest('[inert]') !== null,true); await act(async () => { await new Promise(resolve => setTimeout(resolve,CLOSE_DURATION + 30)); }); assert.equal(host.querySelector('input'),null);

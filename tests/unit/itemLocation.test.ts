@@ -307,7 +307,7 @@ test('editing creates rack, level and box in sequence, preserves failed drafts a
     await act(() => { submit(); }); assert.equal(saved.length, 0);
     await act(async () => button(host, 'Crear y elegir estantería').click());
     assert.match(editor()!.textContent!, /Sin conexión/);
-    assert.equal((editor()!.querySelector('input[id$="input-nueva-estanteria-codigo"]') as HTMLInputElement).readOnly, true);
+    assert.equal(editor()!.querySelector('input[id$="input-nueva-estanteria-codigo"]'), null);
     assert.equal((editor()!.querySelector('input[id$="input-nueva-estanteria-nombre"]') as HTMLInputElement).value, 'Nueva');
     await act(async () => { const create = button(host, 'Crear y elegir estantería'); create.click(); create.click(); }); assert.equal(rackCalls, 2);
     assert.equal(button(host, 'Cerrar detalle').disabled, true); assert.equal(button(host, 'Cancelar').disabled, true);
@@ -367,4 +367,20 @@ test('editing preserves a legacy unit and omits unit changes when saving unrelat
     await act(async()=>editForm()!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true})));
     assert.ok(saved);assert.equal(saved.unidad,undefined);assert.equal(saved.cantidad,undefined);
   } finally {await act(()=>root.unmount());host.remove();}
+});
+
+
+test('product detail renders location links and blocks them while editing', async () => {
+  const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);
+  const requests:import('../../src/domain/explorer').InventoryFilters[]=[];
+  try {
+    await act(()=>root.render(h(ItemDetailContent,{item,onClose(){},inventory:{...inventory(async()=>{}),openLocationInventory:filters=>requests.push(filters)}})));
+    const crumbs=()=>[...host.querySelectorAll<HTMLButtonElement>('.item-location-link')];
+    assert.deepEqual(crumbs().map(row=>row.textContent),['Norte','A','Caja A']);
+    await act(()=>crumbs()[2].click());
+    assert.equal(requests[0].warehouseId,'w1');assert.equal(requests[0].rackId,'r1');assert.equal(requests[0].boxId,'b1');
+    await act(()=>button(host,'Editar').click());
+    assert.ok(crumbs().every(row=>row.disabled));
+    await act(()=>crumbs()[0].click());assert.equal(requests.length,1);
+  }finally{await act(()=>root.unmount());host.remove();}
 });

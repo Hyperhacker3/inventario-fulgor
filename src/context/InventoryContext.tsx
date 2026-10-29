@@ -15,6 +15,7 @@ import { isDemo } from '../lib/supabase';
 import type { DispatchCartItem, Elemento, Remision } from '../types';
 import type { InventoryReport, ReportSaveJob } from '../domain/inventoryReport';
 import { INITIAL_ALMACENES, INITIAL_CAJAS, INITIAL_ELEMENTOS, INITIAL_ESTANTERIAS, INITIAL_HISTORIAL, INITIAL_PROYECTOS, INITIAL_REMISIONES } from '../data/initialData';
+import { useInventoryExplorer } from '../state/useInventoryExplorer';
 
 type CartLine = { elementoId: string; cantidad: number };
 function loadCart(key: string): CartLine[] {
@@ -61,6 +62,7 @@ function useInventoryValue() {
     setDispatchSelection(null);
   }, []);
   const { activeView, navigationView, setActiveView } = useViewNavigation(closeNavigationOverlays);
+  const { explorerState, setExplorerState, openLocationInventory } = useInventoryExplorer(setActiveView, () => setSelectedItemId(null), setGlobalSearch);
   const cartKey = `fulgor_cart_v4_${user?.email || 'anonymous'}`;
   const [cartLines, setCartLines] = useState<CartLine[]>(() => loadCart(cartKey));
   useEffect(() => { localStorage.setItem(cartKey, JSON.stringify(cartLines)); }, [cartKey, cartLines]);
@@ -139,6 +141,7 @@ function useInventoryValue() {
     reportSaveJob, reportItemIds, setReportItemIds, reportFilters, setReportFilters, selectedInventoryReport, openInventoryReport, closeInventoryReport,
     quickMovementType, isHelpModalOpen, globalSearch, isCloudConnected: data.isCloudConnected,
     dispatchSelection, dispatchSelectionItem, closeDispatchSelection, dispatchFeedback,
+    explorerState, setExplorerState, openLocationInventory,
     syncStatus: data.syncStatus, setActiveView, setGlobalSearch, openItemDetail, closeItemDetail,
     startupStatus: combinedInitialStatus(data.initialLoadStatus, catalogs.catalogLoadStatus),
     retryInitialLoad: () => Promise.allSettled([

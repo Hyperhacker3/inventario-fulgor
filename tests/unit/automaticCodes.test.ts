@@ -49,13 +49,13 @@ test('location creation asks only for the requested fields, keeps automatic defa
     const labelNames=labels.map(label=>label.firstChild?.textContent);
     const field=(name:string)=>labels.find(label=>label.firstChild?.textContent===name)?.querySelector('input');
     if(mode==='new'){
-     assert.deepEqual(labelNames,kind==='almacen'?['Nombre','Ciudad']:kind==='caja'?['Nivel de estantería']:['Nombre']);
+     assert.deepEqual(labelNames,kind==='almacen'?['Nombre','Ciudad']:kind==='caja'?['Nivel de estantería','Nombre']:['Nombre']);
     }else{
      const code=field('Código')!;assert.equal(code.readOnly,true);assert.match(code.value,new RegExp(prefix));
      assert.equal(field('Descripción')!.value,'Descripción anterior');
      assert.equal(labelNames.includes('Estado'),kind==='almacen');
     }
-    if(kind!=='caja')await act(()=>change(field('Nombre')!,'Nombre nuevo'));
+    await act(()=>change(field('Nombre')!,'Nombre nuevo'));
     if(kind==='almacen')await act(()=>change(field('Ciudad')!,'Bogotá'));
     await act(async()=>document.querySelector('form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true})));
     const last=calls.at(-1)!;assert.equal(last.kind,kind);
@@ -68,7 +68,7 @@ test('location creation asks only for the requested fields, keeps automatic defa
      assert.equal(last.input.descripcion,'');
      if(kind==='caja'){assert.equal(last.input.estado,undefined);assert.equal(last.input.nivelId,'N');assert.equal(last.input.estanteriaId,'R');}
     }
-    if(kind!=='caja')assert.equal(last.input.nombre,'Nombre nuevo');
+    assert.equal(last.input.nombre,'Nombre nuevo');
     if(kind==='almacen')assert.equal(last.input.ciudad,'Bogotá');
    }finally{await act(()=>root.unmount());host.remove();}
   }

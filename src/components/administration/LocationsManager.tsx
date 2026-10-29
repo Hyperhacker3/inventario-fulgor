@@ -34,7 +34,7 @@ export function LocationsManagerContent({ kind, almacenes, estanterias, niveles,
     location: getAlmacenById(row.almacenId)?.nombre || 'Sin almacén', description: row.descripcion }))
     : level ? niveles.map(row => ({ id: row.id, code: row.codigo, name: row.nombre, parent: row.estanteriaId,
       location: rackLabel(row.estanteriaId), description: row.descripcion }))
-    : cajas.map(row => ({ id: row.id, code: row.codigoCaja, name: '', parent: row.nivelId || null,
+    : cajas.map(row => ({ id: row.id, code: row.codigoCaja, name: row.nombre !== row.codigoCaja ? row.nombre || '' : '', parent: row.nivelId || null,
       location: `${rackLabel(row.estanteriaId)} / ${niveles.find(value => value.id === row.nivelId)?.nombre || 'Sin nivel asignado'}`, description: row.descripcion }));
   const parentName = rack ? 'Almacén' : level ? 'Estantería' : 'Nivel de estantería';
   const entityName = warehouse ? 'almacén' : rack ? 'estantería' : level ? 'nivel' : 'caja';

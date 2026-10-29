@@ -1,3 +1,4 @@
+import { boxLabel } from './locationNavigation';
 import type { Elemento, Almacen, Estanteria, NivelEstanteria, Caja } from '../types';
 import { validQuantity } from './quantity';
 import { validateWeight } from './weight';
@@ -9,7 +10,7 @@ export function locationLabel(item: Elemento, almacenes: ReadonlyMap<string, Alm
   const est = item.estanteriaId ? estanterias.get(item.estanteriaId) : undefined;
   const nivel = item.nivelId ? niveles.get(item.nivelId) : undefined;
   const caj = item.cajaId ? cajas.get(item.cajaId) : undefined;
-  return [alm?.nombre, est?.nombre || est?.codigo, nivel ? `Nivel ${nivel.nombre || nivel.codigo}` : null, caj?.codigoCaja].filter(Boolean).join(' > ') || 'Sin ubicación asignada';
+  return [alm?.nombre, est?.nombre || est?.codigo, nivel ? `Nivel ${nivel.nombre || nivel.codigo}` : null, caj ? boxLabel(caj) : null].filter(Boolean).join(' > ') || 'Sin ubicación asignada';
 }
 export function validateItem(item: Omit<Elemento, 'id' | 'createdAt' | 'updatedAt'>,
   almacenes: Almacen[], estanterias: Estanteria[], cajas: Caja[], niveles: NivelEstanteria[] = []) {

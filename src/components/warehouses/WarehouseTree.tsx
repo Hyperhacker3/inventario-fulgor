@@ -1,3 +1,4 @@
+import { boxLabel } from '../../domain/locationNavigation';
 import { StateIcon } from '../ui/StateIcon';
 import { useMemo } from 'react';
 import type { Almacen, Estanteria, NivelEstanteria, Caja, Elemento } from '../../types';
@@ -39,7 +40,7 @@ export function WarehouseTreeContent({ almacen, estanterias, niveles, cajas, ele
       className="ui-product-open block w-full break-words text-left font-semibold">{item.codigo} · {item.nombre}</button>
     <span className="block text-xs text-[#767682]">{label} · {item.cantidad} {item.unidad}{item.marca ? ` · ${item.marca}` : ''}</span></div>;
   const boxCard = (box: Caja) => <div key={box.id} className="min-w-0 border rounded-xl p-3 bg-[#f8fafc]">
-    <div className="flex flex-wrap justify-between gap-2"><div className="font-bold text-sm">{box.codigoCaja}</div>
+    <div className="flex flex-wrap justify-between gap-2"><div className="font-bold text-sm">{boxLabel(box)}</div>
       {canAdmin && <button data-action="edit" onClick={() => onEditBox(box.id)} className="text-xs text-[#253685]"><StateIcon icon="edit" />Editar</button>}</div>
     <LocationValueSummary values={values.boxes.get(box.id)} />
     <div className="space-y-3 mt-3">{(indexes.byBox.get(box.id) || []).map(item => itemLink(item, box.codigoCaja))}</div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { ALL_LOCATIONS, emptyInventoryFilters, changeWarehouse, changeRack, changeLevel, filterInventory, orderInventoryByActivity, type InventoryFilters } from '../domain/explorer';
 import { ExplorerResults } from './explorer/ExplorerResults';
@@ -10,18 +10,16 @@ import { SearchInput } from './ui/SearchInput';
 export const ExplorerView: React.FC = () => {
   const {
     elementos, almacenes, estanterias, niveles, cajas, categoryOptions, categoryLabel, setGlobalSearch,
-    getLocationString,
+    getLocationString, explorerState, setExplorerState,
     globalSearch
   } = useInventory();
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const { search: searchQuery, filters, filtersOpen, page } = explorerState;
+  const setSearchQuery = (search: string) => setExplorerState(previous => ({ ...previous, search }));
+  const setPage = (page: number) => setExplorerState(previous => ({ ...previous, page }));
   const [viewMode, setViewMode] = useInventoryViewMode();
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [page, setPage] = useState(1);
-
-  const [filters, setFilters] = useState(emptyInventoryFilters);
   const effectiveSearch = globalSearch || searchQuery;
-  const changeFilters = (next: InventoryFilters) => { setFilters(next); setPage(1); };
+  const changeFilters = (next: InventoryFilters) => { setExplorerState(previous => ({ ...previous, filters: next, page: 1 })); };
   const handleClearFilters = () => {
     changeFilters(emptyInventoryFilters());
     setSearchQuery(''); setGlobalSearch('');
@@ -69,7 +67,7 @@ export const ExplorerView: React.FC = () => {
           <div role="group" aria-label="Controles del inventario" className="flex items-center gap-1">
             <button type="button" aria-expanded={filtersOpen} aria-controls="inventory-filters" aria-pressed={filtersOpen}
               aria-label={filtersOpen ? 'Ocultar filtros' : 'Mostrar filtros'} title={filtersOpen ? 'Ocultar filtros' : 'Mostrar filtros'}
-              onClick={() => setFiltersOpen(open => !open)} className="ui-flat-choice relative min-w-11 min-h-11 p-2 rounded-lg">
+              onClick={() => setExplorerState(previous => ({ ...previous, filtersOpen: !previous.filtersOpen }))} className="ui-flat-choice relative min-w-11 min-h-11 p-2 rounded-lg">
               <StateIcon icon="filter_list" filled={filtersOpen} className="text-xl" />
               {activeFiltersCount > 0 && <span aria-hidden="true" className="absolute -top-1 -right-1 bg-[#3e4e9e] text-white text-[10px] px-1.5 rounded-full">{activeFiltersCount}</span>}
             </button>

@@ -2,6 +2,8 @@
 
 Actualizado el 29 de octubre de 2026. La instrucción posterior del usuario conserva todos los números anteriores: solo cambia las letras y el formato, sin renumerar ubicaciones repetidas en padres distintos.
 
+Nombres y navegación actualizados: [Ubicaciones navegables y nombres de cajas](ubicaciones-navegables-y-nombres.md). La migración de nombres debe ejecutarse después de los archivos de códigos/normalización.
+
 ## Qué cambia
 
 - Almacenes usan ALM, estanterías EST, niveles NIV y cajas CAJ. Ejemplos: CON-05 → ALM005, EST-A01 → EST001, NIV-007 → NIV007 y CAJA-005 → CAJ005. Se toma el grupo numérico final del primer bloque de código, antes de descripciones separadas por espacios. Por ejemplo, EST-001 SIN ESTANTERÍA → EST001 y CAJA-005 ZONA 99 → CAJ005, conservando 001 y 005 e ignorando los números de la descripción. Solo se completa su representación hasta un mínimo de tres cifras. Después de 999 se conserva el ancho necesario.

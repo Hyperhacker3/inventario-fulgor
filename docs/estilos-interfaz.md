@@ -161,3 +161,7 @@ La autorización permanente del usuario exige commit y push de cada cambio termi
 Las ventanas de cámara recuerdan el lente local y permiten varias capturas consecutivas en Salidas. Limitan su altura al viewport y disponen de scroll; Capturar conserva su fila completa en móvil. Los botones de vista previa distinguen Repetir, Añadir y tomar otra y Añadir y terminar; Terminar conserva fotos aceptadas.
 
 StockAlerts evita flex-shrink en cada tarjeta. La cabecera separa código y cantidad, los nombres se envuelven completos y el área de scroll reserva separación y padding para sombras. Ayuda y guía tiene una cabecera fija con X y contenido desplazable organizado por funciones; no incluye instalación. Consulte [Guía de funciones](guia-funciones.md).
+
+## Enlaces de ubicación y nombres de cajas
+
+La ubicación de la ficha se compone de botones de texto separados por >, con foco de teclado y objetivo táctil de al menos 44 px. Se ajustan al ancho disponible sin cajas ni sombras adicionales, conservando la selección de texto. Cada botón abre el inventario con su jerarquía por ID y los filtros visibles. Los cuadros de código automático desaparecen de las altas en línea; caja añade Nombre opcional. Selectores y ubicación muestran CAJ007 · Herramientas cuando exista un nombre distinto del código. Mismo componente para móvil, tablet y PC; revisión visual con el usuario.

@@ -22,7 +22,7 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 
 ## Detalle y edición del producto
 
-- Abra un producto para consultar sus fotos, nombre completo, código, categoría, marca, estado, ubicación completa, peso, valor, comentarios y el stock total con su unidad. A su derecha, Valor de stock muestra cantidad total por valor unitario en COP. Peso y valor aparecen antes de la ubicación.
+- Abra un producto para consultar sus fotos, nombre completo, código, categoría, marca, estado, ubicación completa, peso, valor, comentarios y el stock total con su unidad. A su derecha, Valor de stock muestra cantidad total por valor unitario en COP. Peso y valor aparecen antes de la ubicación. Pulse cualquier tramo de Ubicación en la ficha para abrir el inventario de ese almacén, estantería, nivel o caja. Se incluyen sus ubicaciones inferiores y se respetan todos sus padres; se limpian las búsquedas y otros filtros anteriores. El panel de filtros se abre y los filtros se conservan al cambiar de pantalla.
 
 - Las cinco acciones son Editar (lápiz azul), Entrada (verde), Ajuste (amarillo), Agregar a la salida (rojo) y Archivar (violeta), según permisos. El botón permanece hundido mientras su ventana está abierta.
 
@@ -86,9 +86,9 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 
 - Reúne Códigos, Categorías, Almacenes, Estanterías, Niveles, Cajas, Proyectos, Archivados y Empresa. Cada sección tiene su propio color y la misma selección hundida que la navegación.
 
-- Las ubicaciones usan tarjetas con código, nombre, valor total, valor del material dañado y Editar. Cree o edite almacén → estantería → nivel → caja. Las cajas anteriores sin nivel pueden asignarse al editar. Al crear, almacén pide Nombre y Ciudad; estantería y nivel piden Nombre, y caja pide Nivel de estantería. Los códigos se asignan al guardar.
+- Las ubicaciones usan tarjetas con código, nombre, valor total, valor del material dañado y Editar. Cree o edite almacén → estantería → nivel → caja. Las cajas anteriores sin nivel pueden asignarse al editar. Al crear, almacén pide Nombre y Ciudad; estantería y nivel piden Nombre, y caja pide Nivel de estantería y Nombre opcional. En Entradas y edición tampoco se muestran cuadros de código al crear ubicaciones: se asignan automáticamente al guardar.
 
-- Almacenes, estanterías, niveles y cajas nuevos reciben códigos ALM001, EST001, NIV001 y CAJ001 al guardar. El consecutivo es global por tipo y el código no se edita. Los números anteriores se conservan al unificar el formato. Las cajas muestran solo su código. Administración puede eliminar ubicaciones vacías desde su tarjeta, con confirmación; se bloquea si tienen productos, incluidos archivados, o ubicaciones dependientes.
+- Almacenes, estanterías, niveles y cajas nuevos reciben códigos ALM001, EST001, NIV001 y CAJ001 al guardar. El consecutivo es global por tipo y el código no se edita. Los números anteriores se conservan al unificar el formato. Las cajas muestran código y nombre cuando lo tienen (por ejemplo, CAJ007 · Herramientas); puede añadir o corregir el nombre en Administración sin cambiar su código. Administración puede eliminar ubicaciones vacías desde su tarjeta, con confirmación; se bloquea si tienen productos, incluidos archivados, o ubicaciones dependientes.
 
 - Las categorías reciben un código único de tres letras, asignado automáticamente. Puede editar su nombre y disponibilidad sin cambiar el código ni desvincular sus productos.
 

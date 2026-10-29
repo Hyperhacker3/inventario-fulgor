@@ -41,8 +41,6 @@ export function ItemRackSelector({ warehouseId, rackId, racks, onRack, onCreate,
       {racks.map(rack => <option key={rack.id} value={rack.id}>{rack.codigo} - {rack.nombre}</option>)}
     </Select>
     <Presence open={creating}><div className="ui-panel-enter space-y-2">
-      <label htmlFor={idPrefix + 'input-nueva-estanteria-codigo'} className="block">Código de la nueva estantería</label>
-      <input id={idPrefix + 'input-nueva-estanteria-codigo'} readOnly value="EST · Se asigna al guardar" className="w-full px-3 py-2 rounded-lg border bg-white" />
       <label htmlFor={idPrefix + 'input-nueva-estanteria-nombre'} className="block">Nombre de la nueva estantería</label>
       <input autoComplete="off" autoCorrect="off" spellCheck={false} id={idPrefix + 'input-nueva-estanteria-nombre'} maxLength={100} value={name} disabled={busy} onChange={event => { setName(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}

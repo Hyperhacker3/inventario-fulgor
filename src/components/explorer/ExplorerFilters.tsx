@@ -1,3 +1,4 @@
+import { boxLabel } from '../../domain/locationNavigation';
 import { Select } from '../ui/Select';
 import { itemConditionOptions } from '../../domain/itemCondition';
 import { CategoryFilter } from './CategoryFilter';
@@ -67,7 +68,7 @@ export function ExplorerFilters({ visible, filters, warehouses, racks, levels, b
           <Select id="inventory-box-filter" value={filters.boxId} onChange={event => onBox(event.target.value)} className="block w-full mt-2 p-2 border rounded-lg bg-white text-sm font-normal normal-case">
             <option value={ALL_LOCATIONS}>Todas las cajas</option>
             <option value={NO_LOCATION}>Sin caja</option>
-            {locations.boxes.map(box => <option key={box.id} value={box.id}>{filters.rackId === ALL_LOCATIONS ? `${rackNames.get(box.estanteriaId || '') || 'Sin estantería'} > ${levelNames.get(box.nivelId || '') || 'Sin nivel'} > ${box.codigoCaja}` : filters.levelId === ALL_LOCATIONS ? `${levelNames.get(box.nivelId || '') || 'Sin nivel'} > ${box.codigoCaja}` : box.codigoCaja}</option>)}
+            {locations.boxes.map(box => <option key={box.id} value={box.id}>{filters.rackId === ALL_LOCATIONS ? `${rackNames.get(box.estanteriaId || '') || 'Sin estantería'} > ${levelNames.get(box.nivelId || '') || 'Sin nivel'} > ${boxLabel(box)}` : filters.levelId === ALL_LOCATIONS ? `${levelNames.get(box.nivelId || '') || 'Sin nivel'} > ${boxLabel(box)}` : boxLabel(box)}</option>)}
           </Select>
         </label>
       </div>

@@ -1,3 +1,4 @@
+import { boxLabel } from '../../domain/locationNavigation';
 import { useEffect, useId, useState } from 'react';
 import { Select } from '../ui/Select';
 import type { Almacen, Estanteria, NivelEstanteria, Caja } from '../../types';
@@ -50,7 +51,7 @@ export function ItemExistingLocationFields(props: Props) {
         <Select id={`${id}-box`} value={value.boxId} disabled={disabled || !value.rackId} className="block w-full mt-1 p-2.5 border rounded-lg"
           onChange={event => onChange({ ...value, boxId: event.target.value })}>
           <option value="">Sin caja asignada</option>
-          {availableBoxes.map(box => <option key={box.id} value={box.id}>{box.codigoCaja}</option>)}
+          {availableBoxes.map(box => <option key={box.id} value={box.id}>{boxLabel(box)}</option>)}
         </Select>
       </div>
     </div>

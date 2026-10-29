@@ -107,10 +107,10 @@ test('inline level creation requires a rack, keeps failed drafts and selects a c
     await act(()=>root.render(h(ItemLevelSelector,{...props,rackId:'R1'})));
     assert.equal(host.querySelector('select')!.options[1].value,'__NEW_LEVEL__');
     await choose(host,'__NEW_LEVEL__');
-    await act(()=>{const inputs=host.querySelectorAll('input');assert.equal(inputs[0].readOnly,true);type(inputs[1],'Centro');});
+    await act(()=>{const inputs=host.querySelectorAll('input');assert.equal(inputs.length,1);type(inputs[0],'Centro');});
     const button=host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!;
     await act(async()=>button.click());assert.match(host.querySelector('[role="alert"]')!.textContent!,/Sin conexión/);
-    assert.equal(host.querySelectorAll('input')[1].value,'Centro');assert.deepEqual(selected,[]);
+    assert.equal(host.querySelectorAll('input')[0].value,'Centro');assert.deepEqual(selected,[]);
     fail=false;await act(async()=>{button.click();button.click();});assert.equal(calls,2);assert.deepEqual(selected,['L4']);assert.deepEqual(drafts,[true,false]);
   }finally{await act(()=>root.unmount());host.remove();}
 });

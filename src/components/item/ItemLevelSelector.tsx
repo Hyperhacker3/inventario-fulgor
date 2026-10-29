@@ -41,8 +41,6 @@ export function ItemLevelSelector({ rackId, levelId, levels, onLevel, onCreate, 
       {levels.map(level => <option key={level.id} value={level.id}>{level.codigo} - {level.nombre}</option>)}
     </Select>
     <Presence open={creating}><div className="ui-panel-enter space-y-2">
-      <label htmlFor={idPrefix + 'input-nuevo-nivel-codigo'} className="block">Código del nuevo nivel</label>
-      <input id={idPrefix + 'input-nuevo-nivel-codigo'} readOnly value="NIV · Se asigna al guardar" className="w-full px-3 py-2 rounded-lg border bg-white" />
       <label htmlFor={idPrefix + 'input-nuevo-nivel-nombre'} className="block">Nombre del nuevo nivel</label>
       <input autoComplete="off" autoCorrect="off" spellCheck={false} id={idPrefix + 'input-nuevo-nivel-nombre'} maxLength={100} value={name} disabled={busy} onChange={event => { setName(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}
