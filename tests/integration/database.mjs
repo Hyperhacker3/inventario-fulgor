@@ -1520,3 +1520,70 @@ test('pending locations keep their current codes reserved and block dependent pr
   assert.equal(pending.length,3);assert.match(pending.find(row=>row.ubicacion_id==='BLOCK-R3').motivo,/ocupado por la ubicación pendiente BLOCK-R1/);
  }finally{await db.close();}
 });
+
+test('authorized bundle renumbering preserves fifteen box numbers and all contents, allocates above live/reserved maxima and repeats without renumbering again',async()=>{
+ const db=await database();try{
+  await db.exec("INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('BUNDLE-N','NIV-001','Nivel de prueba','EST-A01'); INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) SELECT 'KEEP-'||n,'CAJA-'||lpad(n::text,3,'0'),'CAJA-'||lpad(n::text,3,'0'),'EST-A01','BUNDLE-N' FROM generate_series(1,15) n; INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) SELECT 'BUNDLE-'||n,'BULTO-'||lpad(n::text,3,'0'),'BULTO-'||lpad(n::text,3,'0'),'EST-A01','BUNDLE-N' FROM generate_series(1,15) n; INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('CURRENT-HIGH','CAJ900','Existente alto','EST-A01','BUNDLE-N')");
+  await db.exec("UPDATE public.elementos SET nivel_id='BUNDLE-N',caja_id='BUNDLE-1' WHERE id='ELM-001'; UPDATE public.elementos SET nivel_id='BUNDLE-N',caja_id='KEEP-2' WHERE id='ELM-002'; UPDATE public.elementos SET archived=true WHERE id='ELM-002'");
+  await db.exec(automaticCodesMigration);await db.exec(normalizeLocationCodesMigration);
+  assert.equal((await db.query('SELECT count(*) AS n FROM public.inventario_ubicacion_codigos_pendientes')).rows[0].n,30);
+  await db.exec('ALTER TABLE public.inventario_ubicacion_codigos_pendientes DROP COLUMN reasignacion_autorizada');
+  await db.exec("UPDATE public.inventario_ubicacion_consecutivos SET ultimo=1000 WHERE prefijo='CAJ'");
+  const products=(await db.query('SELECT * FROM public.elementos ORDER BY id')).rows;
+  const history=(await db.query('SELECT * FROM public.historial ORDER BY id')).rows;
+  const original=(await db.query('SELECT * FROM public.cajas ORDER BY id')).rows;
+  const changes=[];for(let n=1;n<=15;n++){
+   changes.push({tipo:'caja',ubicacion_id:'KEEP-'+n,padre_id:'BUNDLE-N',numero:n,codigo_esperado:'CAJA-'+String(n).padStart(3,'0')});
+   changes.push({tipo:'caja',ubicacion_id:'BUNDLE-'+n,padre_id:'BUNDLE-N',siguiente:true,codigo_esperado:'BULTO-'+String(n).padStart(3,'0')});
+  }
+  const sql=normalizationWithOverrides(changes);const result=await db.exec(sql);
+  const rows=(await db.query('SELECT * FROM public.cajas ORDER BY id')).rows;
+  for(let n=1;n<=15;n++){
+   assert.equal(rows.find(row=>row.id==='KEEP-'+n).codigo,'CAJ'+String(n).padStart(3,'0'));
+   assert.equal(rows.find(row=>row.id==='BUNDLE-'+n).codigo,'CAJ'+(1000+n));
+  }
+  assert.equal(rows.find(row=>row.id==='CURRENT-HIGH').codigo,'CAJ900');
+  assert.deepEqual(rows.map(({codigo,...rest})=>rest),original.map(({codigo,...rest})=>rest));
+  assert.deepEqual((await db.query('SELECT * FROM public.elementos ORDER BY id')).rows,products);
+  assert.deepEqual((await db.query('SELECT * FROM public.historial ORDER BY id')).rows,history);
+  assert.equal(result.find(entry=>entry.rows?.some(row=>row.siguiente_codigo)).rows.find(row=>row.prefijo==='CAJ').reasignados_autorizados,15);
+  assert.equal((await db.query('SELECT count(*) AS n FROM public.inventario_ubicacion_codigos_pendientes')).rows[0].n,0);
+  await db.exec(sql);assert.deepEqual((await db.query('SELECT * FROM public.cajas ORDER BY id')).rows,rows);
+  await db.exec(normalizeLocationCodesMigration);assert.deepEqual((await db.query('SELECT * FROM public.cajas ORDER BY id')).rows,rows);
+  await role(db,'admin');const next=(await db.query(autoLocationSql,[autoId(701),'caja',JSON.stringify({parent_id:'EST-A01',nivel_id:'BUNDLE-N'})])).rows[0].row;
+  assert.equal(next.codigo,'CAJ1016');
+ }finally{await db.close();}
+});
+
+test('authorized bundle retries reuse failed proposals and retain confirmed codes after a successful retry',async()=>{
+ const db=await database();try{
+  await db.exec("INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('RENUMBER-N','NIV-001','Nivel','EST-A01'); INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('RENUMBER-KEEP','CAJA-001','Caja','EST-A01','RENUMBER-N'),('RENUMBER-B','BULTO-001','Bulto','EST-A01','RENUMBER-N')");
+  await db.exec(automaticCodesMigration);await db.exec(normalizeLocationCodesMigration);
+  await db.exec("CREATE FUNCTION public.test_reject_bundle() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.id='RENUMBER-B' AND NEW.codigo ~ '^CAJ[0-9]+$' THEN RAISE EXCEPTION 'Bulto bloqueado temporalmente'; END IF; RETURN NEW; END $$; CREATE TRIGGER test_reject_bundle BEFORE UPDATE OF codigo ON public.cajas FOR EACH ROW EXECUTE FUNCTION public.test_reject_bundle()");
+  const changes=[{tipo:'caja',ubicacion_id:'RENUMBER-KEEP',padre_id:'RENUMBER-N',numero:1},{tipo:'caja',ubicacion_id:'RENUMBER-B',padre_id:'RENUMBER-N',siguiente:true,codigo_esperado:'BULTO-001'}];
+  const sql=normalizationWithOverrides(changes);await db.exec(sql);
+  const pending=(await db.query("SELECT * FROM public.inventario_ubicacion_codigos_pendientes WHERE ubicacion_id='RENUMBER-B'")).rows[0];
+  assert.equal(pending.reasignacion_autorizada,true);assert.equal(pending.codigo_propuesto,'CAJ004');
+  assert.equal((await db.query("SELECT codigo FROM public.cajas WHERE id='RENUMBER-B'")).rows[0].codigo,'BULTO-001');
+  await db.exec(sql);assert.equal((await db.query("SELECT codigo_propuesto FROM public.inventario_ubicacion_codigos_pendientes WHERE ubicacion_id='RENUMBER-B'")).rows[0].codigo_propuesto,'CAJ004');
+  assert.equal(Number((await db.query("SELECT ultimo FROM public.inventario_ubicacion_consecutivos WHERE prefijo='CAJ'")).rows[0].ultimo),4);
+  await db.exec('DROP TRIGGER test_reject_bundle ON public.cajas');await db.exec(sql);await db.exec(sql);
+  assert.equal((await db.query("SELECT codigo FROM public.cajas WHERE id='RENUMBER-B'")).rows[0].codigo,'CAJ004');
+  assert.equal(Number((await db.query("SELECT ultimo FROM public.inventario_ubicacion_consecutivos WHERE prefijo='CAJ'")).rows[0].ultimo),4);
+  assert.equal((await db.query('SELECT count(*) AS n FROM public.inventario_ubicacion_codigos_pendientes')).rows[0].n,0);
+ }finally{await db.close();}
+});
+
+test('automatic reassignment checks its original code and rejects incomplete or contradictory authorization',async()=>{
+ const db=await database();try{
+  await db.exec("INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('GUARD-N','NIV-001','Nivel','EST-A01'); INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('GUARD-KEEP','CAJA-001','Caja','EST-A01','GUARD-N'),('GUARD-B','BULTO-001','Bulto','EST-A01','GUARD-N')");
+  await db.exec(automaticCodesMigration);await db.exec(normalizeLocationCodesMigration);
+  const request={tipo:'caja',ubicacion_id:'GUARD-B',padre_id:'GUARD-N',siguiente:true,codigo_esperado:'OTRO-001'};
+  await db.exec(normalizationWithOverrides([{tipo:'caja',ubicacion_id:'GUARD-KEEP',padre_id:'GUARD-N',numero:1},request]));
+  assert.equal((await db.query("SELECT codigo FROM public.cajas WHERE id='GUARD-B'")).rows[0].codigo,'BULTO-001');
+  assert.match((await db.query("SELECT motivo FROM public.inventario_ubicacion_codigos_pendientes WHERE ubicacion_id='GUARD-B'")).rows[0].motivo,/se esperaba OTRO-001/);
+  for(const bad of [{...request,codigo_esperado:null},{...request,codigo_esperado:''},{...request,numero:4}]){
+   await assert.rejects(()=>db.exec(normalizationWithOverrides([bad])),/check constraint/);await db.exec('ROLLBACK');
+  }
+ }finally{await db.close();}
+});
