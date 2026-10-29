@@ -1258,7 +1258,7 @@ test('location normalization changes only prefixes and formatting, preserves eve
  }finally{await db.close();}
 });
 
-for(const problem of ['same-parent','out-of-range'])test('location normalization rolls back without renumbering for '+problem,async()=>{
+for(const problem of ['same-parent','out-of-range'])test('location normalization preserves pending '+problem+' and commits independent valid changes',async()=>{
  const db=await database();try{
   await db.exec("INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('NORMALIZE-L','NIV-001','Nivel','EST-A01')");
   if(problem==='same-parent')await db.exec("INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('NORMALIZE-B1','CAJA-005','Uno','EST-A01','NORMALIZE-L'),('NORMALIZE-B2','CAJ005','Dos','EST-A01','NORMALIZE-L')");
@@ -1266,11 +1266,18 @@ for(const problem of ['same-parent','out-of-range'])test('location normalization
   await db.exec(automaticCodesMigration);
   const tables=['almacenes','estanterias','niveles_estanteria','cajas','elementos','historial'];
   const before=await Promise.all(tables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows));
-  const counters=(await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows;
-  await assert.rejects(()=>db.exec(normalizeLocationCodesMigration),problem==='same-parent'?/repetido en el mismo padre/:/supera el límite admitido/);
-  await db.exec('ROLLBACK');
-  for(const [index,table] of tables.entries())assert.deepEqual((await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows,before[index]);
-  assert.deepEqual((await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows,counters);
+  await db.exec(normalizeLocationCodesMigration);
+  const pending=(await db.query('SELECT * FROM public.inventario_ubicacion_codigos_pendientes ORDER BY ubicacion_id')).rows;
+  assert.equal(pending.length,problem==='same-parent'?2:1);
+  assert.match(pending[0].motivo,problem==='same-parent'?/repetido en el mismo padre/:/supera el límite admitido/);
+  for(const [index,table] of tables.entries()){
+   const after=(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows;
+   if(['elementos','historial'].includes(table))assert.deepEqual(after,before[index]);
+   else assert.deepEqual(after.map(({codigo,...rest})=>rest),before[index].map(({codigo,...rest})=>rest));
+  }
+  for(const row of pending){const table=row.tipo==='caja'?'cajas':'estanterias';assert.equal((await db.query('SELECT codigo FROM public.'+table+' WHERE id=$1',[row.ubicacion_id])).rows[0].codigo,row.codigo_actual);}
+  assert.equal((await db.query("SELECT codigo FROM public.almacenes WHERE id='ALM-BOG-01'")).rows[0].codigo,'ALM001');
+  assert.equal((await db.query("SELECT codigo FROM public.niveles_estanteria WHERE id='NORMALIZE-L'")).rows[0].codigo,'NIV001');
   await role(db,'admin');await assert.rejects(()=>db.exec("UPDATE public.almacenes SET codigo='ALM999' WHERE id='ALM-BOG-01'"),/no se puede modificar/);
  }finally{await db.close();}
 });
@@ -1413,23 +1420,103 @@ test('explicit rack numbering changes only the authorized IDs, keeps all content
  }
 });
 
-test('authorized code overrides reject unexpected parents, missing identities, duplicate targets and invalid numbers atomically',async()=>{
+test('authorized overrides report missing identities, wrong parents and duplicate targets while invalid configuration still rolls back',async()=>{
  const db=await database();try{
   await db.exec(automaticCodesMigration);
   const tables=['almacenes','estanterias','niveles_estanteria','cajas','elementos','historial'];
-  const snapshots=await Promise.all(tables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows));
-  const counters=(await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows;
   const valid={tipo:'estanteria',ubicacion_id:'EST-A01',padre_id:'ALM-BOG-01',numero:1};
-  for(const [changes,pattern] of [
-   [[{...valid,padre_id:'Otro padre'}],/padre esperado/],
-   [[{...valid,ubicacion_id:'No existe'}],/padre esperado/],
-   [[valid,{...valid,ubicacion_id:'EST-B02'}],/repetido en el mismo padre/],
-   [[{...valid,numero:1.5}],/check constraint/],
-   [[valid,valid],/duplicate key/],
+  for(const [changes,pattern,fatal] of [
+   [[{...valid,padre_id:'Otro padre'}],/padre/,false],
+   [[{...valid,ubicacion_id:'No existe'}],/ya no existe/,false],
+   [[valid,{...valid,ubicacion_id:'EST-B02'}],/repetido en el mismo padre/,false],
+   [[{...valid,numero:1.5}],/check constraint/,true],
+   [[valid,valid],/duplicate key/,true],
   ]){
-   await assert.rejects(()=>db.exec(normalizationWithOverrides(changes)),pattern);await db.exec('ROLLBACK');
-   for(const [index,table] of tables.entries())assert.deepEqual((await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows,snapshots[index]);
-   assert.deepEqual((await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows,counters);
+   const snapshots=await Promise.all(tables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows));
+   const counters=(await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows;
+   if(fatal){await assert.rejects(()=>db.exec(normalizationWithOverrides(changes)),pattern);await db.exec('ROLLBACK');}
+   else{
+    await db.exec(normalizationWithOverrides(changes));
+    const pending=(await db.query('SELECT * FROM public.inventario_ubicacion_codigos_pendientes')).rows;
+    assert.ok(pending.some(row=>pattern.test(row.motivo)));
+   }
+   for(const [index,table] of tables.entries()){
+    const after=(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows;
+    if(fatal||['elementos','historial'].includes(table))assert.deepEqual(after,snapshots[index]);
+    else assert.deepEqual(after.map(({codigo,...rest})=>rest),snapshots[index].map(({codigo,...rest})=>rest));
+   }
+   if(fatal)assert.deepEqual((await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows,counters);
   }
+ }finally{await db.close();}
+});
+
+test('partial normalization applies the three authorized racks and independent boxes while recording all duplicate-box participants',async()=>{
+ const db=await database();try{
+  await db.exec("INSERT INTO public.estanterias(id,codigo,nombre,almacen_id) VALUES('PART-R1','EST-001','Primera','ALM-MED-02'),('PART-R2','EST-001 SIN ESTANTERÍA','Segunda','ALM-MED-02'),('PART-R3','GAB-001','Tercera','ALM-MED-02'); INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('PART-N','NIV-001','Nivel','PART-R2'); INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('PART-B1','CAJA-001','Primera caja','PART-R2','PART-N'),('PART-B2','CAJ001','Segunda caja','PART-R2','PART-N'),('PART-B3','CAJA-009','Caja válida','PART-R2','PART-N')");
+  await db.exec("UPDATE public.elementos SET almacen_id='ALM-MED-02',estanteria_id='PART-R2',nivel_id='PART-N',caja_id='PART-B1' WHERE id='ELM-001'");
+  await db.exec(automaticCodesMigration);
+  const products=(await db.query('SELECT * FROM public.elementos ORDER BY id')).rows;
+  const changes=[1,2,3].map((numero,index)=>({tipo:'estanteria',ubicacion_id:'PART-R'+(index+1),padre_id:'ALM-MED-02',numero}));
+  const result=await db.exec(normalizationWithOverrides(changes));
+  for(const number of [1,2,3])assert.equal((await db.query('SELECT codigo FROM public.estanterias WHERE id=$1',['PART-R'+number])).rows[0].codigo,'EST00'+number);
+  const boxes=(await db.query("SELECT * FROM public.cajas WHERE id LIKE 'PART-%' ORDER BY id")).rows;
+  assert.deepEqual(boxes.map(row=>row.codigo),['CAJA-001','CAJ001','CAJ009']);
+  const pending=(await db.query('SELECT * FROM public.inventario_ubicacion_codigos_pendientes ORDER BY ubicacion_id')).rows;
+  assert.deepEqual(pending.map(row=>row.ubicacion_id),['PART-B1','PART-B2']);
+  assert.ok(pending.every(row=>row.codigo_propuesto==='CAJ001'&&row.padre_id==='PART-N'&&/repetido/.test(row.motivo)));
+  assert.equal(result.find(entry=>entry.rows?.some(row=>row.siguiente_codigo)).rows.find(row=>row.prefijo==='CAJ').pendientes,2);
+  assert.deepEqual(result.findLast(entry=>entry.rows?.some(row=>row.motivo)).rows.map(row=>row.ubicacion_id),['PART-B1','PART-B2']);
+  assert.deepEqual((await db.query('SELECT * FROM public.elementos ORDER BY id')).rows,products);
+  assert.equal((await db.query("SELECT count(*) AS n FROM public.inventario_ubicacion_codigos_normalizados WHERE ubicacion_id IN ('PART-B1','PART-B2')")).rows[0].n,0);
+  await db.exec(normalizationWithOverrides(changes));
+  assert.deepEqual((await db.query("SELECT codigo FROM public.cajas WHERE id LIKE 'PART-%' ORDER BY id")).rows.map(row=>row.codigo),['CAJA-001','CAJ001','CAJ009']);
+  await role(db,'admin');await assert.rejects(()=>db.query('SELECT * FROM public.inventario_ubicacion_codigos_pendientes'),/permission denied/);
+ }finally{await db.close();}
+});
+
+test('a per-record constraint failure leaves one pending code, commits unrelated changes and reuses its proposal until a successful retry',async()=>{
+ const db=await database();try{
+  await db.exec("INSERT INTO public.estanterias(id,codigo,nombre,almacen_id) VALUES('FAIL-R','FULGOR','Ubicación sin número','ALM-MED-02')");
+  await db.exec(automaticCodesMigration);
+  await db.exec("CREATE FUNCTION public.test_reject_location_code() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.id='FAIL-R' AND NEW.codigo ~ '^EST[0-9]+$' THEN RAISE EXCEPTION 'Restricción de prueba'; END IF; RETURN NEW; END $$; CREATE TRIGGER test_reject_location_code BEFORE UPDATE OF codigo ON public.estanterias FOR EACH ROW EXECUTE FUNCTION public.test_reject_location_code()");
+  await db.exec(normalizeLocationCodesMigration);
+  assert.equal((await db.query("SELECT codigo FROM public.estanterias WHERE id='FAIL-R'")).rows[0].codigo,'FULGOR');
+  assert.equal((await db.query("SELECT codigo FROM public.almacenes WHERE id='ALM-BOG-01'")).rows[0].codigo,'ALM001');
+  let pending=(await db.query("SELECT * FROM public.inventario_ubicacion_codigos_pendientes WHERE ubicacion_id='FAIL-R'")).rows[0];
+  assert.equal(pending.codigo_propuesto,'EST005');assert.match(pending.motivo,/Restricción de prueba/);
+  assert.equal(Number((await db.query("SELECT ultimo FROM public.inventario_ubicacion_consecutivos WHERE prefijo='EST'")).rows[0].ultimo),5);
+  await db.exec(normalizeLocationCodesMigration);
+  pending=(await db.query("SELECT * FROM public.inventario_ubicacion_codigos_pendientes WHERE ubicacion_id='FAIL-R'")).rows[0];assert.equal(pending.codigo_propuesto,'EST005');
+  assert.equal(Number((await db.query("SELECT ultimo FROM public.inventario_ubicacion_consecutivos WHERE prefijo='EST'")).rows[0].ultimo),5);
+  await db.exec('DROP TRIGGER test_reject_location_code ON public.estanterias');await db.exec(normalizeLocationCodesMigration);
+  assert.equal((await db.query("SELECT codigo FROM public.estanterias WHERE id='FAIL-R'")).rows[0].codigo,'EST005');
+  assert.equal((await db.query('SELECT count(*) AS n FROM public.inventario_ubicacion_codigos_pendientes')).rows[0].n,0);
+  assert.equal((await db.query("SELECT count(*) AS n FROM public.estanterias WHERE codigo LIKE 'NORMALIZA-%'")).rows[0].n,0);
+ }finally{await db.close();}
+});
+
+test('partial normalization rolls back an entire dependent code swap on failure while an independent authorized rack commits',async()=>{
+ const db=await database();try{
+  await db.exec("INSERT INTO public.estanterias(id,codigo,nombre,almacen_id) VALUES('SWAP-R1','EST002','Primera','ALM-MED-02'),('SWAP-R2','EST001','Segunda','ALM-MED-02'),('SWAP-R3','GAB-003','Tercera','ALM-MED-02')");
+  await db.exec(automaticCodesMigration);
+  await db.exec("CREATE FUNCTION public.test_reject_swap() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.id='SWAP-R2' AND NEW.codigo='EST002' THEN RAISE EXCEPTION 'No se acepta el intercambio'; END IF; RETURN NEW; END $$; CREATE TRIGGER test_reject_swap BEFORE UPDATE OF codigo ON public.estanterias FOR EACH ROW EXECUTE FUNCTION public.test_reject_swap()");
+  const changes=[1,2,3].map((numero,index)=>({tipo:'estanteria',ubicacion_id:'SWAP-R'+(index+1),padre_id:'ALM-MED-02',numero}));
+  await db.exec(normalizationWithOverrides(changes));
+  assert.deepEqual((await db.query("SELECT codigo FROM public.estanterias WHERE id LIKE 'SWAP-%' ORDER BY id")).rows.map(row=>row.codigo),['EST002','EST001','EST003']);
+  assert.deepEqual((await db.query('SELECT ubicacion_id FROM public.inventario_ubicacion_codigos_pendientes ORDER BY ubicacion_id')).rows.map(row=>row.ubicacion_id),['SWAP-R1','SWAP-R2']);
+  await db.exec('DROP TRIGGER test_reject_swap ON public.estanterias');await db.exec(normalizationWithOverrides(changes));
+  assert.deepEqual((await db.query("SELECT codigo FROM public.estanterias WHERE id LIKE 'SWAP-%' ORDER BY id")).rows.map(row=>row.codigo),['EST001','EST002','EST003']);
+  assert.equal((await db.query('SELECT count(*) AS n FROM public.inventario_ubicacion_codigos_pendientes')).rows[0].n,0);
+ }finally{await db.close();}
+});
+
+test('pending locations keep their current codes reserved and block dependent proposals without preventing independent changes',async()=>{
+ const db=await database();try{
+  await db.exec("INSERT INTO public.estanterias(id,codigo,nombre,almacen_id) VALUES('BLOCK-R1','EST002','Una','ALM-MED-02'),('BLOCK-R2','RACK-001','Dos','ALM-MED-02'),('BLOCK-R3','ESTANTERIA-002','Tres','ALM-MED-02'),('BLOCK-R4','RACK-008','Válida','ALM-MED-02')");
+  await db.exec(automaticCodesMigration);
+  await db.exec(normalizationWithOverrides([{tipo:'estanteria',ubicacion_id:'BLOCK-R1',padre_id:'ALM-MED-02',numero:1}]));
+  assert.deepEqual((await db.query("SELECT codigo FROM public.estanterias WHERE id LIKE 'BLOCK-%' ORDER BY id")).rows.map(row=>row.codigo),['EST002','RACK-001','ESTANTERIA-002','EST008']);
+  const pending=(await db.query('SELECT * FROM public.inventario_ubicacion_codigos_pendientes ORDER BY ubicacion_id')).rows;
+  assert.equal(pending.length,3);assert.match(pending.find(row=>row.ubicacion_id==='BLOCK-R3').motivo,/ocupado por la ubicación pendiente BLOCK-R1/);
  }finally{await db.close();}
 });

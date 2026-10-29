@@ -20,10 +20,20 @@ CREATE TABLE IF NOT EXISTS public.inventario_ubicacion_codigos_normalizados (
 ALTER TABLE public.inventario_ubicacion_codigos_normalizados ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.inventario_ubicacion_codigos_normalizados FROM PUBLIC,anon,authenticated;
 
+-- Lista privada de pendientes del último intento, consultable después de COMMIT.
+CREATE TABLE IF NOT EXISTS public.inventario_ubicacion_codigos_pendientes (
+  tipo text NOT NULL,ubicacion_id text NOT NULL,nombre text NOT NULL,
+  padre_id text,codigo_actual text NOT NULL,codigo_propuesto text,motivo text NOT NULL,
+  revisado_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(tipo,ubicacion_id)
+);
+ALTER TABLE public.inventario_ubicacion_codigos_pendientes ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.inventario_ubicacion_codigos_pendientes FROM PUBLIC,anon,authenticated;
+
 CREATE TEMP TABLE plan_codigos_ubicaciones (
   tipo text NOT NULL,tabla text NOT NULL,prefijo text NOT NULL,ubicacion_id text NOT NULL,
-  codigo_anterior text NOT NULL,padre_id text,numero_anterior numeric,
-  codigo_nuevo text,codigo_temporal text NOT NULL,
+  nombre text NOT NULL,codigo_anterior text NOT NULL,padre_id text,numero_anterior numeric,
+  codigo_nuevo text,codigo_temporal text NOT NULL,motivo text,grupo text,
+  aplicado boolean NOT NULL DEFAULT false,existe boolean NOT NULL DEFAULT true,
   PRIMARY KEY(tipo,ubicacion_id)
 ) ON COMMIT DROP;
 ALTER TABLE pg_temp.plan_codigos_ubicaciones ENABLE ROW LEVEL SECURITY;
@@ -45,71 +55,126 @@ SELECT tipo,ubicacion_id,padre_id,numero FROM jsonb_to_recordset(
 ) AS a(tipo text,ubicacion_id text,padre_id text,numero numeric);
 
 DO $$
-DECLARE r record;v_last bigint;v_parent text;v_problem record;v_missing record;
+DECLARE r record;v_last bigint;v_parent text;v_missing record;v_group record;v_changes integer;
 BEGIN
   FOR r IN SELECT * FROM (VALUES
     ('almacen','almacenes','ALM'),('estanteria','estanterias','EST'),
     ('nivel','niveles_estanteria','NIV'),('caja','cajas','CAJ')
   ) t(tipo,tabla,prefijo) LOOP
-    -- Lee el número del primer bloque de código; ignora descripciones y sus números.
-    -- EST-001 SIN ESTANTERÍA => 1, CAJA-005 ZONA 99 => 5, EST-A01 => 1.
     v_parent:=CASE r.tipo WHEN 'almacen' THEN '''GLOBAL''' WHEN 'estanteria' THEN 'almacen_id'
       WHEN 'nivel' THEN 'estanteria_id' ELSE 'coalesce(nivel_id,''SIN-NIVEL:''||estanteria_id)' END;
     EXECUTE format('INSERT INTO pg_temp.plan_codigos_ubicaciones
-      (tipo,tabla,prefijo,ubicacion_id,codigo_anterior,padre_id,numero_anterior,codigo_temporal)
-      SELECT $1,$2,$3,id,codigo,%s,substring(substring(codigo from ''^[[:space:]]*([^[:space:]]+)'') from ''([0-9]+)[^0-9]*$'')::numeric,
+      (tipo,tabla,prefijo,ubicacion_id,nombre,codigo_anterior,padre_id,numero_anterior,codigo_temporal)
+      SELECT $1,$2,$3,id,nombre,codigo,%s,substring(substring(codigo from ''^[[:space:]]*([^[:space:]]+)'') from ''([0-9]+)[^0-9]*$'')::numeric,
         ''NORMALIZA-''||upper(gen_random_uuid()::text) FROM public.%I',v_parent,r.tabla)
       USING r.tipo,r.tabla,r.prefijo;
-    SELECT ubicacion_id,codigo_anterior INTO v_problem FROM pg_temp.plan_codigos_ubicaciones
-      WHERE tipo=r.tipo AND numero_anterior>999999999999 LIMIT 1;
-    IF FOUND THEN
-      RAISE EXCEPTION 'El número del código % de % (ID %) supera el límite admitido. No se cambia ningún número; revise audit_location_codes_readonly.sql',v_problem.codigo_anterior,r.tipo,v_problem.ubicacion_id;
-    END IF;
+    UPDATE pg_temp.plan_codigos_ubicaciones SET motivo='El número anterior supera el límite admitido de 12 cifras'
+      WHERE tipo=r.tipo AND numero_anterior>999999999999;
     UPDATE pg_temp.plan_codigos_ubicaciones SET codigo_nuevo=r.prefijo||lpad(numero_anterior::bigint::text,greatest(3,length(numero_anterior::bigint::text)),'0')
-      WHERE tipo=r.tipo;
-    SELECT a.ubicacion_id,a.padre_id INTO v_problem FROM pg_temp.ajustes_codigos_ubicaciones a
-      LEFT JOIN pg_temp.plan_codigos_ubicaciones p ON p.tipo=a.tipo AND p.ubicacion_id=a.ubicacion_id
-      WHERE a.tipo=r.tipo AND (p.ubicacion_id IS NULL OR p.padre_id IS DISTINCT FROM a.padre_id) LIMIT 1;
-    IF FOUND THEN
-      RAISE EXCEPTION 'El ajuste autorizado para % (ID %) no corresponde al padre esperado %. No se aplicó ningún cambio',r.tipo,v_problem.ubicacion_id,v_problem.padre_id;
-    END IF;
+      WHERE tipo=r.tipo AND motivo IS NULL AND numero_anterior IS NOT NULL;
+
+    -- Los ajustes concretos conservan la comprobación de identidad y padre.
+    INSERT INTO pg_temp.plan_codigos_ubicaciones
+      (tipo,tabla,prefijo,ubicacion_id,nombre,codigo_anterior,padre_id,codigo_temporal,motivo,existe)
+    SELECT a.tipo,r.tabla,r.prefijo,a.ubicacion_id,'Ubicación no encontrada','',a.padre_id,
+      'NORMALIZA-'||upper(gen_random_uuid()::text),'El ID del ajuste autorizado ya no existe',false
+    FROM pg_temp.ajustes_codigos_ubicaciones a WHERE a.tipo=r.tipo
+      AND NOT EXISTS(SELECT 1 FROM pg_temp.plan_codigos_ubicaciones p WHERE p.tipo=a.tipo AND p.ubicacion_id=a.ubicacion_id);
+    UPDATE pg_temp.plan_codigos_ubicaciones p
+      SET motivo=format('El ajuste autorizado espera el padre %s, pero la ubicación pertenece a %s',a.padre_id,coalesce(p.padre_id,'sin padre'))
+      FROM pg_temp.ajustes_codigos_ubicaciones a WHERE a.tipo=r.tipo AND p.tipo=a.tipo AND p.ubicacion_id=a.ubicacion_id
+        AND p.existe AND p.padre_id IS DISTINCT FROM a.padre_id;
     UPDATE pg_temp.plan_codigos_ubicaciones p SET codigo_nuevo=r.prefijo||lpad(a.numero::bigint::text,greatest(3,length(a.numero::bigint::text)),'0')
       FROM pg_temp.ajustes_codigos_ubicaciones a WHERE a.tipo=r.tipo AND p.tipo=a.tipo AND p.ubicacion_id=a.ubicacion_id;
-    SELECT padre_id,codigo_nuevo,array_agg(ubicacion_id ORDER BY ubicacion_id) AS ids INTO v_problem
-      FROM pg_temp.plan_codigos_ubicaciones WHERE tipo=r.tipo AND codigo_nuevo IS NOT NULL
-      GROUP BY padre_id,codigo_nuevo HAVING count(*)>1 LIMIT 1;
-    IF FOUND THEN
-      RAISE EXCEPTION 'El código % quedaría repetido en el mismo padre % (IDs %). No se cambia ningún número; elimine o reubique la ubicación de prueba y repita',v_problem.codigo_nuevo,v_problem.padre_id,v_problem.ids;
-    END IF;
-    SELECT greatest(coalesce(max(numero_anterior),0),coalesce(max(substring(codigo_nuevo from 4)::numeric),0),
+
+    -- Reutiliza la propuesta pendiente de una ubicación sin número; no consume
+    -- otro consecutivo cada vez que se repite un intento que sigue fallando.
+    UPDATE pg_temp.plan_codigos_ubicaciones p SET codigo_nuevo=previous.codigo_propuesto
+      FROM public.inventario_ubicacion_codigos_pendientes previous
+      WHERE p.tipo=r.tipo AND p.motivo IS NULL AND p.codigo_nuevo IS NULL
+        AND previous.tipo=p.tipo AND previous.ubicacion_id=p.ubicacion_id
+        AND previous.codigo_actual=p.codigo_anterior AND previous.padre_id IS NOT DISTINCT FROM p.padre_id
+        AND previous.codigo_propuesto ~ ('^'||r.prefijo||'[0-9]{3,12}$');
+    SELECT greatest(coalesce(max(numero_anterior) FILTER(WHERE numero_anterior<=999999999999),0),
+      coalesce(max(substring(codigo_nuevo from 4)::numeric),0),
       coalesce((SELECT ultimo FROM public.inventario_ubicacion_consecutivos WHERE prefijo=r.prefijo),0))::bigint
       INTO v_last FROM pg_temp.plan_codigos_ubicaciones WHERE tipo=r.tipo;
-    -- Solo los códigos sin número reciben uno nuevo, sobre el mayor ya reservado.
-    -- No deduplica ubicaciones ni cambia ningún número anterior.
     FOR v_missing IN SELECT ubicacion_id FROM pg_temp.plan_codigos_ubicaciones
-      WHERE tipo=r.tipo AND codigo_nuevo IS NULL ORDER BY ubicacion_id COLLATE "C" LOOP
-      IF v_last>=999999999999 THEN RAISE EXCEPTION 'Se agotó el consecutivo de %; no se aplicó ningún cambio',r.tipo; END IF;
-      v_last:=v_last+1;
-      UPDATE pg_temp.plan_codigos_ubicaciones
-        SET codigo_nuevo=r.prefijo||lpad(v_last::text,greatest(3,length(v_last::text)),'0')
-        WHERE tipo=r.tipo AND ubicacion_id=v_missing.ubicacion_id;
+      WHERE tipo=r.tipo AND motivo IS NULL AND codigo_nuevo IS NULL ORDER BY ubicacion_id COLLATE "C" LOOP
+      IF v_last>=999999999999 THEN
+        UPDATE pg_temp.plan_codigos_ubicaciones SET motivo='No queda un consecutivo disponible dentro del límite de 12 cifras'
+          WHERE tipo=r.tipo AND ubicacion_id=v_missing.ubicacion_id;
+      ELSE
+        v_last:=v_last+1;
+        UPDATE pg_temp.plan_codigos_ubicaciones SET codigo_nuevo=r.prefijo||lpad(v_last::text,greatest(3,length(v_last::text)),'0')
+          WHERE tipo=r.tipo AND ubicacion_id=v_missing.ubicacion_id;
+      END IF;
+    END LOOP;
+
+    -- Una coincidencia deja pendientes únicamente sus participantes.
+    WITH duplicates AS (
+      SELECT padre_id,codigo_nuevo,string_agg(ubicacion_id,', ' ORDER BY ubicacion_id) AS ids
+      FROM pg_temp.plan_codigos_ubicaciones WHERE tipo=r.tipo AND motivo IS NULL AND codigo_nuevo IS NOT NULL
+      GROUP BY padre_id,codigo_nuevo HAVING count(*)>1
+    )
+    UPDATE pg_temp.plan_codigos_ubicaciones p
+      SET motivo=format('El código %s quedaría repetido en el mismo padre. IDs: %s',p.codigo_nuevo,d.ids)
+      FROM duplicates d WHERE p.tipo=r.tipo AND p.motivo IS NULL AND p.padre_id IS NOT DISTINCT FROM d.padre_id AND p.codigo_nuevo=d.codigo_nuevo;
+    -- Un registro que no se mueve sigue ocupando su código anterior. Propaga
+    -- ese bloqueo a las propuestas que dependan de liberarlo, sin tocarlas.
+    LOOP
+      UPDATE pg_temp.plan_codigos_ubicaciones p
+        SET motivo=format('El código propuesto sigue ocupado por la ubicación pendiente %s (%s)',blocked.ubicacion_id,blocked.codigo_anterior)
+        FROM pg_temp.plan_codigos_ubicaciones blocked
+        WHERE p.tipo=r.tipo AND p.motivo IS NULL AND p.codigo_nuevo<>p.codigo_anterior
+          AND blocked.tipo=p.tipo AND blocked.ubicacion_id<>p.ubicacion_id AND blocked.motivo IS NOT NULL
+          AND blocked.padre_id IS NOT DISTINCT FROM p.padre_id AND upper(trim(blocked.codigo_anterior))=p.codigo_nuevo;
+      GET DIAGNOSTICS v_changes=ROW_COUNT;
+      EXIT WHEN v_changes=0;
     END LOOP;
     INSERT INTO public.inventario_ubicacion_consecutivos(prefijo,ultimo) VALUES(r.prefijo,v_last)
       ON CONFLICT(prefijo) DO UPDATE SET ultimo=greatest(inventario_ubicacion_consecutivos.ultimo,excluded.ultimo);
 
-    -- Solo esta transacción administrativa suspende el bloqueo de código.
-    -- Dos pasos evitan conflictos con códigos antiguos que todavía ocupen el destino.
+    -- Los intercambios de códigos se aplican como un grupo indivisible; los
+    -- grupos independientes continúan aunque uno falle por una restricción.
+    WITH RECURSIVE connected(root,id) AS (
+      SELECT ubicacion_id,ubicacion_id FROM pg_temp.plan_codigos_ubicaciones
+        WHERE tipo=r.tipo AND motivo IS NULL AND codigo_nuevo<>codigo_anterior
+      UNION
+      SELECT connected.root,next.ubicacion_id FROM connected
+        JOIN pg_temp.plan_codigos_ubicaciones current ON current.tipo=r.tipo AND current.ubicacion_id=connected.id
+        JOIN pg_temp.plan_codigos_ubicaciones next ON next.tipo=current.tipo AND next.padre_id IS NOT DISTINCT FROM current.padre_id
+          AND next.motivo IS NULL AND next.codigo_nuevo<>next.codigo_anterior
+          AND (current.codigo_anterior=next.codigo_nuevo OR current.codigo_nuevo=next.codigo_anterior)
+    )
+    UPDATE pg_temp.plan_codigos_ubicaciones p SET grupo=groups.root FROM
+      (SELECT id,min(root COLLATE "C") AS root FROM connected GROUP BY id) groups
+      WHERE p.tipo=r.tipo AND p.ubicacion_id=groups.id;
     EXECUTE format('ALTER TABLE public.%I DISABLE TRIGGER assign_inventory_location_code',r.tabla);
-    EXECUTE format('UPDATE public.%I u SET codigo=p.codigo_temporal FROM pg_temp.plan_codigos_ubicaciones p
-      WHERE p.tipo=$1 AND u.id=p.ubicacion_id AND p.codigo_anterior<>p.codigo_nuevo',r.tabla) USING r.tipo;
-    EXECUTE format('UPDATE public.%I u SET codigo=p.codigo_nuevo FROM pg_temp.plan_codigos_ubicaciones p
-      WHERE p.tipo=$1 AND u.id=p.ubicacion_id AND p.codigo_anterior<>p.codigo_nuevo',r.tabla) USING r.tipo;
+    FOR v_group IN SELECT DISTINCT grupo FROM pg_temp.plan_codigos_ubicaciones
+      WHERE tipo=r.tipo AND motivo IS NULL AND grupo IS NOT NULL ORDER BY grupo LOOP
+      BEGIN
+        EXECUTE format('UPDATE public.%I u SET codigo=p.codigo_temporal FROM pg_temp.plan_codigos_ubicaciones p
+          WHERE p.tipo=$1 AND p.grupo=$2 AND p.motivo IS NULL AND u.id=p.ubicacion_id',r.tabla) USING r.tipo,v_group.grupo;
+        EXECUTE format('UPDATE public.%I u SET codigo=p.codigo_nuevo FROM pg_temp.plan_codigos_ubicaciones p
+          WHERE p.tipo=$1 AND p.grupo=$2 AND p.motivo IS NULL AND u.id=p.ubicacion_id',r.tabla) USING r.tipo,v_group.grupo;
+        UPDATE pg_temp.plan_codigos_ubicaciones SET aplicado=true WHERE tipo=r.tipo AND grupo=v_group.grupo AND motivo IS NULL;
+      EXCEPTION WHEN OTHERS THEN
+        UPDATE pg_temp.plan_codigos_ubicaciones
+          SET motivo=format('No se pudo aplicar el grupo (%s): %s',SQLSTATE,SQLERRM),aplicado=false
+          WHERE tipo=r.tipo AND grupo=v_group.grupo;
+      END;
+    END LOOP;
     EXECUTE format('ALTER TABLE public.%I ENABLE TRIGGER assign_inventory_location_code',r.tabla);
+    DELETE FROM public.inventario_ubicacion_codigos_pendientes WHERE tipo=r.tipo;
+    INSERT INTO public.inventario_ubicacion_codigos_pendientes(tipo,ubicacion_id,nombre,padre_id,codigo_actual,codigo_propuesto,motivo)
+      SELECT tipo,ubicacion_id,nombre,padre_id,codigo_anterior,codigo_nuevo,motivo FROM pg_temp.plan_codigos_ubicaciones
+      WHERE tipo=r.tipo AND motivo IS NOT NULL;
   END LOOP;
 END $$;
 INSERT INTO public.inventario_ubicacion_codigos_normalizados(tipo,ubicacion_id,codigo_anterior,codigo_nuevo)
 SELECT tipo,ubicacion_id,codigo_anterior,codigo_nuevo FROM pg_temp.plan_codigos_ubicaciones
-WHERE codigo_anterior<>codigo_nuevo ON CONFLICT(tipo,ubicacion_id) DO NOTHING;
+WHERE aplicado ON CONFLICT(tipo,ubicacion_id) DO NOTHING;
 
 -- La RPC mantiene permisos y la identidad de los reintentos. Tras una normalización,
 -- devuelve el código actual del mismo ID en vez de resucitar la etiqueta anterior.
@@ -161,14 +226,21 @@ REVOKE ALL ON FUNCTION public.create_inventory_location_auto(uuid,text,jsonb) FR
 GRANT EXECUTE ON FUNCTION public.create_inventory_location_auto(uuid,text,jsonb) TO authenticated;
 NOTIFY pgrst,'reload schema';
 
--- Resumen calculado sobre los datos reales, antes del COMMIT de la misma transacción.
-SELECT t.tipo,c.prefijo,count(p.ubicacion_id) AS ubicaciones,
-  count(p.ubicacion_id) FILTER (WHERE p.codigo_anterior<>p.codigo_nuevo) AS codigos_actualizados,
-  count(p.ubicacion_id) FILTER (WHERE p.numero_anterior IS NULL) AS sin_numero_que_recibieron_consecutivo,
-  max(p.numero_anterior) AS mayor_numero_actual,c.ultimo AS ultimo_reservado,
+-- Resumen de los cambios aplicados y pendientes de ESTA ejecución.
+SELECT t.tipo,c.prefijo,count(p.ubicacion_id) FILTER(WHERE p.existe) AS ubicaciones,
+  count(p.ubicacion_id) FILTER(WHERE p.aplicado) AS codigos_actualizados,
+  count(p.ubicacion_id) FILTER(WHERE p.motivo IS NOT NULL) AS pendientes,
+  count(p.ubicacion_id) FILTER(WHERE p.existe AND p.motivo IS NULL AND NOT p.aplicado) AS ya_correctos,
+  count(p.ubicacion_id) FILTER(WHERE p.aplicado AND p.numero_anterior IS NULL) AS sin_numero_que_recibieron_consecutivo,
+  max(p.numero_anterior) AS mayor_numero_anterior,c.ultimo AS ultimo_reservado,
   CASE WHEN c.ultimo<999999999999 THEN c.prefijo||lpad((c.ultimo+1)::text,greatest(3,length((c.ultimo+1)::text)),'0') END AS siguiente_codigo
 FROM public.inventario_ubicacion_consecutivos c JOIN
   (VALUES('almacen','ALM'),('estanteria','EST'),('nivel','NIV'),('caja','CAJ')) t(tipo,prefijo) ON t.prefijo=c.prefijo
 LEFT JOIN pg_temp.plan_codigos_ubicaciones p ON p.prefijo=c.prefijo
 GROUP BY t.tipo,c.prefijo,c.ultimo ORDER BY c.prefijo;
+
+-- La última tabla de resultados muestra cada pendiente y el motivo concreto.
+-- También queda guardada para consultar después con location_code_normalization_pending.sql.
+SELECT tipo,ubicacion_id,nombre,padre_id,codigo_actual,codigo_propuesto,motivo
+FROM public.inventario_ubicacion_codigos_pendientes ORDER BY tipo,padre_id,codigo_propuesto,ubicacion_id;
 COMMIT;
