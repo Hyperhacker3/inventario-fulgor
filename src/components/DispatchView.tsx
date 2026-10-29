@@ -6,7 +6,7 @@ import { useRemissionTransport, useUnitWeightDispatch, useOutgoingPhotos, useRem
 import { RemissionRouteFields } from './dispatch/RemissionRouteFields';
 import { validateRemissionRoute } from '../domain/remissionRoute';
 import { formatKg, formatUnitWeight, lineWeightKg, totalWeight } from '../domain/weight';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 import { errorMessage } from '../shared/errors';
 import { available } from '../domain/inventory';
@@ -16,9 +16,25 @@ import { OutgoingPhotoPicker } from './dispatch/OutgoingPhotoPicker';
 import { displayCargo } from '../domain/userProfile';
 import { useFormScroll } from '../hooks/useFormScroll';
 import { uppercaseName } from '../shared/uppercase';
+import { InternalDispatchArea } from './internal/InternalDispatchArea';
 import { projectCityIssue } from '../domain/projectCity';
 
-export const DispatchView: React.FC = () => {
+export function DispatchView() {
+  const { dispatchMode,setDispatchMode,internalJobs,internalPending,cartLocked,externalDispatchPending }=useInventory();
+  const [externalBusy,setExternalBusy]=useState(false),[internalVisited,setInternalVisited]=useState(dispatchMode==='internal');
+  const choose=(mode:'external'|'internal')=>{if(mode==='internal')setInternalVisited(true);setDispatchMode(mode);};
+  return <div className="p-4 md:p-8 max-w-[1000px] mx-auto w-full space-y-5">
+    <h2 className="text-2xl md:text-3xl font-bold">Salidas</h2>
+    <div role="group" aria-label="Tipo de salida" className="grid grid-cols-2 gap-4">
+      <button type="button" disabled={externalBusy||externalDispatchPending||internalPending||!!internalJobs.issue} aria-pressed={dispatchMode==='external'} onClick={()=>choose('external')} className="ui-flat-choice rounded-xl px-3 py-3 font-semibold">Salidas externas</button>
+      <button type="button" disabled={externalBusy||externalDispatchPending||internalPending} aria-pressed={dispatchMode==='internal'} onClick={()=>choose('internal')} className="ui-flat-choice rounded-xl px-3 py-3 font-semibold">Salidas internas</button>
+    </div>
+    <div hidden={dispatchMode!=='external'} inert={dispatchMode!=='external'}><fieldset disabled={cartLocked}><ExternalDispatchView onBusyChange={setExternalBusy}/></fieldset></div>
+    {internalVisited&&<div hidden={dispatchMode!=='internal'} inert={dispatchMode!=='internal'}><InternalDispatchArea enabled={dispatchMode==='internal'}/></div>}
+  </div>;
+}
+
+export const ExternalDispatchView: React.FC<{onBusyChange?:(busy:boolean)=>void}> = ({onBusyChange}) => {
   const { ref: pageRef, onInvalidCapture, revealError, scrollToStart } = useFormScroll();
   const {
     elementos,
@@ -29,7 +45,7 @@ export const DispatchView: React.FC = () => {
     removeFromDispatchCart,
     clearDispatchCart,
     openItemDetail,
-    processDispatch
+    processDispatch, setExternalDispatchPending
   } = useInventory();
 
   // Dispatch form state
@@ -46,6 +62,7 @@ export const DispatchView: React.FC = () => {
   const [transport, setTransport] = useState(emptyTransport);
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoBusy, setPhotoBusy] = useState(false);
+  useEffect(()=>{onBusyChange?.(pending||photoBusy);return()=>onBusyChange?.(false);},[onBusyChange,pending,photoBusy]);
   const [attempted, setAttempted] = useState(false);
   const sending = useRef(false);
   const photoQuery = useOutgoingPhotos();
@@ -102,7 +119,7 @@ export const DispatchView: React.FC = () => {
       }
     }
 
-    sending.current = true; setPending(true); setAttempted(true);
+    sending.current = true; setPending(true); setExternalDispatchPending(true); setAttempted(true);
     try {
       await processDispatch({ proyectoId: selectedProyectoId, entregadoPor, cargoEntregado,
         ...route,
@@ -117,16 +134,16 @@ export const DispatchView: React.FC = () => {
     } catch (error) {
       reportError(errorMessage(error));
     } finally {
-      setPending(false);
+      setPending(false); setExternalDispatchPending(false);
       sending.current = false;
     }
   };
 
   return (
-    <div ref={pageRef} onInvalidCapture={onInvalidCapture} className="p-4 md:p-8 max-w-[1000px] mx-auto w-full">
+    <div ref={pageRef} onInvalidCapture={onInvalidCapture} className="w-full">
       {/* Page Title from Mockup Image 1 */}
       <div className="mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#131b2e] tracking-tight">Salidas</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-[#131b2e] tracking-tight">Salidas externas</h2>
         <p className="text-sm md:text-base text-[#454651]">
           Gestione la salida de inventario y genere la remisión de entrega para proyectos solares.
         </p>

@@ -91,7 +91,7 @@ test('administration shows compact warehouse cards and financial values for rack
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
-test('compact administration selector retains all nine icons and synchronizes warehouses and other sections with desktop buttons', async () => {
+test('compact administration selector retains all ten icons and synchronizes warehouses and other sections with desktop buttons', async () => {
   function Navigation() { const [value, setValue] = useState<AdministrationTab>('codes'); return h(AdministrationNavigation, { value, onChange: setValue }); }
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
   try {
@@ -103,12 +103,12 @@ test('compact administration selector retains all nine icons and synchronizes wa
     for (const tab of host.querySelectorAll<HTMLButtonElement>('[role="tab"]')) assert.ok(tab.classList.contains('ui-flat-choice'));
     const desktopColors = [...host.querySelectorAll<HTMLButtonElement>('[role="tab"]')].map(tab => tab.querySelector<HTMLSpanElement>(':scope > span')!.style.color);
     assert.equal(host.querySelectorAll('[role="tab"] [data-filled="true"]').length, 1);
-    assert.equal(new Set(desktopColors).size, 9); assert.ok(desktopColors.every(Boolean));
+    assert.equal(new Set(desktopColors).size, 10); assert.ok(desktopColors.every(Boolean));
     await act(() => trigger.click());
     const list = document.querySelector('[role="listbox"]')!;
-    assert.equal(list.querySelectorAll('[role="option"]').length, 9);
+    assert.equal(list.querySelectorAll('[role="option"]').length, 10);
     assert.equal(list.querySelectorAll('[data-filled="true"]').length, 1);
-    assert.deepEqual([...list.querySelectorAll('[data-icon]')].map(icon => icon.getAttribute('data-icon')), ['tag', 'category', 'warehouse', 'shelves', 'layers', 'inventory_2', 'folder_open', 'archive', 'settings']);
+    assert.deepEqual([...list.querySelectorAll('[data-icon]')].map(icon => icon.getAttribute('data-icon')), ['tag', 'category', 'warehouse', 'shelves', 'layers', 'inventory_2', 'badge', 'folder_open', 'archive', 'settings']);
     assert.deepEqual([...list.querySelectorAll<HTMLSpanElement>('[role="option"] > span:first-child')].map(span => span.style.color), desktopColors);
     await act(() => list.querySelector<HTMLButtonElement>('[data-value="warehouses"]')!.click());
     assert.match(trigger.textContent!, /Almacenes/);

@@ -5,6 +5,7 @@ const tabs = [
   { id: 'codes', label: 'Códigos', icon: 'tag', color: 'var(--ui-action)' }, { id: 'categories', label: 'Categorías', icon: 'category', color: 'var(--ui-nav-inventory)' },
   { id: 'warehouses', label: 'Almacenes', icon: 'warehouse', color: 'var(--ui-admin-warehouses)' },
   { id: 'racks', label: 'Estanterías', icon: 'shelves', color: 'var(--ui-admin-racks)' }, { id: 'levels', label: 'Niveles', icon: 'layers', color: 'var(--ui-admin-levels)' }, { id: 'boxes', label: 'Cajas', icon: 'inventory_2', color: 'var(--ui-nav-history)' },
+  { id: 'personnel', label: 'Personal', icon: 'badge', color: 'var(--ui-nav-help)' },
   { id: 'projects', label: 'Proyectos', icon: 'folder_open', color: 'var(--ui-success)' }, { id: 'archived', label: 'Archivados', icon: 'archive', color: 'var(--ui-archive)' },
   { id: 'company', label: 'Empresa', icon: 'settings', color: 'var(--ui-nav-data)' },
 ] as const;
@@ -21,7 +22,7 @@ export function AdministrationNavigation({ value, onChange }: { value: Administr
         {tabs.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}
       </Select>
     </div>
-    <div role="tablist" aria-label="Datos del inventario" className="hidden lg:grid grid-cols-3 xl:grid-cols-9 gap-2">
+    <div role="tablist" aria-label="Datos del inventario" className="hidden lg:grid grid-cols-3 xl:grid-cols-5 gap-2">
       {tabs.map(tab => <button key={tab.id} type="button" role="tab" id={`data-tab-${tab.id}`} aria-controls="data-tab-panel" aria-selected={value === tab.id}
         onClick={() => onChange(tab.id)} className="ui-flat-choice flex min-w-0 gap-2 items-center justify-center rounded-xl px-2 py-3 text-sm">
         <span className="inline-flex items-center justify-center gap-2 min-w-0" style={{ color: tab.color }}>

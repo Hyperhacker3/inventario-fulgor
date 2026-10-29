@@ -8,7 +8,7 @@ import { itemPhotos } from '../../domain/photos';
 import { uppercaseName } from '../../shared/uppercase';
 import { openProductSurface } from '../../shared/productInteraction';
 
-type ResultsInventory = Pick<ReturnType<typeof useInventory>, 'getAlmacenById' | 'openItemDetail' | 'addToDispatchCart' | 'user' | 'categoryLabel'>;
+type ResultsInventory = Pick<ReturnType<typeof useInventory>, 'getAlmacenById' | 'openItemDetail' | 'addToDispatchCart' | 'user' | 'categoryLabel'> & { cartLocked?: boolean };
 
 export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'grid' | 'list' }) {
   const inventory = useInventory();
@@ -93,7 +93,7 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                       {canOperate && <button
                         type="button"
                         onClick={() => addToDispatchCart(item)}
-                        disabled={available(item) === 0}
+                        disabled={available(item) === 0 || inventory.cartLocked}
                         className="absolute bottom-2.5 right-2.5 z-10 w-11 h-11 text-[#dd4c42] rounded-lg flex items-center justify-center transition-all disabled:opacity-50"
                         aria-label={`Agregar ${uppercaseName(item.nombre)} a la salida`}
                         title={available(item) > 0 ? 'Agregar a la salida' : 'Sin stock disponible'}
@@ -188,7 +188,7 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                             {canOperate && <button
                               type="button"
                               onClick={() => addToDispatchCart(item)}
-                              disabled={available(item) === 0}
+                              disabled={available(item) === 0 || inventory.cartLocked}
                               className={`w-11 h-11 p-1 rounded-md ${
                                 available(item) > 0
                                   ? 'text-[#dd4c42] hover:bg-[#ffdad6]/50'

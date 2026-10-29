@@ -67,6 +67,7 @@ export interface Elemento {
   valorUnitario?: number;
   estado?: 'BUENO' | 'REGULAR' | 'MALO' | 'EN REPARACIÓN' | 'PARA REPARAR' | 'RETAZOS' | string;
   cantidadDanados?: number;
+  cantidadPrestada?: number;
   stockPendiente?: boolean;
   archived?: boolean;
   especificaciones?: Record<string, unknown>;

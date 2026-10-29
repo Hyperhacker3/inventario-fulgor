@@ -1,3 +1,4 @@
+import { InternalHistory } from './internal/InternalHistory';
 import { Select } from './ui/Select';
 import { SearchInput } from './ui/SearchInput';
 import React, { useState, useMemo, useEffect } from 'react';
@@ -20,6 +21,7 @@ export const HistoryView: React.FC = () => {
     user
   } = useInventory();
 
+  const [internal,setInternal]=useState(false);
   // Filters State
   const [filterType, setFilterType] = useState<string>('TODOS');
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,8 +90,10 @@ export const HistoryView: React.FC = () => {
     } catch (error) { setDocumentError(errorMessage(error)); }
   };
 
+  if(internal)return <div className="p-4 md:p-8 space-y-5"><button type="button" onClick={()=>setInternal(false)} className="rounded-xl px-4 py-2">Volver a movimientos</button><InternalHistory/></div>;
   return (
     <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full">
+      <button type="button" onClick={()=>setInternal(true)} className="rounded-xl px-4 py-2 mb-4">Salidas internas y devoluciones</button>
       {/* Top Header matching Mockup Image 5 */}
       <div className="mb-4 sm:mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 sm:gap-4">
         <div>

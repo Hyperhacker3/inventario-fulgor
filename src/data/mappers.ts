@@ -49,6 +49,7 @@ export const mapElemento = (row: DbRow): Elemento => {
     fotosAdicionales: uniquePhotos(specs.fotos_adicionales).filter(photo => photo !== str(row.foto_url)),
     stockMinimo: numeric(row.stock_minimo, 10), estado: normalizeItemCondition(str(row.estado || specs.estado_material, 'BUENO')),
     cantidadDanados: numeric(row.cantidad_danados ?? specs.cantidad_danados),
+    cantidadPrestada: numeric(row.cantidad_prestada),
     stockPendiente: Boolean(row.stock_pendiente), especificaciones: specs,
     archived: row.archived === true, createdAt: str(row.created_at), updatedAt: str(row.updated_at),
   };

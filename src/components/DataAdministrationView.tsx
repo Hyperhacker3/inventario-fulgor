@@ -1,3 +1,4 @@
+import { StaffManager } from './internal/StaffManager';
 import { ScreenTransition } from './ui/Motion';
 import { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
@@ -12,7 +13,7 @@ export function DataAdministrationView({ initialTab = 'codes' }: { initialTab?: 
   const { catalogReady, catalogLoading, catalogError, refreshCatalog } = useInventory();
   const [tab, setTab] = useState<AdministrationTab>(initialTab);
   return <div className="p-4 md:p-8 w-full max-w-6xl mx-auto space-y-6">
-    <div><h2 className="text-2xl md:text-3xl font-bold">Administración de datos</h2><p className="mt-2 text-slate-600">Códigos, categorías, ubicaciones, proyectos, archivados y datos de empresa.</p></div>
+    <div><h2 className="text-2xl md:text-3xl font-bold">Administración de datos</h2><p className="mt-2 text-slate-600">Códigos, categorías, ubicaciones, personal, proyectos, archivados y datos de empresa.</p></div>
     <AdministrationNavigation value={tab} onChange={setTab} />
     <ScreenTransition screen={tab}><div id="data-tab-panel" role="tabpanel" aria-label="Datos de la sección seleccionada">
       {(tab === 'codes' || tab === 'categories') && (!catalogReady ? <div className="border bg-white rounded-2xl p-5 space-y-3">
@@ -23,6 +24,7 @@ export function DataAdministrationView({ initialTab = 'codes' }: { initialTab?: 
       {tab === 'warehouses' && <LocationsManager key={tab} kind="almacen" />}
       {tab === 'levels' && <LocationsManager key={tab} kind="nivel" />}
       {tab === 'boxes' && <LocationsManager key={tab} kind="caja" />}
+      {tab === 'personnel' && <StaffManager />}
       {tab === 'projects' && <ProjectsView embedded />}
       {tab === 'archived' && <ArchivedItems />}
       {tab === 'company' && <CompanyProfileEditor />}

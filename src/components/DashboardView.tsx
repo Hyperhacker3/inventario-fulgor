@@ -64,7 +64,7 @@ export function DashboardView() {
       <div className="grid lg:grid-cols-2 gap-5">
         <InventoryBars title="Distribución por almacén" description="Productos asignados a cada almacén dentro del alcance seleccionado." rows={summary.warehouses} />
         <section className="bg-white border border-[#e2e8f0] rounded-2xl p-5">
-          <h3 className="font-bold">Existencias por unidad de medida</h3><p className="text-xs text-slate-500 mt-1">Cantidades confirmadas. Se excluyen los conteos pendientes.</p>
+          <h3 className="font-bold">Existencias por unidad de medida</h3><p className="text-xs text-slate-500 mt-1">Cantidades confirmadas. Disponible excluye unidades dañadas y en uso interno. Se excluyen los conteos pendientes.</p>
           <div className="overflow-x-auto mt-4"><table className="w-full text-sm text-left"><thead className="text-xs text-slate-500"><tr><th className="py-2">Unidad</th><th className="text-right">Registrado</th><th className="text-right">Disponible</th><th className="text-right">Dañado</th></tr></thead><tbody>
             {summary.units.map(row => <tr key={row.unit} className="border-t border-slate-100"><th className="py-3 uppercase">{row.unit}</th><td className="text-right">{number.format(row.recorded)}</td><td className="text-right font-semibold text-emerald-700">{number.format(row.available)}</td><td className="text-right">{number.format(row.damaged)}</td></tr>)}
           </tbody></table></div>

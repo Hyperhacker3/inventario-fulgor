@@ -48,9 +48,9 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 
 ## Preparar una salida
 
-- Use el carrito rojo para agregar un producto a Salidas. En cuadrícula está sobre la foto, abajo a la derecha. Revise cantidades, disponibilidad y materiales; puede quitar productos antes de confirmar.
+- Salidas permite elegir Externas para proyectos o Internas para préstamos dentro de las instalaciones. Ambas comparten buscador y productos seleccionados. En Internas, entrega usa el nombre/cargo de la sesión y recibe selecciona un trabajador de Personal con su cargo automático. Registrar salida interna guarda el historial sin generar remisión. Materiales sin regresar muestra quién tiene cada material y permite devolver cantidades parciales o todo lo pendiente. Los materiales prestados siguen en el stock total y su valor, pero dejan de estar disponibles para otra salida hasta regresar. Historial permite abrir el comprobante y Guardar PDF cuando lo necesite; también se consulta desde Historial → Salidas internas y devoluciones. Use el carrito rojo para agregar un producto a Salidas. En cuadrícula está sobre la foto, abajo a la derecha. Revise cantidades, disponibilidad y materiales; puede quitar productos antes de confirmar.
 
-- Seleccione proyecto, origen, destino y fechas. Crear un proyecto desde Salidas pide nombre y ciudad, sin dirección ni departamento. El código usa la ciudad del proyecto; Lugar de destino permite indicar la dirección de entrega. Complete Datos del remitente (entrega en bodega, cargo y teléfono), Datos del destinatario (nombre y teléfono) y Datos del transportador y vehículo (nombre, cédula, teléfono y placa). El destinatario aparece como Cliente / destinatario en la remisión. Los nombres y lugares se registran en mayúsculas.
+- En Salidas externas, seleccione proyecto, origen, destino y fechas. Crear un proyecto desde Salidas pide nombre y ciudad, sin dirección ni departamento. El código usa la ciudad del proyecto; Lugar de destino permite indicar la dirección de entrega. Complete Datos del remitente (entrega en bodega, cargo y teléfono), Datos del destinatario (nombre y teléfono) y Datos del transportador y vehículo (nombre, cédula, teléfono y placa). El destinatario aparece como Cliente / destinatario en la remisión. Los nombres y lugares se registran en mayúsculas.
 
 - Las fotos son opcionales. Puede subir varios archivos o capturar varias seguidas: Capturar, revisar y Añadir y tomar otra; Añadir y terminar guarda la última y cierra. Repetir descarta solo la vista previa. Terminar conserva las fotos añadidas.
 
@@ -84,7 +84,7 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 
 ## Administración de datos
 
-- Reúne Códigos, Categorías, Almacenes, Estanterías, Niveles, Cajas, Proyectos, Archivados y Empresa. Cada sección tiene su propio color y la misma selección hundida que la navegación.
+- Reúne Códigos, Categorías, Almacenes, Estanterías, Niveles, Cajas, Personal, Proyectos, Archivados y Empresa. Personal permite agregar nombre y cargo de los trabajadores, corregirlos o desactivarlos para nuevas salidas internas, conservando las entregas anteriores. No crea cuentas de acceso. Cada sección tiene su propio color y la misma selección hundida que la navegación.
 
 - Las ubicaciones usan tarjetas con código, nombre, valor total, valor del material dañado y Editar. Cree o edite almacén → estantería → nivel → caja. Las cajas anteriores sin nivel pueden asignarse al editar. Al crear, almacén pide Nombre y Ciudad; estantería y nivel piden Nombre, y caja pide Nivel de estantería y Nombre opcional. En Entradas y edición tampoco se muestran cuadros de código al crear ubicaciones: se asignan automáticamente al guardar.
 

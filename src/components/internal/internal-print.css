@@ -1,0 +1,11 @@
+.ip-header { padding-bottom: 14px; }
+.ip-title { font-size: 18px; color: #253685; padding: 8px 0; border-bottom: 3px solid #253685; overflow-wrap: anywhere; }
+.ip-parties { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 12px; background: #f5f7fc; font-size: 11px; overflow-wrap: anywhere; }
+.ip-caption { font-size: 10px; padding-top: 8px; }
+.ip-table { table-layout: fixed; border-collapse: collapse; width: 100%; font-size: 10px; }
+.ip-table th { background: #253685; color: white; text-align: left; padding: 8px 4px; font-size: 8px; }
+.ip-table td { padding: 8px 4px; vertical-align: top; overflow-wrap: anywhere; border-bottom: 1px solid #e1e6f0; }
+.ip-table tr:nth-child(even) { background: #f5f7fc; }
+.ip-table small { display: block; font-size: 8px; color: #454f63; }
+.ip-closing { font-size: 10px; padding: 6px 0; overflow-wrap: anywhere; }
+@media print { .ip-table tr, .ip-closing { break-inside: avoid; } }

@@ -34,7 +34,7 @@ export function ItemDetailModal(props: Props) {
 }
 type DetailInventory = Pick<ReturnType<typeof useInventory>, 'user' | 'getLocationString' | 'openQuickMovement' | 'addToDispatchCart'
   | 'updateElemento' | 'deleteElemento' | 'categoryLabel' | 'almacenes' | 'estanterias' | 'cajas' | 'niveles'>
-  & Partial<Pick<ReturnType<typeof useInventory>, 'addEstanteria' | 'addNivel' | 'addCaja' | 'quickMovementItem' | 'quickMovementType' | 'dispatchSelection' | 'openLocationInventory'>>;
+  & Partial<Pick<ReturnType<typeof useInventory>, 'addEstanteria' | 'addNivel' | 'addCaja' | 'quickMovementItem' | 'quickMovementType' | 'dispatchSelection' | 'openLocationInventory' | 'cartLocked'>>;
 export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore, inventory, history }: Props & { inventory: DetailInventory; history?: ReactNode }) {
   const { user, getLocationString, openQuickMovement, addToDispatchCart,
     updateElemento, deleteElemento, categoryLabel, almacenes, estanterias, cajas, niveles, addEstanteria, addNivel, addCaja } = inventory;
@@ -138,7 +138,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
                 <div className="min-w-0 min-[400px]:col-span-2"><dt className="text-xs text-slate-500">Ubicación</dt><dd className="mt-1 break-words">{inventory.openLocationInventory ? <ItemLocationLinks item={item} warehouses={almacenes} racks={estanterias} levels={niveles} boxes={cajas}
                   disabled={busy || editing || archiveConfirm} onNavigate={inventory.openLocationInventory} /> : getLocationString(item)}</dd></div>
                 <div className="col-span-full"><dt className="sr-only">Existencias y valor</dt><dd><dl className="item-form-pair">
-                  <div className="item-detail-stock min-w-0"><dt className="text-xs text-slate-500">Stock</dt><dd className="mt-1 break-words"><strong className="text-2xl sm:text-3xl">{item.cantidad}</strong> {item.unidad}</dd></div>
+                  <div className="item-detail-stock min-w-0"><dt className="text-xs text-slate-500">Stock</dt><dd className="mt-1 break-words"><strong className="text-2xl sm:text-3xl">{item.cantidad}</strong> {item.unidad}{!!item.cantidadPrestada && <span className="block text-xs mt-1">En uso interno: {item.cantidadPrestada} {item.unidad}</span>}</dd></div>
                   <div className="item-detail-stock-value min-w-0"><dt className="text-xs text-slate-500">Valor de stock</dt><dd className="mt-1 break-words">{item.stockPendiente ? 'Pendiente de verificar' : <><strong className="text-2xl sm:text-3xl">{roundCOP(item.cantidad * (item.valorUnitario || 0)).toLocaleString('es-CO', { maximumFractionDigits: 2 })}</strong> COP</>}</dd></div>
                 </dl></dd></div>
                 {item.descripcion && <div className="min-w-0 min-[400px]:col-span-2"><dt className="text-xs text-slate-500">Descripción / comentarios</dt><dd className="mt-1 whitespace-pre-wrap break-words">{item.descripcion}</dd></div>}
@@ -151,7 +151,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
           {canAdmin && <button type="button" data-action="edit" aria-pressed={editing} disabled={busy} onClick={startEdit} aria-label="Editar" title="Editar" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="edit" filled={editing} /></button>}
           {canOperate && !item.stockPendiente && <button type="button" data-action="entry" aria-pressed={entryOpen} disabled={busy || editing} onClick={() => openQuickMovement(item, 'ENTRADA')} aria-label="Entrada" title="Entrada" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="input" filled={entryOpen} /></button>}
           {(canAdmin || canOperate && !item.stockPendiente) && <button type="button" data-action="adjustment" aria-pressed={adjustmentOpen} disabled={busy || editing} onClick={() => openQuickMovement(item, 'AJUSTE')} aria-label={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} title={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="tune" filled={adjustmentOpen} /></button>}
-          {canOperate && <button type="button" data-action="dispatch" aria-pressed={dispatchOpen} disabled={busy || editing || available(item) === 0} onClick={() => addToDispatchCart(item)} aria-label="Agregar a la salida" title="Agregar a la salida"
+          {canOperate && <button type="button" data-action="dispatch" aria-pressed={dispatchOpen} disabled={busy || editing || available(item) === 0 || inventory.cartLocked} onClick={() => addToDispatchCart(item)} aria-label="Agregar a la salida" title="Agregar a la salida"
             className="ui-flat-choice p-2 rounded-lg disabled:opacity-40"><StateIcon icon="add_shopping_cart" filled={dispatchOpen} /></button>}
           {canAdmin && <button type="button" data-action="archive" aria-pressed={archiveConfirm} disabled={busy || editing} onClick={() => { setError(''); setArchiveConfirm(true); }} aria-label="Archivar" title="Archivar" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="archive" filled={archiveConfirm} /></button>}
         </div>}

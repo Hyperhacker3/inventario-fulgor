@@ -15,6 +15,8 @@ import { isDemo } from '../lib/supabase';
 import type { DispatchCartItem, Elemento, Remision } from '../types';
 import type { InventoryReport, ReportSaveJob } from '../domain/inventoryReport';
 import { INITIAL_ALMACENES, INITIAL_CAJAS, INITIAL_ELEMENTOS, INITIAL_ESTANTERIAS, INITIAL_HISTORIAL, INITIAL_PROYECTOS, INITIAL_REMISIONES } from '../data/initialData';
+import { loadInternalJobs } from '../domain/internalRequests';
+import { useInternalOperations } from '../state/useInternalOperations';
 import { useInventoryExplorer } from '../state/useInventoryExplorer';
 
 type CartLine = { elementoId: string; cantidad: number };
@@ -34,6 +36,10 @@ function useInventoryValue() {
   const categoryOptions = useMemo(() => categoryChoices(catalogs.categorias,
     [...categories, ...data.elementos.map(item => item.categoria)]), [catalogs.categorias, data.elementos]);
   const categoryLabel = (id: string) => catalogs.categorias.find(category => category.id === id)?.nombre || id.replaceAll('_', ' ');
+  const [dispatchMode, setDispatchMode] = useState<'external' | 'internal'>(()=>loadInternalJobs(`fulgor_internal_requests_v1_${user?.email || ''}`).issue?'internal':'external');
+  const [externalDispatchPending, setExternalDispatchPending] = useState(false);
+  const [internalTab, setInternalTab] = useState<'new' | 'pending' | 'history'>('new');
+  const [internalRecipient, setInternalRecipient] = useState('');
   const [globalSearch, setGlobalSearch] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [selectedRemisionForPdf, setSelectedRemisionForPdf] = useState<Remision | null>(null);
@@ -67,6 +73,8 @@ function useInventoryValue() {
   const [cartLines, setCartLines] = useState<CartLine[]>(() => loadCart(cartKey));
   useEffect(() => { localStorage.setItem(cartKey, JSON.stringify(cartLines)); }, [cartKey, cartLines]);
 
+  const internalOperations = useInternalOperations(() => data.refresh('elementos'), () => setCartLines([]));
+  const cartLocked = externalDispatchPending || !!internalOperations.internalJobs.issue || internalOperations.internalPending;
   const itemIndex = useMemo(() => byId(data.elementos), [data.elementos]);
   const warehouseIndex = useMemo(() => byId(data.almacenes), [data.almacenes]);
   const rackIndex = useMemo(() => byId(data.estanterias), [data.estanterias]);
@@ -83,6 +91,7 @@ function useInventoryValue() {
   const dispatchSelectionItem = dispatchSelection ? itemIndex.get(dispatchSelection.itemId) || null : null;
   const closeDispatchSelection = useCallback(() => setDispatchSelection(null), []);
   const addToDispatchCart = (item: Elemento, quantity?: number) => {
+    if (cartLocked) throw new Error('Termine o reintente la salida pendiente antes de cambiar los materiales.');
     if (!isDemo && !['admin', 'operador'].includes(user?.role || '')) throw new Error('Su cuenta no puede agregar materiales a la salida.');
     if (quantity === undefined) { setDispatchSelection({ itemId: item.id, token: crypto.randomUUID() }); return; }
     const live = itemIndex.get(item.id);
@@ -99,13 +108,14 @@ function useInventoryValue() {
     setDispatchFeedback({ message: `Agregados ${quantity.toLocaleString('es-CO', { maximumFractionDigits: 3 })} ${live.unidad.toUpperCase()} de ${live.codigo} a la salida.`, token: crypto.randomUUID() });
   };
   const updateDispatchCartQuantity = (itemId: string, quantity: number) => {
+    if (cartLocked) return;
     const item = itemIndex.get(itemId);
     if (!item || available(item) === 0) { setCartLines(prev => prev.filter(line => line.elementoId !== itemId)); return; }
     setCartLines(prev => prev.map(line => line.elementoId === itemId
       ? { ...line, cantidad: roundQuantity(Math.max(MIN_QUANTITY, Math.min(available(item), quantity || MIN_QUANTITY))) } : line));
   };
-  const removeFromDispatchCart = (itemId: string) => setCartLines(prev => prev.filter(line => line.elementoId !== itemId));
-  const clearDispatchCart = useCallback(() => setCartLines([]), []);
+  const removeFromDispatchCart = (itemId: string) => { if (!cartLocked) setCartLines(prev => prev.filter(line => line.elementoId !== itemId)); };
+  const clearDispatchCart = useCallback(() => {if(!cartLocked)setCartLines([]);}, [cartLocked]);
   const openItemDetail = (item: Elemento) => setSelectedItemId(item.id);
   const closeItemDetail = useCallback(() => setSelectedItemId(null), []);
   const openPdfRemision = useCallback((remission: Remision) => setSelectedRemisionForPdf(remission), []);
@@ -142,6 +152,7 @@ function useInventoryValue() {
     quickMovementType, isHelpModalOpen, globalSearch, isCloudConnected: data.isCloudConnected,
     dispatchSelection, dispatchSelectionItem, closeDispatchSelection, dispatchFeedback,
     explorerState, setExplorerState, openLocationInventory,
+    externalDispatchPending, setExternalDispatchPending, dispatchMode, setDispatchMode, internalTab, setInternalTab, internalRecipient, setInternalRecipient, cartLocked, ...internalOperations,
     syncStatus: data.syncStatus, setActiveView, setGlobalSearch, openItemDetail, closeItemDetail,
     startupStatus: combinedInitialStatus(data.initialLoadStatus, catalogs.catalogLoadStatus),
     retryInitialLoad: () => Promise.allSettled([

@@ -21,6 +21,7 @@ const uppercaseMigration = fs.readFileSync(new URL('../../supabase/migrations/20
 const webpMigration = fs.readFileSync(new URL('../../supabase/migrations/20261010000100_webp_photos.sql', import.meta.url), 'utf8');
 const projectCityMigration = fs.readFileSync(new URL('../../supabase/migrations/20261027000100_project_city_remission_code.sql', import.meta.url), 'utf8');
 const automaticCodesMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000100_automatic_location_category_codes.sql', import.meta.url), 'utf8');
+const internalMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000600_internal_dispatches.sql',import.meta.url),'utf8');
 const damagePolicyMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000500_condition_damage_policy.sql', import.meta.url),'utf8');
 const boxNamesMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000400_box_names.sql', import.meta.url), 'utf8');
 const normalizeLocationCodesMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000200_normalize_location_codes.sql', import.meta.url), 'utf8');
@@ -1666,5 +1667,117 @@ test('condition damage policy preserves rows and historical retries, rejects new
   await role(db,'operador');assert.deepEqual((await db.query(routeSql,args)).rows[0].rem,issued);
   await assert.rejects(()=>db.query('SELECT public.dispatch_inventory($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb)',args.slice(0,8)),/permission denied/);
   await role(db,'consulta');await assert.rejects(()=>db.query(routeSql,args),/No autorizado/);
+ }finally{await db.close();}
+});
+
+
+const internalId=n=>'29600000-0000-0000-0000-'+String(n).padStart(12,'0');
+const staffSql='SELECT public.save_internal_staff($1::uuid,$2::uuid,$3,$4,$5,$6) AS row';
+const issueSql='SELECT public.create_internal_dispatch($1::uuid,$2::uuid,$3::jsonb) AS row';
+const returnSql='SELECT public.return_internal_dispatch($1::uuid,$2::uuid,$3::jsonb) AS row';
+const getInternal=async(db,id)=>(await db.query('SELECT public.read_internal_dispatch($1::uuid) AS row',[id])).rows[0].row;
+async function internalDatabase(){const db=await database({route:true});await db.exec(editUnitMigration);await db.exec(internalMigration);return db;}
+async function worker(db,n=1){await role(db,'admin');return (await db.query(staffSql,[internalId(n),null,'Trabajador Uno','Técnico',true,0])).rows[0].row;}
+const loanItems=quantity=>JSON.stringify([{elementoId:'ELM-001',cantidad:quantity}]);
+
+test('internal loans keep full inventory and company/person snapshots, reserve availability, return partially/totally and replay without duplicate operations',async()=>{
+ const db=await internalDatabase();try{
+  const person=await worker(db);await asOwner(db);
+  const before=(await db.query('SELECT id,cantidad,cantidad_danados,unidad,estado,archived FROM public.elementos ORDER BY id')).rows;
+  const history=(await db.query('SELECT * FROM public.historial ORDER BY id')).rows;
+  await db.exec(internalMigration);
+  assert.deepEqual((await db.query('SELECT id,cantidad,cantidad_danados,unidad,estado,archived FROM public.elementos ORDER BY id')).rows,before);
+  await role(db,'operador');const args=[internalId(2),person.id,loanItems(2.375)];
+  const loan=(await db.query(issueSql,args)).rows[0].row;
+  assert.equal(loan.entregado_por,'OPERADOR DE PRUEBA');assert.equal(loan.cargo_entregado,'OPERADOR');
+  assert.equal(loan.recibido_por,'TRABAJADOR UNO');assert.equal(loan.cargo_recibido,'TÉCNICO');assert.equal(loan.estado,'PENDIENTE');
+  assert.match(loan.codigo,/^INT-[0-9]{8}-001$/);assert.equal(loan.items[0].pendiente,2.375);assert.equal(loan.items[0].devuelta,0);
+  assert.deepEqual((await db.query(issueSql,args)).rows[0].row,loan);
+  const reserved=(await db.query("SELECT cantidad,cantidad_prestada FROM public.elementos WHERE id='ELM-001'")).rows[0];
+  assert.equal(Number(reserved.cantidad),Number(before.find(row=>row.id==='ELM-001').cantidad));assert.equal(Number(reserved.cantidad_prestada),2.375);
+  await asOwner(db);assert.equal((await db.query('SELECT count(*) AS n FROM public.remisiones')).rows[0].n,0);
+  assert.deepEqual((await db.query('SELECT * FROM public.historial ORDER BY id')).rows,history);
+  await db.query("UPDATE public.inventario_personal SET nombre='Nombre posterior',cargo='Cargo posterior',activo=false WHERE id=$1",[person.id]);
+  await db.exec("UPDATE public.elementos SET nombre='Nombre actual',estado='PARA REPARAR' WHERE id='ELM-001'");
+  await db.exec("UPDATE public.inventario_empresa SET perfil=jsonb_set(perfil,'{nombre}',to_jsonb('EMPRESA ACTUAL'::text)) WHERE singleton");
+  await role(db,'operador');assert.deepEqual((await db.query(issueSql,args)).rows[0].row,loan);
+  await assert.rejects(()=>db.query(issueSql,[internalId(3),person.id,loanItems(1)]),/trabajador activo/);
+  const partial=(await db.query(returnSql,[internalId(4),loan.id,loanItems(1.125)])).rows[0].row;
+  assert.equal(partial.estado,'PARCIAL');assert.equal(partial.items[0].devuelta,1.125);assert.equal(partial.items[0].pendiente,1.25);
+  assert.equal(partial.recibido_por,loan.recibido_por);assert.deepEqual(partial.empresa,loan.empresa);assert.equal(partial.items[0].nombre,loan.items[0].nombre);
+  assert.deepEqual((await db.query(returnSql,[internalId(4),loan.id,loanItems(1.125)])).rows[0].row,partial);
+  await assert.rejects(()=>db.query(returnSql,[internalId(5),loan.id,loanItems(2)]),/supera la cantidad pendiente/);
+  const done=(await db.query(returnSql,[internalId(6),loan.id,loanItems(1.25)])).rows[0].row;
+  assert.equal(done.estado,'DEVUELTA');assert.equal(done.devoluciones.length,2);assert.equal(done.items[0].pendiente,0);
+  assert.equal((await db.query(issueSql,args)).rows[0].row.estado,'DEVUELTA');
+  assert.equal((await db.query(returnSql,[internalId(4),loan.id,loanItems(1.125)])).rows[0].row.estado,'DEVUELTA');
+  assert.equal(Number((await db.query("SELECT cantidad_prestada FROM public.elementos WHERE id='ELM-001'")).rows[0].cantidad_prestada),0);
+  assert.equal((await getInternal(db,loan.id)).items[0].cantidad,2.375);
+  await asOwner(db);await db.exec("UPDATE public.elementos SET archived=true WHERE id='ELM-001';DELETE FROM public.elementos WHERE id='ELM-001'");
+  await role(db,'consulta');assert.equal((await getInternal(db,loan.id)).items[0].nombre,loan.items[0].nombre);
+ }finally{await db.close();}
+});
+
+test('internal issue validation is atomic, external dispatch respects reservations and borrowed products cannot be archived or have their unit changed',async()=>{
+ const db=await internalDatabase();try{
+  const person=await worker(db);await asOwner(db);await db.exec("UPDATE public.elementos SET cantidad=10,cantidad_danados=1 WHERE id='ELM-001'");
+  await role(db,'operador');
+  for(const items of [[],[{elementoId:'ELM-001',cantidad:1},{elementoId:'missing',cantidad:1}],[{elementoId:'ELM-001',cantidad:1},{elementoId:'ELM-001',cantidad:1}],[{elementoId:'ELM-001',cantidad:0.0001}]])
+   await assert.rejects(()=>db.query(issueSql,[internalId(10),person.id,JSON.stringify(items)]));
+  assert.equal(Number((await db.query("SELECT cantidad_prestada FROM public.elementos WHERE id='ELM-001'")).rows[0].cantidad_prestada),0);
+  const loan=(await db.query(issueSql,[internalId(11),person.id,loanItems(6)])).rows[0].row;
+  await assert.rejects(()=>db.query(issueSql,[internalId(12),person.id,loanItems(4)]),/Stock no disponible/);
+  await role(db,'admin');await assert.rejects(()=>db.exec("UPDATE public.elementos SET archived=true WHERE id='ELM-001'"),/devoluciones internas/);
+  await assert.rejects(()=>db.exec("UPDATE public.elementos SET unidad='MTS' WHERE id='ELM-001'"),/devoluciones internas/);
+  await assert.rejects(()=>db.exec("UPDATE public.elementos SET cantidad_prestada=0 WHERE id='ELM-001'"),/permission denied/);
+  await role(db,'operador');const args=routeArgs(internalId(13));args[7]=loanItems(4);await assert.rejects(()=>db.query(routeSql,args),/Stock no disponible/);
+  args[7]=loanItems(3);await db.query(routeSql,args);
+  assert.equal(Number((await db.query("SELECT cantidad FROM public.elementos WHERE id='ELM-001'")).rows[0].cantidad),7);
+  await assert.rejects(()=>db.query(returnSql,[internalId(14),loan.id,JSON.stringify([{elementoId:'ELM-002',cantidad:1}])]),/no pertenece/);
+  await assert.rejects(()=>db.query(returnSql,[internalId(17),loan.id,JSON.stringify([{elementoId:'ELM-001',cantidad:1},{elementoId:'ELM-999',cantidad:1}])]),/no pertenece/);
+  assert.equal(Number((await db.query("SELECT cantidad_prestada FROM public.elementos WHERE id='ELM-001'")).rows[0].cantidad_prestada),6);
+  assert.equal((await getInternal(db,loan.id)).items[0].devuelta,0);
+  const returned=(await db.query(returnSql,[internalId(15),loan.id,loanItems(6)])).rows[0].row;assert.equal(returned.estado,'DEVUELTA');
+  await asOwner(db);await db.exec("UPDATE public.elementos SET estado='MALO' WHERE id='ELM-001'");
+  await role(db,'operador');await assert.rejects(()=>db.query(issueSql,[internalId(16),person.id,loanItems(1)]),/Stock no disponible/);
+ }finally{await db.close();}
+});
+
+test('internal records use shared read roles, admin-only personnel, private request IDs and versioned staff changes',async()=>{
+ const db=await internalDatabase();try{
+  const person=await worker(db);await role(db,'operador');
+  await assert.rejects(()=>db.query(staffSql,[internalId(20),null,'No','No',true,0]),/administración/);
+  const loan=(await db.query(issueSql,[internalId(21),person.id,loanItems(1)])).rows[0].row;
+  await role(db,'consulta');assert.equal((await getInternal(db,loan.id)).codigo,loan.codigo);
+  assert.equal((await db.query('SELECT * FROM public.inventario_personal')).rows.length,1);
+  await assert.rejects(()=>db.query(issueSql,[internalId(22),person.id,loanItems(1)]),/No autorizado/);
+  await assert.rejects(()=>db.query(returnSql,[internalId(23),loan.id,loanItems(1)]),/No autorizado/);
+  await assert.rejects(()=>db.exec('SELECT * FROM public.inventario_solicitudes_internas'),/permission denied/);
+  await assert.rejects(()=>db.exec("UPDATE public.inventario_prestamo_lineas SET devuelta=cantidad"),/permission denied/);
+  await role(db,'admin');const edited=(await db.query(staffSql,[internalId(24),person.id,'Nombre corregido','Residente',false,person.version])).rows[0].row;
+  assert.equal(edited.version,2);assert.equal(edited.activo,false);
+  assert.deepEqual((await db.query(staffSql,[internalId(24),person.id,'Nombre corregido','Residente',false,person.version])).rows[0].row,edited);
+  await assert.rejects(()=>db.query(staffSql,[internalId(25),person.id,'Otra edición','Residente',true,person.version]),/trabajador cambió/);
+  await assert.rejects(()=>db.query(issueSql,[internalId(21),person.id,loanItems(2)]),/otros datos/);
+  await asOwner(db);await db.exec("CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '00000000-0000-0000-0000-000000000002'::uuid $$");
+  await role(db,'operador');await assert.rejects(()=>db.query(issueSql,[internalId(21),person.id,loanItems(1)]),/otro.*usuario/);
+  await asOwner(db);await db.exec('SET ROLE anon');await assert.rejects(()=>db.query('SELECT public.list_internal_dispatches()'),/permission denied/);
+ }finally{await db.close();}
+});
+
+test('internal history paginates all issues and pending returns without truncating selected materials',async()=>{
+ const db=await internalDatabase();try{
+  const person=await worker(db);await asOwner(db);await db.exec("UPDATE public.elementos SET cantidad=100 WHERE id='ELM-001'");
+  await role(db,'operador');const ids=[];
+  for(let i=0;i<25;i++)ids.push((await db.query(issueSql,[internalId(100+i),person.id,loanItems(1)])).rows[0].row.id);
+  const list=async(page,pending=false,search='')=>(await db.query('SELECT public.list_internal_dispatches($1,$2,$3) AS row',[page,pending,search])).rows[0].row;
+  const first=await list(1),second=await list(2);assert.equal(first.total,25);assert.equal(first.rows.length,20);assert.equal(second.rows.length,5);assert.equal(new Set([...first.rows,...second.rows].map(row=>row.id)).size,25);
+  await db.query(returnSql,[internalId(140),ids[0],loanItems(1)]);const pending=await list(1,true);assert.equal(pending.total,24);assert.equal(pending.pending,24);assert.ok(pending.rows.every(row=>row.estado!=='DEVUELTA'));
+  assert.equal((await list(1,false,first.rows[0].codigo)).total,1);
+  await asOwner(db);await db.exec("INSERT INTO public.elementos(id,codigo,nombre,cantidad,unidad,categoria,stock_minimo) SELECT 'INTERNAL-'||n,'LOA'||lpad(n::text,5,'0'),'Material '||n,1,'UND','OTROS',0 FROM generate_series(1,1001) n");
+  const lines=Array.from({length:1001},(_,i)=>({elementoId:'INTERNAL-'+(i+1),cantidad:1}));await role(db,'operador');
+  const large=(await db.query(issueSql,[internalId(150),person.id,JSON.stringify(lines)])).rows[0].row;assert.equal(large.items.length,1001);
+  assert.equal((await getInternal(db,large.id)).items.length,1001);
+  const done=(await db.query(returnSql,[internalId(151),large.id,JSON.stringify(lines)])).rows[0].row;assert.equal(done.estado,'DEVUELTA');assert.equal(done.devoluciones[0].items.length,1001);
  }finally{await db.close();}
 });
