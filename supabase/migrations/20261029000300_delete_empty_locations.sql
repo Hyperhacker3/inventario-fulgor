@@ -28,7 +28,7 @@ BEGIN
   -- Incluso al eliminar un código antiguo, no reutilizar después su número.
   IF to_regclass('public.inventario_ubicacion_consecutivos') IS NOT NULL THEN
     v_prefix:=CASE p_kind WHEN 'almacen' THEN 'ALM' WHEN 'estanteria' THEN 'EST' WHEN 'nivel' THEN 'NIV' ELSE 'CAJ' END;
-    EXECUTE format('SELECT coalesce(max(n),0) FROM (SELECT substring(trim(codigo) from ''([0-9]+)$'')::numeric AS n FROM public.%I) codes WHERE n<=999999999999',v_table) INTO v_last;
+    EXECUTE format('SELECT coalesce(max(n),0) FROM (SELECT substring(substring(codigo from ''^[[:space:]]*([^[:space:]]+)'') from ''([0-9]+)$'')::numeric AS n FROM public.%I) codes WHERE n<=999999999999',v_table) INTO v_last;
     UPDATE public.inventario_ubicacion_consecutivos SET ultimo=greatest(ultimo,v_last::bigint) WHERE prefijo=v_prefix;
   END IF;
   EXECUTE format('DELETE FROM public.%I WHERE id=$1',v_table) USING p_id;

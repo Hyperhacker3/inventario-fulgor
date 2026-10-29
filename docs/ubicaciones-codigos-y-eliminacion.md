@@ -4,14 +4,16 @@ Actualizado el 29 de octubre de 2026. La instrucción posterior del usuario cons
 
 ## Qué cambia
 
-- Almacenes usan ALM, estanterías EST, niveles NIV y cajas CAJ. Ejemplos: CON-05 → ALM005, EST-A01 → EST001, NIV-007 → NIV007 y CAJA-005 → CAJ005. Se toma el grupo numérico final; solo se completa su representación hasta un mínimo de tres cifras. Después de 999 se conserva el ancho necesario.
+- Almacenes usan ALM, estanterías EST, niveles NIV y cajas CAJ. Ejemplos: CON-05 → ALM005, EST-A01 → EST001, NIV-007 → NIV007 y CAJA-005 → CAJ005. Se toma el grupo numérico final del primer bloque de código, antes de descripciones separadas por espacios. Por ejemplo, EST-001 SIN ESTANTERÍA → EST001 y CAJA-005 ZONA 99 → CAJ005, conservando 001 y 005 e ignorando los números de la descripción. Solo se completa su representación hasta un mínimo de tres cifras. Después de 999 se conserva el ancho necesario.
 - No se cambian IDs, nombres, padres, productos, cantidades, fotos, movimientos, remisiones ni informes guardados. Las cajas de prueba no se eliminan ni se reubican automáticamente.
 - Un número anterior puede repetirse en niveles distintos para cajas, estanterías distintas para niveles o almacenes distintos para estanterías. Se conservan ambas ubicaciones. El consecutivo nuevo sigue siendo global por tipo y continúa sobre el mayor número real o previamente reservado, aunque después se elimine una ubicación.
-- Si dos códigos coincidirían en el mismo padre, o falta un número final compatible, la normalización se detiene y revierte todos sus cambios. Informa códigos/IDs para revisar. No inventa ni cambia números para resolverlo.
+- Si dos códigos coincidirían en el mismo padre, o falta un número compatible en el bloque inicial del código, la normalización se detiene y revierte todos sus cambios. Informa códigos/IDs para revisar. No inventa ni cambia números para resolverlo.
 - Caja no muestra ni pide estado de ocupación en el selector, tarjetas o edición. El campo antiguo de base de datos se conserva por compatibilidad; el frontend no lo envía al crear ni editar cajas.
 - En Administración, cada tarjeta incorpora Eliminar para administración. La confirmación identifica código, nombre y ubicación. Supabase permite borrar únicamente ubicaciones sin productos asignados (también comprueba archivados) y sin hijos. Eliminar una caja vacía permite después eliminar su nivel vacío, estantería vacía y almacén vacío. Nunca hay eliminación en cascada.
 
 ## Activación desde la cuenta del usuario
+
+Corrección del error EST-001 SIN ESTANTERÍA: vuelva a copiar y ejecutar completo el archivo de normalización actualizado (paso 3). La ejecución fallida se revierte; no hay que repetir importaciones ni renumerar datos. La tabla temporal del plan ahora declara RLS explícitamente. La lectura de códigos descritos también se actualizó en la auditoría y en el SQL de eliminación para preservar los máximos al borrar un código antiguo antes de normalizar.
 
 El agente no tiene una sesión autenticada para consultar ni modificar el Supabase real. Las pruebas locales no confirman la aplicación de estas migraciones ni los números actuales de producción.
 
@@ -31,6 +33,8 @@ Las solicitudes de creación anteriores mantienen actor, UUID y payload. Al rein
 La RPC de eliminación valida rol y tipo, bloquea la ubicación y comprueba sus referencias en Supabase, sin depender del listado paginado del frontend. No se concede DELETE directo a usuarios autenticados. El contador conserva como mínimo los números vistos antes de eliminar y no retrocede. Documentos históricos conservan sus textos anteriores.
 
 ## Comprobaciones
+
+Corrección verificada del código con descripción (29 de octubre): typecheck, lint, 210 pruebas unitarias y 49 de integración (259), y build correctos con Node 22.23.3 / pnpm 11.19.0. La regresión reproduce EST-001 SIN ESTANTERÍA y códigos de los cuatro tipos con números en la descripción; conserva el número del bloque inicial, nombres y productos, y prueba repetición de migración y siguientes consecutivos. Las comprobaciones anteriores de rollback, reintentos y eliminación también pasan con el nuevo criterio. La tabla temporal declara RLS explícito. No hay cambios de interfaz ni ejecución de SQL en Supabase real. El usuario debe volver a copiar y ejecutar completo el archivo de normalización actualizado.
 
 Verificación del 29 de octubre: typecheck, lint, 210 pruebas unitarias y 48 de integración (258), y build correctos con Node 22.23.3 / pnpm 11.19.0. Se actualizan las pruebas existentes de cajas/formularios y se añade una prueba DOM de eliminación para los cuatro tipos. Cinco pruebas nuevas de PGlite verifican números y referencias intactos, máximos, códigos repetidos en padres distintos, rollback, copias históricas, reintentos, permisos, dependencias y no reutilización tras eliminar un código antiguo. La primera comprobación SQL detectó que las etiquetas temporales de niveles deben estar en mayúsculas; se corrigió y pasó la suite completa. Sin SQL en Supabase real ni automatización de navegador; activación y revisión visual pendientes del usuario.
 

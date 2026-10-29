@@ -5,7 +5,7 @@ WITH locations AS (
   UNION ALL SELECT 'nivel','NIV',id,codigo,estanteria_id FROM public.niveles_estanteria
   UNION ALL SELECT 'caja','CAJ',id,codigo,coalesce(nivel_id,'SIN-NIVEL:'||estanteria_id) FROM public.cajas
 ), parsed AS (
-  SELECT *,substring(trim(codigo) from '([0-9]+)$')::numeric AS numero FROM locations
+  SELECT *,substring(substring(codigo from '^[[:space:]]*([^[:space:]]+)') from '([0-9]+)$')::numeric AS numero FROM locations
 ), planned AS (
   SELECT *,CASE WHEN numero BETWEEN 0 AND 999999999999
     THEN prefijo||lpad(numero::bigint::text,greatest(3,length(numero::bigint::text)),'0') END AS codigo_propuesto FROM parsed

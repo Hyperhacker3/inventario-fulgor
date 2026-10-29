@@ -1262,12 +1262,12 @@ for(const problem of ['same-parent','missing-number'])test('location normalizati
  const db=await database();try{
   await db.exec("INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('NORMALIZE-L','NIV-001','Nivel','EST-A01')");
   if(problem==='same-parent')await db.exec("INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('NORMALIZE-B1','CAJA-005','Uno','EST-A01','NORMALIZE-L'),('NORMALIZE-B2','CAJ005','Dos','EST-A01','NORMALIZE-L')");
-  else await db.exec("INSERT INTO public.estanterias(id,codigo,nombre,almacen_id) VALUES('NO-NUMBER','ESPECIAL','Sin número','ALM-BOG-01')");
+  else await db.exec("INSERT INTO public.estanterias(id,codigo,nombre,almacen_id) VALUES('NO-NUMBER','ESPECIAL ESTANTE 99','Sin número','ALM-BOG-01')");
   await db.exec(automaticCodesMigration);
   const tables=['almacenes','estanterias','niveles_estanteria','cajas','elementos','historial'];
   const before=await Promise.all(tables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows));
   const counters=(await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows;
-  await assert.rejects(()=>db.exec(normalizeLocationCodesMigration),problem==='same-parent'?/repetido en el mismo padre/:/sin número final/);
+  await assert.rejects(()=>db.exec(normalizeLocationCodesMigration),problem==='same-parent'?/repetido en el mismo padre/:/sin número compatible/);
   await db.exec('ROLLBACK');
   for(const [index,table] of tables.entries())assert.deepEqual((await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows,before[index]);
   assert.deepEqual((await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows,counters);
@@ -1316,7 +1316,7 @@ test('empty location deletion checks dependencies and archived products, rejects
 
 test('deleting an old-format highest box before normalization reserves its number without changing any other box',async()=>{
  const db=await database();try{
-  await db.exec("INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('DELETE-LEG-L','NIV-001','Nivel','EST-A01'); INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('DELETE-LEG-B','CAJA-040','Prueba','EST-A01','DELETE-LEG-L')");
+  await db.exec("INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('DELETE-LEG-L','NIV-001','Nivel','EST-A01'); INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('DELETE-LEG-B','CAJA-040 CAJA 777','Prueba','EST-A01','DELETE-LEG-L')");
   await db.exec(automaticCodesMigration);await db.exec(deleteLocationsMigration);
   const boxes=(await db.query("SELECT * FROM public.cajas WHERE id<>'DELETE-LEG-B' ORDER BY id")).rows;
   await role(db,'admin');await db.query(deleteLocationSql,['caja','DELETE-LEG-B']);await asOwner(db);
@@ -1325,5 +1325,26 @@ test('deleting an old-format highest box before normalization reserves its numbe
   await db.exec(normalizeLocationCodesMigration);await role(db,'admin');
   const next=(await db.query(autoLocationSql,[autoId(301),'caja',JSON.stringify({parent_id:'EST-A01',nivel_id:'DELETE-LEG-L'})])).rows[0].row;
   assert.equal(next.codigo,'CAJ041');
+ }finally{await db.close();}
+});
+
+test('location code parsing preserves numbers before trailing descriptions and ignores numbers inside those descriptions',async()=>{
+ const db=await database();try{
+  await db.exec("INSERT INTO public.almacenes(id,codigo,nombre) VALUES('LABEL-W','CON-010 BODEGA 999','Bodega conservada'); INSERT INTO public.estanterias(id,codigo,nombre,almacen_id) VALUES('LABEL-R','EST-001 SIN ESTANTERÍA','Sin estantería','LABEL-W'); INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('LABEL-L','NIV-002 NIVEL 500','Nombre del nivel','LABEL-R'); INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('LABEL-B','CAJA-005 CAJA DE PRUEBA 888','Nombre de caja','LABEL-R','LABEL-L')");
+  const before=(await db.query('SELECT * FROM public.elementos ORDER BY id')).rows;
+  const audit=(await db.query(locationCodesAudit)).rows;
+  for(const [id,number,code] of [['LABEL-W',10,'ALM010'],['LABEL-R',1,'EST001'],['LABEL-L',2,'NIV002'],['LABEL-B',5,'CAJ005']]){
+   const row=audit.find(row=>row.id===id);assert.equal(Number(row.numero),number);assert.equal(row.codigo_propuesto,code);
+  }
+  await db.exec(automaticCodesMigration);await db.exec(normalizeLocationCodesMigration);await db.exec(normalizeLocationCodesMigration);
+  for(const [table,id,code,name] of [['almacenes','LABEL-W','ALM010','Bodega conservada'],['estanterias','LABEL-R','EST001','Sin estantería'],['niveles_estanteria','LABEL-L','NIV002','Nombre del nivel'],['cajas','LABEL-B','CAJ005','Nombre de caja']]){
+   const row=(await db.query('SELECT * FROM public.'+table+' WHERE id=$1',[id])).rows[0];assert.equal(row.codigo,code);assert.equal(row.nombre,name);
+  }
+  const counters=(await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows;
+  for(const [prefix,value] of [['ALM',10],['EST',4],['NIV',2],['CAJ',5]])assert.equal(Number(counters.find(row=>row.prefijo===prefix).ultimo),value);
+  assert.deepEqual((await db.query('SELECT * FROM public.elementos ORDER BY id')).rows,before);
+  await role(db,'admin');
+  const next=(await db.query(autoLocationSql,[autoId(401),'estanteria',JSON.stringify({nombre:'Nueva',parent_id:'LABEL-W'})])).rows[0].row;
+  assert.equal(next.codigo,'EST005');
  }finally{await db.close();}
 });

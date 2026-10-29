@@ -26,6 +26,8 @@ CREATE TEMP TABLE plan_codigos_ubicaciones (
   codigo_nuevo text,codigo_temporal text NOT NULL,
   PRIMARY KEY(tipo,ubicacion_id)
 ) ON COMMIT DROP;
+ALTER TABLE pg_temp.plan_codigos_ubicaciones ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON pg_temp.plan_codigos_ubicaciones FROM PUBLIC,anon,authenticated;
 
 DO $$
 DECLARE r record;v_last bigint;v_parent text;v_problem record;
@@ -34,18 +36,19 @@ BEGIN
     ('almacen','almacenes','ALM'),('estanteria','estanterias','EST'),
     ('nivel','niveles_estanteria','NIV'),('caja','cajas','CAJ')
   ) t(tipo,tabla,prefijo) LOOP
-    -- El último grupo numérico reconoce CAJA-005, EST-A01, CON-05, NIV-001, etc.
+    -- Lee el número del primer bloque de código; ignora descripciones y sus números.
+    -- EST-001 SIN ESTANTERÍA => 1, CAJA-005 ZONA 99 => 5, EST-A01 => 1.
     v_parent:=CASE r.tipo WHEN 'almacen' THEN '''GLOBAL''' WHEN 'estanteria' THEN 'almacen_id'
       WHEN 'nivel' THEN 'estanteria_id' ELSE 'coalesce(nivel_id,''SIN-NIVEL:''||estanteria_id)' END;
     EXECUTE format('INSERT INTO pg_temp.plan_codigos_ubicaciones
       (tipo,tabla,prefijo,ubicacion_id,codigo_anterior,padre_id,numero_anterior,codigo_temporal)
-      SELECT $1,$2,$3,id,codigo,%s,substring(trim(codigo) from ''([0-9]+)$'')::numeric,
+      SELECT $1,$2,$3,id,codigo,%s,substring(substring(codigo from ''^[[:space:]]*([^[:space:]]+)'') from ''([0-9]+)$'')::numeric,
         ''NORMALIZA-''||upper(gen_random_uuid()::text) FROM public.%I',v_parent,r.tabla)
       USING r.tipo,r.tabla,r.prefijo;
     SELECT ubicacion_id,codigo_anterior INTO v_problem FROM pg_temp.plan_codigos_ubicaciones
       WHERE tipo=r.tipo AND (numero_anterior IS NULL OR numero_anterior>999999999999) LIMIT 1;
     IF FOUND THEN
-      RAISE EXCEPTION 'Código % de % (ID %) sin número final compatible. No se cambia ningún número; revise audit_location_codes_readonly.sql',v_problem.codigo_anterior,r.tipo,v_problem.ubicacion_id;
+      RAISE EXCEPTION 'Código % de % (ID %) sin número compatible en el bloque de código. No se cambia ningún número; revise audit_location_codes_readonly.sql',v_problem.codigo_anterior,r.tipo,v_problem.ubicacion_id;
     END IF;
     UPDATE pg_temp.plan_codigos_ubicaciones SET codigo_nuevo=r.prefijo||lpad(numero_anterior::bigint::text,greatest(3,length(numero_anterior::bigint::text)),'0')
       WHERE tipo=r.tipo;
