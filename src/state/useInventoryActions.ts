@@ -1,4 +1,4 @@
-import type { DatosTransporte, DispatchCartItem, Elemento, Almacen, Estanteria, NivelEstanteria, Caja, HistorialMovimiento, Remision, RemissionRoute, TipoMovimiento } from '../types';
+import type { DatosTransporte, DispatchCartItem, Elemento, Almacen, Estanteria, NivelEstanteria, Caja, HistorialMovimiento, Remision, RemissionRoute, TipoMovimiento, LocationKind } from '../types';
 import type { Dispatch, SetStateAction } from 'react';
 import { useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -287,7 +287,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
   const addCaja = async (input: Omit<Caja, 'id'>) => {
     requireAdmin();
     if (isDemo) { const value = { ...input, id: newId('CAJ') }; setDemoData(prev => ({ ...prev, cajas: [...prev.cajas, value] })); return value; }
-    const value = mapCaja(await createLocation('caja', { parent_id: input.estanteriaId, nivel_id: input.nivelId || null, estado: input.estado.toUpperCase(), descripcion: input.descripcion || '' }));
+    const value = mapCaja(await createLocation('caja', { parent_id: input.estanteriaId, nivel_id: input.nivelId || null, descripcion: input.descripcion || '' }));
     client.setQueryData<Caja[]>(['fulgor', user?.email || '', 'cajas'], previous =>
       [value, ...(previous || []).filter(box => box.id !== value.id)]);
     await syncAfterWrite(refresh('cajas')); return value;
@@ -298,12 +298,23 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     if (isDemo) { setDemoData(prev => ({ ...prev, cajas: prev.cajas.map(c => c.id === id ? { ...c, ...updates } : c),
       elementos: updates.nivelId === undefined ? prev.elementos : prev.elementos.map(item => item.cajaId === id ? { ...item, nivelId: updates.nivelId, updatedAt: isoNow() } : item) })); return; }
     await updateRow('cajas', id, {
-      ...(updates.estado !== undefined && { estado: updates.estado.toUpperCase() }),
       ...(updates.nivelId !== undefined && { nivel_id: updates.nivelId }),
       ...(updates.descripcion !== undefined && { descripcion: updates.descripcion }) }, mapCaja);
     await syncAfterWrite(refresh('cajas', 'elementos', 'historial'));
     void client.invalidateQueries({ queryKey: ['fulgor', user?.email || '', 'archived-items'] });
   };
-  return { addElemento, updateElemento, deleteElemento, processDispatch, addStockMovement,
+  const deleteLocation = async (kind: LocationKind, id: string) => {
+    requireAdmin();
+    try { await rpc('delete_empty_inventory_location', { p_kind: kind, p_id: id }); }
+    catch (cause) {
+      if (['42883', 'PGRST202'].includes((cause as { code?: string }).code || ''))
+        throw new Error('Falta activar la eliminación de ubicaciones. Ejecute 20261029000300_delete_empty_locations.sql en Supabase y vuelva a intentar.', { cause });
+      throw cause;
+    }
+    const table = { almacen: 'almacenes', estanteria: 'estanterias', nivel: 'niveles_estanteria', caja: 'cajas' }[kind];
+    client.setQueryData<{ id: string }[]>(['fulgor', user?.email || '', table], previous => previous?.filter(row => row.id !== id));
+    await syncAfterWrite(refresh('almacenes', 'estanterias', 'niveles_estanteria', 'cajas'));
+  };
+  return { addElemento, updateElemento, deleteElemento, processDispatch, addStockMovement, deleteLocation,
     addAlmacen, updateAlmacen, addEstanteria, updateEstanteria, addNivel, updateNivel, addCaja, updateCaja };
 }

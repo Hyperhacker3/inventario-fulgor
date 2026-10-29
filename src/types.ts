@@ -12,6 +12,7 @@ export interface Proyecto {
 
 export interface Categoria { id: string; codigo?: string; nombre: string; activo: boolean }
 export interface PrefijoCodigo { id: string; prefijo: string; nombre: string; activo: boolean; ultimo: number }
+export type LocationKind = 'almacen' | 'estanteria' | 'nivel' | 'caja';
 
 export interface Almacen {
   id: string;
@@ -39,8 +40,9 @@ export interface Caja {
   id: string;
   estanteriaId: string | null;
   nivelId?: string | null;
-  codigoCaja: string; // e.g. 'CAJ-1045'
-  estado: 'Completa' | 'Parcial' | 'Vacia';
+  codigoCaja: string; // e.g. 'CAJ1045'
+  /** Legacy database metadata; occupancy is no longer displayed or edited. */
+  estado?: 'Completa' | 'Parcial' | 'Vacia';
   descripcion?: string;
 }
 

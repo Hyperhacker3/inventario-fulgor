@@ -21,6 +21,9 @@ const uppercaseMigration = fs.readFileSync(new URL('../../supabase/migrations/20
 const webpMigration = fs.readFileSync(new URL('../../supabase/migrations/20261010000100_webp_photos.sql', import.meta.url), 'utf8');
 const projectCityMigration = fs.readFileSync(new URL('../../supabase/migrations/20261027000100_project_city_remission_code.sql', import.meta.url), 'utf8');
 const automaticCodesMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000100_automatic_location_category_codes.sql', import.meta.url), 'utf8');
+const normalizeLocationCodesMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000200_normalize_location_codes.sql', import.meta.url), 'utf8');
+const deleteLocationsMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000300_delete_empty_locations.sql', import.meta.url), 'utf8');
+const locationCodesAudit = fs.readFileSync(new URL('../../supabase/audit_location_codes_readonly.sql', import.meta.url), 'utf8');
 const editUnitMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000200_edit_item_units.sql', import.meta.url), 'utf8');
 const reportHistoryMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000100_inventory_report_history.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
@@ -1205,5 +1208,122 @@ test('automatic code creation rejects unprivileged access and mismatched parents
   await asOwner(db);await db.exec("CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '00000000-0000-0000-0000-000000000002'::uuid $$");await role(db,'admin');
   await assert.rejects(()=>db.query(autoLocationSql,[autoId(21),'almacen','{"nombre":"Autorizado"}']),/otros datos/);
   assert.ok(result.codigo.startsWith('ALM'));
+ }finally{await db.close();}
+});
+
+const deleteLocationSql='SELECT public.delete_empty_inventory_location($1,$2) AS result';
+test('location normalization changes only prefixes and formatting, preserves every number and historical snapshot, and continues real maxima',async()=>{
+ const db=await database({route:true});try{
+  await db.exec("INSERT INTO public.almacenes(id,codigo,nombre) VALUES('LEG-W','CON-105','Nombre conservado'); INSERT INTO public.estanterias(id,codigo,nombre,almacen_id) VALUES('LEG-R','ESTANTERIA-1001','Estante conservado','LEG-W'); INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('LEG-L1','NIV-007','Nivel uno','EST-A01'),('LEG-L2','NIV-008','Nivel dos','EST-A01'),('LEG-L3','NIVEL-007','Nivel repetido en otro padre','EST-B02'); INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('LEG-B1','CAJA-005','Nombre de caja conservado','EST-A01','LEG-L1'),('LEG-B2','CAJA-001','Caja original','EST-A01','LEG-L1')");
+  await db.exec(automaticCodesMigration);await role(db,'admin');
+  const trial=(await db.query(autoLocationSql,[autoId(101),'caja',JSON.stringify({parent_id:'EST-A01',nivel_id:'LEG-L2'})])).rows[0].row;
+  assert.equal(trial.codigo,'CAJ001');
+  await db.query(routeSql,routeArgs(autoId(102)));
+  await asOwner(db);await db.exec(reportHistoryMigration);await role(db,'consulta');
+  await db.query(reportSaveSql,[autoId(103),JSON.stringify(reportPayload())]);await asOwner(db);
+  const oldPayload={nombre:'',descripcion:'',parent_id:'EST-A01',nivel_id:'LEG-L1',estado:'PARCIAL',ciudad:''};
+  await db.query("INSERT INTO public.inventario_autocodigo_solicitudes(request_id,actor_id,kind,payload,result) SELECT $1::uuid,auth.uid(),'caja',$2::jsonb,to_jsonb(b.*) FROM public.cajas b WHERE id='LEG-B1'",[autoId(108),JSON.stringify(oldPayload)]);
+  const tables=['elementos','historial','remisiones','inventario_informes','inventario_autocodigo_solicitudes'];
+  const snapshots=await Promise.all(tables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY '+(table==='inventario_autocodigo_solicitudes'?'request_id':'id'))).rows));
+  const locationTables=['almacenes','estanterias','niveles_estanteria','cajas'];
+  const original=await Promise.all(locationTables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows));
+  const result=await db.exec(normalizeLocationCodesMigration);
+  const summary=result.find(entry=>entry.rows?.some(row=>row.siguiente_codigo))?.rows;
+  assert.equal(summary.find(row=>row.prefijo==='CAJ').siguiente_codigo,'CAJ006');
+  assert.equal(summary.find(row=>row.prefijo==='EST').siguiente_codigo,'EST1002');
+  for(const [index,table] of locationTables.entries()){
+   const after=(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows;
+   assert.deepEqual(after.map(({codigo,...rest})=>rest),original[index].map(({codigo,...rest})=>rest));
+   assert.deepEqual(after.map(row=>Number(row.codigo.match(/[0-9]+$/)[0])),original[index].map(row=>Number(row.codigo.match(/[0-9]+$/)[0])));
+  }
+  assert.equal((await db.query("SELECT codigo FROM public.cajas WHERE id='LEG-B2'")).rows[0].codigo,'CAJ001');
+  assert.equal((await db.query('SELECT codigo FROM public.cajas WHERE id=$1',[trial.id])).rows[0].codigo,'CAJ001');
+  assert.equal((await db.query("SELECT count(*) AS n FROM public.niveles_estanteria WHERE codigo='NIV007'")).rows[0].n,2);
+  for(const [index,table] of tables.entries())assert.deepEqual((await db.query('SELECT * FROM public.'+table+' ORDER BY '+(table==='inventario_autocodigo_solicitudes'?'request_id':'id'))).rows,snapshots[index]);
+  const audit=(await db.query('SELECT * FROM public.inventario_ubicacion_codigos_normalizados ORDER BY tipo,ubicacion_id')).rows;
+  const normalized=await Promise.all(locationTables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows));
+  await db.exec(normalizeLocationCodesMigration);
+  assert.deepEqual((await db.query('SELECT * FROM public.inventario_ubicacion_codigos_normalizados ORDER BY tipo,ubicacion_id')).rows,audit);
+  for(const [index,table] of locationTables.entries())assert.deepEqual((await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows,normalized[index]);
+  const auditResult=(await db.query(locationCodesAudit)).rows;
+  assert.ok(auditResult.every(row=>row.resultado==='Conserva el número'));
+  await role(db,'admin');
+  const replayedLegacy=(await db.query(autoLocationSql,[autoId(108),'caja',JSON.stringify({parent_id:'EST-A01',nivel_id:'LEG-L1'})])).rows[0].row;assert.equal(replayedLegacy.id,'LEG-B1');assert.equal(replayedLegacy.codigo,'CAJ005');
+  assert.deepEqual((await db.query(autoLocationSql,[autoId(101),'caja',JSON.stringify({parent_id:'EST-A01',nivel_id:'LEG-L2'})])).rows[0].row,trial);
+  for(const [kind,payload,code] of [['almacen',{nombre:'Nuevo'},'ALM106'],['estanteria',{nombre:'Nuevo',parent_id:'LEG-W'},'EST1002'],['nivel',{nombre:'Nuevo',parent_id:'LEG-R'},'NIV009'],['caja',{parent_id:'EST-A01',nivel_id:'LEG-L2'},'CAJ006']]){
+   const row=(await db.query(autoLocationSql,[autoId(104+['almacen','estanteria','nivel','caja'].indexOf(kind)),kind,JSON.stringify(payload)])).rows[0].row;
+   assert.equal(row.codigo,code);
+   await assert.rejects(()=>db.query('UPDATE public.'+locationTables[['almacen','estanteria','nivel','caja'].indexOf(kind)]+" SET codigo='CAMBIO001' WHERE id=$1",[row.id]),/no se puede modificar/);
+  }
+ }finally{await db.close();}
+});
+
+for(const problem of ['same-parent','missing-number'])test('location normalization rolls back without renumbering for '+problem,async()=>{
+ const db=await database();try{
+  await db.exec("INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('NORMALIZE-L','NIV-001','Nivel','EST-A01')");
+  if(problem==='same-parent')await db.exec("INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('NORMALIZE-B1','CAJA-005','Uno','EST-A01','NORMALIZE-L'),('NORMALIZE-B2','CAJ005','Dos','EST-A01','NORMALIZE-L')");
+  else await db.exec("INSERT INTO public.estanterias(id,codigo,nombre,almacen_id) VALUES('NO-NUMBER','ESPECIAL','Sin número','ALM-BOG-01')");
+  await db.exec(automaticCodesMigration);
+  const tables=['almacenes','estanterias','niveles_estanteria','cajas','elementos','historial'];
+  const before=await Promise.all(tables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows));
+  const counters=(await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows;
+  await assert.rejects(()=>db.exec(normalizeLocationCodesMigration),problem==='same-parent'?/repetido en el mismo padre/:/sin número final/);
+  await db.exec('ROLLBACK');
+  for(const [index,table] of tables.entries())assert.deepEqual((await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows,before[index]);
+  assert.deepEqual((await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows,counters);
+  await role(db,'admin');await assert.rejects(()=>db.exec("UPDATE public.almacenes SET codigo='ALM999' WHERE id='ALM-BOG-01'"),/no se puede modificar/);
+ }finally{await db.close();}
+});
+
+test('empty location deletion checks dependencies and archived products, rejects direct and unauthorized deletes, retries and never reuses codes',async()=>{
+ const db=await database();try{
+  await db.exec(automaticCodesMigration);await db.exec(normalizeLocationCodesMigration);await db.exec(deleteLocationsMigration);await db.exec(deleteLocationsMigration);
+  await role(db,'admin');
+  const create=async(n,kind,input)=>(await db.query(autoLocationSql,[autoId(n),kind,JSON.stringify(input)])).rows[0].row;
+  const w=await create(201,'almacen',{nombre:'Temporal'}),r=await create(202,'estanteria',{nombre:'Temporal',parent_id:w.id});
+  const n=await create(203,'nivel',{nombre:'Temporal',parent_id:r.id}),b=await create(204,'caja',{parent_id:r.id,nivel_id:n.id});
+  await assert.rejects(()=>db.query(deleteLocationSql,['almacen',w.id]),/estanterías/);
+  await assert.rejects(()=>db.query(deleteLocationSql,['estanteria',r.id]),/niveles o cajas/);
+  await assert.rejects(()=>db.query(deleteLocationSql,['nivel',n.id]),/tiene cajas/);
+  await asOwner(db);await db.query("UPDATE public.elementos SET almacen_id=$1,estanteria_id=$2,nivel_id=$3,caja_id=$4 WHERE id='ELM-001'",[w.id,r.id,n.id,b.id]);
+  await db.exec("UPDATE public.elementos SET archived=true WHERE id='ELM-001'");await role(db,'admin');
+  await assert.rejects(()=>db.query(deleteLocationSql,['caja',b.id]),/productos asignados/);
+  for(const table of ['almacenes','estanterias','niveles_estanteria','cajas'])await assert.rejects(()=>db.query('DELETE FROM public.'+table+' WHERE id=$1',[b.id]),/permission denied/);
+  await assert.rejects(()=>db.query('SELECT * FROM public.inventario_ubicacion_codigos_normalizados'),/permission denied/);
+  for(const userRole of ['operador','consulta','sin_rol']){
+   await role(db,userRole);await assert.rejects(()=>db.query(deleteLocationSql,['caja',b.id]),/No autorizado/);
+  }
+  await asOwner(db);await db.exec('SET ROLE anon');await assert.rejects(()=>db.query(deleteLocationSql,['caja',b.id]),/permission denied/);await asOwner(db);
+  await db.exec("UPDATE public.elementos SET archived=false WHERE id='ELM-001'; UPDATE public.elementos SET almacen_id='ALM-BOG-01',estanteria_id='EST-A01',nivel_id=NULL,caja_id=NULL WHERE id='ELM-001'");
+  const products=(await db.query('SELECT * FROM public.elementos ORDER BY id')).rows;
+  const history=(await db.query('SELECT * FROM public.historial ORDER BY id')).rows;
+  const counters=(await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows;
+  await role(db,'admin');
+  for(const [kind,row] of [['caja',b],['nivel',n],['estanteria',r],['almacen',w]]){
+   const first=(await db.query(deleteLocationSql,[kind,row.id])).rows[0].result;
+   assert.equal(first.deleted,true);assert.deepEqual((await db.query(deleteLocationSql,[kind,row.id])).rows[0].result,first);
+  }
+  await assert.rejects(()=>db.query(autoLocationSql,[autoId(204),'caja',JSON.stringify({parent_id:r.id,nivel_id:n.id})]),/ya no está disponible/);
+  await assert.rejects(()=>db.query(deleteLocationSql,['inventado','x']),/Tipo de ubicación inválido/);
+  await assert.rejects(()=>db.query(deleteLocationSql,['caja','']),/Seleccione una ubicación/);
+  await asOwner(db);
+  assert.deepEqual((await db.query('SELECT * FROM public.elementos ORDER BY id')).rows,products);
+  assert.deepEqual((await db.query('SELECT * FROM public.historial ORDER BY id')).rows,history);
+  assert.deepEqual((await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows,counters);
+  await role(db,'admin');const next=await create(205,'almacen',{nombre:'Otra'});assert.equal(Number(next.codigo.slice(3)),Number(w.codigo.slice(3))+1);
+ }finally{await db.close();}
+});
+
+test('deleting an old-format highest box before normalization reserves its number without changing any other box',async()=>{
+ const db=await database();try{
+  await db.exec("INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('DELETE-LEG-L','NIV-001','Nivel','EST-A01'); INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('DELETE-LEG-B','CAJA-040','Prueba','EST-A01','DELETE-LEG-L')");
+  await db.exec(automaticCodesMigration);await db.exec(deleteLocationsMigration);
+  const boxes=(await db.query("SELECT * FROM public.cajas WHERE id<>'DELETE-LEG-B' ORDER BY id")).rows;
+  await role(db,'admin');await db.query(deleteLocationSql,['caja','DELETE-LEG-B']);await asOwner(db);
+  assert.deepEqual((await db.query('SELECT * FROM public.cajas ORDER BY id')).rows,boxes);
+  assert.equal(Number((await db.query("SELECT ultimo FROM public.inventario_ubicacion_consecutivos WHERE prefijo='CAJ'")).rows[0].ultimo),40);
+  await db.exec(normalizeLocationCodesMigration);await role(db,'admin');
+  const next=(await db.query(autoLocationSql,[autoId(301),'caja',JSON.stringify({parent_id:'EST-A01',nivel_id:'DELETE-LEG-L'})])).rows[0].row;
+  assert.equal(next.codigo,'CAJ041');
  }finally{await db.close();}
 });

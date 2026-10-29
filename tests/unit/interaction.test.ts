@@ -172,7 +172,7 @@ test('inline box selection saves in the selected rack, blocks double creation an
     await act(() => root.render(createElement(ItemBoxSelector, { rackId:'RACK-1',levelId:'LEVEL-1',boxId:'',boxes:[],
       onBox:(id: string)=>selected.push(id),onBusyChange:(value: boolean)=>busy.push(value),onDraftChange:(value: boolean)=>drafts.push(value),
       onCreate:async (input: Omit<import('../../src/types').Caja,'id'>) => {
-        calls++; assert.equal(input.estanteriaId,'RACK-1'); assert.equal(input.nivelId,'LEVEL-1'); assert.equal(input.codigoCaja,''); return saved;
+        calls++; assert.equal(input.estanteriaId,'RACK-1'); assert.equal(input.nivelId,'LEVEL-1'); assert.equal(input.codigoCaja,''); assert.equal(input.estado,undefined); return saved;
       } })));
     const select = host.querySelector('select')!;
     assert.equal(select.options[0].value,'');
@@ -208,6 +208,7 @@ test('automatic box creation keeps its failed intent and confirms the server-ass
     fail=false;
     // The request coordinator confirms the original intent even if another box becomes visible.
     await act(() => root.render(createElement(ItemBoxSelector,{ ...props,boxes:[{id:'EXISTING',estanteriaId:'RACK-1',nivelId:'LEVEL-1',codigoCaja:'CAJ-025',estado:'Parcial' as const}] })));
+    assert.equal(host.querySelector('select')!.options[2].text,'CAJ-025');
     await act(async () => host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click());
     assert.deepEqual(selected,['BOX-SERVER']); assert.equal(calls,2);
   } finally { await act(() => root.unmount()); host.remove(); }

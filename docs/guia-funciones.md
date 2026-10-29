@@ -88,7 +88,7 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 
 - Las ubicaciones usan tarjetas con código, nombre, valor total, valor del material dañado y Editar. Cree o edite almacén → estantería → nivel → caja. Las cajas anteriores sin nivel pueden asignarse al editar. Al crear, almacén pide Nombre y Ciudad; estantería y nivel piden Nombre, y caja pide Nivel de estantería. Los códigos se asignan al guardar.
 
-- Almacenes, estanterías, niveles y cajas nuevos reciben códigos ALM001, EST001, NIV001 y CAJ001 al guardar. El consecutivo es global por tipo y el código no se edita. Los códigos de ubicaciones anteriores se conservan.
+- Almacenes, estanterías, niveles y cajas nuevos reciben códigos ALM001, EST001, NIV001 y CAJ001 al guardar. El consecutivo es global por tipo y el código no se edita. Los números anteriores se conservan al unificar el formato. Las cajas muestran solo su código. Administración puede eliminar ubicaciones vacías desde su tarjeta, con confirmación; se bloquea si tienen productos, incluidos archivados, o ubicaciones dependientes.
 
 - Las categorías reciben un código único de tres letras, asignado automáticamente. Puede editar su nombre y disponibilidad sin cambiar el código ni desvincular sus productos.
 

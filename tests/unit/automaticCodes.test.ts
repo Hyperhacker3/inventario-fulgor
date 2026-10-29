@@ -53,7 +53,7 @@ test('location creation asks only for the requested fields, keeps automatic defa
     }else{
      const code=field('Código')!;assert.equal(code.readOnly,true);assert.match(code.value,new RegExp(prefix));
      assert.equal(field('Descripción')!.value,'Descripción anterior');
-     assert.equal(labelNames.includes('Estado'),kind==='caja'||kind==='almacen');
+     assert.equal(labelNames.includes('Estado'),kind==='almacen');
     }
     if(kind!=='caja')await act(()=>change(field('Nombre')!,'Nombre nuevo'));
     if(kind==='almacen')await act(()=>change(field('Ciudad')!,'Bogotá'));
@@ -62,11 +62,11 @@ test('location creation asks only for the requested fields, keeps automatic defa
     if(mode==='edit'){
      assert.equal(last.id,id);assert.equal(last.input.codigo,undefined);assert.equal(last.input.codigoCaja,undefined);
      assert.equal(last.input.descripcion,'Descripción anterior');
-     if(kind==='caja')assert.equal(last.input.estado,'Completa');
+     if(kind==='caja')assert.equal(last.input.estado,undefined);
     }else{
      assert.equal(kind==='caja'?last.input.codigoCaja:last.input.codigo,'');
      assert.equal(last.input.descripcion,'');
-     if(kind==='caja'){assert.equal(last.input.estado,'Parcial');assert.equal(last.input.nivelId,'N');assert.equal(last.input.estanteriaId,'R');}
+     if(kind==='caja'){assert.equal(last.input.estado,undefined);assert.equal(last.input.nivelId,'N');assert.equal(last.input.estanteriaId,'R');}
     }
     if(kind!=='caja')assert.equal(last.input.nombre,'Nombre nuevo');
     if(kind==='almacen')assert.equal(last.input.ciudad,'Bogotá');

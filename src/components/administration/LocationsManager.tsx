@@ -6,18 +6,20 @@ import { useInventory } from '../../context/InventoryContext';
 import { WarehouseFormModal, type WarehouseFormTarget } from '../warehouses/WarehouseFormModal';
 import { inventoryLocationValues } from '../../domain/money';
 import { LocationValueSummary, locationValueHint } from '../warehouses/LocationValueSummary';
+import { LocationDeletionDialog, type LocationDeletionTarget } from '../warehouses/LocationDeletionDialog';
 
 type Props = { kind: 'almacen' | 'estanteria' | 'nivel' | 'caja' } & Pick<ReturnType<typeof useInventory>,
-  'almacenes' | 'estanterias' | 'niveles' | 'cajas' | 'elementos' | 'user' | 'getAlmacenById' | 'getEstanteriaById'>;
+  'almacenes' | 'estanterias' | 'niveles' | 'cajas' | 'elementos' | 'user' | 'getAlmacenById' | 'getEstanteriaById' | 'deleteLocation'>;
 
 export function LocationsManager({ kind }: Pick<Props, 'kind'>) {
-  const { almacenes, estanterias, niveles, cajas, elementos, user, getAlmacenById, getEstanteriaById } = useInventory();
-  return <LocationsManagerContent {...{ kind, almacenes, estanterias, niveles, cajas, elementos, user, getAlmacenById, getEstanteriaById }} />;
+  const { almacenes, estanterias, niveles, cajas, elementos, user, getAlmacenById, getEstanteriaById, deleteLocation } = useInventory();
+  return <LocationsManagerContent {...{ kind, almacenes, estanterias, niveles, cajas, elementos, user, getAlmacenById, getEstanteriaById, deleteLocation }} />;
 }
-export function LocationsManagerContent({ kind, almacenes, estanterias, niveles, cajas, elementos, user, getAlmacenById, getEstanteriaById }: Props) {
+export function LocationsManagerContent({ kind, almacenes, estanterias, niveles, cajas, elementos, user, getAlmacenById, getEstanteriaById, deleteLocation }: Props) {
   const values = useMemo(() => inventoryLocationValues(elementos), [elementos]);
   const [parentId, setParentId] = useState('');
   const [target, setTarget] = useState<WarehouseFormTarget | null>(null);
+  const [deleting, setDeleting] = useState<LocationDeletionTarget | null>(null);
   const admin = user.role === 'admin';
   const warehouse = kind === 'almacen', rack = kind === 'estanteria', level = kind === 'nivel';
   const rackLabel = (id: string | null) => {
@@ -32,7 +34,7 @@ export function LocationsManagerContent({ kind, almacenes, estanterias, niveles,
     location: getAlmacenById(row.almacenId)?.nombre || 'Sin almacén', description: row.descripcion }))
     : level ? niveles.map(row => ({ id: row.id, code: row.codigo, name: row.nombre, parent: row.estanteriaId,
       location: rackLabel(row.estanteriaId), description: row.descripcion }))
-    : cajas.map(row => ({ id: row.id, code: row.codigoCaja, name: row.estado, parent: row.nivelId || null,
+    : cajas.map(row => ({ id: row.id, code: row.codigoCaja, name: '', parent: row.nivelId || null,
       location: `${rackLabel(row.estanteriaId)} / ${niveles.find(value => value.id === row.nivelId)?.nombre || 'Sin nivel asignado'}`, description: row.descripcion }));
   const parentName = rack ? 'Almacén' : level ? 'Estantería' : 'Nivel de estantería';
   const entityName = warehouse ? 'almacén' : rack ? 'estantería' : level ? 'nivel' : 'caja';
@@ -50,10 +52,14 @@ export function LocationsManagerContent({ kind, almacenes, estanterias, niveles,
     {!warehouse && !parents.length && <p>Primero cree {rack ? 'un almacén en la sección Almacenes de esta administración' : level ? 'una estantería en esta administración' : 'un nivel en esta administración'}.</p>}
     {warehouse && !entries.length && <p className="text-sm text-slate-600">No hay almacenes.</p>}
     <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">{entries.filter(row => warehouse || !parentId || row.parent === parentId).map(row => <article key={row.id} className="min-w-0 break-words bg-white border rounded-2xl p-5 space-y-2">
-      <strong>{row.code}</strong><p>{row.name}</p>{!warehouse && <><p className="text-sm text-slate-600">{row.location}</p><p className="text-sm">{row.description}</p></>}
+      <strong>{row.code}</strong>{row.name && <p>{row.name}</p>}{!warehouse && <><p className="text-sm text-slate-600">{row.location}</p><p className="text-sm">{row.description}</p></>}
       <LocationValueSummary values={valueIndex.get(row.id)} />
-      {admin && <button data-action="edit" className="text-[#253685] underline text-sm" onClick={() => setTarget({ kind, mode: 'edit', id: row.id })}><StateIcon icon="edit" />Editar</button>}
+      {admin && <div className="flex flex-wrap gap-3">
+        <button data-action="edit" className="text-[#253685] text-sm" onClick={() => setTarget({ kind, mode: 'edit', id: row.id })}><StateIcon icon="edit" />Editar</button>
+        <button aria-label={`Eliminar ${entityName} ${row.code}`} className="text-red-700 text-sm" onClick={() => setDeleting({ kind, ...row })}><StateIcon icon="delete" />Eliminar</button>
+      </div>}
     </article>)}</div>
     <Presence open={!!target}>{target && <WarehouseFormModal target={target} onClose={() => setTarget(null)} onCreatedWarehouse={() => {}} />}</Presence>
+    <Presence open={!!deleting}>{deleting && <LocationDeletionDialog target={deleting} onDelete={deleteLocation} onClose={() => setDeleting(null)} />}</Presence>
   </section>;
 }

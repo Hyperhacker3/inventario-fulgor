@@ -23,7 +23,7 @@ export function ItemBoxSelector({ rackId, levelId, boxId, boxes, onBox, onCreate
     if (saving.current || (!rackId || !levelId)) return;
     saving.current = true; setBusy(true); onBusyChange?.(true); setError(''); setMessage('');
     try {
-      const box = await onCreate({ estanteriaId: rackId, nivelId: levelId, codigoCaja: '', estado: 'Parcial', descripcion: '' });
+      const box = await onCreate({ estanteriaId: rackId, nivelId: levelId, codigoCaja: '', descripcion: '' });
       onBox(box.id); setCreating(false); onDraftChange?.(false);
       setMessage(`Caja ${box.codigoCaja} creada en Supabase y seleccionada.`);
     } catch (cause) { setError(errorMessage(cause)); }
@@ -36,7 +36,7 @@ export function ItemBoxSelector({ rackId, levelId, boxId, boxes, onBox, onCreate
       className="block w-full px-3 py-2 rounded-lg border bg-white">
       <option value="">Seleccione una caja</option>
       <option value="__NEW_BOX__" disabled={!levelId}>+ Crear nueva caja</option>
-      {boxes.map(box => <option key={box.id} value={box.id}>{box.codigoCaja} ({box.estado})</option>)}
+      {boxes.map(box => <option key={box.id} value={box.id}>{box.codigoCaja}</option>)}
     </Select>
     <Presence open={creating}><div className="ui-panel-enter space-y-2">
       <label className="block" htmlFor={idPrefix + 'input-nueva-caja'}>Código de la nueva caja</label>

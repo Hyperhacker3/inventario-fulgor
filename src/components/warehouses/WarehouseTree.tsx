@@ -41,7 +41,6 @@ export function WarehouseTreeContent({ almacen, estanterias, niveles, cajas, ele
   const boxCard = (box: Caja) => <div key={box.id} className="min-w-0 border rounded-xl p-3 bg-[#f8fafc]">
     <div className="flex flex-wrap justify-between gap-2"><div className="font-bold text-sm">{box.codigoCaja}</div>
       {canAdmin && <button data-action="edit" onClick={() => onEditBox(box.id)} className="text-xs text-[#253685]"><StateIcon icon="edit" />Editar</button>}</div>
-    <p className="text-xs text-[#767682]">{box.estado}</p>
     <LocationValueSummary values={values.boxes.get(box.id)} />
     <div className="space-y-3 mt-3">{(indexes.byBox.get(box.id) || []).map(item => itemLink(item, box.codigoCaja))}</div>
   </div>;

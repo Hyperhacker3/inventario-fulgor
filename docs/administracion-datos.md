@@ -24,6 +24,8 @@ En **Categorías**, escriba el nombre visible. Supabase asigna un código único
 
 ## Almacenes, estanterías, niveles, cajas y proyectos
 
+Administración incorpora Eliminar para almacenes, estanterías, niveles y cajas, solo para administración y con confirmación. Supabase comprueba que no tengan productos activos o archivados ni ubicaciones dependientes; no elimina en cascada ni reutiliza números. Las cajas muestran solo su código, sin estado de ocupación en selectores, tarjetas o edición. La nueva normalización cambia las letras/formato de los códigos existentes a ALM/EST/NIV/CAJ conservando cada número, ID, nombre, padre y referencia. Los números iguales en padres distintos permanecen; ante coincidencias en el mismo padre o códigos sin número final, se revierte todo y se informa qué revisar, sin renumerar. Los contadores se sincronizan con el máximo real por tipo y nunca retroceden. Requiere ejecutar las dos nuevas migraciones desde la cuenta del usuario; no están aplicadas por el agente. [Activación y comprobaciones](ubicaciones-codigos-y-eliminacion.md).
+
 La jerarquía actual es **almacén → estantería → nivel → caja**. Para activar los niveles y las marcas, aplique `supabase/migrations/20261006000600_storage_levels_and_brands.sql` después de las migraciones anteriores; consulte el orden completo en README.md. No vuelva a ejecutar importaciones para activar estas funciones.
 
 - En **Almacenes**, cree o edite un almacén. Sus tarjetas muestran código, nombre, valor total, valor del material dañado y Editar, sin árbol ni listado de productos. Almacenes ya no tiene pantalla ni acceso lateral independiente.
@@ -33,7 +35,7 @@ La jerarquía actual es **almacén → estantería → nivel → caja**. Para ac
 - En estas secciones puede editar los datos de las ubicaciones existentes y consultar su valor total y dañado. Las cajas antiguas sin nivel se conservan hasta asignarlo al editar.
 - En **Proyectos** puede crear, editar, finalizar y reactivar los destinos de las salidas. Los proyectos actuales se conservan; la administración se ha integrado en esta pantalla.
 
-Los formularios de creación de Administración piden únicamente Nombre y Ciudad para almacén, Nombre para estantería y nivel, y Nivel de estantería para caja. Se retiran Código y Descripción de esas altas, y Estado de la creación de cajas; los códigos siguen asignándose automáticamente al guardar. Las nuevas descripciones quedan vacías y las cajas se crean con el estado interno Parcial. La edición conserva sus campos y los datos existentes, con Código de solo lectura. Este ajuste se comparte en móvil, tablet y PC y no requiere SQL adicional.
+Los formularios de creación de Administración piden únicamente Nombre y Ciudad para almacén, Nombre para estantería y nivel, y Nivel de estantería para caja. Se retiran Código y Descripción de esas altas, y Estado de la creación de cajas; los códigos siguen asignándose automáticamente al guardar. Las nuevas descripciones quedan vacías. Caja no muestra ni solicita estado de ocupación (Parcial, Completa o Vacía), tampoco al editar; ese metadato antiguo se conserva en la base por compatibilidad. La edición conserva los demás campos y los datos existentes, con Código de solo lectura. Este ajuste se comparte en móvil, tablet y PC y no requiere SQL adicional.
 
 Solo las cuentas con rol `admin` pueden modificar estos datos. Operadores y cuentas de consulta pueden leerlos.
 
@@ -49,7 +51,7 @@ El prefijo también permite **Agregar nuevo código** desde el alta, limitado a 
 
 Después de guardar un componente, el formulario permanece abierto. Conserva el prefijo, categoría, almacén y estantería. Reinicia nombre, marca, descripción, nivel, caja, stock, unidad, peso, valor unitario, mínimo, estado, daños y fotografías. El código del siguiente componente sigue asignándose automáticamente al guardar.
 
-Los consecutivos ALM/EST/NIV/CAJ y los códigos de categoría requieren aplicar la nueva migración de códigos automáticos. Las creaciones no calculan códigos desde el navegador; si falta activarla, se conserva el borrador y se muestra el paso pendiente. Los códigos de ubicaciones existentes no se renumeran y quedan de solo lectura.
+Los consecutivos ALM/EST/NIV/CAJ y los códigos de categoría requieren aplicar la nueva migración de códigos automáticos. Las creaciones no calculan códigos desde el navegador; si falta activarla, se conserva el borrador y se muestra el paso pendiente. Los números de ubicaciones existentes no se renumeran; la migración posterior normaliza sus prefijos y formato y mantiene los códigos de solo lectura.
 
 La pestaña **Archivados** permite consultar productos archivados y eliminarlos individualmente con rol de administrador. Para activar esa eliminación, aplique la nueva migración `20261006000200_archived_inventory.sql`, descrita en `docs/entradas-y-archivados.md`. Esa migración no elimina los productos existentes.
 

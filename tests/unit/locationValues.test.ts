@@ -65,6 +65,7 @@ test('warehouse selection displays the selected total and damaged value plus nes
 
 test('administration shows compact warehouse cards and financial values for racks and boxes, including empty boxes', async () => {
   const props = { almacenes, estanterias, niveles: [], cajas, elementos,
+    deleteLocation: async () => {},
     user: { name: 'User', email: '', role: 'consulta', avatar: '' },
     getAlmacenById: (id: string | null | undefined) => almacenes.find(row => row.id === id),
     getEstanteriaById: (id: string | null | undefined) => estanterias.find(row => row.id === id) };

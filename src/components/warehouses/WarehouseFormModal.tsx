@@ -29,7 +29,7 @@ export function WarehouseFormContent({ target, onClose, onCreatedWarehouse, inve
   const code = existing ? 'codigoCaja' in existing ? existing.codigoCaja : existing.codigo : '';
   const [city, setCity] = useState(existing && 'ciudad' in existing ? existing.ciudad : '');
   const [descripcion, setDescription] = useState(existing?.descripcion || '');
-  const [state, setState] = useState(existing && 'estado' in existing ? existing.estado : target.kind === 'caja' ? 'Parcial' : 'Operativo');
+  const [state, setState] = useState(target.kind === 'almacen' && existing && 'estado' in existing ? existing.estado || 'Operativo' : 'Operativo');
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
   useDialogFocus(dialog, () => { if (!saving.current) onClose(); });
@@ -49,8 +49,8 @@ export function WarehouseFormContent({ target, onClose, onCreatedWarehouse, inve
         else await inventory.addNivel({ estanteriaId: target.parentId || '', codigo: '', nombre: name.trim(), descripcion });
       } else {
         if (!levelId && target.mode === 'new') throw new Error('Seleccione un nivel de estantería para crear la caja.');
-        if (target.mode === 'edit' && target.id) await inventory.updateCaja(target.id, { nivelId: levelId || null, estado: state as 'Completa' | 'Parcial' | 'Vacia', descripcion });
-        else await inventory.addCaja({ estanteriaId: inventory.niveles.find(level => level.id === levelId)?.estanteriaId || boxRackId || null, codigoCaja: '', nivelId: levelId || null, estado: state as 'Completa' | 'Parcial' | 'Vacia', descripcion });
+        if (target.mode === 'edit' && target.id) await inventory.updateCaja(target.id, { nivelId: levelId || null, descripcion });
+        else await inventory.addCaja({ estanteriaId: inventory.niveles.find(level => level.id === levelId)?.estanteriaId || boxRackId || null, codigoCaja: '', nivelId: levelId || null, descripcion });
       }
       onClose();
     } catch (cause) { setError(errorMessage(cause)); }
@@ -69,9 +69,9 @@ export function WarehouseFormContent({ target, onClose, onCreatedWarehouse, inve
         {target.kind !== 'caja' && <label className="text-sm block">Nombre<input autoComplete="off" autoCorrect="off" spellCheck={false} required maxLength={100} value={name} onChange={e => setName(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
         {target.kind === 'almacen' && <label className="text-sm block">Ciudad<input autoComplete="off" autoCorrect="off" spellCheck={false} value={city} onChange={e => setCity(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
         {target.mode === 'edit' && <label className="text-sm block">Descripción<input autoComplete="off" autoCorrect="off" spellCheck={false} value={descripcion} onChange={e => setDescription(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
-        {target.mode === 'edit' && (target.kind === 'caja' || target.kind === 'almacen') &&
+        {target.mode === 'edit' && target.kind === 'almacen' &&
           <label className="text-sm block">Estado<Select value={state} onChange={e => setState(e.target.value as typeof state)} className="block border rounded-lg p-2 w-full mt-1">
-            {(target.kind === 'caja' ? ['Completa', 'Parcial', 'Vacia'] : ['Operativo', 'Mantenimiento', 'Inactivo']).map(s => <option key={s}>{s}</option>)}
+            {['Operativo', 'Mantenimiento', 'Inactivo'].map(s => <option key={s}>{s}</option>)}
           </Select></label>}
         <div className="responsive-actions pt-3"><button data-action="cancel" type="button" data-dialog-close disabled={pending} onClick={onClose} className="border rounded-lg px-4 py-2">Cancelar</button>
           <button disabled={pending} type="submit" className="bg-[#3e4e9e] text-white rounded-lg px-4 py-2">{pending ? 'Guardando…' : 'Guardar'}</button></div>
