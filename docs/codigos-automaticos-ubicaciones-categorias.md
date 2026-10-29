@@ -5,7 +5,8 @@ Actualizado el 29 de octubre de 2026.
 ## Uso
 
 - Crear almacén, estantería, nivel o caja asigna respectivamente ALM001, EST001, NIV001 o CAJ001. Cada tipo tiene un consecutivo global, compartido entre todos los padres. Después de EST999 sigue EST1000.
-- Código aparece de solo lectura. En altas indica el prefijo y Se asigna al guardar; el número definitivo llega desde Supabase. En edición muestra el código confirmado y permite cambiar los demás datos autorizados.
+- Los formularios de creación de Administración piden únicamente Nombre y Ciudad para almacén, Nombre para estantería y nivel, y Nivel de estantería para caja. Se retiran Código y Descripción de esas altas, y Estado de la creación de cajas; los códigos siguen asignándose automáticamente al guardar. Las nuevas descripciones quedan vacías y las cajas se crean con el estado interno Parcial. La edición conserva sus campos y los datos existentes, con Código de solo lectura. Este ajuste se comparte en móvil, tablet y PC y no requiere SQL adicional.
+- Las altas en línea desde Entradas y edición mantienen la indicación del prefijo y Se asigna al guardar; el número definitivo llega desde Supabase.
 - Las ubicaciones existentes mantienen sus códigos, incluso los formatos anteriores. Los consecutivos parten del mayor número existente del mismo prefijo, con o sin un guion antes del número; nunca retroceden. Códigos de otros formatos quedan intactos.
 - Categorías solicita solo nombre y disponibilidad. Código sustituye a Clave de categoría y muestra tres letras únicas, asignadas por Supabase. El nombre sigue siendo editable y no cambia al generar el código.
 - La creación desde Entradas y la edición comparte estas reglas. Estantería y nivel piden nombre; Caja permite crear y elegir sin escribir código. Cambiar un padre limpia las selecciones dependientes.

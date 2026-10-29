@@ -22,13 +22,13 @@ test('automatic creation keeps a failed request ID, shares pending retries and s
 const dom=new JSDOM('<html><body></body></html>',{url:'https://app.test/'});
 Object.assign(globalThis,{window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,HTMLInputElement:dom.window.HTMLInputElement,IS_REACT_ACT_ENVIRONMENT:true});
 const {createRoot}=await import('react-dom/client');
-const warehouse:Almacen={id:'W',codigo:'ALM-ANTERIOR',nombre:'Bodega',ciudad:'Honda',capacidadPorcentaje:0,estado:'Operativo'};
-const rack:Estanteria={id:'R',codigo:'EST-ANTERIOR',nombre:'Estante',almacenId:'W'};
-const level:NivelEstanteria={id:'N',codigo:'NIV-ANTERIOR',nombre:'Piso',estanteriaId:'R'};
-const box:Caja={id:'B',codigoCaja:'CAJ-ANTERIOR',estanteriaId:'R',nivelId:'N',estado:'Parcial'};
+const warehouse:Almacen={id:'W',codigo:'ALM-ANTERIOR',nombre:'Bodega',ciudad:'Honda',descripcion:'Descripción anterior',capacidadPorcentaje:0,estado:'Operativo'};
+const rack:Estanteria={id:'R',codigo:'EST-ANTERIOR',nombre:'Estante',almacenId:'W',descripcion:'Descripción anterior'};
+const level:NivelEstanteria={id:'N',codigo:'NIV-ANTERIOR',nombre:'Piso',estanteriaId:'R',descripcion:'Descripción anterior'};
+const box:Caja={id:'B',codigoCaja:'CAJ-ANTERIOR',estanteriaId:'R',nivelId:'N',estado:'Completa',descripcion:'Descripción anterior'};
 const change=(input:HTMLInputElement,value:string)=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!.call(input,value);input.dispatchEvent(new dom.window.Event('input',{bubbles:true}));};
 
-test('every location form shows an automatic code when creating, a read-only code when editing, and never submits manual code changes',async()=>{
+test('location creation asks only for the requested fields, keeps automatic defaults and preserves metadata and read-only codes when editing',async()=>{
  const calls:{kind:string;id?:string;input:Record<string,unknown>}[]=[],created:string[]=[];
  const inventory={almacenes:[warehouse],estanterias:[rack],niveles:[level],cajas:[box],
   addAlmacen:async(input:Omit<Almacen,'id'>)=>{calls.push({kind:'almacen',input});return {...input,id:'NEW-W',codigo:'ALM002'};},
@@ -45,14 +45,31 @@ test('every location form shows an automatic code when creating, a read-only cod
    const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);
    try{
     await act(()=>root.render(h(WarehouseFormContent,{target:{kind,mode,id:mode==='edit'?id:undefined,parentId},onClose:()=>{},onCreatedWarehouse:id=>created.push(id),inventory})));
-    const inputs=document.querySelectorAll<HTMLInputElement>('[role="dialog"] input');
-    const code=inputs[0];assert.equal(code.readOnly,true);assert.match(code.value,new RegExp(prefix));
-    if(mode==='new')assert.match(code.value,/Se asigna/);
-    if(kind!=='caja')await act(()=>change(inputs[1],'Nombre nuevo'));
+    const labels=[...document.querySelectorAll<HTMLLabelElement>('[role="dialog"] label')];
+    const labelNames=labels.map(label=>label.firstChild?.textContent);
+    const field=(name:string)=>labels.find(label=>label.firstChild?.textContent===name)?.querySelector('input');
+    if(mode==='new'){
+     assert.deepEqual(labelNames,kind==='almacen'?['Nombre','Ciudad']:kind==='caja'?['Nivel de estantería']:['Nombre']);
+    }else{
+     const code=field('Código')!;assert.equal(code.readOnly,true);assert.match(code.value,new RegExp(prefix));
+     assert.equal(field('Descripción')!.value,'Descripción anterior');
+     assert.equal(labelNames.includes('Estado'),kind==='caja'||kind==='almacen');
+    }
+    if(kind!=='caja')await act(()=>change(field('Nombre')!,'Nombre nuevo'));
+    if(kind==='almacen')await act(()=>change(field('Ciudad')!,'Bogotá'));
     await act(async()=>document.querySelector('form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true})));
     const last=calls.at(-1)!;assert.equal(last.kind,kind);
-    if(mode==='edit'){assert.equal(last.id,id);assert.equal(last.input.codigo,undefined);assert.equal(last.input.codigoCaja,undefined);}
-    else assert.equal(kind==='caja'?last.input.codigoCaja:last.input.codigo,'');
+    if(mode==='edit'){
+     assert.equal(last.id,id);assert.equal(last.input.codigo,undefined);assert.equal(last.input.codigoCaja,undefined);
+     assert.equal(last.input.descripcion,'Descripción anterior');
+     if(kind==='caja')assert.equal(last.input.estado,'Completa');
+    }else{
+     assert.equal(kind==='caja'?last.input.codigoCaja:last.input.codigo,'');
+     assert.equal(last.input.descripcion,'');
+     if(kind==='caja'){assert.equal(last.input.estado,'Parcial');assert.equal(last.input.nivelId,'N');assert.equal(last.input.estanteriaId,'R');}
+    }
+    if(kind!=='caja')assert.equal(last.input.nombre,'Nombre nuevo');
+    if(kind==='almacen')assert.equal(last.input.ciudad,'Bogotá');
    }finally{await act(()=>root.unmount());host.remove();}
   }
  }

@@ -33,6 +33,8 @@ La jerarquía actual es **almacén → estantería → nivel → caja**. Para ac
 - En estas secciones puede editar los datos de las ubicaciones existentes y consultar su valor total y dañado. Las cajas antiguas sin nivel se conservan hasta asignarlo al editar.
 - En **Proyectos** puede crear, editar, finalizar y reactivar los destinos de las salidas. Los proyectos actuales se conservan; la administración se ha integrado en esta pantalla.
 
+Los formularios de creación de Administración piden únicamente Nombre y Ciudad para almacén, Nombre para estantería y nivel, y Nivel de estantería para caja. Se retiran Código y Descripción de esas altas, y Estado de la creación de cajas; los códigos siguen asignándose automáticamente al guardar. Las nuevas descripciones quedan vacías y las cajas se crean con el estado interno Parcial. La edición conserva sus campos y los datos existentes, con Código de solo lectura. Este ajuste se comparte en móvil, tablet y PC y no requiere SQL adicional.
+
 Solo las cuentas con rol `admin` pueden modificar estos datos. Operadores y cuentas de consulta pueden leerlos.
 
 ## Registrar productos y crear ubicaciones desde Entradas

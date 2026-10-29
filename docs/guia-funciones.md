@@ -86,7 +86,7 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 
 - Reúne Códigos, Categorías, Almacenes, Estanterías, Niveles, Cajas, Proyectos, Archivados y Empresa. Cada sección tiene su propio color y la misma selección hundida que la navegación.
 
-- Las ubicaciones usan tarjetas con código, nombre, valor total, valor del material dañado y Editar. Cree o edite almacén → estantería → nivel → caja. Las cajas anteriores sin nivel pueden asignarse al editar.
+- Las ubicaciones usan tarjetas con código, nombre, valor total, valor del material dañado y Editar. Cree o edite almacén → estantería → nivel → caja. Las cajas anteriores sin nivel pueden asignarse al editar. Al crear, almacén pide Nombre y Ciudad; estantería y nivel piden Nombre, y caja pide Nivel de estantería. Los códigos se asignan al guardar.
 
 - Almacenes, estanterías, niveles y cajas nuevos reciben códigos ALM001, EST001, NIV001 y CAJ001 al guardar. El consecutivo es global por tipo y el código no se edita. Los códigos de ubicaciones anteriores se conservan.
 

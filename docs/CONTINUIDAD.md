@@ -4,6 +4,12 @@ Actualizado: **29 de octubre de 2026**, zona horaria America/Bogota.
 
 Este documento resume el estado para continuar en otro chat. Las secciones anteriores de `reports/verification.md` y `PLAN_REFACTORIZACION.md` son registros históricos; sus conteos y pendientes no sustituyen este estado actual.
 
+## Formularios de creación simplificados
+
+Verificación del 29 de octubre: typecheck, lint, 209 pruebas unitarias y 43 de integración (252), y build correctos con Node 22.23.3 / pnpm 11.19.0. La prueba DOM existente de los cuatro formularios comprueba campos visibles, valores internos de creación, ubicación padre y conservación de metadatos/códigos al editar. Ayuda y guía sincronizadas. Sin SQL adicional, cambios en Supabase real ni automatización de navegador. La revisión visual corresponde al usuario.
+
+Los formularios de creación de Administración piden únicamente Nombre y Ciudad para almacén, Nombre para estantería y nivel, y Nivel de estantería para caja. Se retiran Código y Descripción de esas altas, y Estado de la creación de cajas; los códigos siguen asignándose automáticamente al guardar. Las nuevas descripciones quedan vacías y las cajas se crean con el estado interno Parcial. La edición conserva sus campos y los datos existentes, con Código de solo lectura. Este ajuste se comparte en móvil, tablet y PC y no requiere SQL adicional.
+
 ## Códigos automáticos de ubicaciones y categorías
 
 Verificación del 29 de octubre: typecheck, lint, 209 pruebas unitarias y 43 de integración (252), y build correctos con Node 22.23.3 / pnpm 11.19.0. Dos pruebas nuevas cubren solicitudes/reintentos y formularios de los cuatro tipos; se actualizan pruebas de categorías y altas en línea. Tres pruebas nuevas de PGlite comprueban migración repetible, datos existentes intactos, categorías faltantes, referencias de productos, códigos de tres letras sin colisiones, consecutivos globales mayores que 999, inmutabilidad, permisos, rollback y protección de solicitudes de otra cuenta. No se ejecutó SQL en Supabase real ni automatización de navegador. Activación y revisión visual pendientes del usuario; PGlite no demuestra concurrencia física entre conexiones reales.

@@ -49,7 +49,7 @@ export const helpGuide = [
   ] },
   { title: 'Administración de datos', items: [
     'Reúne Códigos, Categorías, Almacenes, Estanterías, Niveles, Cajas, Proyectos, Archivados y Empresa. Cada sección tiene su propio color y la misma selección hundida que la navegación.',
-    'Las ubicaciones usan tarjetas con código, nombre, valor total, valor del material dañado y Editar. Cree o edite almacén → estantería → nivel → caja. Las cajas anteriores sin nivel pueden asignarse al editar.',
+    'Las ubicaciones usan tarjetas con código, nombre, valor total, valor del material dañado y Editar. Cree o edite almacén → estantería → nivel → caja. Las cajas anteriores sin nivel pueden asignarse al editar. Al crear, almacén pide Nombre y Ciudad; estantería y nivel piden Nombre, y caja pide Nivel de estantería. Los códigos se asignan al guardar.',
     'Almacenes, estanterías, niveles y cajas nuevos reciben códigos ALM001, EST001, NIV001 y CAJ001 al guardar. El consecutivo es global por tipo y el código no se edita. Los códigos de ubicaciones anteriores se conservan.',
     'Las categorías reciben un código único de tres letras, asignado automáticamente. Puede editar su nombre y disponibilidad sin cambiar el código ni desvincular sus productos.',
     'Gestione prefijos y categorías para nuevas altas, y cree, edite, finalice o reactive proyectos indicando solo su ciudad como ubicación. Empresa permite cambiar nombre, NIT, logo, dirección y teléfono; el logo también aparece en la navegación.',

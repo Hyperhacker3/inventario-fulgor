@@ -27,7 +27,6 @@ export function WarehouseFormContent({ target, onClose, onCreatedWarehouse, inve
   const saving = useRef(false);
   const [name, setName] = useState(existing && 'nombre' in existing ? existing.nombre : '');
   const code = existing ? 'codigoCaja' in existing ? existing.codigoCaja : existing.codigo : '';
-  const prefix = { almacen: 'ALM', estanteria: 'EST', nivel: 'NIV', caja: 'CAJ' }[target.kind];
   const [city, setCity] = useState(existing && 'ciudad' in existing ? existing.ciudad : '');
   const [descripcion, setDescription] = useState(existing?.descripcion || '');
   const [state, setState] = useState(existing && 'estado' in existing ? existing.estado : target.kind === 'caja' ? 'Parcial' : 'Operativo');
@@ -58,7 +57,7 @@ export function WarehouseFormContent({ target, onClose, onCreatedWarehouse, inve
     finally { saving.current = false; setPending(false); }
   };
   return createPortal(<Presence open={active}><div className="ui-modal-layer fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="presentation">
-    <section ref={dialog} role="dialog" aria-modal="true" aria-busy={pending} aria-label="Editar ubicación" className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl border shadow-xl w-full max-w-md p-6">
+    <section ref={dialog} role="dialog" aria-modal="true" aria-busy={pending} aria-label={target.mode === 'new' ? 'Crear ubicación' : 'Editar ubicación'} className="ui-dialog-panel ui-panel-enter bg-white rounded-2xl border shadow-xl w-full max-w-md p-6">
       <h3 data-action="edit" className="font-bold text-lg mb-4 flex items-center gap-3"><StateIcon icon={target.mode === 'new' ? 'add' : 'edit'} />{target.mode === 'new' ? 'Crear' : 'Editar'} {target.kind === 'nivel' ? 'nivel de estantería' : target.kind === 'estanteria' ? 'estantería' : target.kind === 'almacen' ? 'almacén' : 'caja'}</h3>
       <form autoComplete="off" onSubmit={submit} className="space-y-3">
         <fieldset disabled={pending} className="contents">
@@ -66,11 +65,11 @@ export function WarehouseFormContent({ target, onClose, onCreatedWarehouse, inve
         {target.kind === 'caja' && <label className="text-sm block">Nivel de estantería<Select value={levelId} required={target.mode === 'new' || !!(existing && 'nivelId' in existing && existing.nivelId)} onChange={event => setLevelId(event.target.value)} className="block border rounded-lg p-2 w-full mt-1">
           <option value="">Sin nivel asignado</option>{boxLevels.map(level => <option key={level.id} value={level.id}>{level.codigo} · {level.nombre}</option>)}
         </Select></label>}
-        <label className="text-sm block">Código<input readOnly value={existing ? code : `${prefix} · Se asigna al guardar`} className="block border rounded-lg p-2 w-full mt-1" /></label>
+        {target.mode === 'edit' && <label className="text-sm block">Código<input readOnly value={code} className="block border rounded-lg p-2 w-full mt-1" /></label>}
         {target.kind !== 'caja' && <label className="text-sm block">Nombre<input autoComplete="off" autoCorrect="off" spellCheck={false} required maxLength={100} value={name} onChange={e => setName(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
         {target.kind === 'almacen' && <label className="text-sm block">Ciudad<input autoComplete="off" autoCorrect="off" spellCheck={false} value={city} onChange={e => setCity(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
-        <label className="text-sm block">Descripción<input autoComplete="off" autoCorrect="off" spellCheck={false} value={descripcion} onChange={e => setDescription(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>
-        {(target.kind === 'caja' || target.kind === 'almacen' && target.mode === 'edit') &&
+        {target.mode === 'edit' && <label className="text-sm block">Descripción<input autoComplete="off" autoCorrect="off" spellCheck={false} value={descripcion} onChange={e => setDescription(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
+        {target.mode === 'edit' && (target.kind === 'caja' || target.kind === 'almacen') &&
           <label className="text-sm block">Estado<Select value={state} onChange={e => setState(e.target.value as typeof state)} className="block border rounded-lg p-2 w-full mt-1">
             {(target.kind === 'caja' ? ['Completa', 'Parcial', 'Vacia'] : ['Operativo', 'Mantenimiento', 'Inactivo']).map(s => <option key={s}>{s}</option>)}
           </Select></label>}
