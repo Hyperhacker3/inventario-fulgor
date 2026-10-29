@@ -3,7 +3,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import { useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { DemoData } from './useInventoryData';
-import { insertRow, updateRow, rpc } from '../data/repository';
+import { updateRow, rpc } from '../data/repository';
 import { isDatabaseRejection } from '../data/databaseErrors';
 import { mapAlmacen, mapNivel, mapCaja, mapElemento, mapEstanteria, mapRemision, mapHistory } from '../data/mappers';
 import { isDemo } from '../lib/supabase';
@@ -24,6 +24,7 @@ import { displayCargo } from '../domain/userProfile';
 import { validateRemissionRoute, remissionDate, remissionCode, remissionSequence } from '../domain/remissionRoute';
 import { uppercaseName } from '../shared/uppercase';
 import { normalizeItemCondition } from '../domain/itemCondition';
+import { AutomaticCodeRequests, automaticCodeRpc } from '../data/automaticCodes';
 import { normalizeProjectCity } from '../domain/projectCity';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
@@ -38,6 +39,9 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
   const { user } = useAuth();
   const client = useQueryClient();
   const createRequests = useRef(new Map<string, { signature: string; payload: Record<string, unknown> }>());
+  const locationRequests = useRef(new AutomaticCodeRequests());
+  const createLocation = (kind: string, input: Record<string, unknown>) => locationRequests.current.run(kind, input,
+    request => automaticCodeRpc<Record<string, unknown>>('create_inventory_location_auto', { p_request_id: request, p_kind: kind, p_input: input }));
   const outgoingRequests = useRef(new OutgoingPhotoSubmission<Record<string, unknown>>());
   const requireAdmin = () => {
     if (!isDemo && user?.role !== 'admin') throw new Error('Esta acción requiere rol de administración.');
@@ -234,14 +238,15 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
   const addAlmacen = async (input: Omit<Almacen, 'id'>) => {
     requireAdmin();
     if (isDemo) { const value = { ...input, id: newId('ALM') }; setDemoData(prev => ({ ...prev, almacenes: [...prev.almacenes, value] })); return value; }
-    const value = await insertRow('almacenes', { id: `ALM-${crypto.randomUUID()}`, codigo: input.codigo, nombre: input.nombre,
-      direccion: input.ciudad, descripcion: input.descripcion || '', estado: input.estado }, mapAlmacen);
-    await refresh('almacenes'); return value;
+    const value = mapAlmacen(await createLocation('almacen', { nombre: input.nombre, ciudad: input.ciudad, descripcion: input.descripcion || '', estado: input.estado }));
+    client.setQueryData<Almacen[]>(['fulgor', user?.email || '', 'almacenes'], previous => [value, ...(previous || []).filter(row => row.id !== value.id)]);
+    await syncAfterWrite(refresh('almacenes')); return value;
   };
   const updateAlmacen = async (id: string, updates: Partial<Almacen>) => {
     requireAdmin();
+    if (updates.codigo !== undefined && updates.codigo !== data.almacenes.find(row => row.id === id)?.codigo) throw new Error('El código de ubicación no se puede modificar.');
     if (isDemo) { setDemoData(prev => ({ ...prev, almacenes: prev.almacenes.map(a => a.id === id ? { ...a, ...updates } : a) })); return; }
-    await updateRow('almacenes', id, { ...(updates.codigo !== undefined && { codigo: updates.codigo }),
+    await updateRow('almacenes', id, {
       ...(updates.nombre !== undefined && { nombre: updates.nombre }), ...(updates.ciudad !== undefined && { direccion: updates.ciudad }),
       ...(updates.estado !== undefined && { estado: updates.estado }) }, mapAlmacen);
     await refresh('almacenes');
@@ -249,16 +254,16 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
   const addEstanteria = async (input: Omit<Estanteria, 'id'>) => {
     requireAdmin();
     if (isDemo) { const value = { ...input, id: newId('EST') }; setDemoData(prev => ({ ...prev, estanterias: [...prev.estanterias, value] })); return value; }
-    const value = await insertRow('estanterias', { id: `EST-${crypto.randomUUID()}`, almacen_id: input.almacenId,
-      codigo: input.codigo, nombre: input.nombre, descripcion: input.descripcion || '' }, mapEstanteria);
+    const value = mapEstanteria(await createLocation('estanteria', { parent_id: input.almacenId, nombre: input.nombre, descripcion: input.descripcion || '' }));
     client.setQueryData<Estanteria[]>(['fulgor', user?.email || '', 'estanterias'], previous =>
       [value, ...(previous || []).filter(rack => rack.id !== value.id)]);
     await syncAfterWrite(refresh('estanterias')); return value;
   };
   const updateEstanteria = async (id: string, updates: Partial<Estanteria>) => {
     requireAdmin();
+    if (updates.codigo !== undefined && updates.codigo !== data.estanterias.find(row => row.id === id)?.codigo) throw new Error('El código de ubicación no se puede modificar.');
     if (isDemo) { setDemoData(prev => ({ ...prev, estanterias: prev.estanterias.map(e => e.id === id ? { ...e, ...updates } : e) })); return; }
-    await updateRow('estanterias', id, { ...(updates.codigo !== undefined && { codigo: updates.codigo }),
+    await updateRow('estanterias', id, {
       ...(updates.nombre !== undefined && { nombre: updates.nombre }), ...(updates.descripcion !== undefined && { descripcion: updates.descripcion }) }, mapEstanteria);
     await refresh('estanterias');
   };
@@ -266,33 +271,33 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     requireAdmin();
     if (!data.estanterias.some(rack => rack.id === input.estanteriaId)) throw new Error('Seleccione una estantería existente.');
     if (isDemo) { const value = { ...input, id: newId('NIV') }; setDemoData(prev => ({ ...prev, niveles: [...prev.niveles, value] })); return value; }
-    const value = await insertRow('niveles_estanteria', { id: `NIV-${crypto.randomUUID()}`, estanteria_id: input.estanteriaId,
-      codigo: input.codigo.trim().toUpperCase(), nombre: input.nombre.trim(), descripcion: input.descripcion || '' }, mapNivel);
+    const value = mapNivel(await createLocation('nivel', { parent_id: input.estanteriaId, nombre: input.nombre.trim(), descripcion: input.descripcion || '' }));
     client.setQueryData<NivelEstanteria[]>(['fulgor', user?.email || '', 'niveles_estanteria'], previous =>
       [value, ...(previous || []).filter(level => level.id !== value.id)]);
     await syncAfterWrite(refresh('niveles_estanteria')); return value;
   };
   const updateNivel = async (id: string, updates: Partial<NivelEstanteria>) => {
     requireAdmin();
+    if (updates.codigo !== undefined && updates.codigo !== data.niveles.find(row => row.id === id)?.codigo) throw new Error('El código de ubicación no se puede modificar.');
     if (isDemo) { setDemoData(prev => ({ ...prev, niveles: prev.niveles.map(level => level.id === id ? { ...level, ...updates } : level) })); return; }
-    await updateRow('niveles_estanteria', id, { ...(updates.codigo !== undefined && { codigo: updates.codigo.trim().toUpperCase() }),
+    await updateRow('niveles_estanteria', id, {
       ...(updates.nombre !== undefined && { nombre: updates.nombre.trim() }), ...(updates.descripcion !== undefined && { descripcion: updates.descripcion }) }, mapNivel);
     await refresh('niveles_estanteria');
   };
   const addCaja = async (input: Omit<Caja, 'id'>) => {
     requireAdmin();
     if (isDemo) { const value = { ...input, id: newId('CAJ') }; setDemoData(prev => ({ ...prev, cajas: [...prev.cajas, value] })); return value; }
-    const value = await insertRow('cajas', { id: `CAJ-${crypto.randomUUID()}`, estanteria_id: input.estanteriaId, nivel_id: input.nivelId || null,
-      codigo: input.codigoCaja, nombre: input.codigoCaja, estado: input.estado.toUpperCase(), descripcion: input.descripcion || '' }, mapCaja);
+    const value = mapCaja(await createLocation('caja', { parent_id: input.estanteriaId, nivel_id: input.nivelId || null, estado: input.estado.toUpperCase(), descripcion: input.descripcion || '' }));
     client.setQueryData<Caja[]>(['fulgor', user?.email || '', 'cajas'], previous =>
       [value, ...(previous || []).filter(box => box.id !== value.id)]);
     await syncAfterWrite(refresh('cajas')); return value;
   };
   const updateCaja = async (id: string, updates: Partial<Caja>) => {
     requireAdmin();
+    if (updates.codigoCaja !== undefined && updates.codigoCaja !== data.cajas.find(row => row.id === id)?.codigoCaja) throw new Error('El código de ubicación no se puede modificar.');
     if (isDemo) { setDemoData(prev => ({ ...prev, cajas: prev.cajas.map(c => c.id === id ? { ...c, ...updates } : c),
       elementos: updates.nivelId === undefined ? prev.elementos : prev.elementos.map(item => item.cajaId === id ? { ...item, nivelId: updates.nivelId, updatedAt: isoNow() } : item) })); return; }
-    await updateRow('cajas', id, { ...(updates.codigoCaja !== undefined && { codigo: updates.codigoCaja, nombre: updates.codigoCaja }),
+    await updateRow('cajas', id, {
       ...(updates.estado !== undefined && { estado: updates.estado.toUpperCase() }),
       ...(updates.nivelId !== undefined && { nivel_id: updates.nivelId }),
       ...(updates.descripcion !== undefined && { descripcion: updates.descripcion }) }, mapCaja);

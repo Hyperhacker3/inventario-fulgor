@@ -26,7 +26,7 @@ for (const kind of ['prefijo', 'categoria'] as const) test(`${kind} opens only o
   const calls: Record<string, unknown>[] = [];
   let fail = true;
   const prefijos = [{ id: 'PREF-1', prefijo: 'CAB', nombre: 'Cables', activo: true, ultimo: 10 }];
-  const categorias = [{ id: 'ELECTRICO', nombre: 'Eléctrico', activo: true }];
+  const categorias = [{ id: 'ELECTRICO', codigo: 'ELE', nombre: 'Eléctrico', activo: true }];
   const saveCatalogEntry = async (received: string, values: Record<string, unknown>) => {
     assert.equal(received, kind); calls.push(values);
     if (fail) throw new Error('No se pudo guardar');
@@ -41,8 +41,9 @@ for (const kind of ['prefijo', 'categoria'] as const) test(`${kind} opens only o
     assert.equal(document.querySelector('form'), null); assert.equal(document.activeElement, create);
     await act(() => button(host, 'Editar').click());
     const inputs = document.querySelectorAll<HTMLInputElement>('input');
-    assert.equal(inputs[0].value, kind === 'prefijo' ? 'CAB' : 'ELECTRICO');
-    assert.equal(inputs[0].disabled, kind === 'categoria');
+    assert.equal(inputs[0].value, kind === 'prefijo' ? 'CAB' : 'ELE');
+    assert.equal(inputs[0].readOnly, kind === 'categoria');
+    assert.equal(inputs[0].disabled, false);
     await act(() => change(inputs[1], 'Nombre corregido'));
     await act(async () => submit());
     assert.match(document.querySelector('[role="dialog"] [role="alert"]')!.textContent!, /No se pudo guardar/);
@@ -50,10 +51,10 @@ for (const kind of ['prefijo', 'categoria'] as const) test(`${kind} opens only o
     fail = false;
     await act(async () => { submit(); submit(); }); assert.equal(calls.length, 2);
     assert.deepEqual(calls[1], { id: kind === 'prefijo' ? 'PREF-1' : 'ELECTRICO', nombre: 'Nombre corregido', activo: true,
-      ...(kind === 'prefijo' ? { prefijo: 'CAB' } : { clave: 'ELECTRICO' }) });
+      ...(kind === 'prefijo' ? { prefijo: 'CAB' } : {}) });
     await settle(); assert.equal(document.querySelector('[role="dialog"]'), null);
     assert.match(host.querySelector('[role="status"]')!.textContent!, /guardados/);
-    await act(() => create.click()); assert.equal(document.querySelector<HTMLInputElement>('input')!.value, '');
+    await act(() => create.click()); assert.equal(document.querySelector<HTMLInputElement>('input')!.value, kind === 'prefijo' ? '' : 'Se asigna al guardar');
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 

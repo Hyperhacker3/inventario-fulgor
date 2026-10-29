@@ -10,7 +10,7 @@ export interface Proyecto {
   createdAt: string;
 }
 
-export interface Categoria { id: string; nombre: string; activo: boolean }
+export interface Categoria { id: string; codigo?: string; nombre: string; activo: boolean }
 export interface PrefijoCodigo { id: string; prefijo: string; nombre: string; activo: boolean; ultimo: number }
 
 export interface Almacen {

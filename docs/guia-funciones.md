@@ -1,6 +1,6 @@
 # Guía de funciones de la aplicación
 
-Actualizada el 28 de octubre de 2026. Esta guía coincide con Ayuda y guía dentro de la aplicación. La instalación y activación técnica se documentan por separado en README y en las guías de administración.
+Actualizada el 29 de octubre de 2026. Esta guía coincide con Ayuda y guía dentro de la aplicación. La instalación y activación técnica se documentan por separado en README y en las guías de administración.
 
 Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título para desplegar su contenido y vuelva a tocarlo para ocultarlo; puede mantener varios abiertos. La X, Escape o Retroceder cierran la ayuda.
 
@@ -38,7 +38,7 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 
 - Sin selección, administración puede registrar un material nuevo en esta misma pantalla: código, categoría, nombre, marca, estado, ubicación, fotos, cantidad inicial, mínimo, peso y valor. Quitar selección vuelve al alta.
 
-- Puede crear prefijos, categorías, estanterías, niveles y cajas desde el formulario. El código estimado se confirma al guardar. Nombre y marca se guardan en mayúsculas.
+- Puede crear prefijos, categorías, estanterías, niveles y cajas desde el formulario. El código estimado del producto se confirma al guardar. Nombre y marca se guardan en mayúsculas.
 
 - Si hay un error, la pantalla se desplaza al campo o mensaje y conserva el borrador. Tras guardar correctamente vuelve al inicio. El stock inicial se escribe directamente, sin botones −/+ ni flechas internas. En móvil, tablet y PC se agrupan prefijo/categoría, unidad/stock inicial, mínimo/valor y unidad del peso/peso en filas de dos columnas. Ubicación es la última sección de datos antes de guardar.
 
@@ -87,6 +87,10 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 - Reúne Códigos, Categorías, Almacenes, Estanterías, Niveles, Cajas, Proyectos, Archivados y Empresa. Cada sección tiene su propio color y la misma selección hundida que la navegación.
 
 - Las ubicaciones usan tarjetas con código, nombre, valor total, valor del material dañado y Editar. Cree o edite almacén → estantería → nivel → caja. Las cajas anteriores sin nivel pueden asignarse al editar.
+
+- Almacenes, estanterías, niveles y cajas nuevos reciben códigos ALM001, EST001, NIV001 y CAJ001 al guardar. El consecutivo es global por tipo y el código no se edita. Los códigos de ubicaciones anteriores se conservan.
+
+- Las categorías reciben un código único de tres letras, asignado automáticamente. Puede editar su nombre y disponibilidad sin cambiar el código ni desvincular sus productos.
 
 - Gestione prefijos y categorías para nuevas altas, y cree, edite, finalice o reactive proyectos indicando solo su ciudad como ubicación. Empresa permite cambiar nombre, NIT, logo, dirección y teléfono; el logo también aparece en la navegación.
 

@@ -287,8 +287,8 @@ test('editing creates rack, level and box in sequence, preserves failed drafts a
       if (rackCalls === 1) throw new Error('Sin conexión');
       return rackRequest;
     },
-    addNivel: async (input: Omit<import('../../src/types').NivelEstanteria, 'id'>) => { assert.equal(input.estanteriaId, 'r3'); return { ...input, id: 'l3' }; },
-    addCaja: async (input: Omit<Caja, 'id'>) => { assert.equal(input.estanteriaId, 'r3'); assert.equal(input.nivelId, 'l3'); return { ...input, id: 'b3' }; },
+    addNivel: async (input: Omit<import('../../src/types').NivelEstanteria, 'id'>) => { assert.equal(input.estanteriaId, 'r3'); return { ...input, id: 'l3', codigo: 'NIV003' }; },
+    addCaja: async (input: Omit<Caja, 'id'>) => { assert.equal(input.estanteriaId, 'r3'); assert.equal(input.nivelId, 'l3'); return { ...input, id: 'b3', codigoCaja: 'CAJ003' }; },
   };
   const type = async (label: string, value: string) => {
     const element = [...editor()!.querySelectorAll('label')].find(node => node.textContent === label)!;
@@ -302,12 +302,13 @@ test('editing creates rack, level and box in sequence, preserves failed drafts a
     assert.equal(native(host, 'Caja').value, 'b1'); // Legacy box remains selectable without a level.
     assert.equal([...native(host, 'Caja').options].find(option => option.value === '__NEW_BOX__')!.disabled, true);
     await choose(host, 'Almacén', 'w2'); await choose(host, 'Estantería', '__NEW_RACK__');
-    await type('Código de la nueva estantería', 'est-n'); await type('Nombre de la nueva estantería', 'Nueva');
+    await type('Nombre de la nueva estantería', 'Nueva');
     assert.equal(button(host, 'Guardar').disabled, true);
     await act(() => { submit(); }); assert.equal(saved.length, 0);
     await act(async () => button(host, 'Crear y elegir estantería').click());
     assert.match(editor()!.textContent!, /Sin conexión/);
-    assert.equal((editor()!.querySelector('input[id$="input-nueva-estanteria-codigo"]') as HTMLInputElement).value, 'est-n');
+    assert.equal((editor()!.querySelector('input[id$="input-nueva-estanteria-codigo"]') as HTMLInputElement).readOnly, true);
+    assert.equal((editor()!.querySelector('input[id$="input-nueva-estanteria-nombre"]') as HTMLInputElement).value, 'Nueva');
     await act(async () => { const create = button(host, 'Crear y elegir estantería'); create.click(); create.click(); }); assert.equal(rackCalls, 2);
     assert.equal(button(host, 'Cerrar detalle').disabled, true); assert.equal(button(host, 'Cancelar').disabled, true);
     assert.equal(button(host, 'Cerrar edición').disabled, true);
@@ -316,9 +317,9 @@ test('editing creates rack, level and box in sequence, preserves failed drafts a
     await act(async () => { completeRack(createdRack); await rackRequest; });
     assert.equal(native(host, 'Estantería').value, 'r3');
     await choose(host, 'Nivel de estantería', '__NEW_LEVEL__');
-    await type('Código del nuevo nivel', 'niv-n'); await type('Nombre del nuevo nivel', 'Superior');
+    await type('Nombre del nuevo nivel', 'Superior');
     await act(async () => button(host, 'Crear y elegir nivel').click()); assert.equal(native(host, 'Nivel de estantería').value, 'l3');
-    await choose(host, 'Caja', '__NEW_BOX__'); await type('Código de la nueva caja', 'caj-n');
+    await choose(host, 'Caja', '__NEW_BOX__');
     await act(async () => button(host, 'Crear y elegir caja').click()); assert.equal(native(host, 'Caja').value, 'b3');
     assert.equal(button(host, 'Guardar').disabled, false);
     await act(async () => { submit(); }); assert.equal(saved.length, 1);

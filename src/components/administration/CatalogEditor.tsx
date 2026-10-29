@@ -35,19 +35,19 @@ export function CatalogManager({ kind, prefijos, categorias, elementos, saveCata
     setBusy(true); setError(''); setMessage('');
     try {
       await saveCatalogEntry(kind, { id: id || null, nombre: name, activo: active,
-        ...(prefix ? { prefijo: code } : { clave: code }) });
+        ...(prefix ? { prefijo: code } : {}) });
       setFormOpen(false); reset(); setMessage('Datos guardados en Supabase.');
     } catch (cause) { setError(errorMessage(cause)); }
     finally { saving.current = false; setBusy(false); }
   };
   const entries = prefix ? prefijos.map(row => ({ ...row, code: row.prefijo,
     detail: `Siguiente estimado: ${prefixPreview(row, elementos.map(item => item.codigo))}` }))
-    : categorias.map(row => ({ ...row, code: row.id,
+    : categorias.map(row => ({ ...row, code: row.codigo || 'Pendiente',
       detail: `${elementos.filter(item => item.categoria === row.id).length} productos activos` }));
   return <section className="space-y-5">
     <p className="text-sm text-slate-600">{prefix
       ? 'Cada prefijo tiene tres letras. Supabase asigna el siguiente número al guardar el producto. Editar un prefijo afecta las futuras altas; conserva los códigos existentes y el consecutivo.'
-      : 'Puede editar el nombre visible. La clave identifica la categoría y se conserva para mantener asociados sus productos. Las categorías inactivas siguen visibles en el inventario.'}</p>
+      : 'El código de tres letras se asigna automáticamente y no se puede cambiar. Puede editar el nombre visible; los productos conservan su categoría. Las categorías inactivas siguen visibles en el inventario.'}</p>
     {error && !formOpen && <p role="alert" className="text-red-700">{error}</p>}
     {message && <p role="status" className="text-green-700">{message}</p>}
     {admin && <button type="button" disabled={busy} onClick={() => { reset(); setError(''); setMessage(''); setFormOpen(true); }}
@@ -56,10 +56,10 @@ export function CatalogManager({ kind, prefijos, categorias, elementos, saveCata
       <form autoComplete="off" key={id || 'new'} onSubmit={save} className="space-y-4">
         {error && <p role="alert" className="text-red-700">{error}</p>}
         <fieldset disabled={busy} className="grid sm:grid-cols-2 gap-4">
-          <label className="text-sm">{prefix ? 'Prefijo (tres letras)' : 'Clave de categoría'}
-            <input autoComplete="off" autoCorrect="off" spellCheck={false} required maxLength={prefix ? 3 : 50} pattern={prefix ? '[A-Z]{3}' : '[A-Z][A-Z0-9_]{1,49}'}
-              disabled={!prefix && Boolean(id)} value={code} onChange={event => setCode(event.target.value.toUpperCase())}
-              placeholder={prefix ? 'CAB' : 'MATERIALES'} className="block border rounded-lg p-3 w-full mt-1 uppercase" />
+          <label className="text-sm">{prefix ? 'Prefijo (tres letras)' : 'Código'}
+            <input autoComplete="off" autoCorrect="off" spellCheck={false} required={prefix} maxLength={prefix ? 3 : undefined} pattern={prefix ? '[A-Z]{3}' : undefined}
+              readOnly={!prefix} value={prefix ? code : id ? code : 'Se asigna al guardar'} onChange={prefix ? event => setCode(event.target.value.toUpperCase()) : undefined}
+              placeholder={prefix ? 'CAB' : undefined} className="block border rounded-lg p-3 w-full mt-1 uppercase" />
           </label>
           <label className="text-sm">Nombre<input autoComplete="off" autoCorrect="off" spellCheck={false} required maxLength={100} value={name} onChange={event => setName(event.target.value)} className="block border rounded-lg p-3 w-full mt-1" /></label>
           <label className="flex gap-2 items-center text-sm"><input autoComplete="off" autoCorrect="off" spellCheck={false} type="checkbox" checked={active} onChange={event => setActive(event.target.checked)} />Disponible para nuevos productos</label>

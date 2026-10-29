@@ -14,7 +14,6 @@ interface Props {
 }
 export function ItemBoxSelector({ rackId, levelId, boxId, boxes, onBox, onCreate, onBusyChange, onDraftChange, idPrefix = '', allowWithoutLevel = false }: Props) {
   const [creating, setCreating] = useState(false);
-  const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -22,14 +21,11 @@ export function ItemBoxSelector({ rackId, levelId, boxId, boxes, onBox, onCreate
   useEffect(() => () => onDraftChange?.(false), [onDraftChange]);
   const create = async () => {
     if (saving.current || (!rackId || !levelId)) return;
-    const normalized = code.trim().toUpperCase();
-    if (!normalized) { setError('Escriba el código de la nueva caja.'); return; }
     saving.current = true; setBusy(true); onBusyChange?.(true); setError(''); setMessage('');
     try {
-      const existing = boxes.find(box => box.estanteriaId === rackId && box.nivelId === levelId && box.codigoCaja.trim().toUpperCase() === normalized);
-      const box = existing || await onCreate({ estanteriaId: rackId, nivelId: levelId, codigoCaja: normalized, estado: 'Parcial', descripcion: '' });
-      onBox(box.id); setCreating(false); onDraftChange?.(false); setCode('');
-      setMessage(existing ? `Caja ${box.codigoCaja} seleccionada.` : `Caja ${box.codigoCaja} creada en Supabase y seleccionada.`);
+      const box = await onCreate({ estanteriaId: rackId, nivelId: levelId, codigoCaja: '', estado: 'Parcial', descripcion: '' });
+      onBox(box.id); setCreating(false); onDraftChange?.(false);
+      setMessage(`Caja ${box.codigoCaja} creada en Supabase y seleccionada.`);
     } catch (cause) { setError(errorMessage(cause)); }
     finally { saving.current = false; setBusy(false); onBusyChange?.(false); }
   };
@@ -44,10 +40,8 @@ export function ItemBoxSelector({ rackId, levelId, boxId, boxes, onBox, onCreate
     </Select>
     <Presence open={creating}><div className="ui-panel-enter space-y-2">
       <label className="block" htmlFor={idPrefix + 'input-nueva-caja'}>Código de la nueva caja</label>
-      <input autoComplete="off" autoCorrect="off" spellCheck={false} id={idPrefix + 'input-nueva-caja'} value={code} maxLength={100} disabled={busy} onChange={event => { setCode(event.target.value); setError(''); }}
-        onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}
-        placeholder="Ej. CAJ-025" className="block w-full border rounded-lg px-3 py-2 bg-white" />
-      <button type="button" disabled={busy || !code.trim()} onClick={() => { void create(); }} className="text-white bg-[#253685] rounded-lg px-3 py-2 disabled:opacity-50">{busy ? 'Creando…' : 'Crear y elegir caja'}</button>
+      <input id={idPrefix + 'input-nueva-caja'} readOnly value="CAJ · Se asigna al guardar" className="block w-full border rounded-lg px-3 py-2 bg-white" />
+      <button type="button" disabled={busy} onClick={() => { void create(); }} className="text-white bg-[#253685] rounded-lg px-3 py-2 disabled:opacity-50">{busy ? 'Creando…' : 'Crear y elegir caja'}</button>
       <p className="font-normal text-slate-500">Se guardará en el nivel elegido. Cree o seleccione la caja antes de guardar el componente.</p>
     </div></Presence>
     {(!rackId || !levelId) && <p className="font-normal text-slate-500">Seleccione un nivel de estantería para elegir o crear una caja.</p>}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ensurePrefixChoice, categoryChoices, categoryNameKey, newCategoryKey, formatItemCode, prefixPreview } from '../../src/domain/dataAdministration';
+import { ensurePrefixChoice, categoryChoices, categoryNameKey, formatItemCode, prefixPreview } from '../../src/domain/dataAdministration';
 import { mapElemento } from '../../src/data/mappers';
 import { viewFromHash } from '../../src/state/useViewNavigation';
 
@@ -16,17 +16,9 @@ test('custom categories keep their identity and remain available in inventory fi
   assert.equal(viewFromHash('#/projects'), 'projects');
 });
 
-test('inline category names produce valid keys without overwriting an existing category', () => {
-  assert.equal(newCategoryKey('Materiales eléctricos', []), 'MATERIALES_ELECTRICOS');
-  assert.equal(newCategoryKey('123', []), 'CAT_123');
-  assert.equal(newCategoryKey('A', []), 'CAT_A');
+test('category name matching normalizes spaces and case without changing category identity', () => {
   assert.equal(categoryNameKey('  Materiales   eléctricos '), categoryNameKey('materiales eléctricos'));
-  const name = 'A'.repeat(100);
-  const existing = { id:'A'.repeat(50),nombre:'Otro nombre',activo:true };
-  const key = newCategoryKey(name, [existing]);
-  assert.equal(key.length,50); assert.match(key,/_2$/); assert.match(key,/^[A-Z][A-Z0-9_]{1,49}$/);
 });
-
 
 test('creating a prefix reuses an active code without changing its name or counter and rejects inactive or invalid codes', async () => {
   const existing={id:'CODE-1',prefijo:'CAB',nombre:'Cables',activo:true,ultimo:100};

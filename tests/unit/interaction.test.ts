@@ -172,15 +172,14 @@ test('inline box selection saves in the selected rack, blocks double creation an
     await act(() => root.render(createElement(ItemBoxSelector, { rackId:'RACK-1',levelId:'LEVEL-1',boxId:'',boxes:[],
       onBox:(id: string)=>selected.push(id),onBusyChange:(value: boolean)=>busy.push(value),onDraftChange:(value: boolean)=>drafts.push(value),
       onCreate:async (input: Omit<import('../../src/types').Caja,'id'>) => {
-        calls++; assert.equal(input.estanteriaId,'RACK-1'); assert.equal(input.nivelId,'LEVEL-1'); assert.equal(input.codigoCaja,'CAJ-025'); return saved;
+        calls++; assert.equal(input.estanteriaId,'RACK-1'); assert.equal(input.nivelId,'LEVEL-1'); assert.equal(input.codigoCaja,''); return saved;
       } })));
     const select = host.querySelector('select')!;
     assert.equal(select.options[0].value,'');
     assert.equal(select.options[1].value,'__NEW_BOX__');
     await chooseVisible(host,'__NEW_BOX__');
     const input = host.querySelector('input')!;
-    const setValue = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
-    await act(() => { setValue.call(input,' caj-025 '); input.dispatchEvent(new dom.window.Event('input',{ bubbles:true })); });
+    assert.equal(input.readOnly,true);assert.match(input.value,/CAJ/);
     await act(() => { host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click(); });
     assert.equal(calls,1); assert.deepEqual(selected,[]); assert.equal(select.disabled,true); assert.deepEqual(busy,[true]);
     await act(async () => complete({ id:'BOX-SERVER',estanteriaId:'RACK-1',nivelId:'LEVEL-1',codigoCaja:'CAJ-025',estado:'Parcial' }));
@@ -190,28 +189,27 @@ test('inline box selection saves in the selected rack, blocks double creation an
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
-test('box creation failures keep the draft and an existing box is selected without another write', async () => {
+test('automatic box creation keeps its failed intent and confirms the server-assigned code on retry', async () => {
   let fail = true, calls = 0;
   const selected: string[] = [];
   const host = document.body.appendChild(document.createElement('div'));
   const root = createRoot(host);
   const props = { rackId:'RACK-1',levelId:'LEVEL-1',boxId:'',boxes:[],onBox:(id: string)=>selected.push(id),
     onCreate:async (input: Omit<import('../../src/types').Caja,'id'>) => {
-      calls++; if (fail) throw new Error('No se pudo conectar'); return { ...input,id:'BOX-SERVER' };
+      calls++; if (fail) throw new Error('No se pudo conectar'); return { ...input,id:'BOX-SERVER',codigoCaja:'CAJ025' };
     } };
   try {
     await act(() => root.render(createElement(ItemBoxSelector,props)));
     await chooseVisible(host,'__NEW_BOX__');
-    const setValue = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
-    await act(() => { const input=host.querySelector('input')!; setValue.call(input,'CAJ-025'); input.dispatchEvent(new dom.window.Event('input',{bubbles:true})); });
+    assert.equal(host.querySelector('input')!.readOnly,true);
     await act(async () => host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click());
-    assert.deepEqual(selected,[]); assert.equal(host.querySelector('input')!.value,'CAJ-025');
+    assert.deepEqual(selected,[]); assert.match(host.querySelector('input')!.value,/Se asigna/);
     assert.match(host.querySelector('[role="alert"]')!.textContent!,/No se pudo conectar/);
     fail=false;
-    // A refresh can reveal that this box already exists; retry selects it without duplication.
+    // The request coordinator confirms the original intent even if another box becomes visible.
     await act(() => root.render(createElement(ItemBoxSelector,{ ...props,boxes:[{id:'EXISTING',estanteriaId:'RACK-1',nivelId:'LEVEL-1',codigoCaja:'CAJ-025',estado:'Parcial' as const}] })));
     await act(async () => host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click());
-    assert.deepEqual(selected,['EXISTING']); assert.equal(calls,1);
+    assert.deepEqual(selected,['BOX-SERVER']); assert.equal(calls,2);
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
@@ -222,8 +220,8 @@ test('inline racks require a warehouse, keep failed drafts and select a confirme
   const root = createRoot(host);
   const props = { warehouseId:'',rackId:'',racks:[],onRack:(id: string)=>selected.push(id),
     onCreate:async (input: Omit<import('../../src/types').Estanteria,'id'>) => {
-      calls++; assert.equal(input.almacenId,'WAREHOUSE-1'); assert.equal(input.codigo,'EST-025'); assert.equal(input.nombre,'Zona eléctrica');
-      if (fail) throw new Error('No se pudo guardar'); return { ...input,id:'RACK-SERVER' };
+      calls++; assert.equal(input.almacenId,'WAREHOUSE-1'); assert.equal(input.codigo,''); assert.equal(input.nombre,'Zona eléctrica');
+      if (fail) throw new Error('No se pudo guardar'); return { ...input,id:'RACK-SERVER',codigo:'EST025' };
     } };
   try {
     await act(() => root.render(createElement(ItemRackSelector,props)));
@@ -235,7 +233,7 @@ test('inline racks require a warehouse, keep failed drafts and select a confirme
     const setValue=Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;
     await act(() => {
       const inputs=host.querySelectorAll('input');
-      setValue.call(inputs[0],' est-025 '); inputs[0].dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+      assert.equal(inputs[0].readOnly,true);
       setValue.call(inputs[1],'Zona eléctrica'); inputs[1].dispatchEvent(new dom.window.Event('input',{bubbles:true}));
     });
     await act(async () => host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!.click());

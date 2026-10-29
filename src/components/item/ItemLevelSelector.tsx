@@ -13,7 +13,6 @@ interface Props {
 }
 export function ItemLevelSelector({ rackId, levelId, levels, onLevel, onCreate, onBusyChange, onDraftChange, idPrefix = '', label = 'Nivel' }: Props) {
   const [creating, setCreating] = useState(false);
-  const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -22,16 +21,13 @@ export function ItemLevelSelector({ rackId, levelId, levels, onLevel, onCreate, 
   useEffect(() => () => onDraftChange?.(false), [onDraftChange]);
   const create = async () => {
     if (saving.current || !rackId) return;
-    const codigo = code.trim().toUpperCase(), nombre = name.trim();
-    if (!codigo || !nombre) { setError('Escriba el código y el nombre del nivel.'); return; }
+    const nombre = name.trim();
+    if (!nombre) { setError('Escriba el nombre del nivel.'); return; }
     saving.current = true; setBusy(true); onBusyChange?.(true); setError(''); setMessage('');
     try {
-      const existing = levels.find(level => level.estanteriaId === rackId && level.codigo.trim().toUpperCase() === codigo);
-      if (existing && existing.nombre.trim().toLocaleLowerCase('es') !== nombre.toLocaleLowerCase('es'))
-        throw new Error(`Ya existe el nivel ${existing.codigo}: ${existing.nombre}. Selecciónelo de la lista o utilice otro código.`);
-      const level = existing || await onCreate({ estanteriaId: rackId, codigo, nombre, descripcion: '' });
-      onLevel(level.id); setCreating(false); onDraftChange?.(false); setCode(''); setName('');
-      setMessage(existing ? `Nivel ${level.codigo} seleccionado.` : `Nivel ${level.codigo} creado en Supabase y seleccionado.`);
+      const level = await onCreate({ estanteriaId: rackId, codigo: '', nombre, descripcion: '' });
+      onLevel(level.id); setCreating(false); onDraftChange?.(false); setName('');
+      setMessage(`Nivel ${level.codigo} creado en Supabase y seleccionado.`);
     } catch (cause) { setError(errorMessage(cause)); }
     finally { saving.current = false; setBusy(false); onBusyChange?.(false); }
   };
@@ -46,14 +42,12 @@ export function ItemLevelSelector({ rackId, levelId, levels, onLevel, onCreate, 
     </Select>
     <Presence open={creating}><div className="ui-panel-enter space-y-2">
       <label htmlFor={idPrefix + 'input-nuevo-nivel-codigo'} className="block">Código del nuevo nivel</label>
-      <input autoComplete="off" autoCorrect="off" spellCheck={false} id={idPrefix + 'input-nuevo-nivel-codigo'} maxLength={100} value={code} disabled={busy} onChange={event => { setCode(event.target.value); setError(''); }}
-        onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}
-        placeholder="Ej. NIV-01" className="w-full px-3 py-2 rounded-lg border bg-white" />
+      <input id={idPrefix + 'input-nuevo-nivel-codigo'} readOnly value="NIV · Se asigna al guardar" className="w-full px-3 py-2 rounded-lg border bg-white" />
       <label htmlFor={idPrefix + 'input-nuevo-nivel-nombre'} className="block">Nombre del nuevo nivel</label>
       <input autoComplete="off" autoCorrect="off" spellCheck={false} id={idPrefix + 'input-nuevo-nivel-nombre'} maxLength={100} value={name} disabled={busy} onChange={event => { setName(event.target.value); setError(''); }}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void create(); } }}
         placeholder="Ej. Nivel superior" className="w-full px-3 py-2 rounded-lg border bg-white" />
-      <button type="button" disabled={busy || !code.trim() || !name.trim()} onClick={() => { void create(); }} className="text-white bg-[#253685] rounded-lg px-3 py-2 disabled:opacity-50">{busy ? 'Creando…' : 'Crear y elegir nivel'}</button>
+      <button type="button" disabled={busy || !name.trim()} onClick={() => { void create(); }} className="text-white bg-[#253685] rounded-lg px-3 py-2 disabled:opacity-50">{busy ? 'Creando…' : 'Crear y elegir nivel'}</button>
       <p className="font-normal text-slate-500">Se guardará en la estantería elegida.</p>
     </div></Presence>
     {!rackId && <p className="font-normal text-slate-500">Seleccione una estantería para elegir o crear un nivel.</p>}

@@ -1,8 +1,16 @@
 # Continuidad de Inventario EL TURPIAL
 
-Actualizado: **28 de octubre de 2026**, zona horaria America/Bogota.
+Actualizado: **29 de octubre de 2026**, zona horaria America/Bogota.
 
 Este documento resume el estado para continuar en otro chat. Las secciones anteriores de `reports/verification.md` y `PLAN_REFACTORIZACION.md` son registros históricos; sus conteos y pendientes no sustituyen este estado actual.
+
+## Códigos automáticos de ubicaciones y categorías
+
+Verificación del 29 de octubre: typecheck, lint, 209 pruebas unitarias y 43 de integración (252), y build correctos con Node 22.23.3 / pnpm 11.19.0. Dos pruebas nuevas cubren solicitudes/reintentos y formularios de los cuatro tipos; se actualizan pruebas de categorías y altas en línea. Tres pruebas nuevas de PGlite comprueban migración repetible, datos existentes intactos, categorías faltantes, referencias de productos, códigos de tres letras sin colisiones, consecutivos globales mayores que 999, inmutabilidad, permisos, rollback y protección de solicitudes de otra cuenta. No se ejecutó SQL en Supabase real ni automatización de navegador. Activación y revisión visual pendientes del usuario; PGlite no demuestra concurrencia física entre conexiones reales.
+
+Ubicaciones nuevas reciben códigos definitivos de Supabase: ALM001 para almacén, EST001 para estantería, NIV001 para nivel y CAJ001 para caja, con consecutivos globales por tipo, mínimo tres cifras y crecimiento después de 999. Los códigos existentes se conservan y todos quedan bloqueados al editar. Categorías añade un código visible único de tres letras, automático e inmutable, conservando los nombres e IDs internos y las referencias de productos. Crear desde Administración, Entradas y edición comparte las mismas RPC con reintentos por solicitud. Requiere ejecutar `supabase/migrations/20261029000100_automatic_location_category_codes.sql` desde la cuenta del usuario; hasta activarla, las nuevas creaciones muestran un mensaje y conservan el formulario. No se modifica stock ni se reescriben documentos anteriores. [Uso y activación](codigos-automaticos-ubicaciones-categorias.md).
+
+La migración está preparada y ensayada localmente. Aplicación en Supabase real pendiente del usuario.
 
 ## Edición de unidad de medida
 

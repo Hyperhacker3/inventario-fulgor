@@ -101,16 +101,16 @@ test('inline level creation requires a rack, keeps failed drafts and selects a c
   let fail=true,calls=0;const selected:string[]=[],drafts:boolean[]=[];
   const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);
   const props={rackId:'',levelId:'',levels:[],onLevel:(id:string)=>selected.push(id),onDraftChange:(value:boolean)=>drafts.push(value),
-    onCreate:async(input:Omit<import('../../src/types').NivelEstanteria,'id'>)=>{calls++;assert.equal(input.estanteriaId,'R1');assert.equal(input.codigo,'N4');if(fail)throw new Error('Sin conexión');return {...input,id:'L4'};}};
+    onCreate:async(input:Omit<import('../../src/types').NivelEstanteria,'id'>)=>{calls++;assert.equal(input.estanteriaId,'R1');assert.equal(input.codigo,'');if(fail)throw new Error('Sin conexión');return {...input,id:'L4',codigo:'NIV004'};}};
   try {
     await act(()=>root.render(h(ItemLevelSelector,props)));assert.equal(host.querySelector('select')!.disabled,true);
     await act(()=>root.render(h(ItemLevelSelector,{...props,rackId:'R1'})));
     assert.equal(host.querySelector('select')!.options[1].value,'__NEW_LEVEL__');
     await choose(host,'__NEW_LEVEL__');
-    await act(()=>{const inputs=host.querySelectorAll('input');type(inputs[0],'n4');type(inputs[1],'Centro');});
+    await act(()=>{const inputs=host.querySelectorAll('input');assert.equal(inputs[0].readOnly,true);type(inputs[1],'Centro');});
     const button=host.querySelector<HTMLButtonElement>('button:not([role="combobox"])')!;
     await act(async()=>button.click());assert.match(host.querySelector('[role="alert"]')!.textContent!,/Sin conexión/);
-    assert.equal(host.querySelector('input')!.value,'n4');assert.deepEqual(selected,[]);
+    assert.equal(host.querySelectorAll('input')[1].value,'Centro');assert.deepEqual(selected,[]);
     fail=false;await act(async()=>{button.click();button.click();});assert.equal(calls,2);assert.deepEqual(selected,['L4']);assert.deepEqual(drafts,[true,false]);
   }finally{await act(()=>root.unmount());host.remove();}
 });

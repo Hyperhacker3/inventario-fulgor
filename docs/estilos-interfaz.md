@@ -6,6 +6,8 @@ Actualizado el 8 de octubre de 2026. **Neumorfismo es el único estilo de la apl
 
 ## Decisiones vigentes
 
+Los formularios de ubicación muestran Código de solo lectura: prefijo y Se asigna al guardar en altas, o el código existente al editar. No hay entrada manual ni cálculo local del consecutivo. Estantería y nivel solo piden nombre; Caja permite crear y elegir con su código automático. Categorías cambia Clave de categoría por Código, también de solo lectura. Se mantienen controles de 44 px, selectores y borradores en móvil, tablet y escritorio. [Activación y alcance](codigos-automaticos-ubicaciones-categorias.md).
+
 Editar producto añade un selector de Unidad de medida de 44 px, compartido con Entradas, con opciones anteriores conservadas. El selector se bloquea durante el guardado y las etiquetas de peso/valor reflejan su borrador; Cancelar descarta el cambio y un error lo conserva. Detalles de activación en [Edición de unidad](edicion-unidad-medida.md).
 
 Ayuda y guía abre en un portal por encima del menú móvil y muestra solo los títulos en mayúsculas, inicialmente cerrados. Cada título es un botón desplegable independiente, con indicador, foco de teclado y contenido desplazable; conserva toda la guía. La restauración de navegación ignora eventos atrasados para el hash actual, evitando que cierren una ventana recién abierta al cerrar el menú; los cambios reales de ruta, Escape, X y Retroceder conservan su comportamiento.

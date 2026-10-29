@@ -20,6 +20,7 @@ const routeMigration = fs.readFileSync(new URL('../../supabase/migrations/202610
 const uppercaseMigration = fs.readFileSync(new URL('../../supabase/migrations/20261007000300_uppercase_registration.sql', import.meta.url), 'utf8');
 const webpMigration = fs.readFileSync(new URL('../../supabase/migrations/20261010000100_webp_photos.sql', import.meta.url), 'utf8');
 const projectCityMigration = fs.readFileSync(new URL('../../supabase/migrations/20261027000100_project_city_remission_code.sql', import.meta.url), 'utf8');
+const automaticCodesMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000100_automatic_location_category_codes.sql', import.meta.url), 'utf8');
 const editUnitMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000200_edit_item_units.sql', import.meta.url), 'utf8');
 const reportHistoryMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000100_inventory_report_history.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
@@ -1121,4 +1122,88 @@ test('admin can correct item units without converting quantities or changing his
     assert.equal(await itemStock(db),Number(before.cantidad)-1);
     assert.equal((await db.query('SELECT unidad FROM public.historial WHERE remision_id=$1',[second.id])).rows[0].unidad,'MTS');
   } finally {await db.close();}
+});
+
+const autoLocationSql='SELECT public.create_inventory_location_auto($1::uuid,$2,$3::jsonb) AS row';
+const autoCategorySql='SELECT public.create_inventory_category_auto($1::uuid,$2,$3) AS catalog';
+const autoId=(number)=>'29100000-0000-0000-0000-'+String(number).padStart(12,'0');
+test('automatic location migration preserves existing data, continues global sequences beyond 999 and keeps codes immutable',async()=>{
+ const db=await database();try{
+  await db.exec("INSERT INTO public.almacenes(id,codigo,nombre) VALUES('AUTO-W','ALM009','Almacén anterior'); INSERT INTO public.estanterias(id,codigo,nombre,almacen_id) VALUES('AUTO-R','EST-999','Estantería anterior','AUTO-W'); INSERT INTO public.niveles_estanteria(id,codigo,nombre,estanteria_id) VALUES('AUTO-L','NIV007','Nivel anterior','AUTO-R'); INSERT INTO public.cajas(id,codigo,nombre,estanteria_id,nivel_id) VALUES('AUTO-B','CAJ012','Caja anterior','AUTO-R','AUTO-L')");
+  const tables=['elementos','almacenes','estanterias','niveles_estanteria','cajas','historial','remisiones'];
+  const before=await Promise.all(tables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows));
+  const categories=(await db.query('SELECT id,nombre,activo FROM public.inventario_categorias ORDER BY id')).rows;
+  await db.exec(automaticCodesMigration);await db.exec(automaticCodesMigration);
+  for(const [index,table] of tables.entries())assert.deepEqual((await db.query('SELECT * FROM public.'+table+' ORDER BY id')).rows,before[index]);
+  assert.deepEqual((await db.query('SELECT id,nombre,activo FROM public.inventario_categorias ORDER BY id')).rows,categories);
+  await role(db,'admin');
+  const create=async(n,kind,payload)=>(await db.query(autoLocationSql,[autoId(n),kind,JSON.stringify(payload)])).rows[0].row;
+  const warehouse=await create(1,'almacen',{nombre:'Nuevo almacén',ciudad:'Honda'});assert.equal(warehouse.codigo,'ALM010');
+  const rack=await create(2,'estanteria',{nombre:'Nuevo estante',parent_id:warehouse.id});assert.equal(rack.codigo,'EST1000');
+  const level=await create(3,'nivel',{nombre:'Nuevo nivel',parent_id:rack.id});assert.equal(level.codigo,'NIV008');
+  const box=await create(4,'caja',{parent_id:rack.id,nivel_id:level.id});assert.equal(box.codigo,'CAJ013');assert.equal(box.nombre,'CAJ013');
+  assert.deepEqual(await create(2,'estanteria',{nombre:'Nuevo estante',parent_id:warehouse.id}),rack);
+  await assert.rejects(()=>create(2,'estanteria',{nombre:'Datos diferentes',parent_id:warehouse.id}),/otros datos/);
+  for(const [table,row] of [['almacenes',warehouse],['estanterias',rack],['niveles_estanteria',level],['cajas',box]]){
+   await assert.rejects(()=>db.query('UPDATE public.'+table+" SET codigo='EDITADO' WHERE id=$1",[row.id]),/no se puede modificar/);
+  }
+  await db.query("UPDATE public.estanterias SET nombre='Nombre modificado' WHERE id=$1",[rack.id]);
+  assert.equal((await db.query('SELECT codigo FROM public.estanterias WHERE id=$1',[rack.id])).rows[0].codigo,rack.codigo);
+  await asOwner(db);await db.exec(automaticCodesMigration);await role(db,'admin');
+  const next=await create(5,'estanteria',{nombre:'Otro estante',parent_id:'AUTO-W'});assert.equal(next.codigo,'EST1001');
+  const direct=(await db.query("INSERT INTO public.almacenes(id,codigo,nombre) VALUES('AUTO-DIRECT','MANUAL','Creación anterior') RETURNING codigo")).rows[0];assert.equal(direct.codigo,'ALM011');
+ }finally{await db.close();}
+});
+
+test('category codes backfill three unique letters without changing names, identities or product references and survive rename/retry',async()=>{
+ const db=await database();try{
+  await db.exec("INSERT INTO public.inventario_categorias(id,nombre) VALUES('CABLES_RED','Cables redes'),('CABLES_DUP','CABLES')");
+  await db.exec("UPDATE public.elementos SET categoria='SIN_CATALOGO' WHERE id='ELM-001'");
+  const before=(await db.query('SELECT id,nombre,activo FROM public.inventario_categorias ORDER BY id')).rows;
+  const products=(await db.query('SELECT * FROM public.elementos ORDER BY id')).rows;
+  await db.exec(automaticCodesMigration);await role(db,'admin');
+  const catalog=(await db.query('SELECT public.inventory_data_catalog() AS c')).rows[0].c;
+  assert.equal(new Set(catalog.categorias.map(c=>c.codigo)).size,before.length+1);
+  assert.ok(catalog.categorias.every(c=>/^[A-Z]{3}$/.test(c.codigo)));
+  assert.deepEqual(catalog.categorias.filter(c=>c.id!=='SIN_CATALOGO').map(({id,nombre,activo})=>({id,nombre,activo})).sort((a,b)=>a.id.localeCompare(b.id)),before.toSorted((a,b)=>a.id.localeCompare(b.id)));
+  assert.deepEqual((await db.query('SELECT * FROM public.elementos ORDER BY id')).rows,products);
+  const created=(await db.query(autoCategorySql,[autoId(11),'Cables especiales',true])).rows[0].catalog;
+  const category=created.categorias.find(c=>c.nombre==='Cables especiales');assert.match(category.codigo,/^[A-Z]{3}$/);assert.notEqual(category.id,category.codigo);
+  const repeated=(await db.query(autoCategorySql,[autoId(11),'Cables especiales',true])).rows[0].catalog;
+  assert.equal(repeated.categorias.length,created.categorias.length);
+  const reused=(await db.query(autoCategorySql,[autoId(12),'  Cables   especiales  ',true])).rows[0].catalog;assert.equal(reused.categorias.length,created.categorias.length);
+  const prefix=created.prefijos[0];
+  const newItem=(await db.query('SELECT public.create_inventory_item_auto($1,$2::uuid,$3::jsonb) AS item',[prefix.id,autoId(13),JSON.stringify({nombre:'Producto de categoría nueva',categoria:category.id,cantidad:0,stock_minimo:0,unidad:'UND'})])).rows[0].item;assert.equal(newItem.categoria,category.id);
+  const edited=(await db.query('SELECT public.save_inventory_catalog_entry($1,$2::jsonb) AS c',['categoria',JSON.stringify({id:category.id,nombre:'Nombre conservando código',activo:true})])).rows[0].c;
+  assert.equal(edited.categorias.find(c=>c.id===category.id).codigo,category.codigo);
+  await asOwner(db);
+  await assert.rejects(()=>db.query("UPDATE public.inventario_categorias SET codigo='ZZZ' WHERE id=$1",[category.id]),/no se puede modificar/);
+  await assert.rejects(()=>db.query("UPDATE public.inventario_categorias SET id='OTRA' WHERE id=$1",[category.id]),/no se puede modificar/);
+  await db.exec(automaticCodesMigration);assert.equal((await db.query('SELECT codigo FROM public.inventario_categorias WHERE id=$1',[category.id])).rows[0].codigo,category.codigo);
+ }finally{await db.close();}
+});
+
+test('automatic code creation rejects unprivileged access and mismatched parents without consuming sequences or duplicating requests',async()=>{
+ const db=await database();try{
+  await db.exec(automaticCodesMigration);
+  for(const value of ['operador','consulta','sin_rol']){
+   await role(db,value);
+   await assert.rejects(()=>db.query(autoLocationSql,[autoId(21),'almacen','{"nombre":"No autorizado"}']),/No autorizado/);
+   await assert.rejects(()=>db.query(autoCategorySql,[autoId(22),'No autorizada',true]),/No autorizado/);
+   await assert.rejects(()=>db.query('SELECT * FROM public.inventario_ubicacion_consecutivos'),/permission denied/);
+   await assert.rejects(()=>db.query("SELECT public.next_inventory_category_code('Manual')"),/permission denied/);
+  }
+  await asOwner(db);await db.exec('SET ROLE anon');
+  await assert.rejects(()=>db.query(autoLocationSql,[autoId(21),'almacen','{}']),/permission denied/);
+  await asOwner(db);const counters=(await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows;await role(db,'admin');
+  await assert.rejects(()=>db.query(autoLocationSql,[autoId(23),'nivel','{"nombre":"Error","parent_id":"inexistente"}']),/not present|no existe|not found|foreign key/);
+  await assert.rejects(()=>db.query(autoLocationSql,[autoId(24),'caja','{}']),/nivel/);
+  await assert.rejects(()=>db.query(autoCategorySql,[autoId(25),'',true]),/inválido/);
+  await asOwner(db);assert.deepEqual((await db.query('SELECT * FROM public.inventario_ubicacion_consecutivos ORDER BY prefijo')).rows,counters);
+  assert.equal((await db.query('SELECT count(*) AS n FROM public.inventario_autocodigo_solicitudes')).rows[0].n,0);
+  await role(db,'admin');const result=(await db.query(autoLocationSql,[autoId(21),'almacen','{"nombre":"Autorizado"}'])).rows[0].row;
+  await asOwner(db);await db.exec("CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '00000000-0000-0000-0000-000000000002'::uuid $$");await role(db,'admin');
+  await assert.rejects(()=>db.query(autoLocationSql,[autoId(21),'almacen','{"nombre":"Autorizado"}']),/otros datos/);
+  assert.ok(result.codigo.startsWith('ALM'));
+ }finally{await db.close();}
 });

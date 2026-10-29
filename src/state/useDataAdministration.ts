@@ -3,20 +3,26 @@ import { useAuth } from '../context/AuthContext';
 import { rpc } from '../data/repository';
 import { supabase } from '../lib/supabase';
 import type { Categoria, PrefijoCodigo } from '../types';
-import { categoryNameKey, newCategoryKey, ensurePrefixChoice } from '../domain/dataAdministration';
+import { categoryNameKey, ensurePrefixChoice } from '../domain/dataAdministration';
 import { initialQueryStatus } from '../domain/initialLoad';
+import { useRef } from 'react';
+import { AutomaticCodeRequests, automaticCodeRpc } from '../data/automaticCodes';
 
 interface Catalog { categorias: Categoria[]; prefijos: PrefijoCodigo[] }
 export function useDataAdministration() {
   const { user } = useAuth();
   const client = useQueryClient();
+  const requests = useRef(new AutomaticCodeRequests());
   const key = ['fulgor', user?.email || '', 'data-catalog'];
   const query = useQuery({ queryKey: key, queryFn: () => rpc<Catalog>('inventory_data_catalog', {}),
     enabled: Boolean(user && supabase), staleTime: 30_000, retry: false });
   const save = async (kind: 'categoria' | 'prefijo', input: Record<string, unknown>) => {
     if (user?.role !== 'admin') throw new Error('Solo administración puede gestionar estos datos.');
     // RPC returns the refreshed catalogs with the successful write, even if a later read fails.
-    const updated = await rpc<Catalog>('save_inventory_catalog_entry', { p_kind: kind, p_entry: input });
+    const updated = kind === 'categoria' && !input.id
+      ? await requests.current.run('categoria', { nombre: String(input.nombre || '').trim().replace(/\s+/g, ' '), activo: input.activo ?? true },
+        request => automaticCodeRpc<Catalog>('create_inventory_category_auto', { p_request_id: request, p_name: String(input.nombre || '').trim().replace(/\s+/g, ' '), p_active: input.activo ?? true }))
+      : await rpc<Catalog>('save_inventory_catalog_entry', { p_kind: kind, p_entry: input });
     client.setQueryData(key, updated);
     return updated;
   };
@@ -30,10 +36,9 @@ export function useDataAdministration() {
       if (!existing.activo) throw new Error('Esta categoría está inactiva. Reactívela en Administración de datos.');
       return existing;
     }
-    const clave = newCategoryKey(nombre, catalog);
     try {
-      const updated = await save('categoria', { clave, nombre, activo: true });
-      const created = updated.categorias.find(category => category.id === clave);
+      const updated = await save('categoria', { nombre, activo: true });
+      const created = updated.categorias.find(category => category.activo && categoryNameKey(category.nombre) === categoryNameKey(nombre));
       if (!created) throw new Error('No se pudo confirmar la categoría creada.');
       return created;
     } catch (error) {

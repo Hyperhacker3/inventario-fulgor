@@ -11,9 +11,14 @@ export type WarehouseFormTarget = { kind: 'almacen' | 'estanteria' | 'nivel' | '
 interface Props { target: WarehouseFormTarget; onClose: () => void; onCreatedWarehouse: (id: string) => void }
 
 export function WarehouseFormModal({ target, onClose, onCreatedWarehouse }: Props) {
+  const inventory = useInventory();
+  return <WarehouseFormContent {...{ target, onClose, onCreatedWarehouse, inventory }} />;
+}
+type FormInventory = Pick<ReturnType<typeof useInventory>, 'almacenes' | 'estanterias' | 'niveles' | 'cajas'
+  | 'addAlmacen' | 'updateAlmacen' | 'addEstanteria' | 'updateEstanteria' | 'addNivel' | 'updateNivel' | 'addCaja' | 'updateCaja'>;
+export function WarehouseFormContent({ target, onClose, onCreatedWarehouse, inventory }: Props & { inventory: FormInventory }) {
   const active = useMotionActive();
   const dialog = useRef<HTMLElement>(null);
-  const inventory = useInventory();
   const existing = target.kind === 'almacen' ? inventory.almacenes.find(x => x.id === target.id)
     : target.kind === 'estanteria' ? inventory.estanterias.find(x => x.id === target.id) : target.kind === 'nivel' ? inventory.niveles.find(x => x.id === target.id) : inventory.cajas.find(x => x.id === target.id);
   const [levelId, setLevelId] = useState(target.kind === 'caja' ? (existing && 'nivelId' in existing ? existing.nivelId || '' : target.parentId || '') : '');
@@ -21,7 +26,8 @@ export function WarehouseFormModal({ target, onClose, onCreatedWarehouse }: Prop
   const boxLevels = inventory.niveles.filter(level => level.estanteriaId === boxRackId);
   const saving = useRef(false);
   const [name, setName] = useState(existing && 'nombre' in existing ? existing.nombre : '');
-  const [code, setCode] = useState(existing ? 'codigoCaja' in existing ? existing.codigoCaja : existing.codigo : '');
+  const code = existing ? 'codigoCaja' in existing ? existing.codigoCaja : existing.codigo : '';
+  const prefix = { almacen: 'ALM', estanteria: 'EST', nivel: 'NIV', caja: 'CAJ' }[target.kind];
   const [city, setCity] = useState(existing && 'ciudad' in existing ? existing.ciudad : '');
   const [descripcion, setDescription] = useState(existing?.descripcion || '');
   const [state, setState] = useState(existing && 'estado' in existing ? existing.estado : target.kind === 'caja' ? 'Parcial' : 'Operativo');
@@ -33,21 +39,19 @@ export function WarehouseFormModal({ target, onClose, onCreatedWarehouse }: Prop
     if (saving.current || !active) return;
     saving.current = true; setError(''); setPending(true);
     try {
-      const codigo = code.trim().toUpperCase();
-      if (!codigo) throw new Error('Ingrese un código.');
       if (target.kind === 'almacen') {
-        if (target.mode === 'edit' && target.id) await inventory.updateAlmacen(target.id, { codigo, nombre: name.trim(), ciudad: city.trim(), descripcion, estado: state as 'Operativo' | 'Mantenimiento' | 'Inactivo' });
-        else { const created = await inventory.addAlmacen({ codigo, nombre: name.trim(), ciudad: city.trim(), descripcion, capacidadPorcentaje: 0, estado: 'Operativo' }); onCreatedWarehouse(created.id); }
+        if (target.mode === 'edit' && target.id) await inventory.updateAlmacen(target.id, { nombre: name.trim(), ciudad: city.trim(), descripcion, estado: state as 'Operativo' | 'Mantenimiento' | 'Inactivo' });
+        else { const created = await inventory.addAlmacen({ codigo: '', nombre: name.trim(), ciudad: city.trim(), descripcion, capacidadPorcentaje: 0, estado: 'Operativo' }); onCreatedWarehouse(created.id); }
       } else if (target.kind === 'estanteria') {
-        if (target.mode === 'edit' && target.id) await inventory.updateEstanteria(target.id, { codigo, nombre: name.trim(), descripcion });
-        else await inventory.addEstanteria({ almacenId: target.parentId || null, codigo, nombre: name.trim(), descripcion });
+        if (target.mode === 'edit' && target.id) await inventory.updateEstanteria(target.id, { nombre: name.trim(), descripcion });
+        else await inventory.addEstanteria({ almacenId: target.parentId || null, codigo: '', nombre: name.trim(), descripcion });
       } else if (target.kind === 'nivel') {
-        if (target.mode === 'edit' && target.id) await inventory.updateNivel(target.id, { codigo, nombre: name.trim(), descripcion });
-        else await inventory.addNivel({ estanteriaId: target.parentId || '', codigo, nombre: name.trim(), descripcion });
+        if (target.mode === 'edit' && target.id) await inventory.updateNivel(target.id, { nombre: name.trim(), descripcion });
+        else await inventory.addNivel({ estanteriaId: target.parentId || '', codigo: '', nombre: name.trim(), descripcion });
       } else {
         if (!levelId && target.mode === 'new') throw new Error('Seleccione un nivel de estantería para crear la caja.');
-        if (target.mode === 'edit' && target.id) await inventory.updateCaja(target.id, { codigoCaja: codigo, nivelId: levelId || null, estado: state as 'Completa' | 'Parcial' | 'Vacia', descripcion });
-        else await inventory.addCaja({ estanteriaId: inventory.niveles.find(level => level.id === levelId)?.estanteriaId || boxRackId || null, codigoCaja: codigo, nivelId: levelId || null, estado: state as 'Completa' | 'Parcial' | 'Vacia', descripcion });
+        if (target.mode === 'edit' && target.id) await inventory.updateCaja(target.id, { nivelId: levelId || null, estado: state as 'Completa' | 'Parcial' | 'Vacia', descripcion });
+        else await inventory.addCaja({ estanteriaId: inventory.niveles.find(level => level.id === levelId)?.estanteriaId || boxRackId || null, codigoCaja: '', nivelId: levelId || null, estado: state as 'Completa' | 'Parcial' | 'Vacia', descripcion });
       }
       onClose();
     } catch (cause) { setError(errorMessage(cause)); }
@@ -62,7 +66,7 @@ export function WarehouseFormModal({ target, onClose, onCreatedWarehouse }: Prop
         {target.kind === 'caja' && <label className="text-sm block">Nivel de estantería<Select value={levelId} required={target.mode === 'new' || !!(existing && 'nivelId' in existing && existing.nivelId)} onChange={event => setLevelId(event.target.value)} className="block border rounded-lg p-2 w-full mt-1">
           <option value="">Sin nivel asignado</option>{boxLevels.map(level => <option key={level.id} value={level.id}>{level.codigo} · {level.nombre}</option>)}
         </Select></label>}
-        <label className="text-sm block">Código<input autoComplete="off" autoCorrect="off" spellCheck={false} required maxLength={100} value={code} onChange={e => setCode(e.target.value.toUpperCase())} className="block border rounded-lg p-2 w-full mt-1" /></label>
+        <label className="text-sm block">Código<input readOnly value={existing ? code : `${prefix} · Se asigna al guardar`} className="block border rounded-lg p-2 w-full mt-1" /></label>
         {target.kind !== 'caja' && <label className="text-sm block">Nombre<input autoComplete="off" autoCorrect="off" spellCheck={false} required maxLength={100} value={name} onChange={e => setName(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
         {target.kind === 'almacen' && <label className="text-sm block">Ciudad<input autoComplete="off" autoCorrect="off" spellCheck={false} value={city} onChange={e => setCity(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>}
         <label className="text-sm block">Descripción<input autoComplete="off" autoCorrect="off" spellCheck={false} value={descripcion} onChange={e => setDescription(e.target.value)} className="block border rounded-lg p-2 w-full mt-1" /></label>
