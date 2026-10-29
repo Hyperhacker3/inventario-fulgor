@@ -1,9 +1,10 @@
-import { boxLabel } from './locationNavigation';
+import { boxLabel } from './itemLocation';
+import { damagedQuantity } from './itemCondition';
 import type { Elemento, Almacen, Estanteria, NivelEstanteria, Caja } from '../types';
 import { validQuantity } from './quantity';
 import { validateWeight } from './weight';
 import { validateUnitValue } from './money';
-export const available = (item: Elemento) => item.stockPendiente ? 0 : Math.max(0, item.cantidad - (item.cantidadDanados ?? 0));
+export const available = (item: Elemento) => item.stockPendiente ? 0 : Math.max(0, item.cantidad - damagedQuantity(item));
 export const byId = <T extends { id: string }>(items: T[]) => new Map(items.map(item => [item.id, item]));
 export function locationLabel(item: Elemento, almacenes: ReadonlyMap<string, Almacen>, estanterias: ReadonlyMap<string, Estanteria>, cajas: ReadonlyMap<string, Caja>, niveles: ReadonlyMap<string, NivelEstanteria> = new Map()) {
   const alm = item.almacenId ? almacenes.get(item.almacenId) : undefined;

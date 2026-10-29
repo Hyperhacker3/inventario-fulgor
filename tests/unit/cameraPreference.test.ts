@@ -172,7 +172,7 @@ test('the in-app guide covers current functions and matches the maintained usage
   }
   const text = helpGuide.flatMap(section => section.items).join(' ');
   assert.match(text, /Añadir y tomar otra/);
-  assert.match(text, /REGULAR, MALO, EN REPARACIÓN y RETAZOS/);
+  assert.match(text, /REGULAR, MALO, EN REPARACIÓN, PARA REPARAR y RETAZOS/);
   assert.match(text, /Editar abre una ventana encima/);
   assert.doesNotMatch(text, /Instalación|migracion|migración|SQL Editor|\.env|Supabase|README/);
 });

@@ -224,3 +224,12 @@ test('report history pages summaries, retries failed detail reads and opens the 
     await act(async()=>finish(report)); assert.deepEqual(opened,[report]);
   } finally {await act(()=>root.unmount());host.remove();client.clear();}
 });
+
+
+test('new reports snapshot the effective full damage by condition without altering older copies or total stock',()=>{
+ const item=product('repair',3,'und',100,{cantidad_danados:0,estado:'BUENO'});
+ const old=build([item]);item.estado='PARA REPARAR';const current=build([item]);
+ assert.equal(old.rows[0].damaged,0);assert.equal(current.rows[0].damaged,3);
+ assert.equal(current.rows[0].quantity,3);assert.equal(current.valueCOP,300);assert.equal(item.cantidadDanados,0);
+ item.estado='BUENO';assert.equal(current.rows[0].damaged,3);assert.equal(current.rows[0].condition,'PARA REPARAR');
+});

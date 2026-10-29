@@ -130,7 +130,7 @@ test('editing includes existing levels and an editable brand; errors preserve th
     const conditionLabel=[...editor.querySelectorAll('label')].find(label=>label.textContent?.startsWith('Estado'))!;
     assert.equal(conditionLabel.querySelector('select')!.value,'MALO');
     assert.match(conditionLabel.querySelector('[role="combobox"]')!.textContent!,/MALO/);
-    assert.deepEqual([...conditionLabel.querySelector('select')!.options].map(option=>option.value), ['BUENO','REGULAR','MALO','EN REPARACIÓN','RETAZOS']);
+    assert.deepEqual([...conditionLabel.querySelector('select')!.options].map(option=>option.value), ['BUENO','REGULAR','MALO','EN REPARACIÓN','PARA REPARAR','RETAZOS']);
     const label=[...editor.querySelectorAll('label')].find(label=>label.textContent==='Nivel de estantería')!;
     const native=document.getElementById(`${label.htmlFor}-value`) as HTMLSelectElement;
     assert.equal(native.value,'L1');assert.deepEqual([...native.options].map(option=>option.value),['','L1','L2']);

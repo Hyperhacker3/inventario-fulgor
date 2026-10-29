@@ -21,6 +21,7 @@ const uppercaseMigration = fs.readFileSync(new URL('../../supabase/migrations/20
 const webpMigration = fs.readFileSync(new URL('../../supabase/migrations/20261010000100_webp_photos.sql', import.meta.url), 'utf8');
 const projectCityMigration = fs.readFileSync(new URL('../../supabase/migrations/20261027000100_project_city_remission_code.sql', import.meta.url), 'utf8');
 const automaticCodesMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000100_automatic_location_category_codes.sql', import.meta.url), 'utf8');
+const damagePolicyMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000500_condition_damage_policy.sql', import.meta.url),'utf8');
 const boxNamesMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000400_box_names.sql', import.meta.url), 'utf8');
 const normalizeLocationCodesMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000200_normalize_location_codes.sql', import.meta.url), 'utf8');
 const deleteLocationsMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000300_delete_empty_locations.sql', import.meta.url), 'utf8');
@@ -1631,5 +1632,39 @@ test('box names preserve existing inventory and automatic codes, accept optional
   }
   await asOwner(db);await db.exec('SET ROLE anon');
   await assert.rejects(()=>db.query('SELECT public.inventory_box_names_ready()'),/permission denied/);
+ }finally{await db.close();}
+});
+
+
+test('condition damage policy preserves rows and historical retries, rejects new damaged dispatches and retains decimals, snapshots and permissions',async()=>{
+ const db=await database({route:true});try{
+  await role(db,'operador');
+  const previousArgs=routeArgs('29500000-0000-0000-0000-000000000001');
+  const previous=(await db.query(routeSql,previousArgs)).rows[0].rem;
+  await asOwner(db);
+  const tables=['elementos','historial','remisiones','remision_consecutivos'];
+  const before=await Promise.all(tables.map(async table=>(await db.query('SELECT * FROM public.'+table+' ORDER BY 1')).rows));
+  await db.exec(damagePolicyMigration);await db.exec(damagePolicyMigration);
+  for(const [index,table] of tables.entries())assert.deepEqual((await db.query('SELECT * FROM public.'+table+' ORDER BY 1')).rows,before[index]);
+  const damaged=['MALO',' dañado ','MAL ESTADO','OBSOLETO','EN REPARACIÓN',' reparacion ','PARA   REPARAR','\tMALO\n','EN REPARACIÓN'];
+  for(const condition of damaged)assert.equal((await db.query('SELECT public.inventory_condition_is_damaged($1) AS damaged',[condition])).rows[0].damaged,true);
+  for(const condition of ['BUENO','REGULAR','RETAZOS','Por revisar',null])assert.equal((await db.query('SELECT public.inventory_condition_is_damaged($1) AS damaged',[condition])).rows[0].damaged,false);
+  for(const [i,condition] of damaged.entries()){
+   await asOwner(db);await db.query("UPDATE public.elementos SET estado=$1,cantidad_danados=0 WHERE id='ELM-001'",[condition]);
+   const stock=(await db.query("SELECT cantidad FROM public.elementos WHERE id='ELM-001'")).rows[0].cantidad;
+   await role(db,'operador');const args=routeArgs('29500000-0000-0000-0000-'+String(i+2).padStart(12,'0'));
+   await assert.rejects(()=>db.query(routeSql,args),/Stock no disponible/);
+   assert.equal((await db.query("SELECT cantidad FROM public.elementos WHERE id='ELM-001'")).rows[0].cantidad,stock);
+   assert.deepEqual((await db.query(routeSql,previousArgs)).rows[0].rem,previous);
+  }
+  await asOwner(db);assert.equal((await db.query('SELECT count(*) AS n FROM public.remisiones')).rows[0].n,1);
+  await db.exec("UPDATE public.elementos SET estado='REGULAR',cantidad=2.5,cantidad_danados=0.5 WHERE id='ELM-001'");
+  await role(db,'operador');const args=routeArgs('29500000-0000-0000-0000-000000000020');args[7]=JSON.stringify([{elementoId:'ELM-001',cantidad:2}]);
+  const issued=(await db.query(routeSql,args)).rows[0].rem;assert.equal(issued.items[0].cantidad,2);
+  assert.equal(Number((await db.query("SELECT cantidad FROM public.elementos WHERE id='ELM-001'")).rows[0].cantidad),0.5);
+  await asOwner(db);await db.exec("UPDATE public.elementos SET estado='PARA REPARAR' WHERE id='ELM-001'");
+  await role(db,'operador');assert.deepEqual((await db.query(routeSql,args)).rows[0].rem,issued);
+  await assert.rejects(()=>db.query('SELECT public.dispatch_inventory($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb)',args.slice(0,8)),/permission denied/);
+  await role(db,'consulta');await assert.rejects(()=>db.query(routeSql,args),/No autorizado/);
  }finally{await db.close();}
 });

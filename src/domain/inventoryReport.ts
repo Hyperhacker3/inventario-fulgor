@@ -1,3 +1,4 @@
+import { damagedQuantity } from './itemCondition';
 import type { Almacen, Caja, CompanyProfile, Elemento, Estanteria, NivelEstanteria, PesoUnitario } from '../types';
 import { byId, locationLabel } from './inventory';
 import { roundCOP } from './money';
@@ -39,7 +40,7 @@ export function buildInventoryReport(items: Elemento[], ids: readonly string[], 
     return {
       id, code: item.codigo, name: item.nombre, brand: item.marca || '', category: categoryLabel(item.categoria), condition: item.estado || '',
       location: locationLabel(item, warehouses, racks, boxes, levels), quantity, unit: item.unidad.toUpperCase(),
-      damaged: item.cantidadDanados || 0, unitWeight: item.pesoUnitario ? { ...item.pesoUnitario } : null,
+      damaged: item.stockPendiente ? item.cantidadDanados || 0 : damagedQuantity(item), unitWeight: item.pesoUnitario ? { ...item.pesoUnitario } : null,
       weightKg: quantity === null ? null : lineWeightKg(item.pesoUnitario, quantity),
       unitValueCOP: item.valorUnitario || 0, valueCOP: quantity === null ? null : roundCOP(quantity * (item.valorUnitario || 0)),
     };

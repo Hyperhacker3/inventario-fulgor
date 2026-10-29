@@ -42,10 +42,10 @@ test('grid conditions appear on the image opposite stock, normalize legacy label
       else {
         assert.equal(badge!.textContent, ['MALO', 'REGULAR', 'EN REPARACIÓN', 'RETAZOS'][index]);
         assert.ok(image.contains(badge)); assert.equal(content.contains(badge), false);
-        assert.match(badge!.parentElement!.parentElement!.textContent!, /12 DISP/);
+        assert.match(badge!.parentElement!.parentElement!.textContent!, index === 0 || index === 2 ? /0 DISP/ : /11 DISP/);
         await click(badge!); assert.equal(opened.at(-1), item);
       }
-      assert.match(content.textContent!, /1 dañados/); assert.equal(cart(surface).disabled, false);
+      assert.match(content.textContent!, index === 0 || index === 2 ? /12 dañados/ : /1 dañados/); assert.equal(cart(surface).disabled, index === 0 || index === 2);
     }
   }, products);
 });

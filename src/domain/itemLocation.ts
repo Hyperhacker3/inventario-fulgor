@@ -1,4 +1,4 @@
-import type { Elemento } from '../types';
+import type { Caja, Elemento } from '../types';
 
 export interface ItemLocationDraft { warehouseId: string; rackId: string; levelId: string; boxId: string }
 export const itemLocationDraft = (item?: Elemento | null): ItemLocationDraft => ({
@@ -15,4 +15,10 @@ export function itemLocationColumns(updates: Partial<Elemento>): Record<string, 
     ...(updates.nivelId !== undefined && { nivel_id: updates.nivelId }),
     ...(updates.cajaId !== undefined && { caja_id: updates.cajaId }),
   };
+}
+
+export function boxLabel(box: Caja) {
+  const name = box.nombre?.trim();
+  return name && name.toLocaleUpperCase() !== box.codigoCaja.trim().toLocaleUpperCase()
+    ? `${box.codigoCaja} · ${name}` : box.codigoCaja;
 }

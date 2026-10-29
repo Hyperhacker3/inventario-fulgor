@@ -112,11 +112,11 @@ test('stock choices expose exactly one persistent pressed state and reset with t
   } finally { await act(() => root.unmount()); host.remove(); }
 });
 
-test('condition selector exposes the five current states and resets without affecting stock choices', async () => {
+test('condition selector exposes the six current states and resets without affecting stock choices', async () => {
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
   try {
     await act(() => root.render(h(FilterPanel)));
-    assert.deepEqual(optionValues('inventory-condition-filter'), ['todos', 'BUENO', 'REGULAR', 'MALO', 'EN REPARACIÓN', 'RETAZOS']);
+    assert.deepEqual(optionValues('inventory-condition-filter'), ['todos', 'BUENO', 'REGULAR', 'MALO', 'EN REPARACIÓN', 'PARA REPARAR', 'RETAZOS']);
     await choose('inventory-condition-filter', 'REGULAR');
     assert.equal(selectedValue('inventory-condition-filter'), 'REGULAR');
     assert.equal(host.querySelector('[aria-pressed="true"]')!.textContent, 'todos');

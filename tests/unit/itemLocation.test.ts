@@ -384,3 +384,24 @@ test('product detail renders location links and blocks them while editing', asyn
     await act(()=>crumbs()[0].click());assert.equal(requests.length,1);
   }finally{await act(()=>root.unmount());host.remove();}
 });
+
+
+test('repair conditions display automatic full damage while preserving the manual count across state changes and failed saves',async()=>{
+ const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);let saved:Partial<Elemento>|undefined;
+ try{
+  await act(()=>root.render(h(ItemDetailContent,{item:{...item,estado:'PARA REPARAR',cantidadDanados:2},onClose(){},inventory:inventory(async(_id,updates)=>{saved=updates;throw new Error('Sin conexión');})})));
+  await act(()=>button(host,'Editar').click());
+  const damage=()=>[...editor()!.querySelectorAll('label')].find(label=>label.firstChild?.textContent==='Unidades dañadas')!.querySelector('input')!;
+  const condition=async(value:string)=>{
+   const label=[...editor()!.querySelectorAll('label')].find(label=>label.firstChild?.textContent==='Estado')!;
+   const control=label.querySelector<HTMLButtonElement>('[role="combobox"]')!;await act(()=>control.click());
+   const option=[...document.getElementById(control.getAttribute('aria-controls')!)!.querySelectorAll<HTMLButtonElement>('[role="option"]')].find(row=>row.dataset.value===value)!;await act(()=>option.click());
+  };
+  assert.equal(damage().value,'12');assert.equal(damage().readOnly,true);
+  await condition('BUENO');assert.equal(damage().value,'2');assert.equal(damage().readOnly,false);
+  await condition('PARA REPARAR');
+  await act(async()=>editForm()!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true})));
+  assert.equal(saved?.estado,'PARA REPARAR');assert.equal(saved?.cantidadDanados,2);assert.equal(saved?.cantidad,undefined);
+  assert.equal(damage().value,'12');assert.match(editor()!.textContent!,/Sin conexión/);
+ }finally{await act(()=>root.unmount());host.remove();}
+});

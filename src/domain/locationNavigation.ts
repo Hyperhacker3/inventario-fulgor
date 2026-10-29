@@ -1,11 +1,8 @@
 import { emptyInventoryFilters, NO_LOCATION, type InventoryFilters } from './explorer';
 import type { Almacen, Caja, Elemento, Estanteria, LocationKind, NivelEstanteria } from '../types';
 
-export function boxLabel(box: Caja) {
-  const name = box.nombre?.trim();
-  return name && name.toLocaleUpperCase() !== box.codigoCaja.trim().toLocaleUpperCase()
-    ? `${box.codigoCaja} · ${name}` : box.codigoCaja;
-}
+import { boxLabel } from './itemLocation';
+export { boxLabel } from './itemLocation';
 
 export interface LocationBreadcrumb { kind: LocationKind; label: string; filters: InventoryFilters }
 

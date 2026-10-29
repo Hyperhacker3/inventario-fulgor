@@ -33,7 +33,7 @@ La tabla del PDF de Informes usa ocho columnas, en este orden: # / CÓDIGO / PRO
 - Ubicación completa: almacén → estantería → nivel → caja, o Sin ubicación asignada cuando no hay datos.
 - Resumen de productos, cantidades por unidad, peso y valor. No se suman metros, unidades, rollos o kilos como si fueran una misma unidad.
 
-El informe utiliza **stock total**, incluidas las unidades dañadas declaradas. No deduce daños de la condición. Un stock pendiente se imprime como Pendiente y no se incorpora como cero a los totales. Los pesos ausentes también quedan pendientes; el resumen distingue totales parciales y ausencia de pesos verificables. Se conservan los metadatos originales en Supabase.
+El informe utiliza **stock total**, incluidas las unidades dañadas. Las nuevas copias aplican la regla autorizada: MALO, EN REPARACIÓN y PARA REPARAR cuentan todo el stock como dañado; los demás estados usan el daño parcial declarado. Las copias guardadas anteriormente no se recalculan. Un stock pendiente se imprime como Pendiente y no se incorpora como cero a los totales. Los pesos ausentes también quedan pendientes; el resumen distingue totales parciales y ausencia de pesos verificables. Se conservan los metadatos originales en Supabase.
 
 ## Lectura y conservación
 

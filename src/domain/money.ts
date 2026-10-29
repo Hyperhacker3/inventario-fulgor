@@ -1,3 +1,4 @@
+import { damagedQuantity } from './itemCondition';
 import type { Elemento } from '../types';
 
 export const MAX_UNIT_VALUE_COP = 9_999_999_999.99;
@@ -18,7 +19,7 @@ function itemValues(item: Elemento): LocationValues | null {
   if (item.archived || item.stockPendiente) return null;
   const price = item.valorUnitario || 0;
   return { total: roundCOP(item.cantidad * price),
-    damaged: roundCOP(Math.min(item.cantidad, Math.max(0, item.cantidadDanados || 0)) * price) };
+    damaged: roundCOP(damagedQuantity(item) * price) };
 }
 /** Each product contributes once to every assigned level, including stock without a rack or box. */
 export function inventoryLocationValues(items: Elemento[]) {

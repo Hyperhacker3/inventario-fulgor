@@ -30,8 +30,21 @@ test('dashboard separates pending counts, damaged availability and incompatible 
 test('empty dashboard has zero counts and no fabricated balances or alerts', () => {
   const summary = summarizeInventory([], []);
   assert.equal(summary.total, 0);
+  assert.equal(summary.repairProducts, 0);
   assert.equal(Object.values(summary.statuses).reduce((sum, value) => sum + value, 0), 0);
   assert.deepEqual(summary.units, []);
   assert.deepEqual(summary.alerts, []);
   assert.deepEqual(summary.warehouses, []);
+});
+
+test('dashboard counts damaged products by condition and keeps PARA REPARAR separate from EN REPARACIÓN without summing incompatible units', () => {
+  const make=(id:string,estado:string,extra:Record<string,unknown>={})=>mapElemento({id,codigo:id,estado,cantidad:4,cantidad_danados:0,unidad:'UND',...extra});
+  const products=[make('a','MALO'),make('b','DAÑADO'),make('c','EN REPARACIÓN'),make('d','PARA REPARAR'),
+    make('e','BUENO',{cantidad_danados:1}),make('f','REGULAR'),make('g','RETAZOS'),
+    make('pending','PARA REPARAR',{stock_pendiente:true}),make('archived','PARA REPARAR',{archived:true}),
+    make('meters','PARA REPARAR',{cantidad:1.5,unidad:'MTS'})];
+  const before=structuredClone(products),summary=summarizeInventory(products,[]);
+  assert.equal(summary.damagedProducts,7);assert.equal(summary.repairProducts,3);assert.equal(summary.total,9);
+  assert.deepEqual(summary.units,[{unit:'mts',recorded:1.5,available:0,damaged:1.5},{unit:'und',recorded:28,available:11,damaged:17}]);
+  assert.equal(summary.statuses['Pendiente de conteo'],1);assert.deepEqual(products,before);
 });

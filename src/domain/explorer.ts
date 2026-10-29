@@ -1,3 +1,4 @@
+import { available } from './inventory';
 import type { Caja, Elemento, Estanteria, NivelEstanteria } from '../types';
 import { normalizeItemCondition } from './itemCondition';
 
@@ -56,9 +57,11 @@ export function filterInventory(items: Elemento[], filters: InventoryFilters, se
     if (filters.condition !== 'todos' && normalizeItemCondition(item.estado) !== filters.condition) return false;
     if (!matchesLocation(item.almacenId, filters.warehouseId) || !matchesLocation(item.estanteriaId, filters.rackId)
       || !matchesLocation(item.nivelId, filters.levelId) || !matchesLocation(item.cajaId, filters.boxId)) return false;
-    if (filters.stock === 'disponible' && item.cantidad <= 0) return false;
-    if (filters.stock === 'bajo' && (item.cantidad > item.stockMinimo || item.cantidad <= 0)) return false;
-    if (filters.stock === 'agotado' && item.cantidad > 0) return false;
+    const stock = available(item);
+    if (filters.stock !== 'todos' && item.stockPendiente) return false;
+    if (filters.stock === 'disponible' && stock <= 0) return false;
+    if (filters.stock === 'bajo' && (stock > item.stockMinimo || stock <= 0)) return false;
+    if (filters.stock === 'agotado' && stock > 0) return false;
     return !query || [item.codigo, item.nombre, item.marca || '', item.descripcion, location(item)].some(value => value.toLocaleLowerCase().includes(query));
   });
 }

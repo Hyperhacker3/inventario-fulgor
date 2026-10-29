@@ -26,7 +26,8 @@ export function DashboardView() {
     { label: 'Sin disponibilidad', value: summary.statuses['Sin disponibilidad'], hint: 'Sin stock utilizable para registrar una salida', color: 'text-red-600' },
     { label: 'Stock bajo', value: summary.statuses['Stock bajo'], hint: 'Disponibilidad igual o inferior al mínimo', color: 'text-amber-600' },
     { label: 'Conteos pendientes', value: summary.statuses['Pendiente de conteo'], hint: 'Requieren confirmar existencias', color: 'text-indigo-600' },
-    { label: 'Productos con daños', value: summary.damagedProducts, hint: 'Tienen material marcado como dañado', color: 'text-rose-600' },
+    { label: 'Productos con daños', value: summary.damagedProducts, hint: 'Unidades dañadas o estado MALO, EN REPARACIÓN o PARA REPARAR', color: 'text-rose-600' },
+    { label: 'Productos para reparar', value: summary.repairProducts, hint: 'Referencias con la etiqueta PARA REPARAR', color: 'text-amber-600' },
   ];
   return <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6">
     <div className="flex flex-wrap justify-between items-end gap-4">
@@ -41,14 +42,14 @@ export function DashboardView() {
     </div>
     {syncStatus === 'offline' && <p role="alert" className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">No se pudo confirmar la sincronización. Los datos mostrados corresponden a la última lectura disponible.</p>}
     {elementos.length === 0 && syncStatus === 'syncing' ? <p role="status" className="p-8 bg-white rounded-xl">Cargando indicadores…</p> : <>
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-5">{metrics.map(metric => <section key={metric.label} className="min-w-0 bg-white border border-[#e2e8f0] rounded-xl p-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-5">{metrics.map(metric => <section key={metric.label} className="min-w-0 bg-white border border-[#e2e8f0] rounded-xl p-4">
         <h3 className="text-xs font-semibold text-slate-600">{metric.label}</h3><p className={`text-3xl font-bold mt-2 ${metric.color}`}>{number.format(metric.value)}</p><p className="text-[11px] text-slate-500 mt-2">{metric.hint}</p>
       </section>)}</div>
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-5">
         {[
           ['Valor del inventario', formatCOP(values.total), 'Stock confirmado × valor unitario. Incluye material dañado.'],
           ['Valor del material utilizable', formatCOP(values.usable), 'Valor del stock confirmado sin las unidades dañadas.'],
-          ['Valor del material dañado', formatCOP(values.damaged), 'Unidades marcadas como dañadas × valor unitario.'],
+          ['Valor del material dañado', formatCOP(values.damaged), 'Todo el stock en MALO, EN REPARACIÓN o PARA REPARAR; en otros estados, las unidades dañadas declaradas.'],
           ['Porcentaje dañado en valor', `${number.format(values.damagedPercent)} %`, 'Valor dañado dividido entre el valor del inventario.'],
         ].map(([title, value, hint]) => <section key={title} className="min-w-0 bg-white border rounded-xl p-4">
           <h3 className="text-xs font-semibold text-slate-600">{title}</h3><p className="text-xl sm:text-2xl font-bold text-[#253685] break-words mt-2">{value}</p><p className="text-xs text-slate-500 mt-2">{hint}</p>

@@ -3,7 +3,7 @@ import { useInventory } from '../../context/InventoryContext';
 import { ItemImage } from '../ItemImage';
 import { isDemo } from '../../lib/supabase';
 import { available } from '../../domain/inventory';
-import { normalizeItemCondition } from '../../domain/itemCondition';
+import { damagedQuantity, normalizeItemCondition } from '../../domain/itemCondition';
 import { itemPhotos } from '../../domain/photos';
 import { uppercaseName } from '../../shared/uppercase';
 import { openProductSurface } from '../../shared/productInteraction';
@@ -21,26 +21,28 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
   // Stock Badge renderer
   const renderStockBadge = (item: Elemento) => {
-    if (item.cantidad === 0) {
+    const stock = available(item);
+    if (item.stockPendiente) return <span className="text-xs">Conteo pendiente</span>;
+    if (stock === 0) {
       return (
         <div className="px-2.5 py-1 bg-white/95 backdrop-blur-xs text-[#dd4c42] text-[11px] font-bold rounded-md flex items-center gap-1.5 shadow-2xs border border-[#ffdad6]">
           <span className="w-2 h-2 rounded-full bg-[#dd4c42]"></span>
-          <span>0 AGOTADO</span>
+          <span>{item.cantidad === 0 ? '0 AGOTADO' : '0 DISP'}</span>
         </div>
       );
     }
-    if (item.cantidad <= item.stockMinimo) {
+    if (stock <= item.stockMinimo) {
       return (
         <div className="px-2.5 py-1 bg-white/95 backdrop-blur-xs text-[#755b00] text-[11px] font-bold rounded-md flex items-center gap-1.5 shadow-2xs border border-[#ffdf90]">
           <span className="w-2 h-2 rounded-full bg-[#f2c43a]"></span>
-          <span>{item.cantidad} BAJO</span>
+          <span>{stock} BAJO</span>
         </div>
       );
     }
     return (
       <div className="px-2.5 py-1 bg-white/95 backdrop-blur-xs text-[#10b981] text-[11px] font-bold rounded-md flex items-center gap-1.5 shadow-2xs border border-[#e6f4ea]">
         <span className="w-2 h-2 rounded-full bg-[#10b981]"></span>
-        <span>{item.cantidad} DISP</span>
+        <span>{stock} DISP</span>
       </div>
     );
   };
@@ -114,10 +116,10 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                         <dt>CÓDIGO</dt><dd className="min-w-0 break-words font-mono-code">{item.codigo?.trim() || 'Sin especificar'}</dd>
                         <dt>UBICACIÓN</dt><dd className="min-w-0 break-words">{getAlmacenById(item.almacenId)?.nombre?.trim() || 'Sin especificar'}</dd>
                       </dl>
-                      {(item.cantidadDanados || 0) > 0 && <div className="flex items-center gap-1.5 flex-wrap">
-                        {(item.cantidadDanados || 0) > 0 && (
-                          <span className="text-[10px] font-bold text-[#c5221f] bg-[#fce8e6] px-1.5 py-0.5 rounded border border-[#ffdad6]" title={`${item.cantidadDanados} unidades reportadas con daño`}>
-                            {item.cantidadDanados} dañados
+                      {damagedQuantity(item) > 0 && <div className="flex items-center gap-1.5 flex-wrap">
+                        {damagedQuantity(item) > 0 && (
+                          <span className="text-[10px] font-bold text-[#c5221f] bg-[#fce8e6] px-1.5 py-0.5 rounded border border-[#ffdad6]" title={`${damagedQuantity(item)} unidades contabilizadas con daño`}>
+                            {damagedQuantity(item)} dañados
                           </span>
                         )}
                       </div>}

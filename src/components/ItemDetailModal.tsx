@@ -1,6 +1,6 @@
 import { StateIcon } from './ui/StateIcon';
 import { ConfirmDialog } from './ui/ConfirmDialog';
-import { itemConditionOptions, normalizeItemCondition } from '../domain/itemCondition';
+import { conditionMarksAllDamaged, itemConditionOptions, normalizeItemCondition } from '../domain/itemCondition';
 import { Presence } from './ui/Motion';
 import { ItemEditDialog } from './item/ItemEditDialog';
 import { Select } from './ui/Select';
@@ -180,7 +180,8 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
               <NumberInput min="0" step="0.001" required value={minimum} onValueChange={setMinimum} className="block w-full mt-1 p-2.5 border rounded-lg" />
             </label>
             <label className="text-sm font-semibold">Unidades dañadas
-              <NumberInput min="0" max={item.cantidad} step="0.001" required value={damaged} onValueChange={setDamaged} className="block w-full mt-1 p-2.5 border rounded-lg" />
+              <NumberInput min="0" max={item.cantidad} step="0.001" required readOnly={conditionMarksAllDamaged(condition)} value={conditionMarksAllDamaged(condition) ? item.cantidad : damaged} onValueChange={setDamaged} className="block w-full mt-1 p-2.5 border rounded-lg" />
+              {conditionMarksAllDamaged(condition) && <span className="block text-xs font-normal text-slate-500 mt-1">Este estado cuenta todo el stock como dañado.</span>}
             </label>
           </div>
           <ItemWeightFields value={weight} onChange={setWeight} stockUnit={unit} disabled={pending} />
