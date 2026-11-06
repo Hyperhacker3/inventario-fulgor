@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { internalRpc } from '../data/internalDispatch';
 import { InternalRequests, loadInternalJobs } from '../domain/internalRequests';
-import { validateInternalAmounts, type InternalDispatch, type InternalIssueInput, type InternalReturnInput, type StaffInput, type StaffMember } from '../domain/internalDispatch';
+import { validateInternalAmounts, type InternalPermanentInput, type InternalDispatch, type InternalIssueInput, type InternalReturnInput, type StaffInput, type StaffMember } from '../domain/internalDispatch';
 
 export function useInternalOperations(refreshItems: () => Promise<void>, onIssueConfirmed: () => void) {
   const { user } = useAuth(), client = useQueryClient();
@@ -27,13 +27,20 @@ export function useInternalOperations(refreshItems: () => Promise<void>, onIssue
   const issueInternal = async (input: InternalIssueInput) => {
     validateInternalAmounts(input.items);
     if (!input.personalId) throw new Error('Seleccione quién recibe los materiales.');
-    const loan = await run<InternalDispatch>('issue', { ...input }, 'create_internal_dispatch', { p_personal_id: input.personalId, p_items: input.items });
-    onIssueConfirmed(); await refresh(); return loan;
+    const enhanced = input.tipo !== undefined || input.proyectoId !== undefined;
+    const loan = await run<InternalDispatch>('issue', { ...input }, enhanced ? 'create_internal_dispatch_v2' : 'create_internal_dispatch', { p_personal_id: input.personalId, p_items: input.items, ...(enhanced ? {p_tipo:input.tipo || 'TEMPORAL',p_proyecto_id:input.proyectoId || null} : {}) });
+    onIssueConfirmed(); await refresh();
+    if(input.tipo==='PERMANENTE')await Promise.allSettled([client.invalidateQueries({queryKey:['fulgor',user?.email]})]);
+    return loan;
   };
   const returnInternal = async (input: InternalReturnInput) => {
     validateInternalAmounts(input.items);
     const loan = await run<InternalDispatch>(`return:${input.salidaId}`, { ...input }, 'return_internal_dispatch', { p_salida_id: input.salidaId, p_items: input.items });
     await refresh(); return loan;
+  };
+  const makeInternalPermanent = async (input: InternalPermanentInput) => {
+    const loan = await run<InternalDispatch>(`permanent:${input.salidaId}`, { ...input }, 'make_internal_dispatch_permanent', {p_salida_id:input.salidaId});
+    await Promise.allSettled([refresh(), client.invalidateQueries({queryKey:['fulgor',user?.email]})]); return loan;
   };
   const saveStaff = async (input: StaffInput) => {
     if (user?.role !== 'admin') throw new Error('Solo administración puede gestionar personal.');
@@ -42,5 +49,5 @@ export function useInternalOperations(refreshItems: () => Promise<void>, onIssue
     });
     await Promise.allSettled([client.invalidateQueries({ queryKey: ['fulgor', user.email, 'internal', 'staff'] })]); return result;
   };
-  return { internalJobs, internalPending: internalPending > 0, issueInternal, returnInternal, saveStaff };
+  return { internalJobs, internalPending: internalPending > 0, issueInternal, returnInternal, makeInternalPermanent, saveStaff };
 }

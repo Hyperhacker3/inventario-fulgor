@@ -1,10 +1,16 @@
 # Continuidad de Inventario EL TURPIAL
 
-Actualizado: **29 de octubre de 2026**, zona horaria America/Bogota.
+Actualizado: **6 de noviembre de 2026**, zona horaria America/Bogota.
 
 Este documento resume el estado para continuar en otro chat. Las secciones anteriores de `reports/verification.md` y `PLAN_REFACTORIZACION.md` son registros históricos; sus conteos y pendientes no sustituyen este estado actual.
 
-## Salidas internas y personal
+## Proyecto y tipo de salida interna (6 de noviembre de 2026)
+
+Salidas internas permite seleccionar un proyecto de destino opcional y elegir Temporal (por defecto) o Permanente al registrar. Temporal mantiene la reserva y las devoluciones; Permanente descuenta el stock, registra el movimiento y queda fuera de Materiales sin regresar. Desde Historial o el comprobante PDF también puede convertirse una temporal: descuenta únicamente el saldo pendiente, conserva las devoluciones y registra actor/fecha del cambio. El proyecto y el tipo original quedan en la copia de entrega. Las solicitudes inciertas conservan UUID por cuenta, incluidos cambios a permanente y reintentos anteriores. Requiere que el usuario ejecute 20261106000100_internal_dispatch_types_projects.sql después de 20261029000600_internal_dispatches.sql. No se ha aplicado SQL en producción por el agente.
+
+Verificación del 6 de noviembre: pnpm typecheck, pnpm lint, pnpm test (227 unitarias/DOM y 68 de integración: 295) y pnpm build correctos con Node 22.23.3 y pnpm 11.19.0. Las pruebas nuevas comprueban proyecto por copia, temporal por defecto, permanentes sin reserva ni devolución, conversión de saldo parcial, movimientos y protección de otros préstamos, permisos/RLS, reintentos y compatibilidad de solicitudes anteriores, eliminación posterior y rollback completo si una partida falla. La migración se probó de forma repetida en PGlite; no se ejecutó en Supabase real. No se usó automatización de navegador; geometría móvil/tablet/PC, impresión física y concurrencia real quedan para revisión del usuario.
+
+## Salidas internas y personal (implementación del 29 de octubre)
 
 Salidas añade selector Externas/Internas. Externas conserva proyectos y remisiones. Internas usa el mismo carrito/buscador y solicita solo trabajador receptor; nombre/cargo de entrega se obtienen de la sesión y el cargo receptor del catálogo Personal. Incluye historial paginado, Materiales sin regresar, devoluciones parciales/completas y comprobante PDF opcional con copias de identidad/empresa/productos. Administración añade Personal con altas/edición/activación, sin crear cuentas ni cambiar roles. Los préstamos reservan cantidad_prestada sin reducir stock o valor total; disponibilidad y nuevas salidas externas/internas descuentan esas reservas. No se archiva, elimina ni cambia la unidad de productos con préstamos pendientes. Solicitudes inciertas conservan UUID y datos por cuenta al recargar; no se repiten efectos. El usuario debe ejecutar `supabase/migrations/20261029000600_internal_dispatches.sql` para activar Personal e internas; no está ejecutada por el agente. [Uso y activación](salidas-internas-y-personal.md).
 

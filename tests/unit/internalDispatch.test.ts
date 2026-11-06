@@ -10,6 +10,7 @@ import { mapElemento } from '../../src/data/mappers';
 import { inventoryValues } from '../../src/domain/money';
 import { DEFAULT_COMPANY } from '../../src/domain/company';
 import { InternalIssueContent } from '../../src/components/internal/InternalIssueForm';
+import { InternalPermanentForm } from '../../src/components/internal/InternalPermanentDialog';
 import { InternalReturnForm } from '../../src/components/internal/InternalReturnDialog';
 import { StaffForm } from '../../src/components/internal/StaffManager';
 import { InternalPrintHeader, InternalPrintTable, internalClosing } from '../../src/components/internal/InternalPrintSections';
@@ -52,20 +53,23 @@ const type=(input:HTMLInputElement,value:string)=>{Object.getOwnPropertyDescript
 
 test('request recovery is scoped to saved account jobs and rejects malformed local records',()=>{
  localStorage.setItem('test','{"issue":{"id":"29600000-0000-0000-0000-000000000001","payload":{"personalId":"staff","items":[{"elementoId":"p","cantidad":1}]}},"other":{"id":"x"}}');assert.deepEqual(Object.keys(loadInternalJobs('test')),['issue']);
+ localStorage.setItem('test',JSON.stringify({'permanent:loan':{id:'29600000-0000-0000-0000-000000000002',payload:{salidaId:'loan'}},'permanent:wrong':{id:'29600000-0000-0000-0000-000000000003',payload:{salidaId:'other'}}}));assert.deepEqual(Object.keys(loadInternalJobs('test')),['permanent:loan']);
  localStorage.setItem('test','broken');assert.deepEqual(loadInternalJobs('test'),{});
 });
 
-test('internal form uses session identity, staff selection and the shared chosen products without project, transport or automatic PDF fields',async()=>{
+test('internal form uses session identity, staff selection and the shared chosen products with optional project, temporary default, staff and no transport or automatic PDF fields',async()=>{
  const host=document.body.appendChild(document.createElement('div')),root=createRoot(host),sent:InternalIssueInput[]=[];
- const inventory={user:{name:'Persona sesión',cargo:'Almacenista',role:'admin',email:'test',avatar:''},internalJobs:{},internalRecipient:'staff',setInternalRecipient:()=>{},elementos:[item],dispatchCart:[{elemento:item,cantidad:1.25}],
+ const inventory={user:{name:'Persona sesión',cargo:'Almacenista',role:'admin',email:'test',avatar:''},internalJobs:{},internalRecipient:'staff',setInternalRecipient:()=>{},internalType:'TEMPORAL' as const,setInternalType:()=>{},internalProject:'project',setInternalProject:()=>{},proyectos:[{id:'project',nombre:'Proyecto original',ubicacion:'Bogotá',cliente:'Cliente',estado:'ACTIVO' as const,createdAt:''}],elementos:[item],dispatchCart:[{elemento:item,cantidad:1.25}],
   issueInternal:async(input:InternalIssueInput)=>{sent.push(input);if(sent.length===1)throw new Error('Sin conexión');return loan;},clearDispatchCart(){},openItemDetail(){},updateDispatchCartQuantity(){},removeFromDispatchCart(){}};
  try{
   await act(()=>root.render(h(InternalIssueContent,{inventory,staff:{data:[{id:'staff',nombre:'Persona recibe',cargo:'Técnico',activo:true,version:1}],isError:false,error:null,refetch(){}},search:h('p',{},'Buscador compartido')})));
   assert.match(host.textContent!,/Persona sesión/);assert.match(host.textContent!,/Almacenista/);assert.match(host.textContent!,/Técnico/);assert.match(host.textContent!,/Herramienta/);
-  assert.equal(host.querySelectorAll('select').length,1);assert.equal(host.querySelector('textarea'),null);assert.equal(host.querySelector('[role="dialog"]'),null);
+  assert.equal(host.querySelectorAll('select').length,3);assert.equal(host.querySelector<HTMLSelectElement>('#internal-type-value')!.value,'TEMPORAL');assert.match(host.textContent!,/Proyecto original/);assert.equal(host.querySelector('textarea'),null);assert.equal(host.querySelector('[role="dialog"]'),null);
   const submit=()=>host.querySelector('form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));
   await act(async()=>submit());assert.match(host.querySelector('[role="alert"]')!.textContent!,/Sin conexión/);assert.equal(host.querySelector<HTMLInputElement>('input[type="number"]')!.value,'1.25');
-  await act(async()=>submit());assert.deepEqual(sent[1],{personalId:'staff',items:[{elementoId:'p',cantidad:1.25}]});assert.match(host.querySelector('[role="status"]')!.textContent!,/confirmada/);assert.equal(host.querySelector('[role="dialog"]'),null);
+  await act(async()=>submit());assert.deepEqual(sent[1],{personalId:'staff',tipo:'TEMPORAL',proyectoId:'project',items:[{elementoId:'p',cantidad:1.25}]});assert.match(host.querySelector('[role="status"]')!.textContent!,/confirmada/);assert.equal(host.querySelector('[role="dialog"]'),null);
+  await act(()=>root.render(h(InternalIssueContent,{inventory:{...inventory,internalType:'PERMANENTE',internalProject:''},staff:{data:[{id:'staff',nombre:'Persona recibe',cargo:'Técnico',activo:true,version:1}],isError:false,error:null,refetch(){}},search:h('p',{},'Buscador compartido')})));
+  assert.match(host.textContent!,/cantidades se descontarán del stock/);await act(async()=>submit());assert.equal(sent[2].tipo,'PERMANENTE');assert.equal(sent[2].proyectoId,null);
  }finally{await act(()=>root.unmount());host.remove();}
 });
 
@@ -95,5 +99,19 @@ test('internal PDF content uses its saved names, company, delivered/returned/pen
  const saved=structuredClone(loan);saved.devoluciones=[{id:'event',created_at:loan.created_at,registrado_por:'Responsable original',cargo:'Almacenista',items:[{...loan.items[0],cantidad:1}]}];
  const html=renderToStaticMarkup(h('div',{},h(InternalPrintHeader,{loan:saved}),h(InternalPrintTable,{loan:saved,indices:[0]}),...internalClosing(saved)));
  assert.match(html,/SALIDA INTERNA/);assert.match(html,/Persona sesión/);assert.match(html,/Persona recibe/);assert.match(html,/Herramienta original/);assert.match(html,/DEVUELTO/);assert.match(html,/PENDIENTE/);assert.match(html,/Responsable original/);
- assert.doesNotMatch(html,/PROYECTO|TRANSPORTADOR|FORMATO DE REMISIÓN/);
+ assert.match(html,/PROYECTO DE DESTINO/);assert.match(html,/SALIDA TEMPORAL/);assert.doesNotMatch(html,/TRANSPORTADOR|FORMATO DE REMISIÓN/);
+});
+
+
+test('permanent conversion keeps failures retryable, prevents double clicks and replaces the preview only after confirmation',async()=>{
+ const host=document.body.appendChild(document.createElement('div')),root=createRoot(host);let calls=0,closed=0;const saved:InternalDispatch[]=[];
+ const permanent:InternalDispatch={...loan,estado:'PERMANENTE',tipo:'PERMANENTE',tipo_original:'TEMPORAL',proyecto:{id:'project',nombre:'Proyecto original',ubicacion:'Bogotá',cliente:'Cliente'},conversion:{created_at:loan.created_at,registrado_por:'Responsable',cargo:'Almacenista'},items:loan.items.map(row=>({...row,pendiente:0,permanente:row.pendiente}))};
+ try{
+  await act(()=>root.render(h(InternalPermanentForm,{loan,onClose:()=>closed++,onSaved:value=>saved.push(value),save:async input=>{calls++;assert.deepEqual(input,{salidaId:'loan'});if(calls===1)throw new Error('Respuesta perdida');return permanent;}})));
+  const submit=()=>host.ownerDocument.querySelector('[role="dialog"] form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));
+  await act(async()=>{submit();submit();});assert.equal(calls,1);assert.equal(closed,0);assert.match(document.body.textContent!,/Respuesta perdida/);
+  await act(async()=>submit());assert.equal(calls,2);assert.equal(closed,1);assert.deepEqual(saved,[permanent]);
+  const html=renderToStaticMarkup(h('div',{},h(InternalPrintHeader,{loan:permanent}),h(InternalPrintTable,{loan:permanent,indices:[0]}),...internalClosing(permanent)));
+  assert.match(html,/SALIDA PERMANENTE/);assert.match(html,/Proyecto original/);assert.match(html,/Convertida de temporal a permanente/);assert.match(html,/1,5/);
+ }finally{await act(()=>root.unmount());host.remove();}
 });

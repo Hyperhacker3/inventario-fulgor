@@ -1,6 +1,6 @@
 # Salidas internas y personal
 
-Actualizado el 29 de octubre de 2026.
+Actualizado el 6 de noviembre de 2026.
 
 Salidas permite elegir Salidas externas o Salidas internas. Externas conserva el formulario, proyectos, fotografías, fechas y remisiones existentes. Ambas usan la misma selección de productos y cantidades; cambiar de tipo no vacía el carrito. Los formularios permanecen montados al cambiar entre esas opciones. Se bloquea el cambio de tipo durante un guardado o una captura pendiente.
 
@@ -15,19 +15,26 @@ Los cambios comprueban la versión del trabajador para evitar sobrescribir una e
 1. Agregue productos mediante el carrito del inventario o el buscador compartido de Salidas.
 2. Seleccione Salidas internas → Nueva salida.
 3. Entrega muestra el nombre y cargo de la cuenta conectada, sin campos de escritura. Recibe selecciona un trabajador activo y completa su cargo.
-4. Revise las cantidades y pulse Registrar salida interna.
+4. Puede seleccionar un Proyecto de destino del catálogo; es opcional. Se guarda una copia de su nombre y ciudad.
+5. Elija Tipo de salida: Temporal está seleccionada por defecto y mantiene las devoluciones. Permanente descuenta stock y no requiere devolución. Revise las cantidades y pulse Registrar salida interna. Al confirmar, la siguiente salida vuelve a Temporal.
 
-Supabase vuelve a leer la identidad de la sesión, el trabajador y los productos. No acepta nombres/cargos de remitente o destinatario enviados por el navegador. Genera un código INT-AAAAMMDD-NNN con consecutivo anual propio y creciente, independiente de las remisiones. Guarda la entrega, los nombres/cargos originales, la empresa y los productos/cantidades/unidades/ubicaciones de ese momento. No pide proyecto, dirección, transporte o fotografías, ni abre un PDF automáticamente.
+Supabase vuelve a leer la identidad de la sesión, el trabajador y los productos. No acepta nombres/cargos de remitente o destinatario enviados por el navegador. Genera un código INT-AAAAMMDD-NNN con consecutivo anual propio y creciente, independiente de las remisiones. Guarda la entrega, los nombres/cargos originales, la empresa y los productos/cantidades/unidades/ubicaciones de ese momento. El proyecto es opcional; no pide dirección, transporte o fotografías, ni abre un PDF automáticamente.
+
+## Convertir una salida temporal en permanente
+
+Historial, Materiales sin regresar y la vista del comprobante PDF ofrecen Convertir en permanente para salidas temporales con saldo pendiente. La confirmación explica el descuento. Si se entregaron 6 unidades y regresaron 2, se descuentan solo las 4 pendientes y se libera esa reserva; las 2 devueltas siguen en stock. La entrega original, su tipo, empresa, proyecto, productos y devoluciones se conservan; se añade fecha, actor y cargo de la conversión. El PDF muestra cantidades entregadas, devueltas y permanentes, sin presentarlas como pendientes. No se ofrece conversión inversa ni devolución de cantidades permanentes. Una salida completamente devuelta no se convierte.
+
+Las permanentes se conservan en Historial y generan movimientos SALIDA identificados con su código INT, sin crear remisiones externas. La conversión usa una solicitud persistida por cuenta; si se pierde la respuesta, Reintentar conversión confirma el mismo cambio aunque haya desaparecido de pendientes, sin descontar dos veces. Mientras una devolución del mismo documento esté por confirmar, debe reintentarse antes de convertir.
 
 ## Materiales sin regresar y devoluciones
 
 En Salidas internas, Materiales sin regresar muestra las entregas pendientes o parciales, quién recibió, lo entregado, lo devuelto y lo pendiente por producto. Registrar devolución permite escribir cantidades parciales o elegir Devolver todo lo pendiente. No permite devolver más de lo entregado ni materiales de otra salida.
 
-Cada devolución registra fecha, responsable de la sesión y cantidades. Los estados son Pendiente de devolución, Devolución parcial y Devuelta. Historial muestra todas las entregas con búsqueda y páginas de 20; también se consulta desde Historial → Salidas internas y devoluciones, incluidas las cuentas de consulta. Los lectores no pueden registrar entregas, devoluciones ni cambios de personal.
+Cada devolución registra fecha, responsable de la sesión y cantidades. Los estados temporales son Pendiente de devolución, Devolución parcial y Devuelta; las permanentes muestran Salida permanente y quedan fuera de pendientes. Historial muestra todas las entregas con búsqueda y páginas de 20; también se consulta desde Historial → Salidas internas y devoluciones, incluidas las cuentas de consulta. Los lectores no pueden registrar entregas, devoluciones ni cambios de personal.
 
 ## Inventario y disponibilidad
 
-Los materiales continúan dentro de las instalaciones: el préstamo no reduce cantidad ni valor total del inventario. Se reserva cantidad_prestada en cada producto y la disponibilidad resta unidades dañadas y prestadas, sin bajar de cero. Los préstamos no pueden despacharse otra vez, ni en salidas externas ni internas. La devolución libera esa reserva, conservando el stock total. La ficha muestra En uso interno cuando corresponde; las cifras disponibles excluyen préstamos.
+En las salidas temporales, los materiales continúan dentro de las instalaciones: el préstamo no reduce cantidad ni valor total del inventario. Se reserva cantidad_prestada en cada producto y la disponibilidad resta unidades dañadas y prestadas, sin bajar de cero. Los préstamos no pueden despacharse otra vez, ni en salidas externas ni internas. La devolución libera esa reserva, conservando el stock total. La ficha muestra En uso interno cuando corresponde; las cifras disponibles excluyen préstamos.
 
 Entradas y ajustes siguen funcionando. Un ajuste no puede dejar el total por debajo de lo prestado. Mientras haya préstamos pendientes, el producto no puede archivarse, eliminarse ni cambiar de unidad. Puede corregirse su nombre, ubicación y demás datos permitidos sin reescribir las entregas originales. Al terminar todas las devoluciones, se recuperan las operaciones habituales; si después se elimina un producto archivado, sus comprobantes conservan la copia original.
 
@@ -35,7 +42,7 @@ Se conservan las reglas de daño: MALO, EN REPARACIÓN y PARA REPARAR no tienen 
 
 ## PDF opcional
 
-Ver / Guardar PDF abre un comprobante de salida interna, separado de las remisiones. Incluye logo y empresa originales, fecha/código de entrega, remitente/destinatario y sus cargos, materiales, cantidades entregadas/devueltas/pendientes y registro de devoluciones consultado. No se suman cantidades de unidades distintas.
+El comprobante incluye proyecto de destino (o Sin proyecto), tipo actual y registro de conversión cuando exista. Ver / Guardar PDF abre un comprobante de salida interna, separado de las remisiones. Incluye logo y empresa originales, fecha/código de entrega, remitente/destinatario y sus cargos, materiales, cantidades entregadas/devueltas/pendientes y registro de devoluciones consultado. No se suman cantidades de unidades distintas.
 
 La vista previa conserva su copia mientras se imprime, aunque cambie la información actual. Reabrir el comprobante consulta los nuevos avances de devolución y conserva la entrega original. Usa el visor A4 y la paginación por alturas medidas, con Ajustar, 100 % e Imprimir / Guardar PDF. Para descargarlo se elige Guardar como PDF en el diálogo de impresión del dispositivo.
 
@@ -43,7 +50,9 @@ La vista previa conserva su copia mientras se imprime, aunque cambie la informac
 
 El usuario ejecuta completo [20261029000600_internal_dispatches.sql](../supabase/migrations/20261029000600_internal_dispatches.sql) desde SQL Editor de su cuenta, después de las migraciones existentes de seguridad, catálogos, niveles y empresa. Incluye la protección por estados dañados de la migración 005 y añade el descuento de préstamos a las salidas externas.
 
-El archivo añade tablas de personal, entregas, líneas y devoluciones, con RLS y lectura para admin/operador/consulta. Las escrituras se hacen exclusivamente mediante RPC con permisos; solo administración gestiona personal. Contadores y solicitudes se mantienen privados sin acceso directo del frontend. La columna de reservas empieza en cero y no se concede su edición manual. La migración es repetible, no importa datos ni crea préstamos o trabajadores de ejemplo, no cambia stock total ni remisiones/movimientos anteriores. El historial interno utiliza su propio registro; no simula salidas externas ni ajustes.
+Después se ejecuta completo [20261106000100_internal_dispatch_types_projects.sql](../supabase/migrations/20261106000100_internal_dispatch_types_projects.sql) para habilitar proyecto, tipo y conversión. Conserva las salidas anteriores como temporales, sin inventar proyectos ni descontar cantidades. Mantiene la RPC anterior para solicitudes inciertas antiguas y agrega una RPC versionada para nuevos registros. Valida el proyecto activo en la base y guarda su copia; desactivarlo o renombrarlo después no cambia la entrega. No se reejecuta la migración 006 después de esta actualización, porque sustituiría funciones nuevas.
+
+El archivo inicial añade tablas de personal, entregas, líneas y devoluciones, con RLS y lectura para admin/operador/consulta. Las escrituras se hacen exclusivamente mediante RPC con permisos; solo administración gestiona personal. Contadores y solicitudes se mantienen privados sin acceso directo del frontend. La columna de reservas empieza en cero y no se concede su edición manual. La migración es repetible, no importa datos ni crea préstamos o trabajadores de ejemplo, no cambia stock total ni remisiones/movimientos anteriores; la actualización de tipos tampoco convierte datos por sí sola. Las nuevas permanentes y conversiones sí descuentan stock en una transacción. El historial interno utiliza su propio registro; las permanentes también generan movimientos SALIDA sin remisión externa.
 
 Si falta la migración, la aplicación mantiene disponibles las funciones anteriores y muestra el archivo que debe activarse al acceder a Personal o internas. Las nuevas lecturas no bloquean el arranque. Las listas se actualizan después de las escrituras, al recuperar el foco y periódicamente mientras están visibles; la disponibilidad conserva la actualización de productos existente.
 
@@ -54,6 +63,8 @@ Entregas, devoluciones y personal usan UUID por intención y serialización en S
 Los préstamos por confirmar bloquean el carrito y el cambio a salidas externas. Las devoluciones por confirmar siguen accesibles con Reintentar devolución aunque su entrega ya haya desaparecido de pendientes. Las solicitudes comprueban actor, operación y datos; otra cuenta no puede reutilizarlas. Repetir una entrega o devolución confirmada devuelve el estado actual de esa entrega y nunca vuelve a reservar o liberar unidades. Fallar al actualizar la pantalla después de una escritura confirmada no convierte esa escritura en una operación fallida.
 
 ## Verificación
+
+Verificación del 6 de noviembre: pnpm typecheck, pnpm lint, pnpm test (227 unitarias/DOM y 68 de integración: 295) y pnpm build correctos con Node 22.23.3 y pnpm 11.19.0. Las pruebas nuevas comprueban proyecto por copia, temporal por defecto, permanentes sin reserva ni devolución, conversión de saldo parcial, movimientos y protección de otros préstamos, permisos/RLS, reintentos y compatibilidad de solicitudes anteriores, eliminación posterior y rollback completo si una partida falla. La migración se probó de forma repetida en PGlite; no se ejecutó en Supabase real. No se usó automatización de navegador; geometría móvil/tablet/PC, impresión física y concurrencia real quedan para revisión del usuario.
 
 Pruebas unitarias y DOM cubren disponibilidad sin reducir stock/valor, validación de cantidades, selección de personal y carrito, cargos automáticos, errores y doble envío, solicitudes inciertas/recarga, devoluciones parciales, editor de personal y contenido del PDF. Las pruebas de PGlite comprueban permisos y RLS, migración repetible, atomicidad, disponibilidad compartida con externas, reservas/devoluciones, protección de archivado/unidad, snapshots, versiones de personal, reintentos entre usuarios, paginación y 1001 productos en una entrega y devolución.
 

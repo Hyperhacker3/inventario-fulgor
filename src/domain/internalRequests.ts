@@ -32,11 +32,13 @@ export function loadInternalJobs(key: string): InternalJobs {
     const parsed: unknown = JSON.parse(localStorage.getItem(key) || '{}');
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
     return Object.fromEntries(Object.entries(parsed).filter(([name, job]) => {
-      if (!/^(issue|return:.+|staff:.+)$/.test(name) || !job || typeof job.id !== 'string' || !/^[0-9a-f-]{36}$/i.test(job.id)
+      if (!/^(issue|return:.+|permanent:.+|staff:.+)$/.test(name) || !job || typeof job.id !== 'string' || !/^[0-9a-f-]{36}$/i.test(job.id)
         || !job.payload || typeof job.payload !== 'object' || Array.isArray(job.payload)) return false;
       const payload=job.payload;
       if(name.startsWith('staff:')) return typeof payload.nombre==='string' && typeof payload.cargo==='string' && typeof payload.activo==='boolean' && Number.isInteger(payload.version);
       if(name==='issue' && (typeof payload.personalId!=='string'||!payload.personalId)) return false;
+      if(name.startsWith('permanent:'))return payload.salidaId===name.slice(10);
+      if(name==='issue' && (payload.tipo!==undefined && !['TEMPORAL','PERMANENTE'].includes(payload.tipo) || payload.proyectoId!=null && typeof payload.proyectoId!=='string')) return false;
       if(name.startsWith('return:') && payload.salidaId!==name.slice(7)) return false;
       try{if(!Array.isArray(payload.items))return false;validateInternalAmounts(payload.items as InternalAmounts[]);return true;}catch{return false;}
     }));

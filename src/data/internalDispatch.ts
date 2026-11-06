@@ -2,7 +2,7 @@ import { requireSupabase } from '../lib/supabase';
 import { rpc, unwrap } from './repository';
 import type { InternalDispatch, StaffMember } from '../domain/internalDispatch';
 
-export const INTERNAL_ACTIVATION = 'Falta activar Personal y Salidas internas. Ejecute 20261029000600_internal_dispatches.sql en Supabase y vuelva a intentar.';
+export const INTERNAL_ACTIVATION = 'Falta activar una actualización de Salidas internas. Ejecute 20261029000600_internal_dispatches.sql y después 20261106000100_internal_dispatch_types_projects.sql en Supabase.';
 export async function internalRpc<T>(name: string, values: Record<string, unknown>): Promise<T> {
   try { return await rpc<T>(name, values); }
   catch (cause) {

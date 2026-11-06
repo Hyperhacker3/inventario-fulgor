@@ -14,7 +14,7 @@ export function InternalIssueForm({enabled=true}:{enabled?:boolean}) {
   const inventory=useInventory(),staff=useStaff(enabled);
   return <InternalIssueContent inventory={inventory} staff={staff} search={<AvailableInventory idPrefix="internal-"/>}/>;
 }
-type IssueInventory=Pick<ReturnType<typeof useInventory>,'user'|'internalJobs'|'internalRecipient'|'setInternalRecipient'|'dispatchCart'|'elementos'|'issueInternal'|'clearDispatchCart'|'openItemDetail'|'updateDispatchCartQuantity'|'removeFromDispatchCart'>;
+type IssueInventory=Pick<ReturnType<typeof useInventory>,'user'|'internalJobs'|'internalRecipient'|'setInternalRecipient'|'internalProject'|'setInternalProject'|'internalType'|'setInternalType'|'proyectos'|'dispatchCart'|'elementos'|'issueInternal'|'clearDispatchCart'|'openItemDetail'|'updateDispatchCartQuantity'|'removeFromDispatchCart'>;
 export function InternalIssueContent({inventory,staff,search}:{inventory:IssueInventory;staff:{data?:StaffMember[];isError:boolean;error:unknown;refetch:()=>unknown};search:ReactNode}) {
   const saving=useRef(false);
   const {ref,onInvalidCapture,revealError,scrollToStart}=useFormScroll();
@@ -23,23 +23,35 @@ export function InternalIssueContent({inventory,staff,search}:{inventory:IssueIn
   const recipient=payload?.personalId || inventory.internalRecipient;
   const worker=staff.data?.find(row=>row.id===recipient);
   const frozen=!!job;
+  const tipo=payload ? payload.tipo || 'TEMPORAL' : inventory.internalType;
+  const project=payload ? payload.proyectoId || '' : inventory.internalProject;
   const submit=async(event:FormEvent)=>{
     event.preventDefault();if(saving.current)return;setError('');setMessage('');
     try{
       if(!job)validateDispatch(inventory.dispatchCart,inventory.elementos);
       saving.current=true;setBusy(true);
-      const loan=await inventory.issueInternal(payload || {personalId:recipient,items:inventory.dispatchCart.map(row=>({elementoId:row.elemento.id,cantidad:row.cantidad}))});
-      setMessage(`Salida ${loan.codigo} confirmada. Consulte su estado en Materiales sin regresar o Historial.`);scrollToStart();
+      const loan=await inventory.issueInternal(payload || {personalId:recipient,tipo,proyectoId:project || null,items:inventory.dispatchCart.map(row=>({elementoId:row.elemento.id,cantidad:row.cantidad}))});
+      inventory.setInternalType('TEMPORAL');
+      setMessage(`Salida ${loan.codigo} confirmada. ${loan.estado==='PERMANENTE'?'Las cantidades se descontaron del stock. Consulte el comprobante en Historial.':'Consulte su estado en Materiales sin regresar o Historial.'}`);scrollToStart();
     }catch(cause){setError(errorMessage(cause));revealError();}finally{saving.current=false;setBusy(false);}
   };
   return <div ref={ref} onInvalidCapture={onInvalidCapture} className="space-y-5">
-    <p className="text-sm text-slate-600">Materiales para usar dentro de las instalaciones y devolver a la bodega. Comparten la selección de productos con las salidas externas.</p>
+    <p className="text-sm text-slate-600">Seleccione una salida temporal si los materiales regresarán, o permanente si deben descontarse del stock. Comparten la selección de productos con las salidas externas.</p>
     {error && <p role="alert" className="text-red-700">{error}</p>}{message && <p role="status" className="text-green-700">{message}</p>}
     {staff.isError && <div role="alert" className="space-y-2"><p>{errorMessage(staff.error)}</p><button type="button" onClick={()=>{void staff.refetch();}} className="rounded-xl px-4 py-2">Comprobar de nuevo</button></div>}
     {frozen && <p role="status" className="text-sm">Hay una salida por confirmar. Reintente el registro original; sus materiales y destinatario se conservan.</p>}
     <fieldset disabled={busy||frozen} className="min-w-0">{search}</fieldset>
     <form onSubmit={submit} aria-busy={busy} className="rounded-2xl bg-white p-4 sm:p-6 space-y-5">
       <fieldset disabled={busy||frozen} className="min-w-0 space-y-5">
+        <div className="grid sm:grid-cols-2 gap-5">
+          <label className="block text-sm font-semibold space-y-2" htmlFor="internal-type"><span>TIPO DE SALIDA</span>
+            <Select id="internal-type" value={tipo} onChange={e=>inventory.setInternalType(e.target.value as 'TEMPORAL'|'PERMANENTE')} className="w-full rounded-xl px-3 py-2"><option value="TEMPORAL">Salida temporal</option><option value="PERMANENTE">Salida permanente</option></Select>
+          </label>
+          <label className="block text-sm font-semibold space-y-2" htmlFor="internal-project"><span>PROYECTO DE DESTINO (OPCIONAL)</span>
+            <Select id="internal-project" value={project} onChange={e=>inventory.setInternalProject(e.target.value)} className="w-full rounded-xl px-3 py-2"><option value="">Sin proyecto</option>{inventory.proyectos.filter(row=>row.estado==='ACTIVO'||row.id===project).map(row=><option key={row.id} value={row.id} disabled={row.estado!=='ACTIVO'}>{row.nombre}</option>)}</Select>
+          </label>
+        </div>
+        <p className="text-sm">{tipo==='PERMANENTE'?'Al confirmar, las cantidades se descontarán del stock y no requerirán devolución.':'Se reservan las unidades disponibles hasta que regresen a la bodega. Después puede convertir lo pendiente en salida permanente.'}</p>
         <div className="grid sm:grid-cols-2 gap-5">
           <section className="min-w-0 space-y-3"><h3 className="font-bold text-sm">ENTREGA</h3><p className="break-words">{inventory.user.name}</p><p className="text-sm text-slate-500 break-words">{displayCargo(inventory.user)}</p></section>
           <div className="min-w-0 space-y-3"><label className="block text-sm font-semibold" htmlFor="internal-recipient">RECIBE</label>

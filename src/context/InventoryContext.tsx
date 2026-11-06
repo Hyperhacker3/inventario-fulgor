@@ -40,6 +40,8 @@ function useInventoryValue() {
   const [externalDispatchPending, setExternalDispatchPending] = useState(false);
   const [internalTab, setInternalTab] = useState<'new' | 'pending' | 'history'>('new');
   const [internalRecipient, setInternalRecipient] = useState('');
+  const [internalProject, setInternalProject] = useState('');
+  const [internalType, setInternalType] = useState<'TEMPORAL' | 'PERMANENTE'>('TEMPORAL');
   const [globalSearch, setGlobalSearch] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [selectedRemisionForPdf, setSelectedRemisionForPdf] = useState<Remision | null>(null);
@@ -152,7 +154,7 @@ function useInventoryValue() {
     quickMovementType, isHelpModalOpen, globalSearch, isCloudConnected: data.isCloudConnected,
     dispatchSelection, dispatchSelectionItem, closeDispatchSelection, dispatchFeedback,
     explorerState, setExplorerState, openLocationInventory,
-    externalDispatchPending, setExternalDispatchPending, dispatchMode, setDispatchMode, internalTab, setInternalTab, internalRecipient, setInternalRecipient, cartLocked, ...internalOperations,
+    externalDispatchPending, setExternalDispatchPending, dispatchMode, setDispatchMode, internalTab, setInternalTab, internalRecipient, setInternalRecipient, internalProject, setInternalProject, internalType, setInternalType, cartLocked, ...internalOperations,
     syncStatus: data.syncStatus, setActiveView, setGlobalSearch, openItemDetail, closeItemDetail,
     startupStatus: combinedInitialStatus(data.initialLoadStatus, catalogs.catalogLoadStatus),
     retryInitialLoad: () => Promise.allSettled([

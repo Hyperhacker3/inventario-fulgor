@@ -1781,3 +1781,77 @@ test('internal history paginates all issues and pending returns without truncati
   const done=(await db.query(returnSql,[internalId(151),large.id,JSON.stringify(lines)])).rows[0].row;assert.equal(done.estado,'DEVUELTA');assert.equal(done.devoluciones[0].items.length,1001);
  }finally{await db.close();}
 });
+
+
+const internalTypesMigration=fs.readFileSync(new URL('../../supabase/migrations/20261106000100_internal_dispatch_types_projects.sql',import.meta.url),'utf8');
+const issueV2Sql='SELECT public.create_internal_dispatch_v2($1::uuid,$2::uuid,$3::jsonb,$4,$5) AS row';
+const permanentSql='SELECT public.make_internal_dispatch_permanent($1::uuid,$2::uuid) AS row';
+const internalList=async(db,pending=false,search='')=>(await db.query('SELECT public.list_internal_dispatches(1,$1,$2) AS row',[pending,search])).rows[0].row;
+
+test('internal types upgrade preserves old loans and retries, snapshots project destination, defaults temporary and validates current projects',async()=>{
+ const db=await internalDatabase();try{
+  const person=await worker(db);await role(db,'operador');
+  const old=(await db.query(issueSql,[internalId(201),person.id,loanItems(1)])).rows[0].row;
+  const stock=await itemStock(db);await asOwner(db);await db.exec(internalTypesMigration);await db.exec(internalTypesMigration);
+  assert.equal(await itemStock(db),stock);await role(db,'operador');
+  const resumed=(await db.query(issueSql,[internalId(201),person.id,loanItems(1)])).rows[0].row;
+  assert.equal(resumed.tipo,'TEMPORAL');assert.equal(resumed.proyecto,null);assert.equal(resumed.items[0].pendiente,1);assert.equal(resumed.codigo,old.codigo);
+  const automatic=(await db.query('SELECT public.create_internal_dispatch_v2($1::uuid,$2::uuid,$3::jsonb) AS row',[internalId(202),person.id,loanItems(1)])).rows[0].row;
+  assert.equal(automatic.tipo,'TEMPORAL');assert.equal(automatic.tipo_original,'TEMPORAL');
+  const args=[internalId(203),person.id,loanItems(1),'TEMPORAL','PROY-001'];
+  const loan=(await db.query(issueV2Sql,args)).rows[0].row;assert.equal(loan.proyecto.id,'PROY-001');
+  await asOwner(db);await db.exec("UPDATE public.proyectos SET nombre='Nombre posterior',estado='FINALIZADO' WHERE id='PROY-001'");
+  await role(db,'operador');assert.deepEqual((await db.query(issueV2Sql,args)).rows[0].row,loan);
+  await assert.rejects(()=>db.query(issueV2Sql,[internalId(204),person.id,loanItems(1),'TEMPORAL','PROY-001']),/Proyecto.*no disponible/);
+  await assert.rejects(()=>db.query(issueV2Sql,[internalId(205),person.id,loanItems(1),'OTRO',null]),/temporal o permanente/);
+  assert.equal((await internalList(db,false,loan.proyecto.nombre)).total,1);
+  const done=(await db.query(returnSql,[internalId(206),old.id,loanItems(1)])).rows[0].row;assert.equal(done.estado,'DEVUELTA');
+ }finally{await db.close();}
+});
+
+test('direct permanent internal dispatch deducts stock once, protects other loans and excludes permanent materials from pending returns',async()=>{
+ const db=await internalDatabase();try{
+  const person=await worker(db);await asOwner(db);await db.exec(internalTypesMigration);await db.exec("UPDATE public.elementos SET cantidad=10,cantidad_danados=1 WHERE id='ELM-001'");
+  await role(db,'operador');const temporary=(await db.query(issueV2Sql,[internalId(210),person.id,loanItems(6),'TEMPORAL',null])).rows[0].row;
+  await assert.rejects(()=>db.query(issueV2Sql,[internalId(211),person.id,loanItems(4),'PERMANENTE','PROY-001']),/Stock no disponible/);
+  const args=[internalId(212),person.id,loanItems(3),'PERMANENTE','PROY-001'];const issued=(await db.query(issueV2Sql,args)).rows[0].row;
+  assert.equal(issued.estado,'PERMANENTE');assert.equal(issued.tipo_original,'PERMANENTE');assert.equal(issued.items[0].pendiente,0);assert.equal(issued.items[0].permanente,3);
+  assert.equal(await itemStock(db),7);assert.equal(Number((await db.query("SELECT cantidad_prestada FROM public.elementos WHERE id='ELM-001'")).rows[0].cantidad_prestada),6);
+  assert.deepEqual((await db.query(issueV2Sql,args)).rows[0].row,issued);assert.equal(await itemStock(db),7);
+  const list=await internalList(db,true);assert.equal(list.pending,1);assert.deepEqual(list.rows.map(row=>row.id),[temporary.id]);
+  await assert.rejects(()=>db.query(returnSql,[internalId(213),issued.id,loanItems(1)]),/permanente no admite/);
+  await assert.rejects(()=>db.query(permanentSql,[internalId(214),issued.id]),/ya es permanente/);
+  await asOwner(db);assert.equal((await db.query('SELECT count(*) AS n FROM public.remisiones')).rows[0].n,0);
+  const moves=(await db.query("SELECT cantidad,stock_anterior,stock_nuevo,proyecto_nombre FROM public.historial WHERE motivo LIKE 'Salida interna permanente %'")).rows;
+  assert.equal(moves.length,1);assert.equal(Number(moves[0].cantidad),3);assert.equal(Number(moves[0].stock_anterior),10);assert.equal(Number(moves[0].stock_nuevo),7);assert.equal(moves[0].proyecto_nombre,issued.proyecto.nombre);
+  await role(db,'consulta');await assert.rejects(()=>db.query(issueV2Sql,[internalId(215),person.id,loanItems(1),'PERMANENTE',null]),/No autorizado/);
+  await assert.rejects(()=>db.query(permanentSql,[internalId(216),temporary.id]),/No autorizado/);
+  await assert.rejects(()=>db.exec('SELECT public.internal_permanent_stock(NULL,NULL,1,false)'),/permission denied/);
+ }finally{await db.close();}
+});
+
+test('converting partial temporary loans deducts only outstanding units atomically, keeps previous returns and safely replays lost responses',async()=>{
+ const db=await internalDatabase();try{
+  const person=await worker(db);await asOwner(db);await db.exec(internalTypesMigration);await db.exec("UPDATE public.elementos SET cantidad=10,cantidad_danados=0 WHERE id IN ('ELM-001','ELM-002')");
+  await role(db,'operador');const loan=(await db.query(issueV2Sql,[internalId(220),person.id,loanItems(6),'TEMPORAL','PROY-001'])).rows[0].row;
+  const returned=(await db.query(returnSql,[internalId(221),loan.id,loanItems(2)])).rows[0].row;
+  const args=[internalId(222),loan.id];const converted=(await db.query(permanentSql,args)).rows[0].row;
+  assert.equal(converted.tipo_original,'TEMPORAL');assert.equal(converted.estado,'PERMANENTE');assert.equal(converted.items[0].devuelta,2);assert.equal(converted.items[0].permanente,4);assert.equal(converted.items[0].pendiente,0);
+  assert.deepEqual(converted.devoluciones,returned.devoluciones);assert.equal(converted.conversion.registrado_por,'OPERADOR DE PRUEBA');assert.equal(converted.items[0].nombre,loan.items[0].nombre);assert.deepEqual(converted.proyecto,loan.proyecto);
+  assert.equal(await itemStock(db),6);assert.equal(Number((await db.query("SELECT cantidad_prestada FROM public.elementos WHERE id='ELM-001'")).rows[0].cantidad_prestada),0);
+  assert.deepEqual((await db.query(permanentSql,args)).rows[0].row,converted);assert.equal(await itemStock(db),6);
+  assert.equal((await db.query(returnSql,[internalId(221),loan.id,loanItems(2)])).rows[0].row.estado,'PERMANENTE');
+  assert.equal((await db.query(issueV2Sql,[internalId(220),person.id,loanItems(6),'TEMPORAL','PROY-001'])).rows[0].row.estado,'PERMANENTE');
+  assert.equal((await internalList(db,true)).total,0);
+  await assert.rejects(()=>db.query(returnSql,[internalId(223),loan.id,loanItems(1)]),/permanente no admite/);
+  await assert.rejects(()=>db.query(permanentSql,[internalId(222),'00000000-0000-0000-0000-000000000099']),/otros datos/);
+  const multiple=JSON.stringify([{elementoId:'ELM-001',cantidad:1},{elementoId:'ELM-002',cantidad:3}]);
+  const pending=(await db.query(issueV2Sql,[internalId(224),person.id,multiple,'TEMPORAL',null])).rows[0].row;
+  await asOwner(db);await db.exec("UPDATE public.elementos SET cantidad_danados=8 WHERE id='ELM-002'");await role(db,'operador');
+  await assert.rejects(()=>db.query(permanentSql,[internalId(225),pending.id]),/Revise existencias y daños/);
+  assert.equal(await itemStock(db),6);assert.equal(Number((await db.query("SELECT cantidad_prestada FROM public.elementos WHERE id='ELM-001'")).rows[0].cantidad_prestada),1);assert.equal((await getInternal(db,pending.id)).estado,'PENDIENTE');
+  await db.query(returnSql,[internalId(226),pending.id,multiple]);await assert.rejects(()=>db.query(permanentSql,[internalId(227),pending.id]),/no tiene materiales pendientes/);
+  await asOwner(db);await db.exec("UPDATE public.elementos SET archived=true WHERE id='ELM-001';DELETE FROM public.elementos WHERE id='ELM-001'");await role(db,'consulta');
+  assert.equal((await getInternal(db,loan.id)).items[0].permanente,4);
+ }finally{await db.close();}
+});
