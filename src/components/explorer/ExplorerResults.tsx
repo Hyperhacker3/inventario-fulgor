@@ -3,7 +3,7 @@ import { useInventory } from '../../context/InventoryContext';
 import { ItemImage } from '../ItemImage';
 import { isDemo } from '../../lib/supabase';
 import { available } from '../../domain/inventory';
-import { damagedQuantity, normalizeItemCondition } from '../../domain/itemCondition';
+import { normalizeItemCondition } from '../../domain/itemCondition';
 import { itemPhotos } from '../../domain/photos';
 import { uppercaseName } from '../../shared/uppercase';
 import { openProductSurface } from '../../shared/productInteraction';
@@ -131,13 +131,6 @@ export function ExplorerResultsContent({ items, mode, inventory, selection }: { 
                         <dt>CÓDIGO</dt><dd className="min-w-0 break-words font-mono-code">{item.codigo?.trim() || 'Sin especificar'}</dd>
                         <dt>UBICACIÓN</dt><dd className="min-w-0 break-words">{getAlmacenById(item.almacenId)?.nombre?.trim() || 'Sin especificar'}</dd>
                       </dl>
-                      {damagedQuantity(item) > 0 && <div className="flex items-center gap-1.5 flex-wrap">
-                        {damagedQuantity(item) > 0 && (
-                          <span className="text-[10px] font-bold text-[#c5221f] bg-[#fce8e6] px-1.5 py-0.5 rounded border border-[#ffdad6]" title={`${damagedQuantity(item)} unidades contabilizadas con daño`}>
-                            {damagedQuantity(item)} dañados
-                          </span>
-                        )}
-                      </div>}
 
                     </div>
                   </article>

@@ -6,7 +6,7 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 
 ## Inicio y notificaciones
 
-- Consulte el resumen de existencias, valores del inventario, material dañado y proyectos. Productos para reparar cuenta las referencias activas etiquetadas PARA REPARAR, de forma independiente de EN REPARACIÓN. MALO, EN REPARACIÓN y PARA REPARAR contabilizan todo el stock del producto como dañado. REGULAR y RETAZOS conservan el daño parcial declarado. No se suman dos veces las unidades ni se modifica el stock guardado. Los conteos pendientes se excluyen de unidades y valores hasta verificarlos; los precios sin definir siguen valiendo 0. La campana reúne alertas de stock agotado o por debajo del mínimo configurado.
+- Consulte el resumen de existencias, valores del inventario, material dañado y proyectos. Productos para reparar cuenta las referencias activas etiquetadas PARA REPARAR, de forma independiente de EN REPARACIÓN. Los indicadores de material dañado en Inicio y Almacenes se calculan únicamente según la etiqueta de estado (MALO, EN REPARACIÓN o PARA REPARAR), sin contar unidades dañadas por aparte ni restarlas del stock disponible. Los conteos pendientes se excluyen de unidades y valores hasta verificarlos; los precios sin definir siguen valiendo 0. La campana reúne alertas de stock agotado o por debajo del mínimo configurado.
 
 - Toque una alerta para abrir el producto. Ver más permite consultar todas las alertas; los nombres largos se muestran completos.
 
@@ -34,7 +34,7 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 
 - Las cinco acciones son Editar (lápiz azul), Entrada (verde), Ajuste (amarillo), Agregar a la salida (rojo) y Archivar (violeta), según permisos. El botón permanece hundido mientras su ventana está abierta.
 
-- Editar abre una ventana encima de la ficha. Guardar, cancelar o cerrar vuelve al detalle conservando su posición. Puede cambiar o crear la categoría, y crear estanterías, niveles y cajas; cambiar una ubicación superior limpia las selecciones dependientes. PARA REPARAR se elige manualmente para las herramientas que lo necesiten; es distinto de EN REPARACIÓN. En esos estados y en MALO, Unidades dañadas muestra el stock completo automáticamente.
+- Editar abre una ventana encima de la ficha. Guardar, cancelar o cerrar vuelve al detalle conservando su posición. Puede cambiar o crear la categoría, y crear estanterías, niveles y cajas; cambiar una ubicación superior limpia las selecciones dependientes. PARA REPARAR se elige manualmente para las herramientas que lo necesiten; es distinto de EN REPARACIÓN. Las etiquetas de estado no restan unidades del stock disponible.
 
 - En edición, Unidad de medida permite corregir cómo se registra el producto. El cambio conserva las cantidades y no convierte pesos ni precios; las etiquetas de peso y valor usan la unidad elegida. Las remisiones e informes anteriores conservan sus datos.
 

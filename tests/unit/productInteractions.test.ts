@@ -30,7 +30,7 @@ const product = (host: HTMLElement, item: Elemento) => host.querySelector<HTMLEl
 const cart = (surface: HTMLElement) => [...surface.querySelectorAll<HTMLButtonElement>('button')]
   .find(button => /add_shopping_cart|shopping_cart_checkout/.test(button.textContent!))!;
 
-test('grid conditions appear on the image opposite stock, normalize legacy labels and keep damaged counts', async () => {
+test('grid conditions appear on the image opposite stock, normalize legacy labels and count full stock without separate damaged badges', async () => {
   const products = ['OBSOLETO', 'REGULAR', 'EN REPARACIÓN', 'RETAL', 'BUENO'].map((estado, index) => ({
     ...items[0], id: `condition-${index}`, estado, cantidadDanados: 1,
   }));
@@ -42,10 +42,10 @@ test('grid conditions appear on the image opposite stock, normalize legacy label
       else {
         assert.equal(badge!.textContent, ['MALO', 'REGULAR', 'EN REPARACIÓN', 'RETAZOS'][index]);
         assert.ok(image.contains(badge)); assert.equal(content.contains(badge), false);
-        assert.match(badge!.parentElement!.parentElement!.textContent!, index === 0 || index === 2 ? /0 DISP/ : /11 DISP/);
+        assert.match(badge!.parentElement!.parentElement!.textContent!, /12 DISP/);
         await click(badge!); assert.equal(opened.at(-1), item);
       }
-      assert.match(content.textContent!, index === 0 || index === 2 ? /12 dañados/ : /1 dañados/); assert.equal(cart(surface).disabled, index === 0 || index === 2);
+      assert.doesNotMatch(content.textContent!, /dañados/); assert.equal(cart(surface).disabled, false);
     }
   }, products);
 });
@@ -111,7 +111,7 @@ for (const mode of ['list', 'grid'] as const) {
   });
 
   test(`${mode}: disabled dispatch controls cannot add unavailable stock or accidentally open details`, async () => {
-    const unavailable = [{ ...items[0], cantidad: 0 }, { ...items[1], cantidadDanados: items[1].cantidad }];
+    const unavailable = [{ ...items[0], cantidad: 0 }, { ...items[1], cantidadPrestada: items[1].cantidad }];
     await withResults(mode, async (host, opened, dispatched) => {
       for (const item of unavailable) {
         const surface = product(host, item), button = cart(surface);

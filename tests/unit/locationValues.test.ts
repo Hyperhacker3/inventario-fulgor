@@ -15,27 +15,27 @@ const cajas = [mapCaja({ id: 'b1', codigo: 'Caja Norte', estanteria_id: 'r1' }),
 const product = (id: string, cantidad: number, price: number, extra = {}) => mapElemento({ id, nombre: id, cantidad,
   almacen_id: 'w1', estanteria_id: 'r1', caja_id: 'b1', especificaciones: { valor_unitario_cop: price }, ...extra });
 const elementos = [
-  product('boxed', 10, 100, { cantidad_danados: 2 }),
-  product('rack only', 2.5, 50, { caja_id: null, cantidad_danados: 0.5 }),
+  product('boxed', 10, 100, { estado: 'BUENO', cantidad_danados: 2 }),
+  product('rack only', 2.5, 50, { caja_id: null, estado: 'MALO' }),
   product('warehouse only', 3, 10, { estanteria_id: null, caja_id: null }),
-  product('south', 2, 300, { almacen_id: 'w2', estanteria_id: 'r2', caja_id: null, cantidad_danados: 1 }),
+  product('south', 2, 300, { almacen_id: 'w2', estanteria_id: 'r2', caja_id: null, estado: 'PARA REPARAR' }),
   product('no location', 1, 99, { almacen_id: null, estanteria_id: null, caja_id: null }),
   product('archived', 999, 999, { archived: true }), product('pending', 999, 999, { stock_pendiente: true }),
 ];
 
 test('location values include each product once per level, preserve unassigned stock and match dashboard amounts', () => {
   const values = inventoryLocationValues(elementos);
-  assert.deepEqual(values.warehouses.get('w1'), { total: 1155, damaged: 225 });
-  assert.deepEqual(values.warehouses.get('w2'), { total: 600, damaged: 300 });
-  assert.deepEqual(values.racks.get('r1'), { total: 1125, damaged: 225 });
-  assert.deepEqual(values.boxes.get('b1'), { total: 1000, damaged: 200 });
+  assert.deepEqual(values.warehouses.get('w1'), { total: 1155, damaged: 125 });
+  assert.deepEqual(values.warehouses.get('w2'), { total: 600, damaged: 600 });
+  assert.deepEqual(values.racks.get('r1'), { total: 1125, damaged: 125 });
+  assert.deepEqual(values.boxes.get('b1'), { total: 1000, damaged: 0 });
   assert.equal(values.boxes.has('b2'), false);
   assert.equal(values.warehouses.has(''), false);
   const dashboard = inventoryValues(elementos);
   for (const [id, summary] of values.warehouses) assert.equal(summary.total, dashboard.warehouses.get(id));
   assert.equal(dashboard.total, 1854);
-  const capped = inventoryLocationValues([product('fractional', 0.001, 12.34, { cantidad_danados: 2 })]);
-  assert.deepEqual(capped.boxes.get('b1'), { total: 0.01, damaged: 0.01 });
+  const fractional = inventoryLocationValues([product('fractional', 0.001, 12.34, { estado: 'MALO' })]);
+  assert.deepEqual(fractional.boxes.get('b1'), { total: 0.01, damaged: 0.01 });
   assert.equal(inventoryLocationValues([]).warehouses.size, 0);
 });
 
@@ -53,13 +53,13 @@ test('warehouse selection displays the selected total and damaged value plus nes
   const props = { estanterias, niveles: [], cajas, elementos, canAdmin: false, onEditWarehouse() {}, onNewRack() {}, onEditRack() {},
     onNewLevel() {}, onEditLevel() {}, onNewBox() {}, onEditBox() {}, openItemDetail() {} };
   const north = content(renderToStaticMarkup(h(WarehouseTreeContent, { ...props, almacen: almacenes[0] })));
-  assertValues(north.querySelector('section > div')!, 1155, 225);
+  assertValues(north.querySelector('section > div')!, 1155, 125);
   const rack = north.querySelector('article')!;
-  assertValues(rack, 1125, 225);
-  assertValues(rack.querySelector(':scope > div.grid > div')!, 1000, 200);
+  assertValues(rack, 1125, 125);
+  assertValues(rack.querySelector(':scope > div.grid > div')!, 1000, 0);
   assertValues(rack.querySelectorAll(':scope > div.grid > div')[1], 0, 0);
   const south = content(renderToStaticMarkup(h(WarehouseTreeContent, { ...props, almacen: almacenes[1] })));
-  assertValues(south.querySelector('section > div')!, 600, 300);
+  assertValues(south.querySelector('section > div')!, 600, 600);
   assert.equal(south.querySelectorAll('article').length, 1);
 });
 
@@ -73,8 +73,8 @@ test('administration shows compact warehouse cards and financial values for rack
   try {
     await act(() => root.render(h(LocationsManagerContent, { ...props, kind: 'almacen' })));
     assert.equal(host.querySelectorAll('article').length, 2);
-    assertValues(host.querySelector('article')!, 1155, 225);
-    assertValues(host.querySelectorAll('article')[1], 600, 300);
+    assertValues(host.querySelector('article')!, 1155, 125);
+    assertValues(host.querySelectorAll('article')[1], 600, 600);
     assert.match(host.textContent!, /Norte/); assert.match(host.textContent!, /Sur/);
     assert.doesNotMatch(host.textContent!, /Rack Norte|Caja Norte/);
     assert.equal(host.querySelector('button'), null);
@@ -83,10 +83,10 @@ test('administration shows compact warehouse cards and financial values for rack
     assert.ok(createWarehouse); assert.equal(createWarehouse.disabled, false);
     assert.equal([...host.querySelectorAll('article button')].filter(control => control.textContent === 'Editar').length, 2);
     await act(() => root.render(h(LocationsManagerContent, { ...props, kind: 'estanteria' })));
-    assertValues(host.querySelector('article')!, 1125, 225);
-    assertValues(host.querySelectorAll('article')[1], 600, 300);
+    assertValues(host.querySelector('article')!, 1125, 125);
+    assertValues(host.querySelectorAll('article')[1], 600, 600);
     await act(() => root.render(h(LocationsManagerContent, { ...props, kind: 'caja' })));
-    assertValues(host.querySelector('article')!, 1000, 200);
+    assertValues(host.querySelector('article')!, 1000, 0);
     assertValues(host.querySelectorAll('article')[1], 0, 0);
   } finally { await act(() => root.unmount()); host.remove(); }
 });

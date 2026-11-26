@@ -129,7 +129,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
         ...(updates.categoria !== undefined ? { categoria: next.categoria } : {}),
         ...(updates.unidad !== undefined ? { unidad: next.unidad.trim().toUpperCase() } : {}),
         ...itemLocationColumns(updates),
-        foto_url: photo, estado: next.estado, cantidad_danados: next.cantidadDanados ?? 0,
+        foto_url: photo, estado: next.estado,
         especificaciones: { ...next.especificaciones, marca: (next.marca || '').trim(), peso_unitario: next.pesoUnitario ?? null, valor_unitario_cop: next.valorUnitario ?? 0, fotos_adicionales: gallery.additional }, updated_at: isoNow(),
       }, mapElemento);
       applyItemChange(id, saved);

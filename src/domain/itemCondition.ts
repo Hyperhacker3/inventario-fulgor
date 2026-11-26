@@ -23,8 +23,8 @@ export function conditionMarksAllDamaged(condition?: string | null) {
   return ['MALO', 'EN REPARACIÓN', 'PARA REPARAR'].includes(normalizeItemCondition(condition));
 }
 
-/** Authorized rule: damaged/repair conditions apply to the whole current stock, without rewriting its saved count. */
-export function damagedQuantity(item: Pick<Elemento, 'cantidad' | 'cantidadDanados' | 'estado'>) {
+/** Condition-based damage count for dashboard/valuation summaries; never subtracted from available stock. */
+export function damagedQuantity(item: Pick<Elemento, 'cantidad' | 'estado'>) {
   const quantity = Math.max(0, item.cantidad);
-  return conditionMarksAllDamaged(item.estado) ? quantity : Math.min(quantity, Math.max(0, item.cantidadDanados || 0));
+  return conditionMarksAllDamaged(item.estado) ? quantity : 0;
 }

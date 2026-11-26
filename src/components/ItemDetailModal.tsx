@@ -1,6 +1,6 @@
 import { StateIcon } from './ui/StateIcon';
 import { ConfirmDialog } from './ui/ConfirmDialog';
-import { conditionMarksAllDamaged, itemConditionOptions, normalizeItemCondition } from '../domain/itemCondition';
+import { itemConditionOptions, normalizeItemCondition } from '../domain/itemCondition';
 import { Presence } from './ui/Motion';
 import { ItemEditDialog } from './item/ItemEditDialog';
 import { Select } from './ui/Select';
@@ -56,7 +56,6 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   const [photo, setPhoto] = useState(item?.fotoUrl || '');
   const [additionalPhotos, setAdditionalPhotos] = useState<string[]>(item?.fotosAdicionales || []);
   const [condition, setCondition] = useState(normalizeItemCondition(item?.estado));
-  const [damaged, setDamaged] = useState(item?.cantidadDanados ?? 0);
   const [weight, setWeight] = useState(() => weightDraft(item?.pesoUnitario));
   const [location, setLocation] = useState(() => itemLocationDraft(item));
   const [valorUnitario, setValorUnitario] = useState(item?.valorUnitario || 0);
@@ -87,7 +86,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
     setName(item.nombre); setCategory(item.categoria); originalCategory.current = item.categoria; setCategoryDraft(false);
     setBrand(item.marca || ''); setDescription(item.descripcion); setMinimum(item.stockMinimo);
     setUnit(item.unidad.toUpperCase()); originalUnit.current = item.unidad;
-    setPhoto(item.fotoUrl || ''); setCondition(normalizeItemCondition(item.estado)); setDamaged(item.cantidadDanados ?? 0);
+    setPhoto(item.fotoUrl || ''); setCondition(normalizeItemCondition(item.estado));
     setAdditionalPhotos(item.fotosAdicionales || []);
     setWeight(weightDraft(item.pesoUnitario));
     setLocation(itemLocationDraft(item));
@@ -105,7 +104,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
       await updateElemento(item.id, { nombre: name.trim(), marca: brand.trim(), descripcion: description.trim(), stockMinimo: minimum,
         ...(category !== originalCategory.current ? { categoria: category } : {}),
         ...(normalizeUnit(unit) !== normalizeUnit(originalUnit.current) ? { unidad: normalizeUnit(unit) } : {}),
-        fotoUrl: photo.trim(), fotosAdicionales: additionalPhotos, estado: condition, cantidadDanados: damaged, pesoUnitario: parseWeightDraft(weight),
+        fotoUrl: photo.trim(), fotosAdicionales: additionalPhotos, estado: condition, pesoUnitario: parseWeightDraft(weight),
         valorUnitario, ...changedItemLocation(location, item) });
       setEditing(false);
     } catch (cause) { setError(errorMessage(cause)); }
@@ -197,15 +196,9 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
           <div className="space-y-2"><ItemUnitField value={unit} onChange={setUnit} disabled={busy} />
             <p className="text-xs text-slate-500">La cantidad no se convierte automáticamente al cambiar la unidad.</p>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <label className="text-sm font-semibold">Stock mínimo
-              <NumberInput min="0" step="0.001" required value={minimum} onValueChange={setMinimum} className="block w-full mt-1 p-2.5 border rounded-lg" />
-            </label>
-            <label className="text-sm font-semibold">Unidades dañadas
-              <NumberInput min="0" max={item.cantidad} step="0.001" required readOnly={conditionMarksAllDamaged(condition)} value={conditionMarksAllDamaged(condition) ? item.cantidad : damaged} onValueChange={setDamaged} className="block w-full mt-1 p-2.5 border rounded-lg" />
-              {conditionMarksAllDamaged(condition) && <span className="block text-xs font-normal text-slate-500 mt-1">Este estado cuenta todo el stock como dañado.</span>}
-            </label>
-          </div>
+          <label className="block text-sm font-semibold">Stock mínimo
+            <NumberInput min="0" step="0.001" required value={minimum} onValueChange={setMinimum} className="block w-full mt-1 p-2.5 border rounded-lg" />
+          </label>
           <ItemWeightFields value={weight} onChange={setWeight} stockUnit={unit} disabled={pending} />
           <ItemValueField value={valorUnitario} onChange={setValorUnitario} unit={unit} disabled={pending} />
           <label className="block text-sm font-semibold">Estado

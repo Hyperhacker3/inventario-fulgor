@@ -40,7 +40,7 @@ export function buildInventoryReport(items: Elemento[], ids: readonly string[], 
     return {
       id, code: item.codigo, name: item.nombre, brand: item.marca || '', category: categoryLabel(item.categoria), condition: item.estado || '',
       location: locationLabel(item, warehouses, racks, boxes, levels), quantity, unit: item.unidad.toUpperCase(),
-      damaged: item.stockPendiente ? item.cantidadDanados || 0 : damagedQuantity(item), unitWeight: item.pesoUnitario ? { ...item.pesoUnitario } : null,
+      damaged: item.stockPendiente ? 0 : damagedQuantity(item), unitWeight: item.pesoUnitario ? { ...item.pesoUnitario } : null,
       weightKg: quantity === null ? null : lineWeightKg(item.pesoUnitario, quantity),
       unitValueCOP: item.valorUnitario || 0, valueCOP: quantity === null ? null : roundCOP(quantity * (item.valorUnitario || 0)),
     };

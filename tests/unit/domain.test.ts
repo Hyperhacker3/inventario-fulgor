@@ -24,9 +24,9 @@ test('mappers preserve string IDs, zero values and null stock history', () => {
   assert.equal(remission.items[0].elementoId, 'ELM-0007');
 });
 
-test('validators accept three decimals and dispatch only available stock', () => {
+test('validators accept three decimals and dispatch only available stock (excluding internal loans)', () => {
   const item = mapElemento({ id: 'ELM-1', codigo: 'PAN001', nombre: 'Panel', categoria: 'PANELES',
-    cantidad: 5, stock_minimo: 0, cantidad_danados: 2, unidad: 'UND' });
+    cantidad: 5, stock_minimo: 0, cantidad_prestada: 2, unidad: 'UND' });
   assert.doesNotThrow(() => validateItem(item, [], [], []));
   assert.doesNotThrow(() => validateItem({ ...item, cantidad: 3.125 }, [], [], []));
   assert.throws(() => validateItem({ ...item, cantidad: 3.1234 }, [], [], []), /tres decimales/);

@@ -26,7 +26,7 @@ export function DashboardView() {
     { label: 'Sin disponibilidad', value: summary.statuses['Sin disponibilidad'], hint: 'Sin stock utilizable para registrar una salida', color: 'text-red-600' },
     { label: 'Stock bajo', value: summary.statuses['Stock bajo'], hint: 'Disponibilidad igual o inferior al mínimo', color: 'text-amber-600' },
     { label: 'Conteos pendientes', value: summary.statuses['Pendiente de conteo'], hint: 'Requieren confirmar existencias', color: 'text-indigo-600' },
-    { label: 'Productos con daños', value: summary.damagedProducts, hint: 'Unidades dañadas o estado MALO, EN REPARACIÓN o PARA REPARAR', color: 'text-rose-600' },
+    { label: 'Productos con daños', value: summary.damagedProducts, hint: 'Referencias con estado MALO, EN REPARACIÓN o PARA REPARAR', color: 'text-rose-600' },
     { label: 'Productos para reparar', value: summary.repairProducts, hint: 'Referencias con la etiqueta PARA REPARAR', color: 'text-amber-600' },
   ];
   return <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6">
@@ -48,8 +48,8 @@ export function DashboardView() {
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-5">
         {[
           ['Valor del inventario', formatCOP(values.total), 'Stock confirmado × valor unitario. Incluye material dañado.'],
-          ['Valor del material utilizable', formatCOP(values.usable), 'Valor del stock confirmado sin las unidades dañadas.'],
-          ['Valor del material dañado', formatCOP(values.damaged), 'Todo el stock en MALO, EN REPARACIÓN o PARA REPARAR; en otros estados, las unidades dañadas declaradas.'],
+          ['Valor del material utilizable', formatCOP(values.usable), 'Valor del stock confirmado sin estado MALO, EN REPARACIÓN o PARA REPARAR.'],
+          ['Valor del material dañado', formatCOP(values.damaged), 'Valor del stock en estado MALO, EN REPARACIÓN o PARA REPARAR.'],
           ['Porcentaje dañado en valor', `${number.format(values.damagedPercent)} %`, 'Valor dañado dividido entre el valor del inventario.'],
         ].map(([title, value, hint]) => <section key={title} className="min-w-0 bg-white border rounded-xl p-4">
           <h3 className="text-xs font-semibold text-slate-600">{title}</h3><p className="text-xl sm:text-2xl font-bold text-[#253685] break-words mt-2">{value}</p><p className="text-xs text-slate-500 mt-2">{hint}</p>
@@ -64,7 +64,7 @@ export function DashboardView() {
       <div className="grid lg:grid-cols-2 gap-5">
         <InventoryBars title="Distribución por almacén" description="Productos asignados a cada almacén dentro del alcance seleccionado." rows={summary.warehouses} />
         <section className="bg-white border border-[#e2e8f0] rounded-2xl p-5">
-          <h3 className="font-bold">Existencias por unidad de medida</h3><p className="text-xs text-slate-500 mt-1">Cantidades confirmadas. Disponible excluye unidades dañadas y en uso interno. Se excluyen los conteos pendientes.</p>
+          <h3 className="font-bold">Existencias por unidad de medida</h3><p className="text-xs text-slate-500 mt-1">Cantidades confirmadas. Disponible excluye únicamente unidades en uso interno. Dañado refleja el stock en estado MALO, EN REPARACIÓN o PARA REPARAR, sin restarlo de disponible. Se excluyen los conteos pendientes.</p>
           <div className="overflow-x-auto mt-4"><table className="w-full text-sm text-left"><thead className="text-xs text-slate-500"><tr><th className="py-2">Unidad</th><th className="text-right">Registrado</th><th className="text-right">Disponible</th><th className="text-right">Dañado</th></tr></thead><tbody>
             {summary.units.map(row => <tr key={row.unit} className="border-t border-slate-100"><th className="py-3 uppercase">{row.unit}</th><td className="text-right">{number.format(row.recorded)}</td><td className="text-right font-semibold text-emerald-700">{number.format(row.available)}</td><td className="text-right">{number.format(row.damaged)}</td></tr>)}
           </tbody></table></div>

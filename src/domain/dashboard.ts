@@ -23,7 +23,7 @@ export function summarizeInventory(items: Elemento[], warehouses: Almacen[]) {
     categories.set(item.categoria, (categories.get(item.categoria) || 0) + 1);
     const warehouse = item.almacenId || '';
     locations.set(warehouse, (locations.get(warehouse) || 0) + 1);
-    if (damagedQuantity(item) > 0 || conditionMarksAllDamaged(item.estado)) damagedProducts++;
+    if (conditionMarksAllDamaged(item.estado)) damagedProducts++;
     if (normalizeItemCondition(item.estado) === 'PARA REPARAR') repairProducts++;
     if (item.stockMinimo === 0) withoutMinimum++;
     if (!item.estanteriaId) withoutRack++;

@@ -29,6 +29,7 @@ const deleteLocationsMigration = fs.readFileSync(new URL('../../supabase/migrati
 const locationCodesAudit = fs.readFileSync(new URL('../../supabase/audit_location_codes_readonly.sql', import.meta.url), 'utf8');
 const editUnitMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000200_edit_item_units.sql', import.meta.url), 'utf8');
 const editCategoryMigration = fs.readFileSync(new URL('../../supabase/migrations/20261126000300_edit_item_category.sql', import.meta.url), 'utf8');
+const damagedAvailabilityMigration = fs.readFileSync(new URL('../../supabase/migrations/20261126000400_allow_damaged_stock_availability.sql', import.meta.url), 'utf8');
 const toolLifeMigration = fs.readFileSync(new URL('../../supabase/migrations/20261126000200_tool_life_records.sql', import.meta.url), 'utf8');
 const bulkEditMigration = fs.readFileSync(new URL('../../supabase/migrations/20261126000100_bulk_item_edit.sql', import.meta.url), 'utf8');
 const reportHistoryMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000100_inventory_report_history.sql', import.meta.url), 'utf8');
@@ -2022,5 +2023,56 @@ test('admin can change item category during single-item edit with active-categor
     }
     await db.exec('SET ROLE anon');
     await assert.rejects(() => db.query('SELECT public.inventory_item_category_edit_ready()'), /permission denied/);
+  } finally { await db.close(); }
+});
+
+test('damaged/repair tags and legacy cantidad_danados no longer reduce availability or block dispatches, loans or adjustments', async () => {
+  const db = await internalDatabase();
+  try {
+    await db.exec(internalTypesMigration);
+    await asOwner(db);
+    await db.exec("UPDATE public.elementos SET estado='PARA REPARAR', cantidad=5, cantidad_danados=3 WHERE id='ELM-001'");
+    await db.exec("UPDATE public.elementos SET estado='MALO', cantidad=2, cantidad_danados=2 WHERE id='ELM-002'");
+    const original = (await db.query('SELECT * FROM public.elementos ORDER BY id')).rows;
+    await db.exec(damagedAvailabilityMigration);
+    await db.exec(damagedAvailabilityMigration);
+    assert.deepEqual((await db.query('SELECT * FROM public.elementos ORDER BY id')).rows, original, 'migration does not rewrite existing rows');
+
+    const staff = await worker(db);
+    await role(db, 'operador');
+
+    // Temporary internal loan on a PARA REPARAR item with legacy cantidad_danados=3 succeeds for 2 units.
+    const loan = (await db.query(issueV2Sql,
+      ['34000000-0000-0000-0000-000000000002', staff.id, JSON.stringify([{ elementoId: 'ELM-001', cantidad: 2 }]), 'TEMPORAL', null])).rows[0].row;
+    assert.equal(loan.estado, 'PENDIENTE');
+    // Active loan (2) is still protected: cannot dispatch 4 of 5 externally, can dispatch 3.
+    await assert.rejects(() => db.query(routeSql,
+      ['34000000-0000-0000-0000-000000000003', 'PROY-001', 'Operador', 'Op', 'Recibe', '', '', JSON.stringify([{ elementoId: 'ELM-001', cantidad: 4 }]), '{}', '[]', 'Bogotá', 'Obra']),
+      /Stock no disponible/);
+    const rem = (await db.query(routeSql,
+      ['34000000-0000-0000-0000-000000000004', 'PROY-001', 'Operador', 'Op', 'Recibe', '', '', JSON.stringify([{ elementoId: 'ELM-001', cantidad: 3 }]), '{}', '[]', 'Bogotá', 'Obra'])).rows[0].rem;
+    assert.equal(rem.items[0].cantidad, 3);
+    assert.equal(Number((await db.query("SELECT cantidad FROM public.elementos WHERE id='ELM-001'")).rows[0].cantidad), 2);
+    // Converting the temporary loan to permanent deducts the remaining 2 even though legacy cantidad_danados is 3.
+    const converted = (await db.query(permanentSql,
+      ['34000000-0000-0000-0000-000000000005', loan.id])).rows[0].row;
+    assert.equal(converted.estado, 'PERMANENTE');
+    assert.equal(Number((await db.query("SELECT cantidad FROM public.elementos WHERE id='ELM-001'")).rows[0].cantidad), 0);
+
+    // Negative adjustment on MALO item with legacy cantidad_danados=2 works down to 0, and permanent internal dispatch works too.
+    const perm = (await db.query(issueV2Sql,
+      ['34000000-0000-0000-0000-000000000006', staff.id, JSON.stringify([{ elementoId: 'ELM-002', cantidad: 1 }]), 'PERMANENTE', null])).rows[0].row;
+    assert.equal(perm.estado, 'PERMANENTE');
+    await db.query("SELECT public.record_inventory_movement($1::uuid,'ELM-002','AJUSTE',-1,'Baja')",
+      ['34000000-0000-0000-0000-000000000007']);
+    assert.equal(Number((await db.query("SELECT cantidad FROM public.elementos WHERE id='ELM-002'")).rows[0].cantidad), 0);
+
+    // Pending counts remain blocked for dispatches.
+    await asOwner(db);
+    await db.exec("UPDATE public.elementos SET stock_pendiente=true, cantidad=5 WHERE id='ELM-003'");
+    await role(db, 'operador');
+    await assert.rejects(() => db.query(routeSql,
+      ['34000000-0000-0000-0000-000000000008', 'PROY-001', 'Operador', 'Op', 'Recibe', '', '', JSON.stringify([{ elementoId: 'ELM-003', cantidad: 1 }]), '{}', '[]', 'Bogotá', 'Obra']),
+      /Stock no disponible/);
   } finally { await db.close(); }
 });

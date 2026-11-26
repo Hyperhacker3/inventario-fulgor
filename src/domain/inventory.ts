@@ -1,10 +1,9 @@
 import { boxLabel } from './itemLocation';
-import { damagedQuantity } from './itemCondition';
 import type { Elemento, Almacen, Estanteria, NivelEstanteria, Caja } from '../types';
 import { validQuantity } from './quantity';
 import { validateWeight } from './weight';
 import { validateUnitValue } from './money';
-export const available = (item: Elemento) => item.stockPendiente ? 0 : Math.max(0, item.cantidad - damagedQuantity(item) - (item.cantidadPrestada || 0));
+export const available = (item: Elemento) => item.stockPendiente ? 0 : Math.max(0, item.cantidad - (item.cantidadPrestada || 0));
 export const byId = <T extends { id: string }>(items: T[]) => new Map(items.map(item => [item.id, item]));
 export function locationLabel(item: Elemento, almacenes: ReadonlyMap<string, Almacen>, estanterias: ReadonlyMap<string, Estanteria>, cajas: ReadonlyMap<string, Caja>, niveles: ReadonlyMap<string, NivelEstanteria> = new Map()) {
   const alm = item.almacenId ? almacenes.get(item.almacenId) : undefined;
@@ -22,10 +21,9 @@ export function validateItem(item: Omit<Elemento, 'id' | 'createdAt' | 'updatedA
   if (!item.unidad.trim()) throw new Error('Unidad inválida.');
   if (item.pesoUnitario) validateWeight(item.pesoUnitario);
   validateUnitValue(item.valorUnitario ?? 0);
-  for (const [value, name] of [[item.cantidad, 'Stock'], [item.stockMinimo, 'Stock mínimo'], [item.cantidadDanados ?? 0, 'Material dañado']] as const) {
+  for (const [value, name] of [[item.cantidad, 'Stock'], [item.stockMinimo, 'Stock mínimo']] as const) {
     if (!validQuantity(value) || value < 0) throw new Error(`${name}: ingrese un número no negativo con hasta tres decimales.`);
   }
-  if ((item.cantidadDanados ?? 0) > item.cantidad) throw new Error('El material dañado supera el stock.');
   if (item.almacenId && !almacenes.some(a => a.id === item.almacenId)) throw new Error('Almacén no encontrado.');
   if (item.estanteriaId && !estanterias.some(e => e.id === item.estanteriaId && e.almacenId === item.almacenId)) throw new Error('La estantería no pertenece al almacén.');
   if (item.nivelId && !niveles.some(n => n.id === item.nivelId && n.estanteriaId === item.estanteriaId)) throw new Error('El nivel no pertenece a la estantería.');

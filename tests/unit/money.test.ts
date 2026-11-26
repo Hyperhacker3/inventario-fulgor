@@ -10,14 +10,14 @@ import { ProjectInvestmentChart } from '../../src/components/dashboard/ProjectIn
 test('COP values validate zero and cents, and inventory valuation uses confirmed stock including damaged units', () => {
   for (const value of [0, 0.01, 12.34, MAX_UNIT_VALUE_COP]) assert.doesNotThrow(() => validateUnitValue(value));
   for (const value of [-1, NaN, Infinity, 1.001, MAX_UNIT_VALUE_COP + 1]) assert.throws(() => validateUnitValue(value));
-  const item = (id: string, quantity: number, damaged: number, price: number, extra = {}) => mapElemento({ id, cantidad: quantity,
-    cantidad_danados: damaged, almacen_id: id, especificaciones: { valor_unitario_cop: price }, ...extra });
+  const item = (id: string, quantity: number, estado: string, price: number, extra = {}) => mapElemento({ id, cantidad: quantity,
+    estado, almacen_id: id, especificaciones: { valor_unitario_cop: price }, ...extra });
   const summary = inventoryValues([
-    item('a', 10, 2, 100), item('b', 2.5, 0.5, 50), item('pending', 999, 1, 999, { stock_pendiente: true }),
-    item('archived', 999, 1, 999, { archived: true }), item('zero', 12, 0, 0),
+    item('a', 9, 'BUENO', 100), item('b', 4.5, 'MALO', 50), item('pending', 999, 'MALO', 999, { stock_pendiente: true }),
+    item('archived', 999, 'MALO', 999, { archived: true }), item('zero', 12, 'BUENO', 0),
   ]);
   assert.equal(summary.total, 1125); assert.equal(summary.damaged, 225); assert.equal(summary.usable, 900); assert.equal(summary.damagedPercent, 20);
-  assert.deepEqual([...summary.warehouses], [['a', 1000], ['b', 125], ['zero', 0]]);
+  assert.deepEqual([...summary.warehouses], [['a', 900], ['b', 225], ['zero', 0]]);
   assert.equal(inventoryValues([]).damagedPercent, 0);
   assert.equal(roundCOP(1.005), 1.01); assert.equal(roundCOP(0.001 * 12.34), 0.01);
   assert.match(formatCOP(1250.5), /COP/);

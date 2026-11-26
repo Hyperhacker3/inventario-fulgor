@@ -30,7 +30,7 @@ const build = (items: ReturnType<typeof product>[], ids = items.map(item => item
 test('reports preserve separate products and full stock including damage, group units and snapshot quantities, values, weights and locations', () => {
   const items = [product('1', 2), product('2', 1.25, 'mts', 10.2), product('3', 0.1, 'und', 0.5)];
   const report = build(items, ['1', '2', '3', '1']);
-  assert.equal(report.rows.length, 3); assert.equal(report.rows[0].quantity, 2); assert.equal(report.rows[0].damaged, 1);
+  assert.equal(report.rows.length, 3); assert.equal(report.rows[0].quantity, 2); assert.equal(report.rows[0].damaged, 0);
   assert.equal(report.rows[0].weightKg, 0.5); assert.equal(report.rows[1].weightKg, 0.3125);
   assert.equal(report.weightKg, 0.8375); assert.equal(report.valueCOP, 212.8);
   assert.deepEqual(report.quantities, [{ unit: 'MTS', quantity: 1.25 }, { unit: 'UND', quantity: 2.1 }]);

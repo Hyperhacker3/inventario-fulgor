@@ -26,14 +26,14 @@ test('levels complete the location, constrain parent choices and count each mate
   assert.throws(()=>validateItem({...product,nivelId:'L2'},warehouses,racks,boxes,levels),/caja no pertenece/);
   const choices=locationChoices(racks,boxes,'W1','R1',levels,'L1');
   assert.deepEqual(choices.levels.map(row=>row.id),['L1','L2']);assert.deepEqual(choices.boxes.map(row=>row.id),['B1']);
-  const items=[product,{...product,id:'M2',nivelId:'L2',cajaId:null,cantidad:3,cantidadDanados:1},{...product,id:'M3',nivelId:null,cajaId:null,cantidad:2,cantidadDanados:0}];
+  const items=[product,{...product,id:'M2',nivelId:'L2',cajaId:null,cantidad:3,estado:'MALO'},{...product,id:'M3',nivelId:null,cajaId:null,cantidad:2,estado:'BUENO'}];
   const filters={...emptyInventoryFilters(),warehouseId:'W1',rackId:'R1',levelId:'L1',boxId:'B1'};
   assert.deepEqual(filterInventory(items,filters,'fabricante',()=>''),[product]);
   assert.deepEqual(filterInventory(items,{...emptyInventoryFilters(),levelId:NO_LOCATION},'',()=>''),[items[2]]);
   assert.equal(changeWarehouse(filters,'W2').levelId,ALL_LOCATIONS);assert.equal(changeRack(filters,'R2').levelId,ALL_LOCATIONS);
   assert.equal(changeLevel(filters,'L2').boxId,ALL_LOCATIONS);
   const values=inventoryLocationValues(items);
-  assert.deepEqual(values.levels.get('L1'),{total:1000,damaged:200});assert.deepEqual(values.levels.get('L2'),{total:300,damaged:100});
+  assert.deepEqual(values.levels.get('L1'),{total:1000,damaged:0});assert.deepEqual(values.levels.get('L2'),{total:300,damaged:300});
   assert.deepEqual(values.racks.get('R1'),{total:1500,damaged:300});
 });
 

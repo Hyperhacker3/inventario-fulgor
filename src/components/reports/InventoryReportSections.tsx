@@ -13,7 +13,7 @@ export function InventoryReportHeader({ report }: { report: InventoryReport }) {
       <div className="rm-document-meta"><span className="rm-eyebrow">INFORME DE INVENTARIO</span><p>{reportDate(report.createdAt)}</p></div>
     </div>
     <h1 className="ir-title">Informe de productos seleccionados</h1>
-    <p className="ir-intro">Generado por: {report.generatedBy} · {report.rows.length} producto(s). Cantidades de stock total, incluidas las unidades dañadas declaradas.</p>
+    <p className="ir-intro">Generado por: {report.generatedBy} · {report.rows.length} producto(s). Cantidades de stock total registrado.</p>
   </header>;
 }
 

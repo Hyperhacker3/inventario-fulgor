@@ -19,7 +19,7 @@ const item=mapElemento({id:'p',codigo:'MAT001',nombre:'Herramienta',cantidad:10,
 const loan:InternalDispatch={id:'loan',codigo:'INT-20261029-001',created_at:'2026-10-29T15:00:00Z',entregado_por:'Persona sesión',cargo_entregado:'Almacenista',personal_id:'staff',recibido_por:'Persona recibe',cargo_recibido:'Técnico',empresa:DEFAULT_COMPANY,estado:'PARCIAL',items:[{elementoId:'p',codigo:'MAT001',nombre:'Herramienta original',marca:'Marca',cantidad:2.5,devuelta:1,pendiente:1.5,unidad:'UND',ubicacion:'Almacén > Caja'}],devoluciones:[]};
 
 test('loans reduce availability without reducing total stock or inventory valuation; return amounts respect each unit and outstanding balance',()=>{
- assert.equal(available(item),6.5);assert.equal(item.cantidad,10);assert.equal(inventoryValues([item]).total,1000);
+ assert.equal(available(item),7.5);assert.equal(item.cantidad,10);assert.equal(inventoryValues([item]).total,1000);
  assert.deepEqual(returnAmounts(loan,{p:1.125}),[{elementoId:'p',cantidad:1.125}]);
  for(const amount of [-1,2,0.0001,Infinity])assert.throws(()=>returnAmounts(loan,{p:amount}));
  assert.throws(()=>returnAmounts(loan,{}));assert.throws(()=>validateInternalAmounts([{elementoId:'p',cantidad:1},{elementoId:'p',cantidad:1}]));
