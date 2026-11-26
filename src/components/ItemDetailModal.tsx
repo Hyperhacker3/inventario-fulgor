@@ -25,6 +25,8 @@ import { formatCOP, roundCOP } from '../domain/money';
 import { normalizeUnit } from '../domain/catalogs';
 import { ItemLocationLinks } from './item/ItemLocationLinks';
 import { ItemUnitField } from './item/ItemUnitField';
+import { ToolLifeRecordDialog, type ToolLifeServices } from './tools/ToolLifeRecordDialog';
+import { toolTypeFor } from '../domain/toolLifeRecord';
 
 interface Props { item: Elemento | null; onClose: () => void; onPermanentDelete?: (item: Elemento) => Promise<void>; onRestore?: (item: Elemento) => Promise<void> }
 
@@ -34,11 +36,13 @@ export function ItemDetailModal(props: Props) {
 }
 type DetailInventory = Pick<ReturnType<typeof useInventory>, 'user' | 'getLocationString' | 'openQuickMovement' | 'addToDispatchCart'
   | 'updateElemento' | 'deleteElemento' | 'categoryLabel' | 'almacenes' | 'estanterias' | 'cajas' | 'niveles'>
-  & Partial<Pick<ReturnType<typeof useInventory>, 'addEstanteria' | 'addNivel' | 'addCaja' | 'quickMovementItem' | 'quickMovementType' | 'dispatchSelection' | 'openLocationInventory' | 'cartLocked'>>;
-export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore, inventory, history }: Props & { inventory: DetailInventory; history?: ReactNode }) {
+  & Partial<Pick<ReturnType<typeof useInventory>, 'addEstanteria' | 'addNivel' | 'addCaja' | 'quickMovementItem' | 'quickMovementType' | 'dispatchSelection' | 'openLocationInventory' | 'cartLocked' | 'categorias'>>;
+export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore, inventory, history, lifeServices }: Props & { inventory: DetailInventory; history?: ReactNode; lifeServices?: ToolLifeServices }) {
   const { user, getLocationString, openQuickMovement, addToDispatchCart,
     updateElemento, deleteElemento, categoryLabel, almacenes, estanterias, cajas, niveles, addEstanteria, addNivel, addCaja } = inventory;
   const [editing, setEditing] = useState(false);
+  const [lifeRecordOpen, setLifeRecordOpen] = useState(false);
+  const toolType = toolTypeFor(item, inventory.categorias || []);
   const [archiveConfirm, setArchiveConfirm] = useState(false);
   const [name, setName] = useState(item?.nombre || '');
   const [brand, setBrand] = useState(item?.marca || '');
@@ -64,7 +68,8 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
 
   const busy = pending || photoBusy || locationBusy;
-  const close = () => { if (!busy && !editing && !archiveConfirm) onClose(); };
+  const close = () => { if (!busy && !editing && !archiveConfirm && !lifeRecordOpen) onClose(); };
+  const overlay = editing || archiveConfirm || lifeRecordOpen;
   useDialogFocus(dialog, close);
   if (!item) return null;
   const entryOpen = inventory.quickMovementItem?.id === item.id && inventory.quickMovementType === 'ENTRADA';
@@ -111,7 +116,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
     onClick={event => { if (event.target === event.currentTarget) close(); }}>
     <section ref={dialog} role="dialog" aria-modal="true" aria-labelledby="item-detail-heading"
       aria-busy={busy}
-      inert={editing || archiveConfirm} aria-hidden={editing || archiveConfirm || undefined}
+      inert={overlay} aria-hidden={overlay || undefined}
       className="ui-dialog-panel ui-panel-enter relative bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] shadow-2xl border flex flex-col overflow-hidden">
       <button data-dialog-close type="button" onClick={close} disabled={busy} aria-label="Cerrar detalle" title="Cerrar detalle"
         className="item-detail-close absolute top-6 right-6 sm:top-8 sm:right-8 z-20 w-11 h-11 rounded-xl flex items-center justify-center text-[#253685]">
@@ -146,6 +151,11 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
             </div>
           </div>
           {item.archived && canAdmin && <ArchivedItemActions item={item} onDelete={onPermanentDelete} onRestore={onRestore} />}
+          {toolType && <button type="button" data-action="life-record" aria-pressed={lifeRecordOpen} disabled={busy || editing}
+            onClick={() => { setError(''); setLifeRecordOpen(true); }}
+            className="ui-flat-choice self-start min-h-11 px-4 rounded-lg text-sm font-semibold inline-flex items-center gap-2">
+            <StateIcon icon="assignment" filled={lifeRecordOpen} />Ver hoja de vida
+          </button>}
         </div>
         {!item.archived && <div className="item-detail-actions">
           {canAdmin && <button type="button" data-action="edit" aria-pressed={editing} disabled={busy} onClick={startEdit} aria-label="Editar" title="Editar" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="edit" filled={editing} /></button>}
@@ -199,6 +209,8 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
           </div>
         </form>
     </ItemEditDialog>}</Presence>
+    <Presence open={lifeRecordOpen && !!toolType}>{lifeRecordOpen && toolType && <ToolLifeRecordDialog item={item} type={toolType} user={user}
+      categoryLabel={categoryLabel} location={getLocationString(item)} onClose={() => setLifeRecordOpen(false)} services={lifeServices} />}</Presence>
     <Presence open={archiveConfirm}>{archiveConfirm && <ConfirmDialog title="Archivar producto" message={`¿Archivar ${item.codigo} · ${item.nombre}?`} pending={pending} error={error}
       onCancel={() => { setArchiveConfirm(false); setError(''); }} onConfirm={() => { void archive(); }} />}</Presence>
   </div>;

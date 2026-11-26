@@ -28,6 +28,7 @@ const normalizeLocationCodesMigration = fs.readFileSync(new URL('../../supabase/
 const deleteLocationsMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000300_delete_empty_locations.sql', import.meta.url), 'utf8');
 const locationCodesAudit = fs.readFileSync(new URL('../../supabase/audit_location_codes_readonly.sql', import.meta.url), 'utf8');
 const editUnitMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000200_edit_item_units.sql', import.meta.url), 'utf8');
+const toolLifeMigration = fs.readFileSync(new URL('../../supabase/migrations/20261126000200_tool_life_records.sql', import.meta.url), 'utf8');
 const bulkEditMigration = fs.readFileSync(new URL('../../supabase/migrations/20261126000100_bulk_item_edit.sql', import.meta.url), 'utf8');
 const reportHistoryMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000100_inventory_report_history.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
@@ -1906,5 +1907,79 @@ test('bulk item edit changes only the chosen shared data atomically, records rel
   assert.equal(cleared.categoria,'INVERSORES','fields that were not chosen keep their values');
   await asOwner(db);await db.exec('SET ROLE anon');
   await assert.rejects(()=>db.query(sql,[request(34),['ELM-001'],JSON.stringify({estado:'MALO'})]),/permission denied/);
+ }finally{await db.close();}
+});
+
+test('tool life records add both tool categories, keep versioned data for admins and immutable maintenance with private photos',async()=>{
+ const db=await database({uppercase:true});try{
+  await db.exec(automaticCodesMigration);
+  await db.exec("INSERT INTO public.inventario_categorias(id,nombre,activo) VALUES('CAT-PREVIA','Herramientas electricas',false)");
+  const products=(await db.query('SELECT * FROM public.elementos ORDER BY id')).rows;
+  const history=(await db.query('SELECT count(*)::int AS n FROM public.historial')).rows[0].n;
+  await db.exec(toolLifeMigration);await db.exec(toolLifeMigration);
+  assert.deepEqual((await db.query('SELECT * FROM public.elementos ORDER BY id')).rows,products,'the migration does not move products');
+  const tools=(await db.query("SELECT id,nombre,activo,codigo,hoja_vida_tipo FROM public.inventario_categorias WHERE hoja_vida_tipo IS NOT NULL ORDER BY id")).rows;
+  assert.deepEqual(tools.map(row=>[row.id,row.hoja_vida_tipo,row.activo]),[['CAT-PREVIA','ELECTRICA',true],['HERRAMIENTAS_COMBUSTION','COMBUSTION',true]],'an existing category with the same name is reused');
+  assert.equal(tools[0].nombre,'Herramientas electricas');assert.match(tools[1].codigo,/^[A-Z]{3}$/);assert.equal(tools[1].nombre,'HERRAMIENTAS A COMBUSTIÓN');
+  await db.exec("UPDATE public.elementos SET categoria='CAT-PREVIA' WHERE id='ELM-003'; UPDATE public.elementos SET categoria='HERRAMIENTAS_COMBUSTION' WHERE id='ELM-004'");
+  const saveSql='SELECT public.save_tool_life_record($1,$2,$3::jsonb) AS row';
+  const data={modelo:' GSB 13 RE ',numero_serie:'',fecha_adquisicion:'2026-01-15',anio_fabricacion:'2025',voltaje:'120 V',recomendaciones_seguridad:'Usar gafas'};
+  for(const value of ['operador','consulta']){await role(db,value);await assert.rejects(()=>db.query(saveSql,['ELM-003',0,JSON.stringify(data)]),/No autorizado/);}
+  await role(db,'admin');
+  await assert.rejects(()=>db.query(saveSql,['ELM-001',0,JSON.stringify(data)]),/no tiene hoja de vida/);
+  const first=(await db.query(saveSql,['ELM-003',0,JSON.stringify(data)])).rows[0].row;
+  assert.equal(first.version,1);assert.deepEqual(first.datos,{modelo:'GSB 13 RE',fecha_adquisicion:'2026-01-15',anio_fabricacion:'2025',voltaje:'120 V',recomendaciones_seguridad:'Usar gafas'});
+  assert.deepEqual((await db.query(saveSql,['ELM-003',0,JSON.stringify(data)])).rows[0].row,first,'repeating a confirmed save is idempotent');
+  await assert.rejects(()=>db.query(saveSql,['ELM-003',0,JSON.stringify({...data,modelo:'Otro'})]),/cambió en otra sesión/);
+  assert.equal((await db.query(saveSql,['ELM-003',1,JSON.stringify({...data,modelo:'Otro'})])).rows[0].row.version,2);
+  for(const [value,message] of [[{color:'rojo'},/no pertenece/],[{modelo:3},/debe ser texto/],[{modelo:'x'.repeat(201)},/200 caracteres/],[{fecha_adquisicion:'15/01/2026'},/Fecha inválida/],
+    [{fecha_adquisicion:'2026-13-40'},/out of range|inválid/],[{anio_fabricacion:'1800'},/Año/],[{observaciones:'x'.repeat(2001)},/2000 caracteres/]])
+   await assert.rejects(()=>db.query(saveSql,['ELM-003',2,JSON.stringify(value)]),message);
+  await role(db,'consulta');
+  assert.equal((await db.query("SELECT datos->>'modelo' AS modelo FROM public.inventario_hojas_vida WHERE elemento_id='ELM-003'")).rows[0].modelo,'Otro');
+  await assert.rejects(()=>db.exec("UPDATE public.inventario_hojas_vida SET version=9"),/permission denied/);
+
+  const uid='00000000-0000-0000-0000-000000000001',request=n=>`31200000-0000-0000-0000-${String(n).padStart(12,'0')}`;
+  const photo=(n,file='31200000-0000-0000-0000-0000000000f1')=>`${uid}/${request(n)}/${file}.webp`;
+  const registerSql='SELECT public.register_tool_maintenance($1::uuid,$2,$3::jsonb,$4::jsonb) AS row';
+  const input={fecha:'2026-11-20',tipo:'preventivo',descripcion:' Cambio de carbones ',realizado_por:'taller central',repuestos:'Carbones',costo_cop:45000.5,horas_uso:120.5,proxima_fecha:'2027-02-20'};
+  await role(db,'consulta');
+  await assert.rejects(()=>db.query("INSERT INTO storage.objects(bucket_id,name) VALUES('maintenance-images',$1)",[photo(1)]),/row-level security|permission denied/);
+  await assert.rejects(()=>db.query(registerSql,[request(1),'ELM-003',JSON.stringify(input),'[]']),/No autorizado/);
+  await role(db,'operador');
+  await db.query("INSERT INTO storage.objects(bucket_id,name) VALUES('maintenance-images',$1)",[photo(1)]);
+  await assert.rejects(()=>db.query("INSERT INTO storage.objects(bucket_id,name) VALUES('maintenance-images',$1)",[`00000000-0000-0000-0000-000000000009/${request(1)}/31200000-0000-0000-0000-0000000000f2.webp`]),/row-level security/);
+  await assert.rejects(()=>db.query(registerSql,[request(1),'ELM-003',JSON.stringify(input),JSON.stringify([`maintenance://${photo(1,'31200000-0000-0000-0000-0000000000f9')}`])]),/aún no está guardada/);
+  await assert.rejects(()=>db.query(registerSql,[request(1),'ELM-003',JSON.stringify(input),JSON.stringify([`maintenance://${photo(2)}`])]),/este mantenimiento/);
+  const refs=JSON.stringify([`maintenance://${photo(1)}`]);
+  const saved=(await db.query(registerSql,[request(1),'ELM-003',JSON.stringify(input),refs])).rows[0].row;
+  assert.equal(saved.tipo,'PREVENTIVO');assert.equal(saved.descripcion,'Cambio de carbones');assert.equal(saved.realizado_por,'TALLER CENTRAL');
+  assert.equal(Number(saved.costo_cop),45000.5);assert.equal(Number(saved.horas_uso),120.5);assert.equal(saved.proxima_fecha,'2027-02-20');
+  assert.equal(saved.elemento_codigo,products.find(row=>row.id==='ELM-003').codigo);assert.deepEqual(saved.fotos,[`maintenance://${photo(1)}`]);
+  assert.deepEqual((await db.query(registerSql,[request(1),'ELM-003',JSON.stringify(input),refs])).rows[0].row,saved,'a retry returns the confirmed record');
+  await assert.rejects(()=>db.query(registerSql,[request(1),'ELM-003',JSON.stringify({...input,descripcion:'Otro'}),refs]),/otros datos/);
+  assert.equal((await db.query("DELETE FROM storage.objects WHERE bucket_id='maintenance-images' AND name=$1 RETURNING name",[photo(1)])).rows.length,0,'a linked photo cannot be deleted');
+  const invalid=[[{...input,fecha:'2999-01-01'},/futura/],[{...input,tipo:'LAVADO'},/tipo de mantenimiento/],[{...input,descripcion:' '},/Describa/],[{...input,realizado_por:''},/quién realizó/],
+    [{...input,costo_cop:-1},/no negativo/],[{...input,costo_cop:'5'},/Costo inválido/],[{...input,horas_uso:1.25},/un decimal/],[{...input,proxima_fecha:'2026-01-01'},/posterior/]];
+  for(const [index,[value,message]] of invalid.entries())await assert.rejects(()=>db.query(registerSql,[request(10+index),'ELM-003',JSON.stringify(value),'[]']),message);
+  await assert.rejects(()=>db.query(registerSql,[request(20),'ELM-001',JSON.stringify(input),'[]']),/no tiene hoja de vida/);
+  const combustion=(await db.query(registerSql,[request(21),'ELM-004',JSON.stringify({fecha:'2026-11-21',tipo:'INSPECCIÓN',descripcion:'Revisión de bujía',realizado_por:'Operario'}),'[]'])).rows[0].row;
+  assert.equal(Number(combustion.costo_cop),0);assert.equal(combustion.horas_uso,null);assert.equal(combustion.proxima_fecha,null);
+  await role(db,'consulta');
+  assert.equal((await db.query("SELECT count(*)::int AS n FROM storage.objects WHERE bucket_id='maintenance-images'")).rows[0].n,1,'linked photos are readable by every read role');
+  assert.deepEqual((await db.query("SELECT tipo FROM public.inventario_mantenimientos WHERE elemento_id='ELM-003' ORDER BY fecha DESC")).rows,[{tipo:'PREVENTIVO'}]);
+  await assert.rejects(()=>db.exec("UPDATE public.inventario_mantenimientos SET descripcion='x'"),/permission denied/);
+  await assert.rejects(()=>db.exec("DELETE FROM public.inventario_mantenimientos"),/permission denied/);
+  await asOwner(db);await db.exec("UPDATE public.elementos SET archived=true WHERE id='ELM-004'");await role(db,'operador');
+  await assert.rejects(()=>db.query(registerSql,[request(22),'ELM-004',JSON.stringify(input),'[]']),/herramienta activa/);
+  await asOwner(db);await db.exec("DELETE FROM public.elementos WHERE id='ELM-004'");
+  assert.equal((await db.query("SELECT count(*)::int AS n FROM public.inventario_mantenimientos WHERE elemento_id='ELM-004'")).rows[0].n,1,'records survive deleting an archived tool');
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM public.historial')).rows[0].n,history,'no stock movements are created');
+  assert.equal(Number((await db.query("SELECT cantidad FROM public.elementos WHERE id='ELM-003'")).rows[0].cantidad),Number(products.find(row=>row.id==='ELM-003').cantidad));
+  await db.exec(toolLifeMigration);
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM public.inventario_mantenimientos')).rows[0].n,2,'re-running keeps the records');
+  await db.exec('SET ROLE anon');
+  await assert.rejects(()=>db.query('SELECT * FROM public.inventario_mantenimientos'),/permission denied/);
+  await assert.rejects(()=>db.query(registerSql,[request(30),'ELM-003',JSON.stringify(input),'[]']),/permission denied/);
  }finally{await db.close();}
 });

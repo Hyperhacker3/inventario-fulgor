@@ -40,6 +40,16 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 
 - La X permanece visible al desplazarse. También puede cerrar tocando fuera, con Escape o con Retroceder: primero se cierra la ventana superior. Los cierres se bloquean durante un guardado pendiente.
 
+## Hoja de vida de herramientas
+
+- Los productos de las categorías HERRAMIENTAS ELÉCTRICAS y HERRAMIENTAS A COMBUSTIÓN muestran Ver hoja de vida en su ficha. Para incluir una herramienta, asígnele una de esas categorías al editarla o desde la edición en grupo. La ventana se abre encima del detalle con código, marca, categoría, estado, stock, valor y ubicación, y las secciones Identificación, Adquisición, Datos técnicos y Uso, mantenimiento y seguridad. Los datos técnicos dependen del tipo: potencia, voltaje, corriente, frecuencia, velocidad y batería para eléctricas; motor, cilindrada, combustible, tanque, mezcla, aceite y arranque para combustión.
+
+- Administración pulsa Editar datos para completar o corregir la hoja de vida. Si otra cuenta la modificó mientras tanto, se avisa sin sobrescribir sus cambios y el formulario se conserva para revisarlo y volver a guardar.
+
+- Administración y operadores pulsan Registrar mantenimiento para anotar la fecha (no futura), el tipo PREVENTIVO, CORRECTIVO o INSPECCIÓN, el trabajo realizado, quién lo hizo, repuestos, costo en COP, horas de uso, próximo mantenimiento, observaciones y hasta 12 fotos tomadas con la cámara o subidas como archivo. Los registros no se editan ni se borran. Si la respuesta no llega, vuelva a pulsar Guardar mantenimiento con los mismos datos: no se duplica.
+
+- El historial de mantenimiento aparece del más reciente al más antiguo, de 10 en 10, con sus fotos. Un aviso indica la fecha del próximo mantenimiento o que está vencido, según el último registro. Todos los roles pueden consultar la hoja de vida y el historial, que se conservan aunque después se elimine un producto archivado.
+
 ## Entradas: recibir y registrar materiales
 
 - Busque y seleccione un producto existente, indique cantidad y motivo y registre la entrada. Se suma al stock y se guarda responsable, fecha y movimiento, sin generar remisión.

@@ -2,6 +2,7 @@ import { uniquePhotos } from './photos';
 
 export class OutgoingPhotoSubmission<T> {
   private prepared = new Map<string, { signature: string; photos: string[] }>();
+  constructor(private changedMessage = 'La salida pendiente cambió. Reintente con los mismos materiales, datos y fotos.') {}
   has(requestId: string) { return this.prepared.has(requestId); }
   async submit(requestId: string, payload: unknown, sources: string[],
     operations: { save: (source: string, requestId: string) => Promise<string>; remove: (source: string) => Promise<void>; definitelyRejected?: (cause: unknown) => boolean },
@@ -9,7 +10,7 @@ export class OutgoingPhotoSubmission<T> {
     const originals = uniquePhotos(sources);
     const signature = JSON.stringify([payload, originals]);
     const previous = this.prepared.get(requestId);
-    if (previous && previous.signature !== signature) throw new Error('La salida pendiente cambió. Reintente con los mismos materiales, datos y fotos.');
+    if (previous && previous.signature !== signature) throw new Error(this.changedMessage);
     const photos = previous?.photos || [];
     if (!previous) {
       try {

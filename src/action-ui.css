@@ -3,7 +3,7 @@
 @media screen {
   :root[data-ui-style] button { text-decoration: none !important; }
   :root[data-ui-style] button[data-action='edit']:has(> [data-icon='edit']) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-  :root[data-ui-style] [data-action='edit'] { --ui-button-ink: var(--ui-action); --ui-icon-ink: var(--ui-icon-action); }
+  :root[data-ui-style] [data-action='edit'], :root[data-ui-style] [data-action='life-record'] { --ui-button-ink: var(--ui-action); --ui-icon-ink: var(--ui-icon-action); }
   :root[data-ui-style] [data-action='entry'] { --ui-button-ink: var(--ui-success); --ui-icon-ink: var(--ui-icon-success); }
   :root[data-ui-style] [data-action='adjustment'] { --ui-button-ink: var(--ui-warning); --ui-icon-ink: var(--ui-icon-warning); }
   :root[data-ui-style] [data-action='dispatch'], :root[data-ui-style] [data-action='cancel'] { --ui-button-ink: var(--ui-danger); --ui-icon-ink: var(--ui-icon-danger); }
