@@ -54,7 +54,7 @@ export function ToolsOverviewSection({ items, categories, warehouseScope, getLoc
     <section aria-labelledby="tools-dashboard-heading" className="grid grid-cols-1 xl:grid-cols-12 gap-5">
       {/* Left: Interactive Tools KPIs & Health Breakdown */}
       <div className="xl:col-span-7 min-w-0 bg-white border border-[#e2e8f0] rounded-2xl p-5 flex flex-col gap-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[11px] font-bold tracking-widest text-[#3e4e9e] uppercase flex items-center gap-1.5">
               <StateIcon icon="build" className="text-base" />
@@ -67,40 +67,42 @@ export function ToolsOverviewSection({ items, categories, warehouseScope, getLoc
               {number.format(selected.units)} {selected.units === 1 ? 'unidad' : 'unidades'} en {number.format(selected.references)} {selected.references === 1 ? 'herramienta' : 'herramientas'}
             </p>
           </div>
-          <div role="group" aria-label="Filtrar tipo de herramienta" className="flex flex-wrap items-center gap-1.5">
+          <div role="group" aria-label="Filtrar tipo de herramienta" className="grid grid-cols-3 sm:flex sm:flex-wrap items-stretch sm:items-center gap-1.5 w-full sm:w-auto">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 type="button"
                 aria-pressed={scope === tab.id}
                 onClick={() => setScope(tab.id)}
-                className="ui-flat-choice inline-flex items-center gap-1.5 px-3 min-h-11 rounded-xl text-xs font-semibold"
+                className="ui-flat-choice flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1.5 sm:px-3 py-1.5 min-h-11 rounded-xl text-[11px] sm:text-xs font-semibold min-w-0"
               >
-                {tab.icon && <span className="material-symbols-outlined text-[16px]" aria-hidden="true">{tab.icon}</span>}
-                <span>{tab.label}</span>
-                <span className="text-[11px] opacity-75">({number.format(tab.count)})</span>
+                <span className="inline-flex items-center justify-center gap-1 min-w-0">
+                  {tab.icon && <span className="material-symbols-outlined text-[15px] sm:text-[16px] shrink-0" aria-hidden="true">{tab.icon}</span>}
+                  <span className="truncate">{tab.label}</span>
+                </span>
+                <span className="text-[10px] sm:text-[11px] opacity-75">({number.format(tab.count)})</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* 3 Interactive Status Tiles */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* 3 Interactive Status Tiles — 3 columns across mobile, tablet and desktop */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <button
             type="button"
             onClick={() => openFiltered('PARA REPARAR')}
-            className="text-left p-4 rounded-xl flex flex-col justify-between gap-2 min-h-[112px]"
+            className="text-left p-2.5 sm:p-4 rounded-xl flex flex-col justify-between gap-2 min-h-[126px] sm:min-h-[116px] min-w-0"
           >
-            <span className="text-xs font-semibold text-amber-700 flex items-center justify-between gap-2">
-              <span>Necesitan reparación</span>
-              <StateIcon icon="build" className="text-lg" />
+            <span className="text-[11px] sm:text-xs font-semibold text-amber-700 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-1 leading-tight">
+              <span className="break-words">Necesitan reparación</span>
+              <StateIcon icon="build" className="text-base sm:text-lg shrink-0" />
             </span>
-            <div>
-              <p className="text-3xl font-bold text-amber-700 leading-none">
+            <div className="min-w-0">
+              <p className="text-2xl sm:text-3xl font-bold text-amber-700 leading-none">
                 {number.format(selected.forRepairUnits)}
-                <span className="text-xs font-semibold ml-1.5 opacity-80">und</span>
+                <span className="text-[10px] sm:text-xs font-semibold ml-1 opacity-80">und</span>
               </p>
-              <p className="text-[11px] text-slate-500 mt-1.5">
+              <p className="text-[10px] sm:text-[11px] text-slate-500 mt-1.5 leading-tight break-words">
                 {number.format(selected.forRepairRefs)} {selected.forRepairRefs === 1 ? 'herramienta' : 'herramientas'} · PARA REPARAR
               </p>
             </div>
@@ -109,19 +111,19 @@ export function ToolsOverviewSection({ items, categories, warehouseScope, getLoc
           <button
             type="button"
             onClick={() => openFiltered('EN REPARACIÓN')}
-            className="text-left p-4 rounded-xl flex flex-col justify-between gap-2 min-h-[112px]"
+            className="text-left p-2.5 sm:p-4 rounded-xl flex flex-col justify-between gap-2 min-h-[126px] sm:min-h-[116px] min-w-0"
           >
-            <span className="text-xs font-semibold text-[#3e4e9e] flex items-center justify-between gap-2">
-              <span>En reparación</span>
-              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">engineering</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-[#3e4e9e] flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-1 leading-tight">
+              <span className="break-words">En reparación</span>
+              <span className="material-symbols-outlined text-[16px] sm:text-[18px] shrink-0" aria-hidden="true">engineering</span>
             </span>
-            <div>
-              <p className="text-3xl font-bold text-[#253685] leading-none">
+            <div className="min-w-0">
+              <p className="text-2xl sm:text-3xl font-bold text-[#253685] leading-none">
                 {number.format(selected.inRepairUnits)}
-                <span className="text-xs font-semibold ml-1.5 opacity-80">und</span>
+                <span className="text-[10px] sm:text-xs font-semibold ml-1 opacity-80">und</span>
               </p>
-              <p className="text-[11px] text-slate-500 mt-1.5">
-                {number.format(selected.inRepairRefs)} {selected.inRepairRefs === 1 ? 'herramienta' : 'herramientas'} en taller
+              <p className="text-[10px] sm:text-[11px] text-slate-500 mt-1.5 leading-tight break-words">
+                {number.format(selected.inRepairRefs)} en taller
               </p>
             </div>
           </button>
@@ -129,26 +131,26 @@ export function ToolsOverviewSection({ items, categories, warehouseScope, getLoc
           <button
             type="button"
             onClick={() => openFiltered('todos')}
-            className="text-left p-4 rounded-xl flex flex-col justify-between gap-2 min-h-[112px]"
+            className="text-left p-2.5 sm:p-4 rounded-xl flex flex-col justify-between gap-2 min-h-[126px] sm:min-h-[116px] min-w-0"
           >
-            <span className="text-xs font-semibold text-emerald-700 flex items-center justify-between gap-2">
-              <span>Operativas</span>
-              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">check_circle</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-emerald-700 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-1 leading-tight">
+              <span className="break-words">Operativas</span>
+              <span className="material-symbols-outlined text-[16px] sm:text-[18px] shrink-0" aria-hidden="true">check_circle</span>
             </span>
-            <div>
-              <p className="text-3xl font-bold text-emerald-700 leading-none">
+            <div className="min-w-0">
+              <p className="text-2xl sm:text-3xl font-bold text-emerald-700 leading-none">
                 {number.format(selected.operationalUnits)}
-                <span className="text-xs font-semibold ml-1.5 opacity-80">und</span>
+                <span className="text-[10px] sm:text-xs font-semibold ml-1 opacity-80">und</span>
               </p>
-              <p className="text-[11px] text-slate-500 mt-1.5">
-                {selected.operationalPercent} % disponibles en buen estado
+              <p className="text-[10px] sm:text-[11px] text-slate-500 mt-1.5 leading-tight break-words">
+                {selected.operationalPercent} % en buen estado
               </p>
             </div>
           </button>
         </div>
 
-        {/* Interactive Split Comparison: Electric vs Combustion */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Interactive Split Comparison: Electric vs Combustion — 2 columns side by side */}
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
           {([
             { type: 'ELECTRICA' as const, title: 'Herramientas eléctricas', icon: 'electric_bolt', data: electric },
             { type: 'COMBUSTION' as const, title: 'Herramientas a combustión', icon: 'engineering', data: combustion },
@@ -160,18 +162,18 @@ export function ToolsOverviewSection({ items, categories, warehouseScope, getLoc
                 type="button"
                 aria-pressed={active}
                 onClick={() => setScope(active ? 'ALL' : group.type)}
-                className="ui-flat-choice text-left px-4 py-3 rounded-xl flex items-center justify-between gap-3"
+                className="text-left p-3 sm:px-4 sm:py-3.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 min-w-0"
               >
-                <span className="flex items-center gap-3 min-w-0">
-                  <span className="material-symbols-outlined text-[22px] shrink-0" aria-hidden="true">{group.icon}</span>
+                <span className="flex items-start sm:items-center gap-2 sm:gap-3 min-w-0">
+                  <span className="material-symbols-outlined text-[20px] sm:text-[22px] shrink-0 mt-0.5 sm:mt-0" aria-hidden="true">{group.icon}</span>
                   <span className="min-w-0">
-                    <span className="block text-xs font-bold text-[#131b2e] truncate">{group.title}</span>
-                    <span className="block text-[11px] text-slate-500">
+                    <span className="block text-xs font-bold text-[#131b2e] leading-snug break-words">{group.title}</span>
+                    <span className="block text-[11px] text-slate-500 mt-0.5">
                       {number.format(group.data.units)} und · {number.format(group.data.references)} ref.
                     </span>
                   </span>
                 </span>
-                <span className={`shrink-0 text-xs font-bold px-2.5 py-1 rounded-full ${group.data.forRepairUnits > 0 ? 'bg-[#fef7e0] text-[#755b00]' : 'bg-[#e6f4ea] text-[#137333]'}`}>
+                <span className={`self-start sm:self-center shrink-0 text-[11px] sm:text-xs font-bold px-2.5 py-1 rounded-full ${group.data.forRepairUnits > 0 ? 'bg-[#fef7e0] text-[#755b00]' : 'bg-[#e6f4ea] text-[#137333]'}`}>
                   {number.format(group.data.forRepairUnits)} por reparar
                 </span>
               </button>
