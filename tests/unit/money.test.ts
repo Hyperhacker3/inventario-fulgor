@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import { act, createElement as h, useState } from 'react';
-import { mapElemento, mapRemision } from '../../src/data/mappers';
+import { mapAlmacen, mapElemento, mapRemision } from '../../src/data/mappers';
 import { inventoryValues, roundCOP, validateUnitValue, formatCOP, MAX_UNIT_VALUE_COP } from '../../src/domain/money';
 import { ItemValueField } from '../../src/components/item/ItemValueField';
 import { ProjectInvestmentChart } from '../../src/components/dashboard/ProjectInvestmentChart';
+import { WarehouseValueChart } from '../../src/components/dashboard/WarehouseValueChart';
+import type { InventoryFilters } from '../../src/domain/explorer';
 
 test('COP values validate zero and cents, and inventory valuation uses confirmed stock including damaged units', () => {
   for (const value of [0, 0.01, 12.34, MAX_UNIT_VALUE_COP]) assert.doesNotThrow(() => validateUnitValue(value));
@@ -46,15 +48,58 @@ test('the COP field lets users clear the default zero, enter cents and validates
     await act(() => type('-1')); assert.equal(host.querySelector('form')!.checkValidity(), false);
   } finally { await act(() => root.unmount()); host.remove(); }
 });
-test('project investment chart renders stored costs and shows loading/error without inventing a zero balance', async () => {
+test('project investment chart renders stored costs, filters projects, expands details and shows loading/error', async () => {
   const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
-  const props = { projects: [{ id: 'p', nombre: 'Proyecto Norte', cliente: '', ubicacion: '', estado: 'ACTIVO' as const, createdAt: '' }],
-    spending: [{ proyectoId: 'p', totalCOP: 12500.5, salidas: 3 }], loading: false, error: false, onRetry: () => {} };
+  let openedProjects = 0;
+  const props = {
+    projects: [
+      { id: 'p', nombre: 'Proyecto Norte', cliente: 'Cliente Sol', ubicacion: 'Bogotá', estado: 'ACTIVO' as const, createdAt: '' },
+      { id: 'z', nombre: 'Proyecto Vacío', cliente: 'Cliente Cero', ubicacion: 'Cali', estado: 'FINALIZADO' as const, createdAt: '' },
+    ],
+    spending: [{ proyectoId: 'p', totalCOP: 12500.5, salidas: 3 }],
+    loading: false, error: false, onRetry: () => {}, onOpenProjects: () => { openedProjects++; },
+  };
+  const button = (pattern: RegExp) => [...host.querySelectorAll<HTMLButtonElement>('button')].find(btn => pattern.test(btn.textContent || ''))!;
   try {
-    await act(() => root.render(h(ProjectInvestmentChart, props))); assert.match(host.textContent!, /Proyecto Norte/); assert.match(host.textContent!, /12\.500,5/);
+    await act(() => root.render(h(ProjectInvestmentChart, props)));
+    assert.match(host.textContent!, /Proyecto Norte/); assert.match(host.textContent!, /12\.500,5/);
+    assert.doesNotMatch(host.textContent!, /Proyecto Vacío/, 'defaults to projects with investment');
+    await act(() => button(/Todos/).click());
+    assert.match(host.textContent!, /Proyecto Vacío/);
+    await act(() => button(/Proyecto Norte/).click());
+    assert.match(host.textContent!, /Cliente Sol/);
+    await act(() => button(/Ir a Proyectos/).click());
+    assert.equal(openedProjects, 1);
+
     await act(() => root.render(h(ProjectInvestmentChart, { ...props, spending: [], loading: true })));
     assert.ok(host.querySelector('[role="status"]')); assert.equal(host.querySelector('ul'), null);
     await act(() => root.render(h(ProjectInvestmentChart, { ...props, spending: [], error: true })));
     assert.ok(host.querySelector('[role="alert"]')); assert.equal(host.querySelector('ul'), null);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});
+
+test('warehouse value chart sorts by value, toggles empty warehouses and opens filtered inventory on click', async () => {
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  const navigated: InventoryFilters[] = [];
+  const warehouses = [
+    mapAlmacen({ id: 'w-empty', nombre: 'Bodega Vacía', direccion: 'Cali' }),
+    mapAlmacen({ id: 'w-main', nombre: 'Almacén Turpial', direccion: 'Bogotá' }),
+  ];
+  const items = [
+    mapElemento({ id: 'i1', almacen_id: 'w-main', cantidad: 10, especificaciones: { valor_unitario_cop: 5000 } }),
+  ];
+  const button = (pattern: RegExp) => [...host.querySelectorAll<HTMLButtonElement>('button')].find(btn => pattern.test(btn.textContent || ''))!;
+  try {
+    await act(() => root.render(h(WarehouseValueChart, {
+      items, warehouses, warehouseScope: 'ALL',
+      onOpenInventory: (filters: InventoryFilters) => { navigated.push(filters); },
+    })));
+    assert.match(host.textContent!, /Almacén Turpial/);
+    assert.doesNotMatch(host.textContent!, /Bodega Vacía/, 'defaults to warehouses with value');
+    await act(() => button(/Todos/).click());
+    assert.match(host.textContent!, /Bodega Vacía/);
+    await act(() => button(/Almacén Turpial/).click());
+    assert.equal(navigated.length, 1);
+    assert.equal(navigated[0].warehouseId, 'w-main');
   } finally { await act(() => root.unmount()); host.remove(); }
 });

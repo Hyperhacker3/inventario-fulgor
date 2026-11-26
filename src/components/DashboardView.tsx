@@ -8,6 +8,7 @@ import { formatCOP, inventoryValues } from '../domain/money';
 import { useProjectSpending } from '../state/useProjectSpending';
 import { ProjectInvestmentChart } from './dashboard/ProjectInvestmentChart';
 import { ToolsOverviewSection } from './dashboard/ToolsOverviewSection';
+import { WarehouseValueChart } from './dashboard/WarehouseValueChart';
 
 const number = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 3 });
 export function DashboardView() {
@@ -17,9 +18,6 @@ export function DashboardView() {
   const items = useMemo(() => elementos.filter(item => warehouse === 'ALL' || (warehouse === 'NONE' ? !item.almacenId : item.almacenId === warehouse)), [elementos, warehouse]);
   const summary = useMemo(() => summarizeInventory(items, almacenes), [items, almacenes]);
   const values = useMemo(() => inventoryValues(items), [items]);
-  const warehouseValues = almacenes.filter(row => warehouse === 'ALL' || row.id === warehouse)
-    .map(row => ({ label: row.nombre, value: values.warehouses.get(row.id) || 0 }));
-  if (values.warehouses.has('')) warehouseValues.push({ label: 'Sin almacén asignado', value: values.warehouses.get('')! });
   const itemIndex = useMemo(() => new Map(items.map(item => [item.id, item])), [items]);
   const recent = historial.filter(row => warehouse === 'ALL' || itemIndex.has(row.elementoId)).slice(0, 6);
   const metrics = [
@@ -63,8 +61,8 @@ export function DashboardView() {
       </div>
       <p className="text-xs text-slate-500">Valores en COP para el alcance seleccionado. Productos sin precio: valor 0. Se excluyen elementos archivados y conteos pendientes.</p>
       <div className="grid lg:grid-cols-2 gap-5">
-        <InventoryBars title="Valor por almacén" description="Valor del stock confirmado dentro del alcance seleccionado." rows={warehouseValues} formatValue={formatCOP} />
-        <ProjectInvestmentChart projects={proyectos} spending={spending.data || []} loading={spending.isPending} error={spending.isError} onRetry={() => { void spending.refetch(); }} />
+        <WarehouseValueChart items={items} warehouses={almacenes} warehouseScope={warehouse} onOpenInventory={openLocationInventory} />
+        <ProjectInvestmentChart projects={proyectos} spending={spending.data || []} loading={spending.isPending} error={spending.isError} onRetry={() => { void spending.refetch(); }} onOpenProjects={() => setActiveView('projects')} />
       </div>
       <div className="grid lg:grid-cols-2 gap-5"><StockChart statuses={summary.statuses} total={summary.total} /><InventoryBars title="Productos por categoría" description="Cantidad de referencias distintas, independientemente de sus unidades." rows={summary.categories.map(row => ({ ...row, label: categoryLabel(row.id) }))} /></div>
       <div className="grid lg:grid-cols-2 gap-5">
