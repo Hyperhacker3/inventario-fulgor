@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
+import ts from 'typescript';
 import { JSDOM } from 'jsdom';
 import { act, createElement, lazy, useState } from 'react';
 import { AppInitialContent } from '../../src/components/AppLoadingScreen';
+import { StateIcon } from '../../src/components/ui/StateIcon';
 import { combinedInitialStatus, initialQueryStatus } from '../../src/domain/initialLoad';
 import { loadStartupFonts } from '../../src/shared/startupAssets';
 import { useViewNavigation } from '../../src/state/useViewNavigation';
@@ -145,4 +148,44 @@ test('first HTML has an independent spinner and module error recovery; fonts are
   for(const file of ['Hanken-Grotesk-OFL.txt','JetBrains-Mono-OFL.txt','Material-Symbols-LICENSE.txt']) {
     assert.ok(fs.readFileSync(new URL(`../../public/fonts/${file}`,import.meta.url),'utf8').length>1000);
   }
+  // Every icon referenced in src/ must exist in the vendored font or as an SVG in StateIcon.
+  const available = new Set<string>(manifest.iconNames);
+  const stateIconSource = fs.readFileSync(new URL('../../src/components/ui/StateIcon.tsx', import.meta.url), 'utf8');
+  for (const match of stateIconSource.matchAll(/^\s+([a-z][a-z0-9_]*):\s*\{/gm)) available.add(match[1]);
+  const used = new Set<string>();
+  const collect = (node: ts.Node) => {
+    if (ts.isConditionalExpression(node)) { collect(node.whenTrue); collect(node.whenFalse); return; }
+    if (ts.isStringLiteralLike(node) && /^[a-z][a-z0-9_]*$/.test(node.text)) used.add(node.text);
+    if (ts.isJsxText(node) && /^[a-z][a-z0-9_]*$/.test(node.text.trim())) used.add(node.text.trim());
+    ts.forEachChild(node, collect);
+  };
+  const scan = (directory: string) => {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const target = path.join(directory, entry.name);
+      if (entry.isDirectory()) scan(target);
+      else if (/\.tsx?$/.test(target)) {
+        const source = ts.createSourceFile(target, fs.readFileSync(target, 'utf8'), ts.ScriptTarget.Latest, true);
+        const visit = (node: ts.Node) => {
+          if (ts.isJsxElement(node) && node.openingElement.attributes.getText(source).includes('material-symbols-outlined')) node.children.forEach(collect);
+          if (ts.isJsxAttribute(node) && node.name.getText(source) === 'icon' && node.initializer) collect(node.initializer);
+          if (ts.isPropertyAssignment(node) && node.name.getText(source) === 'icon') collect(node.initializer);
+          if (ts.isVariableDeclaration(node) && node.name.getText(source) === 'icons' && node.initializer) collect(node.initializer);
+          ts.forEachChild(node, visit);
+        };
+        visit(source);
+      }
+    }
+  };
+  scan(path.resolve(import.meta.dirname, '../../src'));
+  const missing = [...used].filter(name => !available.has(name));
+  assert.deepEqual(missing, [], `missing vendored/SVG icons: ${missing.join(', ')}`);
+  // The bulk-selection checklist icon renders as an inline SVG with outline/solid states, never fallback text.
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  try {
+    await act(() => root.render(createElement(StateIcon, { icon: 'checklist', filled: true, className: 'text-xl' })));
+    const icon = host.querySelector('svg[data-icon="checklist"]');
+    assert.ok(icon); assert.equal(icon.getAttribute('data-filled'), 'true');
+    assert.equal(host.textContent, '');
+    assert.ok(icon.querySelector('.ui-icon-outline') && icon.querySelector('.ui-icon-solid'));
+  } finally { await act(() => root.unmount()); host.remove(); }
 });

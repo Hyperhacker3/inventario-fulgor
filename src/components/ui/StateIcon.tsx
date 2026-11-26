@@ -7,6 +7,10 @@ const shapes: Record<string, { outline: ReactNode; solid: ReactNode }> = {
     outline: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M7 16v-4m5 4V8m5 8v-6" /></>,
     solid: <path fill="currentColor" stroke="none" fillRule="evenodd" d="M5 2h14a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3Zm1 10v5h2v-5Zm5-5v10h2V7Zm5 3v7h2v-7Z" />,
   },
+  checklist: {
+    outline: <><path d="m3 7 2 2 4-4m-6 12 2 2 4-4" /><path d="M12 7h9M12 17h9" /></>,
+    solid: <><path d="m3 7 2 2 4-4m-6 12 2 2 4-4" strokeWidth="3" /><path fill="currentColor" stroke="none" d="M12 5.5h9a1.5 1.5 0 0 1 0 3h-9a1.5 1.5 0 0 1 0-3Zm0 10h9a1.5 1.5 0 0 1 0 3h-9a1.5 1.5 0 0 1 0-3Z" /></>,
+  },
   edit: {
     outline: <path d="m16 3 5 5M4 15 16 3a2.1 2.1 0 0 1 5 5L9 20l-6 1 1-6Z" />,
     solid: <path d="m16 3 5 5M4 15 16 3a2.1 2.1 0 0 1 5 5L9 20l-6 1 1-6Z" fill="currentColor" />,

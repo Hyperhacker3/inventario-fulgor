@@ -6,6 +6,7 @@ import ts from 'typescript';
 const root = path.resolve(import.meta.dirname, '..');
 const names = new Set();
 const collect = node => {
+  if (ts.isConditionalExpression(node)) { collect(node.whenTrue); collect(node.whenFalse); return; }
   if (ts.isStringLiteralLike(node) && /^[a-z][a-z0-9_]*$/.test(node.text)) names.add(node.text);
   if (ts.isJsxText(node) && /^[a-z][a-z0-9_]*$/.test(node.text.trim())) names.add(node.text.trim());
   ts.forEachChild(node, collect);
@@ -18,6 +19,7 @@ async function scan(directory) {
       const source = ts.createSourceFile(file, await fs.readFile(file, 'utf8'), ts.ScriptTarget.Latest, true);
       const visit = node => {
         if (ts.isJsxElement(node) && node.openingElement.attributes.getText(source).includes('material-symbols-outlined')) node.children.forEach(collect);
+        if (ts.isJsxAttribute(node) && node.name.getText(source) === 'icon' && node.initializer) collect(node.initializer);
         if (ts.isPropertyAssignment(node) && node.name.getText(source) === 'icon') collect(node.initializer);
         if (ts.isVariableDeclaration(node) && node.name.getText(source) === 'icons' && node.initializer) collect(node.initializer);
         ts.forEachChild(node, visit);

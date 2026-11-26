@@ -87,24 +87,24 @@ export const ExplorerView: React.FC = () => {
             Mostrando <strong className="text-[#131b2e] font-bold">{filteredItems.length.toLocaleString('es-CO')}</strong> componentes
           </p>
           <div role="group" aria-label="Controles del inventario" className="flex items-center gap-1">
-            {canBulkEdit && <button type="button" aria-pressed={selecting} aria-controls="inventory-selection"
+            {canBulkEdit && <button type="button" aria-expanded={selecting} aria-pressed={selecting} aria-controls="inventory-selection"
               aria-label={selecting ? 'Terminar selección' : 'Seleccionar varios productos'} title={selecting ? 'Terminar selección' : 'Seleccionar varios productos'}
-              onClick={toggleSelecting} className="ui-flat-choice relative min-w-11 min-h-11 p-2 rounded-lg">
+              onClick={toggleSelecting} className="ui-flat-choice relative inline-flex items-center justify-center min-w-11 min-h-11 p-2 rounded-lg">
               <StateIcon icon="checklist" filled={selecting} className="text-xl" />
               {selecting && selectedItems.length > 0 && <span aria-hidden="true" className="absolute -top-1 -right-1 bg-[#3e4e9e] text-white text-[10px] px-1.5 rounded-full">{selectedItems.length}</span>}
             </button>}
             <button type="button" aria-expanded={filtersOpen} aria-controls="inventory-filters" aria-pressed={filtersOpen}
               aria-label={filtersOpen ? 'Ocultar filtros' : 'Mostrar filtros'} title={filtersOpen ? 'Ocultar filtros' : 'Mostrar filtros'}
-              onClick={() => setExplorerState(previous => ({ ...previous, filtersOpen: !previous.filtersOpen }))} className="ui-flat-choice relative min-w-11 min-h-11 p-2 rounded-lg">
+              onClick={() => setExplorerState(previous => ({ ...previous, filtersOpen: !previous.filtersOpen }))} className="ui-flat-choice relative inline-flex items-center justify-center min-w-11 min-h-11 p-2 rounded-lg">
               <StateIcon icon="filter_list" filled={filtersOpen} className="text-xl" />
               {activeFiltersCount > 0 && <span aria-hidden="true" className="absolute -top-1 -right-1 bg-[#3e4e9e] text-white text-[10px] px-1.5 rounded-full">{activeFiltersCount}</span>}
             </button>
             <button type="button" onClick={() => setViewMode('grid')} aria-pressed={viewMode === 'grid'} aria-label="Vista cuadrícula"
-              className="ui-flat-choice min-w-11 min-h-11 p-2 rounded-lg" title="Vista cuadrícula">
+              className="ui-flat-choice inline-flex items-center justify-center min-w-11 min-h-11 p-2 rounded-lg" title="Vista cuadrícula">
               <StateIcon icon="grid_view" filled={viewMode === 'grid'} className="text-xl" />
             </button>
             <button type="button" onClick={() => setViewMode('list')} aria-pressed={viewMode === 'list'} aria-label="Vista lista"
-              className="ui-flat-choice min-w-11 min-h-11 p-2 rounded-lg" title="Vista lista">
+              className="ui-flat-choice inline-flex items-center justify-center min-w-11 min-h-11 p-2 rounded-lg" title="Vista lista">
               <StateIcon icon="view_list" filled={viewMode === 'list'} className="text-xl" />
             </button>
           </div>
