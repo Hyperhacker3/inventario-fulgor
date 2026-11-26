@@ -7,10 +7,11 @@ import { InventoryBars, StockChart } from './dashboard/InventoryCharts';
 import { formatCOP, inventoryValues } from '../domain/money';
 import { useProjectSpending } from '../state/useProjectSpending';
 import { ProjectInvestmentChart } from './dashboard/ProjectInvestmentChart';
+import { ToolsOverviewSection } from './dashboard/ToolsOverviewSection';
 
 const number = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 3 });
 export function DashboardView() {
-  const { elementos, almacenes, proyectos, historial, setActiveView, openItemDetail, getLocationString, syncStatus, categoryLabel } = useInventory();
+  const { elementos, almacenes, categorias, proyectos, historial, setActiveView, openItemDetail, openLocationInventory, getLocationString, syncStatus, categoryLabel } = useInventory();
   const spending = useProjectSpending();
   const [warehouse, setWarehouse] = useState('ALL');
   const items = useMemo(() => elementos.filter(item => warehouse === 'ALL' || (warehouse === 'NONE' ? !item.almacenId : item.almacenId === warehouse)), [elementos, warehouse]);
@@ -23,9 +24,6 @@ export function DashboardView() {
   const recent = historial.filter(row => warehouse === 'ALL' || itemIndex.has(row.elementoId)).slice(0, 6);
   const metrics = [
     { label: 'Productos activos', value: summary.total, hint: 'Referencias distintas del catálogo', color: 'text-[#253685]' },
-    { label: 'Sin disponibilidad', value: summary.statuses['Sin disponibilidad'], hint: 'Sin stock utilizable para registrar una salida', color: 'text-red-600' },
-    { label: 'Stock bajo', value: summary.statuses['Stock bajo'], hint: 'Disponibilidad igual o inferior al mínimo', color: 'text-amber-600' },
-    { label: 'Conteos pendientes', value: summary.statuses['Pendiente de conteo'], hint: 'Requieren confirmar existencias', color: 'text-indigo-600' },
     { label: 'Productos con daños', value: summary.damagedProducts, hint: 'Referencias con estado MALO, EN REPARACIÓN o PARA REPARAR', color: 'text-rose-600' },
     { label: 'Productos para reparar', value: summary.repairProducts, hint: 'Referencias con la etiqueta PARA REPARAR', color: 'text-amber-600' },
   ];
@@ -42,7 +40,15 @@ export function DashboardView() {
     </div>
     {syncStatus === 'offline' && <p role="alert" className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">No se pudo confirmar la sincronización. Los datos mostrados corresponden a la última lectura disponible.</p>}
     {elementos.length === 0 && syncStatus === 'syncing' ? <p role="status" className="p-8 bg-white rounded-xl">Cargando indicadores…</p> : <>
-      <div className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-5">{metrics.map(metric => <section key={metric.label} className="min-w-0 bg-white border border-[#e2e8f0] rounded-xl p-4">
+      <ToolsOverviewSection
+        items={items}
+        categories={categorias}
+        warehouseScope={warehouse}
+        getLocationString={getLocationString}
+        onOpenItem={openItemDetail}
+        onOpenInventory={openLocationInventory}
+      />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">{metrics.map(metric => <section key={metric.label} className="min-w-0 bg-white border border-[#e2e8f0] rounded-xl p-4">
         <h3 className="text-xs font-semibold text-slate-600">{metric.label}</h3><p className={`text-3xl font-bold mt-2 ${metric.color}`}>{number.format(metric.value)}</p><p className="text-[11px] text-slate-500 mt-2">{metric.hint}</p>
       </section>)}</div>
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-5">

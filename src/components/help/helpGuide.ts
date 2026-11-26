@@ -1,5 +1,6 @@
 export const helpGuide = [
   { title: 'Inicio y notificaciones', items: [
+    'Consulte arriba el panel interactivo de herramientas eléctricas y a combustión: filtre entre Todas, Eléctricas o Combustión, revise cuántas unidades necesitan reparación, están en reparación o siguen operativas, abra cualquiera de las 3 herramientas más recientes marcadas PARA REPARAR o pase directo al inventario filtrado.',
     'Consulte el resumen de existencias, valores del inventario, material dañado y proyectos. Productos para reparar cuenta las referencias activas etiquetadas PARA REPARAR, de forma independiente de EN REPARACIÓN. Los indicadores de material dañado en Inicio y Almacenes se calculan únicamente según la etiqueta de estado (MALO, EN REPARACIÓN o PARA REPARAR), sin contar unidades dañadas por aparte ni restarlas del stock disponible. Los conteos pendientes se excluyen de unidades y valores hasta verificarlos; los precios sin definir siguen valiendo 0. La campana reúne alertas de stock agotado o por debajo del mínimo configurado.',
     'Toque una alerta para abrir el producto. Ver más permite consultar todas las alertas; los nombres largos se muestran completos.',
   ] },
