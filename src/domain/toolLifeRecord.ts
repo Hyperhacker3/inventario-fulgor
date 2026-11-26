@@ -17,7 +17,7 @@ export interface LifeSection { title: string; fields: LifeField[] }
 const text = (key: string, label: string, placeholder?: string): LifeField => ({ key, label, kind: 'text', placeholder });
 const date = (key: string, label: string): LifeField => ({ key, label, kind: 'date' });
 
-/** Contents of a tool life record: identification, purchase, technical data and use/safety. */
+/** Contents of a tool life record: identification, purchase and technical data. */
 export function lifeRecordSections(type: ToolType): LifeSection[] {
   const technical = type === 'ELECTRICA'
     ? [text('potencia', 'Potencia', '1.200 W'), text('voltaje', 'Voltaje', '120 V'), text('amperaje', 'Corriente', '10 A'),
@@ -28,16 +28,10 @@ export function lifeRecordSections(type: ToolType): LifeSection[] {
       text('capacidad_tanque', 'Capacidad del tanque', '3,6 L'), text('mezcla_aceite', 'Mezcla aceite-combustible', '50:1'),
       text('aceite_motor', 'Aceite de motor', 'SAE 10W-30 · 0,6 L'), text('arranque', 'Arranque', 'Manual o eléctrico')];
   return [
-    { title: 'Identificación', fields: [text('modelo', 'Modelo'), text('numero_serie', 'Número de serie'),
-      { key: 'anio_fabricacion', label: 'Año de fabricación', kind: 'year', placeholder: '2025' }] },
+    { title: 'Identificación', fields: [text('modelo', 'Modelo'), text('numero_serie', 'Número de serie')] },
     { title: 'Adquisición', fields: [date('fecha_adquisicion', 'Fecha de adquisición'), text('proveedor', 'Proveedor'),
-      text('factura', 'Factura o documento de compra'), date('garantia_hasta', 'Garantía hasta'), date('fecha_puesta_servicio', 'Puesta en servicio')] },
+      text('factura', 'Factura o documento de compra'), date('garantia_hasta', 'Garantía hasta')] },
     { title: 'Datos técnicos', fields: technical },
-    { title: 'Uso, mantenimiento y seguridad', fields: [text('responsable', 'Responsable o asignado a'),
-      text('frecuencia_mantenimiento', 'Frecuencia de mantenimiento', 'Cada 50 horas o cada 3 meses'),
-      text('epp_requerido', 'EPP requerido', 'Gafas, guantes y protección auditiva'),
-      { key: 'recomendaciones_seguridad', label: 'Recomendaciones de seguridad', kind: 'long' },
-      { key: 'observaciones', label: 'Observaciones', kind: 'long' }] },
   ];
 }
 

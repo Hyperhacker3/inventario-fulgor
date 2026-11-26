@@ -162,19 +162,16 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
             </div>
           </div>
           {item.archived && canAdmin && <ArchivedItemActions item={item} onDelete={onPermanentDelete} onRestore={onRestore} />}
-          {toolType && <button type="button" data-action="life-record" aria-pressed={lifeRecordOpen} disabled={busy || editing}
-            onClick={() => { setError(''); setLifeRecordOpen(true); }}
-            className="ui-flat-choice self-start min-h-11 px-4 rounded-lg text-sm font-semibold inline-flex items-center gap-2">
-            <StateIcon icon="assignment" filled={lifeRecordOpen} />Ver hoja de vida
-          </button>}
         </div>
-        {!item.archived && <div className="item-detail-actions">
-          {canAdmin && <button type="button" data-action="edit" aria-pressed={editing} disabled={busy} onClick={startEdit} aria-label="Editar" title="Editar" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="edit" filled={editing} /></button>}
-          {canOperate && !item.stockPendiente && <button type="button" data-action="entry" aria-pressed={entryOpen} disabled={busy || editing} onClick={() => openQuickMovement(item, 'ENTRADA')} aria-label="Entrada" title="Entrada" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="input" filled={entryOpen} /></button>}
-          {(canAdmin || canOperate && !item.stockPendiente) && <button type="button" data-action="adjustment" aria-pressed={adjustmentOpen} disabled={busy || editing} onClick={() => openQuickMovement(item, 'AJUSTE')} aria-label={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} title={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="tune" filled={adjustmentOpen} /></button>}
-          {canOperate && <button type="button" data-action="dispatch" aria-pressed={dispatchOpen} disabled={busy || editing || available(item) === 0 || inventory.cartLocked} onClick={() => addToDispatchCart(item)} aria-label="Agregar a la salida" title="Agregar a la salida"
+        {(!item.archived || toolType) && <div className="item-detail-actions">
+          {!item.archived && canAdmin && <button type="button" data-action="edit" aria-pressed={editing} disabled={busy} onClick={startEdit} aria-label="Editar" title="Editar" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="edit" filled={editing} /></button>}
+          {!item.archived && canOperate && !item.stockPendiente && <button type="button" data-action="entry" aria-pressed={entryOpen} disabled={busy || editing} onClick={() => openQuickMovement(item, 'ENTRADA')} aria-label="Entrada" title="Entrada" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="input" filled={entryOpen} /></button>}
+          {!item.archived && (canAdmin || canOperate && !item.stockPendiente) && <button type="button" data-action="adjustment" aria-pressed={adjustmentOpen} disabled={busy || editing} onClick={() => openQuickMovement(item, 'AJUSTE')} aria-label={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} title={item.stockPendiente ? 'Resolver stock pendiente' : 'Ajuste'} className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="tune" filled={adjustmentOpen} /></button>}
+          {!item.archived && canOperate && <button type="button" data-action="dispatch" aria-pressed={dispatchOpen} disabled={busy || editing || available(item) === 0 || inventory.cartLocked} onClick={() => addToDispatchCart(item)} aria-label="Agregar a la salida" title="Agregar a la salida"
             className="ui-flat-choice p-2 rounded-lg disabled:opacity-40"><StateIcon icon="add_shopping_cart" filled={dispatchOpen} /></button>}
-          {canAdmin && <button type="button" data-action="archive" aria-pressed={archiveConfirm} disabled={busy || editing} onClick={() => { setError(''); setArchiveConfirm(true); }} aria-label="Archivar" title="Archivar" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="archive" filled={archiveConfirm} /></button>}
+          {toolType && <button type="button" data-action="life-record" aria-pressed={lifeRecordOpen} disabled={busy || editing} onClick={() => { setError(''); setLifeRecordOpen(true); }} aria-label="Ver hoja de vida" title="Ver hoja de vida"
+            className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="assignment" filled={lifeRecordOpen} /></button>}
+          {!item.archived && canAdmin && <button type="button" data-action="archive" aria-pressed={archiveConfirm} disabled={busy || editing} onClick={() => { setError(''); setArchiveConfirm(true); }} aria-label="Archivar" title="Archivar" className="ui-flat-choice p-2 rounded-lg"><StateIcon icon="archive" filled={archiveConfirm} /></button>}
         </div>}
         {history}
       </div>
@@ -225,7 +222,7 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
         </form>
     </ItemEditDialog>}</Presence>
     <Presence open={lifeRecordOpen && !!toolType}>{lifeRecordOpen && toolType && <ToolLifeRecordDialog item={item} type={toolType} user={user}
-      categoryLabel={categoryLabel} location={getLocationString(item)} onClose={() => setLifeRecordOpen(false)} services={lifeServices} />}</Presence>
+      categoryLabel={categoryLabel} onClose={() => setLifeRecordOpen(false)} services={lifeServices} />}</Presence>
     <Presence open={archiveConfirm}>{archiveConfirm && <ConfirmDialog title="Archivar producto" message={`¿Archivar ${item.codigo} · ${item.nombre}?`} pending={pending} error={error}
       onCancel={() => { setArchiveConfirm(false); setError(''); }} onConfirm={() => { void archive(); }} />}</Presence>
   </div>;

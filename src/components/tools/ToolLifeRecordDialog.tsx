@@ -29,11 +29,11 @@ const PHOTO_LABELS: EvidencePhotoLabels = { title: 'Fotos del mantenimiento', al
   description: 'Opcional, hasta 12 fotos. Puede tomar varias seguidas o subir archivos; se guardan de forma privada con este registro.' };
 
 interface Props {
-  item: Elemento; type: ToolType; user: UserProfile; categoryLabel: (id: string) => string; location: string;
+  item: Elemento; type: ToolType; user: UserProfile; categoryLabel: (id: string) => string;
   onClose: () => void; services?: ToolLifeServices;
 }
 
-export function ToolLifeRecordDialog({ item, type, user, categoryLabel, location, onClose, services = defaultServices }: Props) {
+export function ToolLifeRecordDialog({ item, type, user, categoryLabel, onClose, services = defaultServices }: Props) {
   const heading = useId();
   const dialog = useRef<HTMLElement>(null);
   const active = useMotionActive();
@@ -93,7 +93,6 @@ export function ToolLifeRecordDialog({ item, type, user, categoryLabel, location
             <Datum label="Estado" value={normalizeItemCondition(item.estado)} />
             <Datum label="Stock" value={item.stockPendiente ? 'Pendiente de verificar' : `${item.cantidad} ${item.unidad}`} />
             <Datum label={`Valor por 1 ${item.unidad.toUpperCase()}`} value={formatCOP(item.valorUnitario || 0)} />
-            <div className="min-[400px]:col-span-2"><Datum label="Ubicación" value={location} /></div>
           </dl>
         </section>
         {next && <p role="status" className={`rounded-xl p-3 text-sm font-semibold ${next.overdue ? 'bg-[#fce8e6] text-[#ba1a1a]' : 'bg-[#e6f4ea] text-[#137333]'}`}>

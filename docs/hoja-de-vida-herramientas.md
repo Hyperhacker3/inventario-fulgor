@@ -4,12 +4,11 @@ Actualizado: 26 de noviembre de 2026.
 
 ## Uso
 
-1. Los productos de las categorías **HERRAMIENTAS ELÉCTRICAS** y **HERRAMIENTAS A COMBUSTIÓN** muestran **Ver hoja de vida** en su ficha (icono de documento, color de acción azul, hundido mientras la ventana está abierta). Las demás categorías no lo muestran. Para incluir una herramienta, asígnele una de esas categorías al editarla o con la edición en grupo; la migración no cambia la categoría de ningún producto.
-2. La ventana se abre encima del detalle, que queda inerte debajo. Muestra los datos del producto (tipo, nombre, código, marca, categoría, estado, stock, valor por unidad y ubicación) y cuatro secciones:
-   - **Identificación:** modelo, número de serie, año de fabricación.
-   - **Adquisición:** fecha de adquisición, proveedor, factura o documento de compra, garantía hasta, puesta en servicio.
+1. Los productos de las categorías **HERRAMIENTAS ELÉCTRICAS** y **HERRAMIENTAS A COMBUSTIÓN** muestran el icono **Ver hoja de vida** junto a las acciones de la ficha (color turquesa, plano en reposo, elevado en hover y hundido mientras la ventana está abierta). Las demás categorías no lo muestran. Para incluir una herramienta, asígnele una de esas categorías al editarla o con la edición en grupo; la migración no cambia la categoría de ningún producto.
+2. La ventana se abre encima del detalle, que queda inerte debajo. Muestra los datos del producto (tipo, nombre, código, marca, categoría, estado, stock y valor por unidad) y tres secciones:
+   - **Identificación:** modelo y número de serie.
+   - **Adquisición:** fecha de adquisición, proveedor, factura o documento de compra y garantía hasta.
    - **Datos técnicos:** eléctricas — potencia, voltaje, corriente, frecuencia, velocidad (RPM), alimentación y batería; combustión — tipo de motor, cilindrada, potencia, combustible, capacidad del tanque, mezcla aceite-combustible, aceite de motor y arranque.
-   - **Uso, mantenimiento y seguridad:** responsable o asignado a, frecuencia de mantenimiento, EPP requerido, recomendaciones de seguridad y observaciones.
 3. **Editar datos** (solo administración) abre el formulario. Los campos vacíos se guardan como sin registrar. Si la herramienta cambió de tipo, los datos técnicos del otro tipo se conservan sin mostrarse.
 4. **Registrar mantenimiento** (administración y operadores, solo productos activos): fecha (hoy o anterior, hora de Colombia), tipo PREVENTIVO / CORRECTIVO / INSPECCIÓN, trabajo realizado, realizado por, repuestos o insumos, costo COP (hasta dos decimales), horas de uso (un decimal), próximo mantenimiento (igual o posterior a la fecha), observaciones y hasta 12 fotos tomadas con la cámara o subidas.
 5. El historial se ordena del más reciente al más antiguo, en páginas de 10, con fotos que se abren en una pestaña nueva. Un aviso verde indica el próximo mantenimiento y uno rojo indica que está vencido, según el registro más reciente.

@@ -7,6 +7,18 @@ const shapes: Record<string, { outline: ReactNode; solid: ReactNode }> = {
     outline: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M7 16v-4m5 4V8m5 8v-6" /></>,
     solid: <path fill="currentColor" stroke="none" fillRule="evenodd" d="M5 2h14a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3Zm1 10v5h2v-5Zm5-5v10h2V7Zm5 3v7h2v-7Z" />,
   },
+  assignment: {
+    outline: <><path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1Z" /><path d="M8 5H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><path d="M8 11h8M8 15h8M8 19h5" /></>,
+    solid: <path fill="currentColor" stroke="none" fillRule="evenodd" d="M9 2h6a2 2 0 0 1 2 2h1a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1a2 2 0 0 1 2-2Zm0 2v1.5h6V4H9Zm-1 6v1.8h8V10H8Zm0 4v1.8h8V14H8Zm0 4v1.8h5V18H8Z" />,
+  },
+  badge: {
+    outline: <><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="11" r="2" /><path d="M6.5 16a3 3 0 0 1 5 0M14 10h4M14 14h4" /></>,
+    solid: <path fill="currentColor" stroke="none" fillRule="evenodd" d="M5 4h14a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3Zm4 5a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-3 7c0-1.5 1.3-2.5 3-2.5s3 1 3 2.5H6Zm8-6.5v1.8h5V9.5h-5Zm0 4v1.8h5v-1.8h-5Z" />,
+  },
+  build: {
+    outline: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z" />,
+    solid: <path fill="currentColor" d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z" />,
+  },
   checklist: {
     outline: <><path d="m3 7 2 2 4-4m-6 12 2 2 4-4" /><path d="M12 7h9M12 17h9" /></>,
     solid: <><path d="m3 7 2 2 4-4m-6 12 2 2 4-4" strokeWidth="3" /><path fill="currentColor" stroke="none" d="M12 5.5h9a1.5 1.5 0 0 1 0 3h-9a1.5 1.5 0 0 1 0-3Zm0 10h9a1.5 1.5 0 0 1 0 3h-9a1.5 1.5 0 0 1 0-3Z" /></>,

@@ -28,14 +28,17 @@ test('only the two tool categories have a life record, with technical fields by 
   const keys = (type: 'ELECTRICA' | 'COMBUSTION') => lifeRecordSections(type).flatMap(section => section.fields.map(field => field.key));
   assert.ok(keys('ELECTRICA').includes('voltaje')); assert.ok(!keys('ELECTRICA').includes('cilindrada'));
   assert.ok(keys('COMBUSTION').includes('cilindrada')); assert.ok(keys('COMBUSTION').includes('mezcla_aceite')); assert.ok(!keys('COMBUSTION').includes('voltaje'));
-  for (const type of ['ELECTRICA', 'COMBUSTION'] as const)
-    for (const key of ['modelo', 'numero_serie', 'fecha_adquisicion', 'proveedor', 'garantia_hasta', 'responsable', 'frecuencia_mantenimiento', 'epp_requerido', 'recomendaciones_seguridad'])
+  for (const type of ['ELECTRICA', 'COMBUSTION'] as const) {
+    assert.deepEqual(lifeRecordSections(type).map(section => section.title), ['Identificación', 'Adquisición', 'Datos técnicos']);
+    for (const key of ['modelo', 'numero_serie', 'fecha_adquisicion', 'proveedor', 'factura', 'garantia_hasta'])
       assert.ok(keys(type).includes(key), `${type} includes ${key}`);
+    for (const removed of ['anio_fabricacion', 'fecha_puesta_servicio', 'responsable', 'frecuencia_mantenimiento', 'epp_requerido', 'recomendaciones_seguridad', 'observaciones'])
+      assert.ok(!keys(type).includes(removed), `${type} omits ${removed}`);
+  }
   assert.deepEqual(normalizeLifeData({ modelo: ' GSB ', numero_serie: '  ', cilindrada: '196 cc' }), { modelo: 'GSB', cilindrada: '196 cc' });
-  for (const [data, message] of [[{ modelo: 'x'.repeat(201) }, /200/], [{ fecha_adquisicion: '2026-02-30' }, /fecha válida/],
-    [{ anio_fabricacion: '1850' }, /1900/], [{ observaciones: 'x'.repeat(2001) }, /2000/]] as [LifeData, RegExp][])
+  for (const [data, message] of [[{ modelo: 'x'.repeat(201) }, /200/], [{ fecha_adquisicion: '2026-02-30' }, /fecha válida/]] as [LifeData, RegExp][])
     assert.throws(() => validateLifeData(data, 'ELECTRICA'), message);
-  assert.doesNotThrow(() => validateLifeData({ fecha_adquisicion: '2024-02-29', anio_fabricacion: '2024', cilindrada: 'ignored for electric' }, 'ELECTRICA'));
+  assert.doesNotThrow(() => validateLifeData({ fecha_adquisicion: '2024-02-29', cilindrada: 'ignored for electric', anio_fabricacion: 'preserved' }, 'ELECTRICA'));
 });
 
 test('maintenance validation, payload, Colombian date and next maintenance follow the Supabase rules', () => {
@@ -87,20 +90,30 @@ function services(initial: LifeRecord | null = null, rows: MaintenanceRecord[] =
     } };
 }
 
-test('the detail shows Ver hoja de vida only for tools and opens the record above it', async () => {
+test('the detail shows the icon-only life record button in the action bar only for tools and opens the record above it', async () => {
   const fake = services();
-  await mount(h(ItemDetailContent, { item: cable, onClose: () => {}, inventory: detailInventory() }), async (_host, rerender) => {
-    assert.equal(buttonByText('Ver hoja de vida'), undefined, 'other categories have no life record');
-    await rerender(h(ItemDetailContent, { item: tool, onClose: () => {}, inventory: detailInventory(), lifeServices: fake.value }));
-    const open = buttonByText('Ver hoja de vida')!;
-    assert.ok(open); assert.equal(open.getAttribute('aria-pressed'), 'false');
-    await act(() => open.click()); await settle();
+  await mount(h(ItemDetailContent, { item: cable, onClose: () => {}, inventory: detailInventory('admin') }), async (host, rerender) => {
+    assert.equal(host.querySelector('button[data-action="life-record"]'), null, 'other categories have no life record');
+    assert.deepEqual([...host.querySelectorAll('.item-detail-actions button')].map(btn => btn.getAttribute('data-action')), ['edit', 'entry', 'adjustment', 'dispatch', 'archive']);
+    await rerender(h(ItemDetailContent, { item: tool, onClose: () => {}, inventory: detailInventory('admin'), lifeServices: fake.value }));
+    assert.deepEqual([...host.querySelectorAll('.item-detail-actions button')].map(btn => btn.getAttribute('data-action')), ['edit', 'entry', 'adjustment', 'dispatch', 'life-record', 'archive']);
+    const open = host.querySelector<HTMLButtonElement>('.item-detail-actions button[data-action="life-record"]')!;
+    assert.ok(open); assert.ok(open.classList.contains('ui-flat-choice'));
+    assert.equal(open.getAttribute('aria-label'), 'Ver hoja de vida');
+    assert.equal(open.textContent, '', 'icon-only button renders SVG without fallback text');
+    assert.ok(open.querySelector('svg[data-icon="assignment"]'));
+    assert.equal(open.getAttribute('aria-pressed'), 'false');
+    await rerender(h(ItemDetailContent, { item: tool, onClose: () => {}, inventory: detailInventory('consulta'), lifeServices: fake.value }));
+    const openReadOnly = host.querySelector<HTMLButtonElement>('.item-detail-actions button[data-action="life-record"]')!;
+    await act(() => openReadOnly.click()); await settle();
     const dialog = document.querySelector<HTMLElement>('[data-tool-life-dialog]')!;
+    assert.ok(dialog.querySelector('[data-life-heading] svg[data-icon="assignment"]'));
+    assert.doesNotMatch(dialog.textContent!, /ASSIGNMENT|Ubicación|Año de fabricación|Puesta en servicio|Uso, mantenimiento y seguridad/);
     assert.match(dialog.textContent!, /Hoja de vida · HER001/); assert.match(dialog.textContent!, /Herramienta eléctrica/);
     assert.match(dialog.textContent!, /Voltaje/); assert.doesNotMatch(dialog.textContent!, /Cilindrada/);
     assert.match(dialog.textContent!, /Aún no hay mantenimientos registrados/);
     assert.equal(document.querySelector('[role="dialog"][aria-labelledby="item-detail-heading"]')!.getAttribute('aria-hidden'), 'true', 'the detail is inert below');
-    assert.equal(open.getAttribute('aria-pressed'), 'true');
+    assert.equal(openReadOnly.getAttribute('aria-pressed'), 'true');
     assert.equal(buttonByText('Editar datos'), undefined, 'read-only roles cannot edit');
     assert.equal(buttonByText('Registrar mantenimiento'), undefined, 'read-only roles cannot register');
   });
@@ -108,7 +121,7 @@ test('the detail shows Ver hoja de vida only for tools and opens the record abov
 
 test('administration edits the life record with its version, keeping other data and the draft on conflicts', async () => {
   const fake = services({ datos: { modelo: 'GSB 13', cilindrada: 'dato anterior' }, version: 3, updatedAt: '2026-11-01T10:00:00Z', updatedBy: 'Otra persona' });
-  await mount(h(ToolLifeRecordDialog, { item: tool, type: 'ELECTRICA', user: user('admin'), categoryLabel: (id: string) => id, location: 'Bodega', onClose: () => {}, services: fake.value }), async () => {
+  await mount(h(ToolLifeRecordDialog, { item: tool, type: 'ELECTRICA', user: user('admin'), categoryLabel: (id: string) => id, onClose: () => {}, services: fake.value }), async () => {
     await settle();
     const dialog = document.querySelector<HTMLElement>('[data-tool-life-dialog]')!;
     assert.match(dialog.textContent!, /GSB 13/); assert.match(dialog.textContent!, /Sin registrar/); assert.match(dialog.textContent!, /por Otra persona/);
@@ -132,7 +145,7 @@ test('operators register maintenance with validation, a reused request on retry 
     proxima_fecha: '2026-11-20', fotos: ['maintenance://user/request/photo.webp'], registrado_por: 'Persona' });
   const fake = services(null, [previous]);
   let closed = 0;
-  await mount(h(ToolLifeRecordDialog, { item: tool, type: 'ELECTRICA', user: user('operador'), categoryLabel: (id: string) => id, location: 'Bodega', onClose: () => { closed++; }, services: fake.value }), async () => {
+  await mount(h(ToolLifeRecordDialog, { item: tool, type: 'ELECTRICA', user: user('operador'), categoryLabel: (id: string) => id, onClose: () => { closed++; }, services: fake.value }), async () => {
     await settle(); await settle();
     const dialog = document.querySelector<HTMLElement>('[data-tool-life-dialog]')!;
     assert.match(dialog.textContent!, /Mantenimiento vencido desde el/);

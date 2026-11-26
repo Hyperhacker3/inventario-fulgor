@@ -42,7 +42,7 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 
 ## Hoja de vida de herramientas
 
-- Los productos de las categorías HERRAMIENTAS ELÉCTRICAS y HERRAMIENTAS A COMBUSTIÓN muestran Ver hoja de vida en su ficha. Para incluir una herramienta, asígnele una de esas categorías al editarla o desde la edición en grupo. La ventana se abre encima del detalle con código, marca, categoría, estado, stock, valor y ubicación, y las secciones Identificación, Adquisición, Datos técnicos y Uso, mantenimiento y seguridad. Los datos técnicos dependen del tipo: potencia, voltaje, corriente, frecuencia, velocidad y batería para eléctricas; motor, cilindrada, combustible, tanque, mezcla, aceite y arranque para combustión.
+- Los productos de las categorías HERRAMIENTAS ELÉCTRICAS y HERRAMIENTAS A COMBUSTIÓN muestran el icono Ver hoja de vida junto a las acciones de la ficha. Para incluir una herramienta, asígnele una de esas categorías al editarla o desde la edición en grupo. La ventana se abre encima del detalle con código, marca, categoría, estado, stock y valor, y las secciones Identificación, Adquisición y Datos técnicos. Los datos técnicos dependen del tipo: potencia, voltaje, corriente, frecuencia, velocidad y batería para eléctricas; motor, cilindrada, combustible, tanque, mezcla, aceite y arranque para combustión.
 
 - Administración pulsa Editar datos para completar o corregir la hoja de vida. Si otra cuenta la modificó mientras tanto, se avisa sin sobrescribir sus cambios y el formulario se conserva para revisarlo y volver a guardar.
 
