@@ -28,6 +28,7 @@ const normalizeLocationCodesMigration = fs.readFileSync(new URL('../../supabase/
 const deleteLocationsMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000300_delete_empty_locations.sql', import.meta.url), 'utf8');
 const locationCodesAudit = fs.readFileSync(new URL('../../supabase/audit_location_codes_readonly.sql', import.meta.url), 'utf8');
 const editUnitMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000200_edit_item_units.sql', import.meta.url), 'utf8');
+const editCategoryMigration = fs.readFileSync(new URL('../../supabase/migrations/20261126000300_edit_item_category.sql', import.meta.url), 'utf8');
 const toolLifeMigration = fs.readFileSync(new URL('../../supabase/migrations/20261126000200_tool_life_records.sql', import.meta.url), 'utf8');
 const bulkEditMigration = fs.readFileSync(new URL('../../supabase/migrations/20261126000100_bulk_item_edit.sql', import.meta.url), 'utf8');
 const reportHistoryMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000100_inventory_report_history.sql', import.meta.url), 'utf8');
@@ -1982,4 +1983,44 @@ test('tool life records add both tool categories, keep versioned data for admins
   await assert.rejects(()=>db.query('SELECT * FROM public.inventario_mantenimientos'),/permission denied/);
   await assert.rejects(()=>db.query(registerSql,[request(30),'ELM-003',JSON.stringify(input),'[]']),/permission denied/);
  }finally{await db.close();}
+});
+
+test('admin can change item category during single-item edit with active-category and archived validation', async () => {
+  const db = await database({ uppercase: true });
+  try {
+    await db.exec(automaticCodesMigration);
+    await db.exec(toolLifeMigration);
+    await db.exec("INSERT INTO public.inventario_categorias(id,nombre,activo) VALUES('CAT_INACTIVA','Categoría inactiva',false)");
+    const original = (await db.query('SELECT * FROM public.elementos ORDER BY id')).rows;
+    await db.exec(editCategoryMigration);
+    await db.exec(editCategoryMigration);
+    assert.deepEqual((await db.query('SELECT * FROM public.elementos ORDER BY id')).rows, original, 'migration does not alter existing rows');
+
+    await role(db, 'admin');
+    assert.equal((await db.query('SELECT public.inventory_item_category_edit_ready() AS ready')).rows[0].ready, true);
+    assert.equal((await db.query("SELECT has_column_privilege(current_user,'public.elementos','cantidad','UPDATE') AS allowed")).rows[0].allowed, false);
+
+    const before = (await db.query("SELECT * FROM public.elementos WHERE id='ELM-001'")).rows[0];
+    const changed = (await db.query("UPDATE public.elementos SET categoria='HERRAMIENTAS_ELECTRICAS' WHERE id='ELM-001' RETURNING *")).rows[0];
+    assert.equal(changed.categoria, 'HERRAMIENTAS_ELECTRICAS');
+    assert.equal(Number(changed.cantidad), Number(before.cantidad));
+    assert.deepEqual(changed.especificaciones, before.especificaciones);
+
+    for (const invalid of [null, '', 'NO_EXISTE', 'CAT_INACTIVA']) {
+      await assert.rejects(() => db.query("UPDATE public.elementos SET categoria=$1 WHERE id='ELM-001'", [invalid]), /categoría activa/);
+    }
+
+    await asOwner(db);
+    await db.exec("UPDATE public.elementos SET archived=true WHERE id='ELM-002'");
+    await role(db, 'admin');
+    await assert.rejects(() => db.query("UPDATE public.elementos SET categoria='HERRAMIENTAS_COMBUSTION' WHERE id='ELM-002'"), /archivado/);
+
+    for (const value of ['operador', 'consulta']) {
+      await role(db, value);
+      await assert.rejects(() => db.query('SELECT public.inventory_item_category_edit_ready()'), /No autorizado/);
+      assert.equal((await db.query("UPDATE public.elementos SET categoria='HERRAMIENTAS_COMBUSTION' WHERE id='ELM-001' RETURNING id")).rows.length, 0);
+    }
+    await db.exec('SET ROLE anon');
+    await assert.rejects(() => db.query('SELECT public.inventory_item_category_edit_ready()'), /permission denied/);
+  } finally { await db.close(); }
 });

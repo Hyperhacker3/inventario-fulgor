@@ -102,9 +102,17 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     if (updates.cantidad !== undefined && !isDemo) throw new Error('Use una entrada o ajuste para cambiar existencias.');
     const next = { ...before, ...updates, nombre: uppercaseName(updates.nombre ?? before.nombre), marca: uppercaseName(updates.marca ?? before.marca), estado: normalizeItemCondition(updates.estado ?? before.estado) };
     validateItem(next, data.almacenes, data.estanterias, data.cajas, data.niveles);
-    if (updates.unidad !== undefined) {
+    if (updates.unidad !== undefined && !isDemo) {
       const activation = 'Falta activar la edición de unidades en Supabase. Ejecute 20261028000200_edit_item_units.sql y vuelva a guardar.';
       try { if (!await rpc<boolean>('inventory_item_unit_edit_ready', {})) throw new Error(activation); }
+      catch (cause) {
+        if (['42883', 'PGRST202'].includes((cause as { code?: string }).code || '')) throw new Error(activation, { cause });
+        throw cause;
+      }
+    }
+    if (updates.categoria !== undefined && !isDemo) {
+      const activation = 'Falta activar el cambio de categoría en edición en Supabase. Ejecute 20261126000300_edit_item_category.sql y vuelva a guardar.';
+      try { if (!await rpc<boolean>('inventory_item_category_edit_ready', {})) throw new Error(activation); }
       catch (cause) {
         if (['42883', 'PGRST202'].includes((cause as { code?: string }).code || '')) throw new Error(activation, { cause });
         throw cause;
@@ -118,6 +126,7 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       }
       const saved = await updateRow('elementos', id, {
         nombre: next.nombre, descripcion: next.descripcion, stock_minimo: next.stockMinimo,
+        ...(updates.categoria !== undefined ? { categoria: next.categoria } : {}),
         ...(updates.unidad !== undefined ? { unidad: next.unidad.trim().toUpperCase() } : {}),
         ...itemLocationColumns(updates),
         foto_url: photo, estado: next.estado, cantidad_danados: next.cantidadDanados ?? 0,

@@ -9,10 +9,10 @@ interface Props {
   onCreate: (name: string) => Promise<Categoria>;
   onBusyChange?: (busy: boolean) => void; onDraftChange?: (unfinished: boolean) => void;
   disabled?: boolean; canCreate?: boolean; required?: boolean;
-  emptyLabel?: string; id?: string;
+  emptyLabel?: string; legacyLabel?: string; id?: string;
 }
 export function ItemCategorySelector({ value, categories, onChange, onCreate, onBusyChange, onDraftChange,
-  disabled = false, canCreate = true, required = true, emptyLabel = 'Seleccione una categoría', id = 'select-categoria' }: Props) {
+  disabled = false, canCreate = true, required = true, emptyLabel = 'Seleccione una categoría', legacyLabel, id = 'select-categoria' }: Props) {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
@@ -31,14 +31,17 @@ export function ItemCategorySelector({ value, categories, onChange, onCreate, on
     } catch (cause) { setError(errorMessage(cause)); }
     finally { saving.current = false; setBusy(false); onBusyChange?.(false); }
   };
+  const activeCategories = categories.filter(category => category.activo);
+  const hasCurrent = !value || activeCategories.some(category => category.id === value);
   return <div className="space-y-2">
     <label htmlFor={id} className="block text-xs font-bold tracking-wider text-[#454651] uppercase">Categoría{required && ' *'}</label>
-    <Select id={id} required={required} value={creating ? '__NEW_CATEGORY__' : value} disabled={disabled || busy}
+    <Select id={id} aria-label="Categoría" required={required} value={creating ? '__NEW_CATEGORY__' : value} disabled={disabled || busy}
       onChange={event => { const draft = event.target.value === '__NEW_CATEGORY__'; setCreating(draft); onDraftChange?.(draft); setError(''); setMessage(''); if (!draft) onChange(event.target.value); }}
       className="w-full px-3.5 py-2.5 rounded-lg border bg-white text-sm">
       <option value="">{emptyLabel}</option>
       {canCreate && <option value="__NEW_CATEGORY__">+ Crear nueva categoría</option>}
-      {categories.filter(category => category.activo).map(category => <option key={category.id} value={category.id}>{category.nombre}</option>)}
+      {!hasCurrent && <option value={value}>{legacyLabel || value}</option>}
+      {activeCategories.map(category => <option key={category.id} value={category.id}>{category.nombre}</option>)}
     </Select>
     <Presence open={creating}><div className="ui-panel-enter space-y-2">
       <label htmlFor={`${id}-name`} className="block text-xs">Nombre de la nueva categoría</label>

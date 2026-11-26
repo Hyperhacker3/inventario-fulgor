@@ -405,3 +405,69 @@ test('repair conditions display automatic full damage while preserving the manua
   assert.equal(damage().value,'12');assert.match(editor()!.textContent!,/Sin conexión/);
  }finally{await act(()=>root.unmount());host.remove();}
 });
+
+test('editing allows changing or creating a category, omits unchanged categories and preserves legacy values', async () => {
+  const host = document.body.appendChild(document.createElement('div')), root = createRoot(host);
+  const payloads: Partial<Elemento>[] = []; let fail = true;
+  const created: string[] = [];
+  const cats = [
+    { id: 'PANELES', nombre: 'PANELES', activo: true },
+    { id: 'HERRAMIENTAS_ELECTRICAS', nombre: 'HERRAMIENTAS ELÉCTRICAS', activo: true, hoja_vida_tipo: 'ELECTRICA' as const },
+    { id: 'LEGADA', nombre: 'Categoría inactiva', activo: false },
+  ];
+  const update = async (_id: string, updates: Partial<Elemento>) => {
+    payloads.push(updates);
+    if (fail) throw new Error('Falta activar el cambio de categoría');
+  };
+  const createCategoria = async (name: string) => {
+    created.push(name);
+    return { id: 'CAT_NUEVA', nombre: name.trim().toUpperCase(), activo: true };
+  };
+  const catButton = () => editor()!.querySelector<HTMLButtonElement>('button[aria-label="Categoría"]')!;
+  const catValue = () => document.getElementById(catButton().id + '-value') as HTMLSelectElement;
+  const selectCategory = async (value: string) => {
+    const control = catButton(); await act(() => control.click());
+    const option = [...document.getElementById(control.id + '-options')!.querySelectorAll<HTMLButtonElement>('[role="option"]')].find(row => row.dataset.value === value)!;
+    await act(() => option.click());
+  };
+  const submit = () => editForm()!.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+  try {
+    await act(() => root.render(h(ItemDetailContent, {
+      item: { ...item, categoria: 'LEGADA' }, onClose: () => {},
+      inventory: { ...inventory(update), categorias: cats, categoryLabel: (id: string) => cats.find(c => c.id === id)?.nombre || id, createCategoria },
+    })));
+    await act(() => button(host, 'Editar').click());
+    assert.equal(catValue().value, 'LEGADA', 'an inactive/legacy category stays selected');
+    fail = false;
+    await act(async () => submit());
+    assert.equal(payloads.length, 1);
+    assert.equal(payloads[0].categoria, undefined, 'unchanged category is omitted from the update');
+
+    await act(() => button(host, 'Editar').click());
+    await selectCategory('HERRAMIENTAS_ELECTRICAS');
+    fail = true;
+    await act(async () => submit());
+    assert.equal(payloads[1].categoria, 'HERRAMIENTAS_ELECTRICAS');
+    assert.equal(catValue().value, 'HERRAMIENTAS_ELECTRICAS', 'draft survives a failed save');
+    assert.match(editor()!.querySelector('[role="alert"]')!.textContent!, /Falta activar/);
+
+    fail = false;
+    await act(async () => submit());
+    assert.equal(payloads[2].categoria, 'HERRAMIENTAS_ELECTRICAS');
+    assert.equal(payloads[2].cantidad, undefined);
+
+    await act(() => button(host, 'Editar').click());
+    await selectCategory('__NEW_CATEGORY__');
+    const saveBtn = [...editor()!.querySelectorAll<HTMLButtonElement>('button[type="submit"]')][0];
+    assert.equal(saveBtn.disabled, true, 'saving is blocked while a new category draft is open');
+    const nameInput = editor()!.querySelector<HTMLInputElement>('#edit-item-categoria-name')!;
+    await act(() => {
+      Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value')!.set!.call(nameInput, 'Equipos de medición');
+      nameInput.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+    });
+    await act(async () => { button(editor()!, 'Crear y elegir categoría').click(); });
+    assert.deepEqual(created, ['Equipos de medición']);
+    assert.equal(catValue().value, 'CAT_NUEVA');
+    assert.equal(saveBtn.disabled, false);
+  } finally { await act(() => root.unmount()); host.remove(); }
+});

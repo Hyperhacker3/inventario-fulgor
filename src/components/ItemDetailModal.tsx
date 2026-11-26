@@ -25,6 +25,7 @@ import { formatCOP, roundCOP } from '../domain/money';
 import { normalizeUnit } from '../domain/catalogs';
 import { ItemLocationLinks } from './item/ItemLocationLinks';
 import { ItemUnitField } from './item/ItemUnitField';
+import { ItemCategorySelector } from './item/ItemCategorySelector';
 import { ToolLifeRecordDialog, type ToolLifeServices } from './tools/ToolLifeRecordDialog';
 import { toolTypeFor } from '../domain/toolLifeRecord';
 
@@ -36,7 +37,7 @@ export function ItemDetailModal(props: Props) {
 }
 type DetailInventory = Pick<ReturnType<typeof useInventory>, 'user' | 'getLocationString' | 'openQuickMovement' | 'addToDispatchCart'
   | 'updateElemento' | 'deleteElemento' | 'categoryLabel' | 'almacenes' | 'estanterias' | 'cajas' | 'niveles'>
-  & Partial<Pick<ReturnType<typeof useInventory>, 'addEstanteria' | 'addNivel' | 'addCaja' | 'quickMovementItem' | 'quickMovementType' | 'dispatchSelection' | 'openLocationInventory' | 'cartLocked' | 'categorias'>>;
+  & Partial<Pick<ReturnType<typeof useInventory>, 'addEstanteria' | 'addNivel' | 'addCaja' | 'quickMovementItem' | 'quickMovementType' | 'dispatchSelection' | 'openLocationInventory' | 'cartLocked' | 'categorias' | 'categoryOptions' | 'createCategoria'>>;
 export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore, inventory, history, lifeServices }: Props & { inventory: DetailInventory; history?: ReactNode; lifeServices?: ToolLifeServices }) {
   const { user, getLocationString, openQuickMovement, addToDispatchCart,
     updateElemento, deleteElemento, categoryLabel, almacenes, estanterias, cajas, niveles, addEstanteria, addNivel, addCaja } = inventory;
@@ -45,6 +46,8 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   const toolType = toolTypeFor(item, inventory.categorias || []);
   const [archiveConfirm, setArchiveConfirm] = useState(false);
   const [name, setName] = useState(item?.nombre || '');
+  const [category, setCategory] = useState(item?.categoria || '');
+  const originalCategory = useRef(item?.categoria || '');
   const [brand, setBrand] = useState(item?.marca || '');
   const [description, setDescription] = useState(item?.descripcion || '');
   const [minimum, setMinimum] = useState(item?.stockMinimo ?? 0);
@@ -62,12 +65,14 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   const [photoBusy, setPhotoBusy] = useState(false);
   const [locationBusy, setLocationBusy] = useState(false);
   const [locationDraft, setLocationDraft] = useState(false);
+  const [categoryBusy, setCategoryBusy] = useState(false);
+  const [categoryDraft, setCategoryDraft] = useState(false);
   const dialog = useRef<HTMLElement>(null);
   const saving = useRef(false);
   const canAdmin = isDemo || user.role === 'admin';
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
 
-  const busy = pending || photoBusy || locationBusy;
+  const busy = pending || photoBusy || locationBusy || categoryBusy;
   const close = () => { if (!busy && !editing && !archiveConfirm && !lifeRecordOpen) onClose(); };
   const overlay = editing || archiveConfirm || lifeRecordOpen;
   useDialogFocus(dialog, close);
@@ -75,11 +80,12 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   const entryOpen = inventory.quickMovementItem?.id === item.id && inventory.quickMovementType === 'ENTRADA';
   const adjustmentOpen = inventory.quickMovementItem?.id === item.id && inventory.quickMovementType === 'AJUSTE';
   const dispatchOpen = inventory.dispatchSelection?.itemId === item.id;
-  const closeEdit = () => { if (!busy) { setEditing(false); setError(''); } };
+  const closeEdit = () => { if (!busy) { setEditing(false); setCategoryDraft(false); setError(''); } };
 
   const startEdit = () => {
     if (editing || busy) return;
-    setName(item.nombre); setBrand(item.marca || ''); setDescription(item.descripcion); setMinimum(item.stockMinimo);
+    setName(item.nombre); setCategory(item.categoria); originalCategory.current = item.categoria; setCategoryDraft(false);
+    setBrand(item.marca || ''); setDescription(item.descripcion); setMinimum(item.stockMinimo);
     setUnit(item.unidad.toUpperCase()); originalUnit.current = item.unidad;
     setPhoto(item.fotoUrl || ''); setCondition(normalizeItemCondition(item.estado)); setDamaged(item.cantidadDanados ?? 0);
     setAdditionalPhotos(item.fotosAdicionales || []);
@@ -90,12 +96,14 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
   };
   const save = async (event: FormEvent) => {
     event.preventDefault();
-    if (saving.current || photoBusy || locationBusy || !canAdmin || item.archived) return;
+    if (saving.current || photoBusy || locationBusy || categoryBusy || !canAdmin || item.archived) return;
+    if (categoryDraft) { setError('Cree o seleccione la categoría antes de guardar el producto.'); return; }
     if (locationDraft) { setError('Cree o seleccione la ubicación antes de guardar el producto.'); return; }
     saving.current = true;
     setError(''); setPending(true);
     try {
       await updateElemento(item.id, { nombre: name.trim(), marca: brand.trim(), descripcion: description.trim(), stockMinimo: minimum,
+        ...(category !== originalCategory.current ? { categoria: category } : {}),
         ...(normalizeUnit(unit) !== normalizeUnit(originalUnit.current) ? { unidad: normalizeUnit(unit) } : {}),
         fotoUrl: photo.trim(), fotosAdicionales: additionalPhotos, estado: condition, cantidadDanados: damaged, pesoUnitario: parseWeightDraft(weight),
         valorUnitario, ...changedItemLocation(location, item) });
@@ -103,6 +111,9 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
     } catch (cause) { setError(errorMessage(cause)); }
     finally { saving.current = false; setPending(false); }
   };
+  const editCategories = inventory.categorias?.length
+    ? inventory.categorias
+    : (inventory.categoryOptions?.length ? inventory.categoryOptions : [item.categoria]).map(id => ({ id, nombre: categoryLabel(id), activo: true }));
   const archive = async () => {
     if (saving.current || busy || !canAdmin || item.archived) return;
     saving.current = true;
@@ -174,6 +185,10 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
           <label className="block text-sm font-semibold">Nombre
             <input autoComplete="off" autoCorrect="off" spellCheck={false} required value={name} onChange={event => setName(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg" />
           </label>
+          <ItemCategorySelector id="edit-item-categoria" value={category} categories={editCategories} legacyLabel={categoryLabel(category)}
+            onChange={setCategory} onCreate={inventory.createCategoria || (async () => { throw new Error('No se pueden crear categorías desde aquí.'); })}
+            canCreate={Boolean(inventory.createCategoria)} disabled={pending || photoBusy || locationBusy}
+            onBusyChange={setCategoryBusy} onDraftChange={setCategoryDraft} />
           <label className="block text-sm font-semibold">Marca
             <input autoComplete="off" autoCorrect="off" spellCheck={false} maxLength={100} value={brand} onChange={event => setBrand(event.target.value)} className="block w-full mt-1 p-2.5 border rounded-lg" />
           </label>
@@ -202,10 +217,10 @@ export function ItemDetailContent({ item, onClose, onPermanentDelete, onRestore,
               {itemConditionOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
             </Select>
           </label>
-          <ItemPhotoPicker value={photo} additional={additionalPhotos} category={item.categoria} onChange={setPhoto} onAdditionalChange={setAdditionalPhotos} onBusyChange={setPhotoBusy} disabled={pending} />
+          <ItemPhotoPicker value={photo} additional={additionalPhotos} category={category || item.categoria} onChange={setPhoto} onAdditionalChange={setAdditionalPhotos} onBusyChange={setPhotoBusy} disabled={pending} />
           <div className="grid grid-cols-2 gap-4 pt-2">
             <button type="button" data-action="cancel" onClick={closeEdit} disabled={busy} className="px-4 py-2 border rounded-lg text-sm">Cancelar</button>
-            <button type="submit" data-action="edit" disabled={busy || locationDraft} className="px-4 py-2 rounded-lg text-sm font-semibold">{pending ? 'Guardando…' : 'Guardar'}</button>
+            <button type="submit" data-action="edit" disabled={busy || locationDraft || categoryDraft} className="px-4 py-2 rounded-lg text-sm font-semibold">{pending ? 'Guardando…' : 'Guardar'}</button>
           </div>
         </form>
     </ItemEditDialog>}</Presence>

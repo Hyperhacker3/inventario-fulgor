@@ -34,7 +34,7 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 
 - Las cinco acciones son Editar (lápiz azul), Entrada (verde), Ajuste (amarillo), Agregar a la salida (rojo) y Archivar (violeta), según permisos. El botón permanece hundido mientras su ventana está abierta.
 
-- Editar abre una ventana encima de la ficha. Guardar, cancelar o cerrar vuelve al detalle conservando su posición. Puede crear estanterías, niveles y cajas; cambiar una ubicación superior limpia las selecciones dependientes. PARA REPARAR se elige manualmente para las herramientas que lo necesiten; es distinto de EN REPARACIÓN. En esos estados y en MALO, Unidades dañadas muestra el stock completo automáticamente.
+- Editar abre una ventana encima de la ficha. Guardar, cancelar o cerrar vuelve al detalle conservando su posición. Puede cambiar o crear la categoría, y crear estanterías, niveles y cajas; cambiar una ubicación superior limpia las selecciones dependientes. PARA REPARAR se elige manualmente para las herramientas que lo necesiten; es distinto de EN REPARACIÓN. En esos estados y en MALO, Unidades dañadas muestra el stock completo automáticamente.
 
 - En edición, Unidad de medida permite corregir cómo se registra el producto. El cambio conserva las cantidades y no convierte pesos ni precios; las etiquetas de peso y valor usan la unidad elegida. Las remisiones e informes anteriores conservan sus datos.
 
