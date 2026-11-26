@@ -9,14 +9,26 @@ import { uppercaseName } from '../../shared/uppercase';
 import { openProductSurface } from '../../shared/productInteraction';
 
 type ResultsInventory = Pick<ReturnType<typeof useInventory>, 'getAlmacenById' | 'openItemDetail' | 'addToDispatchCart' | 'user' | 'categoryLabel'> & { cartLocked?: boolean };
+/** Present only while administration is selecting products for a bulk edit. */
+export interface ResultsSelection { ids: ReadonlySet<string>; onToggle: (item: Elemento, selected: boolean) => void; disabled?: boolean }
 
-export function ExplorerResults({ items, mode }: { items: Elemento[]; mode: 'grid' | 'list' }) {
+export function ExplorerResults({ items, mode, selection }: { items: Elemento[]; mode: 'grid' | 'list'; selection?: ResultsSelection }) {
   const inventory = useInventory();
-  return <ExplorerResultsContent items={items} mode={mode} inventory={inventory} />;
+  return <ExplorerResultsContent items={items} mode={mode} inventory={inventory} selection={selection} />;
 }
 
-export function ExplorerResultsContent({ items, mode, inventory }: { items: Elemento[]; mode: 'grid' | 'list'; inventory: ResultsInventory }) {
+export function ExplorerResultsContent({ items, mode, inventory, selection }: { items: Elemento[]; mode: 'grid' | 'list'; inventory: ResultsInventory; selection?: ResultsSelection }) {
   const { getAlmacenById, openItemDetail, addToDispatchCart, user, categoryLabel } = inventory;
+  const isSelected = (item: Elemento) => selection?.ids.has(item.id) ?? false;
+  // In selection mode the product surface toggles it; the name still opens the detail.
+  const surfaceAction = (item: Elemento) => () => {
+    if (!selection) openItemDetail(item);
+    else if (!selection.disabled) selection.onToggle(item, !isSelected(item));
+  };
+  const checkbox = (item: Elemento) => selection && <label className="inventory-select-control shrink-0 min-w-11 min-h-11 grid place-items-center">
+    <input type="checkbox" className="w-5 h-5" checked={isSelected(item)} disabled={selection.disabled}
+      aria-label={`Seleccionar ${item.codigo} · ${uppercaseName(item.nombre)}`} onChange={event => selection.onToggle(item, event.target.checked)} />
+  </label>;
   const warehouseName = (item: Elemento) => getAlmacenById(item.almacenId)?.nombre || 'Sin almacén asignado';
   const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
   // Stock Badge renderer
@@ -64,8 +76,8 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                 return (
                   <article
                     key={item.id}
-                    data-product-id={item.id}
-                    onClick={event => openProductSurface(event, () => openItemDetail(item))}
+                    data-product-id={item.id} data-selected={selection ? isSelected(item) : undefined}
+                    onClick={event => openProductSurface(event, surfaceAction(item))}
                     className="ui-product ui-product-card bg-white border border-[#e2e8f0] rounded-xl overflow-hidden flex flex-col"
                   >
                     {/* Image Area */}
@@ -104,12 +116,15 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
 
                     {/* Card Content */}
                     <div className="p-3.5 sm:p-4 flex flex-col flex-1 gap-2">
-                      <h3 className="font-bold text-base sm:text-lg leading-snug break-words">
-                        <button type="button" className="ui-product-open block w-full text-left" onClick={() => openItemDetail(item)}
-                          aria-label={`Ver detalles de ${item.codigo} · ${item.nombre}`} title={uppercaseName(item.nombre)}>
-                          <span className="inventory-product-name">{uppercaseName(item.nombre)}</span>
-                        </button>
-                      </h3>
+                      <div className={selection ? 'flex items-start gap-1 -ml-2' : undefined}>
+                        {checkbox(item)}
+                        <h3 className="min-w-0 flex-1 font-bold text-base sm:text-lg leading-snug break-words">
+                          <button type="button" className="ui-product-open block w-full text-left" onClick={() => openItemDetail(item)}
+                            aria-label={`Ver detalles de ${item.codigo} · ${item.nombre}`} title={uppercaseName(item.nombre)}>
+                            <span className="inventory-product-name">{uppercaseName(item.nombre)}</span>
+                          </button>
+                        </h3>
+                      </div>
 
                       <dl className="inventory-card-metadata grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-xs">
                         <dt>MARCA</dt><dd className="min-w-0 break-words">{uppercaseName(item.marca?.trim() || '') || 'Sin especificar'}</dd>
@@ -136,6 +151,7 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                 <table className="inventory-list-table w-full text-left text-xs sm:text-sm">
                   <thead>
                     <tr className="bg-[#f8fafc] border-b border-[#e2e8f0] text-[11px] sm:text-xs font-bold text-[#454651] uppercase tracking-wider">
+                      {selection && <th className="inventory-select-cell p-1"><span className="sr-only">Seleccionar</span></th>}
                       <th className="p-2.5 sm:p-3 hidden sm:table-cell">Código</th>
                       <th className="p-2.5 sm:p-3">Componente</th>
                       <th className="p-2.5 sm:p-3 hidden sm:table-cell">Categoría</th>
@@ -146,7 +162,9 @@ export function ExplorerResultsContent({ items, mode, inventory }: { items: Elem
                   </thead>
                   <tbody>
                     {items.map((item) => (
-                      <tr key={item.id} data-product-id={item.id} onClick={event => openProductSurface(event, () => openItemDetail(item))} className="ui-product ui-product-row">
+                      <tr key={item.id} data-product-id={item.id} data-selected={selection ? isSelected(item) : undefined}
+                        onClick={event => openProductSurface(event, surfaceAction(item))} className="ui-product ui-product-row">
+                        {selection && <td className="inventory-select-cell p-1">{checkbox(item)}</td>}
                         <td className="p-2.5 sm:p-3 font-mono-code font-bold text-[#3e4e9e] whitespace-nowrap hidden sm:table-cell">
                           {item.codigo}
                         </td>

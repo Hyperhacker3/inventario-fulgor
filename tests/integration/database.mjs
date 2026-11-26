@@ -28,6 +28,7 @@ const normalizeLocationCodesMigration = fs.readFileSync(new URL('../../supabase/
 const deleteLocationsMigration = fs.readFileSync(new URL('../../supabase/migrations/20261029000300_delete_empty_locations.sql', import.meta.url), 'utf8');
 const locationCodesAudit = fs.readFileSync(new URL('../../supabase/audit_location_codes_readonly.sql', import.meta.url), 'utf8');
 const editUnitMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000200_edit_item_units.sql', import.meta.url), 'utf8');
+const bulkEditMigration = fs.readFileSync(new URL('../../supabase/migrations/20261126000100_bulk_item_edit.sql', import.meta.url), 'utf8');
 const reportHistoryMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000100_inventory_report_history.sql', import.meta.url), 'utf8');
 const demoSeed = fs.readFileSync(new URL('../fixtures/demo_seed.sql', import.meta.url), 'utf8');
 const postdeployAudit = fs.readFileSync(new URL('../../supabase/postdeploy_readonly.sql', import.meta.url), 'utf8');
@@ -1853,5 +1854,57 @@ test('converting partial temporary loans deducts only outstanding units atomical
   await db.query(returnSql,[internalId(226),pending.id,multiple]);await assert.rejects(()=>db.query(permanentSql,[internalId(227),pending.id]),/no tiene materiales pendientes/);
   await asOwner(db);await db.exec("UPDATE public.elementos SET archived=true WHERE id='ELM-001';DELETE FROM public.elementos WHERE id='ELM-001'");await role(db,'consulta');
   assert.equal((await getInternal(db,loan.id)).items[0].permanente,4);
+ }finally{await db.close();}
+});
+
+test('bulk item edit changes only the chosen shared data atomically, records relocations once and replays confirmed requests',async()=>{
+ const db=await database({uppercase:true});try{
+  const rows=async(ids=['ELM-001','ELM-002','ELM-003'])=>(await db.query('SELECT * FROM public.elementos WHERE id=ANY($1) ORDER BY id',[ids])).rows;
+  const relocations=async()=>(await db.query("SELECT count(*)::int AS n FROM public.historial WHERE tipo='REUBICACION'")).rows[0].n;
+  const before=await rows(); const allBefore=(await db.query('SELECT * FROM public.elementos ORDER BY id')).rows;
+  await db.exec(bulkEditMigration);await db.exec(bulkEditMigration);
+  assert.deepEqual((await db.query('SELECT * FROM public.elementos ORDER BY id')).rows,allBefore,'the migration does not touch products');
+  await db.exec(`INSERT INTO public.niveles_estanteria(id,estanteria_id,codigo,nombre) VALUES('NIV-T','EST-A01','NIV001','Superior');
+    INSERT INTO public.cajas(id,estanteria_id,nombre,codigo,estado,nivel_id) VALUES('CAJ-T','EST-A01','Caja prueba','CAJ900','PARCIAL','NIV-T');
+    INSERT INTO public.inventario_categorias(id,nombre,activo) VALUES('CAT-OFF','Retirada',false) ON CONFLICT (id) DO UPDATE SET activo=false;`);
+  const sql='SELECT public.bulk_update_inventory_items($1::uuid,$2::text[],$3::jsonb) AS rows';
+  const request=n=>`31100000-0000-0000-0000-${String(n).padStart(12,'0')}`;
+  const changes={categoria:'INVERSORES',estado:'EN REPARACIÓN',marca:' acme solar ',stock_minimo:7.5,
+    ubicacion:{almacen_id:'ALM-BOG-01',estanteria_id:'EST-A01',nivel_id:'NIV-T',caja_id:'CAJ-T'}};
+  for(const value of ['operador','consulta']){await role(db,value);await assert.rejects(()=>db.query(sql,[request(1),['ELM-001'],JSON.stringify(changes)]),/No autorizado/);}
+  await role(db,'admin');
+  await assert.rejects(()=>db.query('SELECT * FROM public.inventario_ediciones_masivas'),/permission denied/);
+  const historyBefore=await relocations();
+  const args=[request(1),['ELM-002','ELM-001','ELM-001'],JSON.stringify(changes)];
+  const saved=(await db.query(sql,args)).rows[0].rows;
+  assert.deepEqual(saved.map(row=>row.id),['ELM-001','ELM-002']);
+  for(const [index,row] of saved.entries()){
+   const old=before[index];
+   assert.equal(row.categoria,'INVERSORES');assert.equal(row.estado,'EN REPARACIÓN');assert.equal(row.especificaciones.marca,'ACME SOLAR');
+   assert.equal(Number(row.stock_minimo),7.5);assert.deepEqual([row.almacen_id,row.estanteria_id,row.nivel_id,row.caja_id],['ALM-BOG-01','EST-A01','NIV-T','CAJ-T']);
+   for(const key of ['codigo','nombre','unidad','foto_url','archived'])assert.deepEqual(row[key],old[key],key);
+   for(const key of ['cantidad','cantidad_danados','cantidad_prestada'])assert.equal(Number(row[key]??0),Number(old[key]??0),key);
+   assert.deepEqual({...row.especificaciones,marca:null},{...old.especificaciones,marca:null},'prices, weights and photos are preserved');
+  }
+  assert.deepEqual((await rows(['ELM-003']))[0],before[2],'unselected products stay intact');
+  assert.equal(await relocations(),historyBefore+2,'each relocated product is recorded once');
+  assert.deepEqual((await db.query(sql,args)).rows[0].rows,saved,'a confirmed retry returns the same products');
+  assert.equal(await relocations(),historyBefore+2,'a retry does not duplicate history');
+  await assert.rejects(()=>db.query(sql,[request(1),['ELM-001'],JSON.stringify(changes)]),/otros datos/);
+  const invalid=[[{cantidad:1},/no se puede editar en grupo/],[{},/al menos un dato/],[{categoria:'CAT-OFF'},/categoría activa/],[{categoria:'NO-EXISTE'},/categoría activa/],
+   [{estado:'NUEVO'},/estado válido/],[{stock_minimo:-1},/no negativo/],[{stock_minimo:'5'},/Stock mínimo inválido/],[{stock_minimo:1.0005},/tres decimales/],
+   [{marca:'x'.repeat(101)},/100 caracteres/],[{ubicacion:{estanteria_id:'EST-A01'}},/almacén/],[{ubicacion:{almacen_id:'ALM-BOG-01',caja_id:'CAJ-T'}},/estantería/]];
+  for(const [index,[value,message]] of invalid.entries())await assert.rejects(()=>db.query(sql,[request(10+index),['ELM-003'],JSON.stringify(value)]),message);
+  await assert.rejects(()=>db.query(sql,[request(30),[],JSON.stringify({estado:'MALO'})]),/entre 1 y 5000/);
+  await assert.rejects(()=>db.query(sql,[request(31),['ELM-003'],JSON.stringify({categoria:'PANELES',ubicacion:{almacen_id:'ALM-BOG-01',estanteria_id:'EST-A01',caja_id:'CAJ-A01-01'}})]),/caja no pertenece/);
+  assert.deepEqual((await rows(['ELM-003']))[0],before[2],'a failing location rolls back the category of the same request');
+  await asOwner(db);await db.exec("UPDATE public.elementos SET archived=true WHERE id='ELM-004'");await role(db,'admin');
+  await assert.rejects(()=>db.query(sql,[request(32),['ELM-003','ELM-004'],JSON.stringify({estado:'MALO'})]),/ya no están disponibles/);
+  assert.equal((await rows(['ELM-003']))[0].estado,before[2].estado,'an archived product cancels the whole edit');
+  const cleared=(await db.query(sql,[request(33),['ELM-001'],JSON.stringify({marca:'',ubicacion:{almacen_id:null,estanteria_id:null,nivel_id:null,caja_id:null}})])).rows[0].rows[0];
+  assert.equal(cleared.especificaciones.marca,'');assert.deepEqual([cleared.almacen_id,cleared.estanteria_id,cleared.nivel_id,cleared.caja_id],[null,null,null,null]);
+  assert.equal(cleared.categoria,'INVERSORES','fields that were not chosen keep their values');
+  await asOwner(db);await db.exec('SET ROLE anon');
+  await assert.rejects(()=>db.query(sql,[request(34),['ELM-001'],JSON.stringify({estado:'MALO'})]),/permission denied/);
  }finally{await db.close();}
 });

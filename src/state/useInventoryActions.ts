@@ -27,6 +27,7 @@ import { normalizeItemCondition } from '../domain/itemCondition';
 import { ensureBoxNamesReady } from '../data/boxNames';
 import { AutomaticCodeRequests, automaticCodeRpc } from '../data/automaticCodes';
 import { normalizeProjectCity } from '../domain/projectCity';
+import { applyBulkChanges, BULK_EDIT_ACTIVATION, bulkChangesPayload, validateBulkChanges, validateBulkLocation, type BulkItemChanges } from '../domain/bulkEdit';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
 const newId = (prefix: string) => `${prefix}-DEMO-${crypto.randomUUID()}`;
@@ -126,6 +127,32 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
       await syncAfterWrite(refreshItemIds([id]), ...(Object.keys(itemLocationColumns(updates)).length
         ? [refresh('historial'), client.invalidateQueries({ queryKey: ['fulgor', user?.email || '', 'item-history', id] })] : []));
     });
+  };
+  /** All or nothing in Supabase; a retry with the same request returns the confirmed result. */
+  const updateElementosBulk = async (ids: string[], changes: BulkItemChanges, requestId: string): Promise<Elemento[]> => {
+    requireAdmin();
+    const unique = [...new Set(ids)];
+    validateBulkChanges(unique, changes);
+    const known = new Set(data.elementos.map(item => item.id));
+    if (unique.some(id => !known.has(id))) throw new Error('Algunos productos seleccionados ya no están disponibles. Actualice la lista y vuelva a intentar.');
+    if (changes.ubicacion) validateBulkLocation(changes.ubicacion, data.almacenes, data.estanterias, data.niveles, data.cajas);
+    if (isDemo) {
+      const now = isoNow();
+      const selected = new Set(unique);
+      setDemoData(prev => ({ ...prev, elementos: prev.elementos.map(item => selected.has(item.id) ? applyBulkChanges(item, changes, now) : item) }));
+      return data.elementos.filter(item => selected.has(item.id)).map(item => applyBulkChanges(item, changes, now));
+    }
+    let rows: Record<string, unknown>[];
+    try {
+      rows = await rpc<Record<string, unknown>[]>('bulk_update_inventory_items', { p_request_id: requestId, p_ids: unique, p_changes: bulkChangesPayload(changes) });
+    } catch (cause) {
+      if (['42883', 'PGRST202'].includes((cause as { code?: string }).code || '')) throw new Error(BULK_EDIT_ACTIVATION, { cause });
+      throw cause;
+    }
+    const saved = rows.map(row => mapElemento(row));
+    saved.forEach(item => applyItemChange(item.id, item));
+    await syncAfterWrite(...(changes.ubicacion ? [refresh('historial'), client.invalidateQueries({ queryKey: ['fulgor', user?.email || '', 'item-history'] })] : []));
+    return saved;
   };
   const deleteElemento = async (id: string) => {
     requireAdmin();
@@ -319,6 +346,6 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     client.setQueryData<{ id: string }[]>(['fulgor', user?.email || '', table], previous => previous?.filter(row => row.id !== id));
     await syncAfterWrite(refresh('almacenes', 'estanterias', 'niveles_estanteria', 'cajas'));
   };
-  return { addElemento, updateElemento, deleteElemento, processDispatch, addStockMovement, deleteLocation,
+  return { addElemento, updateElemento, updateElementosBulk, deleteElemento, processDispatch, addStockMovement, deleteLocation,
     addAlmacen, updateAlmacen, addEstanteria, updateEstanteria, addNivel, updateNivel, addCaja, updateCaja };
 }

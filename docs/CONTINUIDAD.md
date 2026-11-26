@@ -1,8 +1,14 @@
 # Continuidad de Inventario EL TURPIAL
 
-Actualizado: **6 de noviembre de 2026**, zona horaria America/Bogota.
+Actualizado: **26 de noviembre de 2026**, zona horaria America/Bogota.
 
 Este documento resume el estado para continuar en otro chat. Las secciones anteriores de `reports/verification.md` y `PLAN_REFACTORIZACION.md` son registros históricos; sus conteos y pendientes no sustituyen este estado actual.
+
+## Edición en grupo desde Inventario (26 de noviembre de 2026)
+
+Administración activa Seleccionar varios productos en Inventario; cada tarjeta/fila muestra una casilla y la superficie del producto alterna su selección, mientras el nombre sigue abriendo la ficha. Seleccionar página/resultados y Limpiar selección; la selección vive en el contexto y se conserva entre páginas, filtros y pantallas. Editar selección reutiliza la ventana de edición y permite marcar categoría, estado, marca, stock mínimo y ubicación (con creación en línea). Valores compartidos se rellenan; los distintos se avisan. La RPC `bulk_update_inventory_items` es todo o nada, solo para admin, actualiza cada dato solo donde cambia, deja que el disparador existente registre REUBICACION y guarda la solicitud por UUID/actor para reintentos sin duplicar. No toca cantidades, unidades, precios, pesos, fotos, códigos ni documentos. Unidad, valor y peso quedan fuera por depender de la unidad de cada producto. La categoría no tenía permiso de UPDATE para el frontend; ahora solo cambia mediante esta RPC. El usuario debe ejecutar `20261126000100_bulk_item_edit.sql`; no se ha ejecutado en producción por el agente. [Uso y activación](edicion-en-grupo.md).
+
+Ese mismo día se preparó por error una persistencia de lecturas de alertas y un botón Solucionado pensados para otro proyecto; se revirtió sin commit. Las alertas de esta app se calculan en cada navegador desde `elementos` de Supabase (stock ≤ mínimo) con actualización en tiempo real; no guardan estado de lectura.
 
 ## Proyecto y tipo de salida interna (6 de noviembre de 2026)
 

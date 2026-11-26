@@ -70,7 +70,7 @@ function useInventoryValue() {
     setDispatchSelection(null);
   }, []);
   const { activeView, navigationView, setActiveView } = useViewNavigation(closeNavigationOverlays);
-  const { explorerState, setExplorerState, openLocationInventory } = useInventoryExplorer(setActiveView, () => setSelectedItemId(null), setGlobalSearch);
+  const { explorerState, setExplorerState, openLocationInventory, inventorySelection, setInventorySelection } = useInventoryExplorer(setActiveView, () => setSelectedItemId(null), setGlobalSearch);
   const cartKey = `fulgor_cart_v4_${user?.email || 'anonymous'}`;
   const [cartLines, setCartLines] = useState<CartLine[]>(() => loadCart(cartKey));
   useEffect(() => { localStorage.setItem(cartKey, JSON.stringify(cartLines)); }, [cartKey, cartLines]);
@@ -153,7 +153,7 @@ function useInventoryValue() {
     reportSaveJob, reportItemIds, setReportItemIds, reportFilters, setReportFilters, selectedInventoryReport, openInventoryReport, closeInventoryReport,
     quickMovementType, isHelpModalOpen, globalSearch, isCloudConnected: data.isCloudConnected,
     dispatchSelection, dispatchSelectionItem, closeDispatchSelection, dispatchFeedback,
-    explorerState, setExplorerState, openLocationInventory,
+    explorerState, setExplorerState, openLocationInventory, inventorySelection, setInventorySelection,
     externalDispatchPending, setExternalDispatchPending, dispatchMode, setDispatchMode, internalTab, setInternalTab, internalRecipient, setInternalRecipient, internalProject, setInternalProject, internalType, setInternalType, cartLocked, ...internalOperations,
     syncStatus: data.syncStatus, setActiveView, setGlobalSearch, openItemDetail, closeItemDetail,
     startupStatus: combinedInitialStatus(data.initialLoadStatus, catalogs.catalogLoadStatus),

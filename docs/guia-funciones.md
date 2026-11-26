@@ -1,6 +1,6 @@
 # Guía de funciones de la aplicación
 
-Actualizada el 29 de octubre de 2026. Esta guía coincide con Ayuda y guía dentro de la aplicación. La instalación y activación técnica se documentan por separado en README y en las guías de administración.
+Actualizada el 26 de noviembre de 2026. Esta guía coincide con Ayuda y guía dentro de la aplicación. La instalación y activación técnica se documentan por separado en README y en las guías de administración.
 
 Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título para desplegar su contenido y vuelva a tocarlo para ocultarlo; puede mantener varios abiertos. La X, Escape o Retroceder cierran la ayuda.
 
@@ -19,6 +19,14 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 - Los estados son BUENO, REGULAR, MALO, EN REPARACIÓN, PARA REPARAR y RETAZOS. DAÑADO se presenta como MALO. Los estados antiguos MEDIO y OBSOLETO se presentan como REGULAR y MALO.
 
 - Los nombres muestran hasta dos líneas. La lista móvil prioriza nombre, cantidad/unidad y salida; tablet y PC conservan el código. En cuadrícula aparecen MARCA, CÓDIGO y UBICACIÓN (solo almacén), con Sin especificar para datos vacíos.
+
+## Editar varios productos a la vez
+
+- Administración ve en Inventario el botón Seleccionar varios productos, junto a filtros y vistas. Al activarlo, cada producto muestra una casilla; toque el producto o su casilla para elegirlo, y el nombre sigue abriendo el detalle. Seleccionar página y Seleccionar resultados eligen los productos visibles o todos los filtrados; Limpiar selección los quita. La selección se conserva al cambiar de página, filtros o pantalla.
+
+- Editar selección abre una ventana donde marca solo los datos que quiere cambiar: categoría, estado, marca, stock mínimo y ubicación (almacén → estantería → nivel → caja, con creación de estanterías, niveles y cajas). Si todos los productos comparten un valor aparece escrito; si no, se indica que tienen valores distintos. Una marca vacía quita la marca.
+
+- Los cambios se guardan en todos los productos o en ninguno. Las cantidades, unidades, precios, pesos, fotos, códigos y documentos anteriores no cambian. Los cambios de ubicación quedan en el historial de cada producto. Si la respuesta no llega, vuelva a pulsar Guardar cambios: no se repiten los cambios. Se admiten hasta 5.000 productos por edición.
 
 ## Detalle y edición del producto
 

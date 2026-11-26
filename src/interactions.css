@@ -27,6 +27,9 @@
   :root[data-ui-style]:not(:where([data-theme-changing='true'])) .ui-product-row > td { transition: background-color var(--ui-motion-duration) ease; }
   :root[data-ui-style] .ui-product-row > td:first-child { border-radius: var(--ui-control-radius) 0 0 var(--ui-control-radius); }
   :root[data-ui-style] .ui-product-row > td:last-child { border-radius: 0 var(--ui-control-radius) var(--ui-control-radius) 0; }
+  /* Products chosen for a bulk edit stay sunken, like any other selected control. */
+  :root[data-ui-style] :is(.ui-product-card, .ui-product-row)[data-selected='true'] { box-shadow: var(--ui-inset-shadow) !important; }
+  :root[data-ui-style] .ui-product-row[data-selected='true'] > td { background-color: transparent; }
   :root[data-ui-style] .ui-product-line {
     border-radius: var(--ui-control-radius); background-color: var(--ui-product-fill, var(--ui-surface)); box-shadow: var(--ui-control-shadow);
   }
@@ -38,6 +41,7 @@
   .inventory-list-table :is(td, th) { padding-inline: 8px; }
   .inventory-list-table .inventory-stock-cell { width: 68px; white-space: normal; overflow-wrap: anywhere; }
   .inventory-list-table .inventory-action-cell { width: 60px; }
+  .inventory-list-table .inventory-select-cell { width: 52px; padding-inline: 4px; }
   :root[data-ui-style] .inventory-list-table .ui-product-row > td:nth-child(2) { border-radius: var(--ui-control-radius) 0 0 var(--ui-control-radius); }
 }
 @media screen and (hover: hover) and (pointer: fine) {
