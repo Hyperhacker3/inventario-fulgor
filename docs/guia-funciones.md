@@ -24,11 +24,15 @@ Ayuda muestra los títulos en mayúsculas y cerrados al abrir. Toque un título 
 
 ## Editar varios productos a la vez
 
-- Administración ve en Inventario el botón Seleccionar varios productos, junto a filtros y vistas. Al activarlo, cada producto muestra una casilla; toque el producto o su casilla para elegirlo, y el nombre sigue abriendo el detalle. Seleccionar página y Seleccionar resultados eligen los productos visibles o todos los filtrados; Limpiar selección los quita. La selección se conserva al cambiar de página, filtros o pantalla.
+- Administración y operadores ven en Inventario el botón Seleccionar varios productos, junto a filtros y vistas. Al activarlo, cada producto muestra una casilla; toque el producto o su casilla para elegirlo, y el nombre sigue abriendo el detalle. Seleccionar página y Seleccionar resultados eligen los productos visibles o todos los filtrados; Limpiar selección los quita. La selección se conserva al cambiar de página, filtros o pantalla.
 
-- Editar selección abre una ventana donde marca solo los datos que quiere cambiar: categoría, estado, marca, stock mínimo y ubicación (almacén → estantería → nivel → caja, con creación de estanterías, niveles y cajas). Si todos los productos comparten un valor aparece escrito; si no, se indica que tienen valores distintos. Una marca vacía quita la marca.
+- Agregar a la salida (administración y operadores) abre una ventana para elegir la cantidad de cada producto disponible (con atajos 1 c/u y Todo disponible) y llevarlos juntos al carrito compartido de salidas externas e internas. Los productos sin stock disponible se muestran aparte sin bloquear el resto.
 
-- Los cambios se guardan en todos los productos o en ninguno. Las cantidades, unidades, precios, pesos, fotos, códigos y documentos anteriores no cambian. Los cambios de ubicación quedan en el historial de cada producto. Si la respuesta no llega, vuelva a pulsar Guardar cambios: no se repiten los cambios. Se admiten hasta 5.000 productos por edición.
+- Editar selección (solo administración) abre una ventana donde marca solo los datos que quiere cambiar: categoría, estado, marca, stock mínimo y ubicación (almacén → estantería → nivel → caja, con creación de estanterías, niveles y cajas). Si todos los productos comparten un valor aparece escrito; si no, se indica que tienen valores distintos. Una marca vacía quita la marca.
+
+- Archivar selección (solo administración) mueve todos los productos elegidos a Administración → Archivados de una sola vez, conservando existencias, historial y documentos. Es todo o nada y se bloquea si algún producto tiene préstamos internos sin devolver.
+
+- Los cambios se guardan en todos los productos o en ninguno. Las cantidades, unidades, precios, pesos, fotos, códigos y documentos anteriores no cambian. Los cambios de ubicación quedan en el historial de cada producto. Si la respuesta no llega, vuelva a pulsar Guardar cambios o Archivar: no se repiten efectos. Se admiten hasta 5.000 productos por operación en grupo.
 
 ## Detalle y edición del producto
 

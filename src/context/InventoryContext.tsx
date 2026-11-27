@@ -109,6 +109,31 @@ function useInventoryValue() {
     setDispatchSelection(null);
     setDispatchFeedback({ message: `Agregados ${quantity.toLocaleString('es-CO', { maximumFractionDigits: 3 })} ${live.unidad.toUpperCase()} de ${live.codigo} a la salida.`, token: crypto.randomUUID() });
   };
+  const addManyToDispatchCart = (lines: { elemento: Elemento; cantidad: number }[]) => {
+    if (cartLocked) throw new Error('Termine o reintente la salida pendiente antes de cambiar los materiales.');
+    if (!isDemo && !['admin', 'operador'].includes(user?.role || '')) throw new Error('Su cuenta no puede agregar materiales a la salida.');
+    if (!lines.length) throw new Error('Seleccione al menos un producto para agregar.');
+    const existingById = new Map(cartLines.map(line => [line.elementoId, line.cantidad]));
+    const additions = new Map<string, number>();
+    for (const line of lines) {
+      const live = itemIndex.get(line.elemento.id);
+      const already = (existingById.get(line.elemento.id) || 0) + (additions.get(line.elemento.id) || 0);
+      if (!live || !validQuantity(line.cantidad) || line.cantidad <= 0 || line.cantidad > roundQuantity(available(live) - already))
+        throw new Error(`La cantidad de ${line.elemento.codigo} supera el stock disponible para agregar. Revise las cantidades.`);
+      additions.set(live.id, roundQuantity((additions.get(live.id) || 0) + line.cantidad));
+    }
+    setCartLines(prev => {
+      const next = [...prev];
+      for (const [elementoId, qty] of additions) {
+        const index = next.findIndex(row => row.elementoId === elementoId);
+        if (index >= 0) next[index] = { elementoId, cantidad: roundQuantity(next[index].cantidad + qty) };
+        else next.push({ elementoId, cantidad: qty });
+      }
+      return next;
+    });
+    const count = additions.size;
+    setDispatchFeedback({ message: `Agregado${count === 1 ? '' : 's'} ${count.toLocaleString('es-CO')} producto${count === 1 ? '' : 's'} a la salida.`, token: crypto.randomUUID() });
+  };
   const updateDispatchCartQuantity = (itemId: string, quantity: number) => {
     if (cartLocked) return;
     const item = itemIndex.get(itemId);
@@ -161,7 +186,7 @@ function useInventoryValue() {
       data.refresh('elementos', 'almacenes', 'estanterias', 'cajas', 'proyectos', 'remisiones', 'historial'), catalogs.refreshCatalog(),
     ]),
     openPdfRemision, closePdfRemision, openQuickMovement, closeQuickMovement, setIsHelpModalOpen,
-    addToDispatchCart, updateDispatchCartQuantity, removeFromDispatchCart, clearDispatchCart,
+    addToDispatchCart, addManyToDispatchCart, updateDispatchCartQuantity, removeFromDispatchCart, clearDispatchCart,
     getAlmacenById, getEstanteriaById, getNivelById, getCajaById, getProyectoById, getLocationString,
     resetToDefaultData, ...actions, ...projectActions, ...catalogs, ...companyProfile, categoryOptions, categoryLabel,
   };

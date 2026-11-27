@@ -27,7 +27,7 @@ import { normalizeItemCondition } from '../domain/itemCondition';
 import { ensureBoxNamesReady } from '../data/boxNames';
 import { AutomaticCodeRequests, automaticCodeRpc } from '../data/automaticCodes';
 import { normalizeProjectCity } from '../domain/projectCity';
-import { applyBulkChanges, BULK_EDIT_ACTIVATION, bulkChangesPayload, validateBulkChanges, validateBulkLocation, type BulkItemChanges } from '../domain/bulkEdit';
+import { applyBulkChanges, BULK_ARCHIVE_ACTIVATION, BULK_EDIT_ACTIVATION, bulkChangesPayload, validateBulkArchive, validateBulkChanges, validateBulkLocation, type BulkItemChanges } from '../domain/bulkEdit';
 
 type SetDemoData = Dispatch<SetStateAction<DemoData>>;
 const newId = (prefix: string) => `${prefix}-DEMO-${crypto.randomUUID()}`;
@@ -168,6 +168,32 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     if (isDemo) setDemoData(prev => ({ ...prev, elementos: prev.elementos.filter(el => el.id !== id) }));
     else { await updateRow('elementos', id, { archived: true, updated_at: isoNow() }, mapElemento);
       applyItemChange(id, null); await syncAfterWrite(refreshItemIds([id])); }
+  };
+  /** Archives multiple active products atomically in Supabase; retries with the same UUID return the confirmed IDs. */
+  const archiveElementosBulk = async (ids: string[], requestId: string): Promise<string[]> => {
+    requireAdmin();
+    const unique = [...new Set(ids)];
+    validateBulkArchive(unique);
+    const byId = new Map(data.elementos.map(item => [item.id, item]));
+    if (unique.some(id => !byId.has(id))) throw new Error('Algunos productos seleccionados ya no están disponibles. Actualice la lista y vuelva a intentar.');
+    const borrowed = unique.map(id => byId.get(id)!).filter(item => (item.cantidadPrestada || 0) > 0);
+    if (borrowed.length) throw new Error(`Registre las devoluciones internas antes de archivar (${borrowed.slice(0, 3).map(item => item.codigo).join(', ')}).`);
+    if (isDemo) {
+      const selected = new Set(unique);
+      setDemoData(prev => ({ ...prev, elementos: prev.elementos.filter(item => !selected.has(item.id)) }));
+      return unique;
+    }
+    let result: { archivedIds?: string[] };
+    try {
+      result = await rpc<{ archivedIds?: string[] }>('bulk_archive_inventory_items', { p_request_id: requestId, p_ids: unique });
+    } catch (cause) {
+      if (['42883', 'PGRST202'].includes((cause as { code?: string }).code || '')) throw new Error(BULK_ARCHIVE_ACTIVATION, { cause });
+      throw cause;
+    }
+    const archivedIds = Array.isArray(result?.archivedIds) ? result.archivedIds : unique;
+    archivedIds.forEach(id => applyItemChange(id, null));
+    await syncAfterWrite(refreshItemIds(archivedIds), client.invalidateQueries({ queryKey: ['fulgor', user?.email || '', 'archived-items'] }));
+    return archivedIds;
   };
 
   const processDispatch = async (payload: RemissionRoute & { proyectoId: string; entregadoPor: string; cargoEntregado?: string; recibidoPor: string; cargoRecibido?: string; observaciones?: string; requestId?: string; datosTransporte?: DatosTransporte; fotosSalida?: string[] }): Promise<Remision> => {
@@ -355,6 +381,6 @@ export function useInventoryActions(data: DemoData, setDemoData: SetDemoData,
     client.setQueryData<{ id: string }[]>(['fulgor', user?.email || '', table], previous => previous?.filter(row => row.id !== id));
     await syncAfterWrite(refresh('almacenes', 'estanterias', 'niveles_estanteria', 'cajas'));
   };
-  return { addElemento, updateElemento, updateElementosBulk, deleteElemento, processDispatch, addStockMovement, deleteLocation,
+  return { addElemento, updateElemento, updateElementosBulk, deleteElemento, archiveElementosBulk, processDispatch, addStockMovement, deleteLocation,
     addAlmacen, updateAlmacen, addEstanteria, updateEstanteria, addNivel, updateNivel, addCaja, updateCaja };
 }

@@ -1,7 +1,8 @@
-import type { Almacen, Caja, Elemento, Estanteria, NivelEstanteria } from '../types';
+import type { Almacen, Caja, DispatchCartItem, Elemento, Estanteria, NivelEstanteria } from '../types';
+import { available } from './inventory';
 import { normalizeItemCondition } from './itemCondition';
 import { itemLocationDraft, type ItemLocationDraft } from './itemLocation';
-import { validQuantity } from './quantity';
+import { roundQuantity, validQuantity } from './quantity';
 import { conditions } from './catalogs';
 import { uppercaseName } from '../shared/uppercase';
 
@@ -16,6 +17,7 @@ export interface BulkItemChanges {
 export type BulkField = keyof BulkItemChanges;
 export const BULK_EDIT_LIMIT = 5000;
 export const BULK_EDIT_ACTIVATION = 'Falta activar la edición en grupo en Supabase. Ejecute 20261126000100_bulk_item_edit.sql y vuelva a guardar.';
+export const BULK_ARCHIVE_ACTIVATION = 'Falta activar el archivado en grupo en Supabase. Ejecute 20261127000100_bulk_archive_items.sql y vuelva a intentar.';
 
 export function validateBulkChanges(ids: readonly string[], changes: BulkItemChanges) {
   if (!ids.length) throw new Error('Seleccione al menos un producto.');
@@ -93,4 +95,41 @@ export class BulkEditRequests {
     return this.pending.id;
   }
   confirm() { this.pending = null; }
+}
+
+/** Reuses the request ID while the same bulk archive is retried after an uncertain error. */
+export class BulkArchiveRequests {
+  private pending: { signature: string; id: string } | null = null;
+  requestFor(ids: readonly string[], newId: () => string = () => crypto.randomUUID()) {
+    const signature = JSON.stringify([...new Set(ids)].sort());
+    if (this.pending?.signature !== signature) this.pending = { signature, id: newId() };
+    return this.pending.id;
+  }
+  confirm() { this.pending = null; }
+}
+
+export function validateBulkArchive(ids: readonly string[]) {
+  if (!ids.length) throw new Error('Seleccione al menos un producto.');
+  if (ids.length > BULK_EDIT_LIMIT) throw new Error(`Seleccione como máximo ${BULK_EDIT_LIMIT.toLocaleString('es-CO')} productos por archivado.`);
+}
+
+export interface BulkDispatchCandidate {
+  item: Elemento;
+  inCart: number;
+  maxAdd: number;
+}
+
+/** Splits selected items into those with remaining available stock to add and those unavailable. */
+export function prepareBulkDispatch(items: readonly Elemento[], cart: readonly DispatchCartItem[]) {
+  const inCartById = new Map(cart.map(line => [line.elemento.id, line.cantidad]));
+  const availableRows: BulkDispatchCandidate[] = [];
+  const unavailableRows: BulkDispatchCandidate[] = [];
+  for (const item of items) {
+    const inCart = inCartById.get(item.id) || 0;
+    const maxAdd = Math.max(0, roundQuantity(available(item) - inCart));
+    const entry: BulkDispatchCandidate = { item, inCart, maxAdd };
+    if (maxAdd > 0) availableRows.push(entry);
+    else unavailableRows.push(entry);
+  }
+  return { availableRows, unavailableRows };
 }

@@ -1,8 +1,14 @@
 # Continuidad de Inventario EL TURPIAL
 
-Actualizado: **26 de noviembre de 2026**, zona horaria America/Bogota.
+Actualizado: **27 de noviembre de 2026**, zona horaria America/Bogota.
 
 Este documento resume el estado para continuar en otro chat. Las secciones anteriores de `reports/verification.md` y `PLAN_REFACTORIZACION.md` son registros históricos; sus conteos y pendientes no sustituyen este estado actual.
+
+## Agregar varios a la salida y archivar en grupo (27 de noviembre de 2026)
+
+La selección múltiple de `ExplorerView` ahora está disponible para `admin` y `operador`, y añade dos acciones junto a **Editar selección**:
+- **Agregar a la salida** (`BulkDispatchDialog` + `addManyToDispatchCart` en `InventoryContext`): separa los seleccionados con stock disponible para agregar de los agotados/pendientes/ya completos en carrito, permite ajustar cantidades con `1 c/u` o `Todo disponible`, respeta `cartLocked` y agrega todas las líneas válidas de forma atómica al carrito compartido (externas e internas). No requiere SQL.
+- **Archivar selección** (`BulkArchiveDialog` + `archiveElementosBulk` en `useInventoryActions`, solo `admin`): confirma la lista, bloquea si algún producto tiene `cantidadPrestada > 0`, reutiliza su UUID ante errores inciertos y llama a `public.bulk_archive_inventory_items(p_request_id, p_ids)` en todo o nada (protegido por RLS y el trigger `guard_borrowed_inventory`). Requiere que el usuario ejecute `supabase/migrations/20261127000100_bulk_archive_items.sql`; no se ha ejecutado en producción por el agente.
 
 ## Panel de herramientas en Inicio (26 de noviembre de 2026)
 

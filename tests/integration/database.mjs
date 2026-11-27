@@ -30,6 +30,7 @@ const locationCodesAudit = fs.readFileSync(new URL('../../supabase/audit_locatio
 const editUnitMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000200_edit_item_units.sql', import.meta.url), 'utf8');
 const editCategoryMigration = fs.readFileSync(new URL('../../supabase/migrations/20261126000300_edit_item_category.sql', import.meta.url), 'utf8');
 const damagedAvailabilityMigration = fs.readFileSync(new URL('../../supabase/migrations/20261126000400_allow_damaged_stock_availability.sql', import.meta.url), 'utf8');
+const bulkArchiveMigration = fs.readFileSync(new URL('../../supabase/migrations/20261127000100_bulk_archive_items.sql', import.meta.url), 'utf8');
 const toolLifeMigration = fs.readFileSync(new URL('../../supabase/migrations/20261126000200_tool_life_records.sql', import.meta.url), 'utf8');
 const bulkEditMigration = fs.readFileSync(new URL('../../supabase/migrations/20261126000100_bulk_item_edit.sql', import.meta.url), 'utf8');
 const reportHistoryMigration = fs.readFileSync(new URL('../../supabase/migrations/20261028000100_inventory_report_history.sql', import.meta.url), 'utf8');
@@ -2074,5 +2075,48 @@ test('damaged/repair tags and legacy cantidad_danados no longer reduce availabil
     await assert.rejects(() => db.query(routeSql,
       ['34000000-0000-0000-0000-000000000008', 'PROY-001', 'Operador', 'Op', 'Recibe', '', '', JSON.stringify([{ elementoId: 'ELM-003', cantidad: 1 }]), '{}', '[]', 'Bogotá', 'Obra']),
       /Stock no disponible/);
+  } finally { await db.close(); }
+});
+
+test('bulk archive RPC is admin-only, atomic on borrowed or missing items, and idempotent by request UUID', async () => {
+  const db = await internalDatabase();
+  try {
+    await db.exec(bulkArchiveMigration);
+    await db.exec(bulkArchiveMigration);
+    const archiveSql = 'SELECT public.bulk_archive_inventory_items($1::uuid,$2::text[]) AS row';
+
+    // Non-admins and anon cannot call bulk archive or read request table.
+    for (const r of ['operador', 'consulta']) {
+      await role(db, r);
+      await assert.rejects(() => db.query(archiveSql, ['35000000-0000-0000-0000-000000000001', ['ELM-001']]), /No autorizado/);
+    }
+    await role(db, 'admin');
+    await assert.rejects(() => db.query('SELECT * FROM public.inventario_archivados_masivos'), /permission denied/);
+
+    // Active loan on ELM-002 rolls back the ENTIRE batch (ELM-001 stays active too!).
+    const staff = await worker(db);
+    await role(db, 'operador');
+    await db.query(issueSql, ['35000000-0000-0000-0000-000000000002', staff.id, JSON.stringify([{ elementoId: 'ELM-002', cantidad: 1 }])]);
+    await role(db, 'admin');
+    await assert.rejects(() => db.query(archiveSql, ['35000000-0000-0000-0000-000000000003', ['ELM-001', 'ELM-002']]), /devoluciones internas/);
+    assert.equal((await db.query("SELECT archived FROM public.elementos WHERE id='ELM-001'")).rows[0].archived, false, 'rollback leaves ELM-001 active');
+
+    // Missing/already-archived item rolls back the batch.
+    await assert.rejects(() => db.query(archiveSql, ['35000000-0000-0000-0000-000000000004', ['ELM-001', 'NO_EXISTE']]), /ya no están disponibles/);
+    assert.equal((await db.query("SELECT archived FROM public.elementos WHERE id='ELM-001'")).rows[0].archived, false);
+
+    // Valid batch archives all selected items and preserves stock; retry returns confirmed result.
+    const stockBefore = Number((await db.query("SELECT cantidad FROM public.elementos WHERE id='ELM-001'")).rows[0].cantidad);
+    const first = (await db.query(archiveSql, ['35000000-0000-0000-0000-000000000005', ['ELM-003', 'ELM-001', 'ELM-001']])).rows[0].row;
+    assert.deepEqual(first, { archivedIds: ['ELM-001', 'ELM-003'], count: 2 });
+    assert.equal((await db.query("SELECT count(*)::int AS n FROM public.elementos WHERE id IN ('ELM-001','ELM-003') AND archived")).rows[0].n, 2);
+    assert.equal(Number((await db.query("SELECT cantidad FROM public.elementos WHERE id='ELM-001'")).rows[0].cantidad), stockBefore);
+    // Retrying same UUID with same IDs (even in another order) replays cleanly without failing on already-archived rows.
+    const retry = (await db.query(archiveSql, ['35000000-0000-0000-0000-000000000005', ['ELM-001', 'ELM-003']])).rows[0].row;
+    assert.deepEqual(retry, first);
+    // Same UUID with different IDs is rejected.
+    await assert.rejects(() => db.query(archiveSql, ['35000000-0000-0000-0000-000000000005', ['ELM-001']]), /otros datos/);
+    await db.exec('SET ROLE anon');
+    await assert.rejects(() => db.query(archiveSql, ['35000000-0000-0000-0000-000000000006', ['ELM-004']]), /permission denied/);
   } finally { await db.close(); }
 });

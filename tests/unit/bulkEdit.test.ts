@@ -3,15 +3,17 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import { act, createElement as h } from 'react';
 import { mapAlmacen, mapCaja, mapElemento, mapEstanteria, mapNivel } from '../../src/data/mappers';
-import { applyBulkChanges, BulkEditRequests, bulkChangesPayload, changeSelection, sharedLocation, sharedValue,
-  validateBulkChanges, validateBulkLocation, type BulkItemChanges } from '../../src/domain/bulkEdit';
+import { applyBulkChanges, BulkArchiveRequests, BulkEditRequests, bulkChangesPayload, changeSelection, prepareBulkDispatch, sharedLocation, sharedValue,
+  validateBulkArchive, validateBulkChanges, validateBulkLocation, type BulkItemChanges } from '../../src/domain/bulkEdit';
 import type { Elemento } from '../../src/types';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://app.test/' });
-Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
+Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, HTMLInputElement: dom.window.HTMLInputElement, IS_REACT_ACT_ENVIRONMENT: true });
 const { createRoot } = await import('react-dom/client');
 const { ExplorerResultsContent } = await import('../../src/components/explorer/ExplorerResults');
 const { BulkEditDialog } = await import('../../src/components/explorer/BulkEditDialog');
+const { BulkDispatchDialog } = await import('../../src/components/explorer/BulkDispatchDialog');
+const { BulkArchiveDialog } = await import('../../src/components/explorer/BulkArchiveDialog');
 
 const item = (index: number, extra: Record<string, unknown> = {}) => mapElemento({ id: `item-${index}`, codigo: `MAT00${index}`, nombre: `Material ${index}`,
   categoria: 'OTROS', cantidad: 12, stock_minimo: index, unidad: 'UND', estado: 'BUENO', almacen_id: 'W', estanteria_id: 'R',
@@ -142,5 +144,77 @@ test('bulk edit dialog sends only marked data, keeps the form on errors and bloc
     assert.equal(closed, 0, 'Escape does not close while saving');
     await act(async () => finish());
     assert.deepEqual(saved, [2]);
+  });
+});
+
+test('bulk dispatch dialog separates unavailable products, supports 1 c/u and Todo disponible, and confirms chosen lines', async () => {
+  const zero = item(3, { cantidad: 0 });
+  const inCart = [{ elemento: items[0], cantidad: 10 }];
+  const { availableRows, unavailableRows } = prepareBulkDispatch([items[0], items[1], zero], inCart);
+  assert.deepEqual(availableRows.map(r => [r.item.id, r.maxAdd]), [['item-1', 2], ['item-2', 12]]);
+  assert.deepEqual(unavailableRows.map(r => r.item.id), ['item-3']);
+
+  const confirmed: { elemento: Elemento; cantidad: number }[][] = [];
+  await render(h(BulkDispatchDialog, {
+    items: [items[0], items[1], zero],
+    cart: inCart,
+    cartLocked: false,
+    onConfirm: lines => { confirmed.push(lines); },
+    onClose: () => {},
+  }), async () => {
+    assert.match(document.body.textContent!, /1 producto sin stock disponible/);
+    await act(() => button('Todo disponible').click());
+    await act(() => button('Agregar a la salida (2)').click());
+    assert.equal(confirmed.length, 1);
+    assert.deepEqual(confirmed[0].map(l => [l.elemento.id, l.cantidad]), [['item-1', 2], ['item-2', 12]]);
+  });
+});
+
+test('bulk archive dialog blocks borrowed items, reuses UUID on retry and prevents closing while pending', async () => {
+  assert.throws(() => validateBulkArchive([]), /al menos un producto/);
+  const reqs = new BulkArchiveRequests();
+  let seq = 0; const next = () => `arch-${++seq}`;
+  const first = reqs.requestFor(['b', 'a'], next);
+  assert.equal(reqs.requestFor(['a', 'b', 'a'], next), first);
+  reqs.confirm();
+  assert.notEqual(reqs.requestFor(['a', 'b'], next), first);
+
+  const borrowedItem = item(4, { cantidad_prestada: 2 });
+  await render(h(BulkArchiveDialog, {
+    items: [items[0], borrowedItem],
+    archive: async () => [],
+    onClose: () => {},
+    onArchived: () => {},
+  }), async () => {
+    assert.match(document.querySelector('[role="alert"]')!.textContent!, /préstamos internos/);
+    assert.equal(button('Archivar (2)').disabled, true);
+  });
+
+  const calls: { ids: string[]; requestId: string }[] = [];
+  const archived: string[][] = [];
+  let fail = true, finish!: () => void, closed = 0;
+  const archive = async (ids: string[], requestId: string) => {
+    calls.push({ ids, requestId });
+    if (fail) throw new Error('Sin respuesta');
+    await new Promise<void>(resolve => { finish = resolve; });
+    return ids;
+  };
+  await render(h(BulkArchiveDialog, {
+    items,
+    archive,
+    onClose: () => { closed++; },
+    onArchived: ids => { archived.push(ids); },
+  }), async () => {
+    await act(async () => { button('Archivar (2)').click(); });
+    assert.match(document.querySelector('[role="alert"]')!.textContent!, /Sin respuesta/);
+    fail = false;
+    const confirmBtn = button('Archivar (2)');
+    await act(async () => { confirmBtn.click(); confirmBtn.click(); });
+    assert.equal(calls.length, 2, 'double click sends one request');
+    assert.equal(calls[1].requestId, calls[0].requestId, 'retry reuses the UUID');
+    await act(() => { document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
+    assert.equal(closed, 0, 'Escape cannot close while archiving');
+    await act(async () => finish());
+    assert.deepEqual(archived, [['item-1', 'item-2']]);
   });
 });

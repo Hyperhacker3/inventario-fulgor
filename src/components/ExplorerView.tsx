@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { isDemo } from '../lib/supabase';
 import { BULK_EDIT_LIMIT, changeSelection } from '../domain/bulkEdit';
 import { BulkEditDialog } from './explorer/BulkEditDialog';
+import { BulkDispatchDialog } from './explorer/BulkDispatchDialog';
+import { BulkArchiveDialog } from './explorer/BulkArchiveDialog';
 import { Presence } from './ui/Motion';
 import { useInventory } from '../context/InventoryContext';
 import { ALL_LOCATIONS, emptyInventoryFilters, changeWarehouse, changeRack, changeLevel, filterInventory, orderInventoryByActivity, type InventoryFilters } from '../domain/explorer';
@@ -15,12 +17,17 @@ export const ExplorerView: React.FC = () => {
   const {
     elementos, almacenes, estanterias, niveles, cajas, categoryOptions, categoryLabel, setGlobalSearch,
     getLocationString, explorerState, setExplorerState,
-    globalSearch, user, categorias, inventorySelection, setInventorySelection, updateElementosBulk, addEstanteria, addNivel, addCaja,
+    globalSearch, user, categorias, inventorySelection, setInventorySelection, updateElementosBulk, archiveElementosBulk,
+    dispatchCart, addManyToDispatchCart, cartLocked, addEstanteria, addNivel, addCaja,
   } = useInventory();
-  const canBulkEdit = isDemo || user.role === 'admin';
-  const selecting = canBulkEdit && inventorySelection.active;
+  const canAdmin = isDemo || user.role === 'admin';
+  const canOperate = isDemo || ['admin', 'operador'].includes(user.role);
+  const selecting = canOperate && inventorySelection.active;
   const [bulkEditing, setBulkEditing] = useState(false);
+  const [bulkDispatching, setBulkDispatching] = useState(false);
+  const [bulkArchiving, setBulkArchiving] = useState(false);
   const [bulkNotice, setBulkNotice] = useState('');
+  const bulkDialogOpen = bulkEditing || bulkDispatching || bulkArchiving;
   const selectedIds = useMemo(() => new Set(inventorySelection.ids), [inventorySelection.ids]);
   // Products archived or removed elsewhere drop out of the selection count and the edit.
   const selectedItems = useMemo(() => elementos.filter(item => selectedIds.has(item.id)), [elementos, selectedIds]);
@@ -87,7 +94,7 @@ export const ExplorerView: React.FC = () => {
             Mostrando <strong className="text-[#131b2e] font-bold">{filteredItems.length.toLocaleString('es-CO')}</strong> componentes
           </p>
           <div role="group" aria-label="Controles del inventario" className="flex items-center gap-1">
-            {canBulkEdit && <button type="button" aria-expanded={selecting} aria-pressed={selecting} aria-controls="inventory-selection"
+            {canOperate && <button type="button" aria-expanded={selecting} aria-pressed={selecting} aria-controls="inventory-selection"
               aria-label={selecting ? 'Terminar selección' : 'Seleccionar varios productos'} title={selecting ? 'Terminar selección' : 'Seleccionar varios productos'}
               onClick={toggleSelecting} className="ui-flat-choice relative inline-flex items-center justify-center min-w-11 min-h-11 p-2 rounded-lg">
               <StateIcon icon="checklist" filled={selecting} className="text-xl" />
@@ -118,13 +125,21 @@ export const ExplorerView: React.FC = () => {
             <button type="button" disabled={!filteredItems.length} onClick={() => choose(filteredItems.map(item => item.id), !resultsSelected)} className="rounded-xl px-4 min-h-11 text-sm text-[#3e4e9e]">
               {resultsSelected ? 'Quitar resultados' : 'Seleccionar resultados'} ({filteredItems.length.toLocaleString('es-CO')})
             </button>
-            <button type="button" disabled={!inventorySelection.ids.length} onClick={() => { setBulkNotice(''); setInventorySelection(previous => ({ ...previous, ids: [] })); }} className="rounded-xl px-4 min-h-11 text-sm text-red-700">Limpiar selección</button>
-            <button type="button" data-action="edit" aria-pressed={bulkEditing} disabled={!selectedItems.length || selectedItems.length > BULK_EDIT_LIMIT}
+            <button type="button" disabled={!inventorySelection.ids.length || bulkDialogOpen} onClick={() => { setBulkNotice(''); setInventorySelection(previous => ({ ...previous, ids: [] })); }} className="rounded-xl px-4 min-h-11 text-sm text-red-700">Limpiar selección</button>
+            <button type="button" data-action="dispatch" aria-pressed={bulkDispatching} disabled={!selectedItems.length || cartLocked || bulkDialogOpen}
+              onClick={() => { setBulkNotice(''); setBulkDispatching(true); }} className="rounded-xl px-4 min-h-11 text-sm font-semibold inline-flex items-center gap-2">
+              <StateIcon icon="add_shopping_cart" filled={bulkDispatching} />Agregar a la salida
+            </button>
+            {canAdmin && <button type="button" data-action="edit" aria-pressed={bulkEditing} disabled={!selectedItems.length || selectedItems.length > BULK_EDIT_LIMIT || bulkDialogOpen}
               onClick={() => { setBulkNotice(''); setBulkEditing(true); }} className="rounded-xl px-4 min-h-11 text-sm font-semibold inline-flex items-center gap-2">
               <StateIcon icon="edit" filled={bulkEditing} />Editar selección
-            </button>
+            </button>}
+            {canAdmin && <button type="button" data-action="archive" aria-pressed={bulkArchiving} disabled={!selectedItems.length || selectedItems.length > BULK_EDIT_LIMIT || bulkDialogOpen}
+              onClick={() => { setBulkNotice(''); setBulkArchiving(true); }} className="rounded-xl px-4 min-h-11 text-sm font-semibold inline-flex items-center gap-2">
+              <StateIcon icon="archive" filled={bulkArchiving} />Archivar selección
+            </button>}
           </div>
-          {selectedItems.length > BULK_EDIT_LIMIT && <p role="alert" className="text-sm text-amber-800">Seleccione como máximo {BULK_EDIT_LIMIT.toLocaleString('es-CO')} productos por edición.</p>}
+          {selectedItems.length > BULK_EDIT_LIMIT && <p role="alert" className="text-sm text-amber-800">Seleccione como máximo {BULK_EDIT_LIMIT.toLocaleString('es-CO')} productos por operación en grupo.</p>}
           {bulkNotice && <p role="status" className="text-sm text-[#137333]">{bulkNotice}</p>}
         </div>}
       </section>
@@ -132,6 +147,21 @@ export const ExplorerView: React.FC = () => {
         warehouses={almacenes} racks={estanterias} levels={niveles} boxes={cajas} onCreateRack={addEstanteria} onCreateLevel={addNivel} onCreateBox={addCaja}
         save={updateElementosBulk} onClose={() => setBulkEditing(false)}
         onSaved={count => { setBulkEditing(false); setBulkNotice(`Se guardaron los cambios en ${count.toLocaleString('es-CO')} producto${count === 1 ? '' : 's'}.`); }} />}</Presence>
+      <Presence open={bulkDispatching}>{bulkDispatching && <BulkDispatchDialog items={selectedItems} cart={dispatchCart} cartLocked={cartLocked}
+        onClose={() => setBulkDispatching(false)}
+        onConfirm={lines => {
+          addManyToDispatchCart(lines);
+          setBulkDispatching(false);
+          setBulkNotice(`Se agregaron ${lines.length.toLocaleString('es-CO')} producto${lines.length === 1 ? '' : 's'} a la salida.`);
+        }} />}</Presence>
+      <Presence open={bulkArchiving}>{bulkArchiving && <BulkArchiveDialog items={selectedItems} archive={archiveElementosBulk}
+        onClose={() => setBulkArchiving(false)}
+        onArchived={archivedIds => {
+          const archivedSet = new Set(archivedIds);
+          setInventorySelection(previous => ({ ...previous, ids: previous.ids.filter(id => !archivedSet.has(id)) }));
+          setBulkArchiving(false);
+          setBulkNotice(`Se archivaron ${archivedIds.length.toLocaleString('es-CO')} producto${archivedIds.length === 1 ? '' : 's'}.`);
+        }} />}</Presence>
 
       {/* Filters stay above both full-width result layouts. */}
       <div className={`flex flex-col w-full min-w-0 ${filtersOpen ? 'gap-4 sm:gap-6' : ''}`}>
@@ -149,7 +179,7 @@ export const ExplorerView: React.FC = () => {
         <section aria-label="Componentes del inventario" className="min-w-0 flex flex-col gap-4 w-full">
           {/* Results Layout */}
           <ExplorerResults items={visibleItems} mode={viewMode}
-            selection={selecting ? { ids: selectedIds, onToggle: (item, selected) => choose([item.id], selected), disabled: bulkEditing } : undefined} />
+            selection={selecting ? { ids: selectedIds, onToggle: (item, selected) => choose([item.id], selected), disabled: bulkDialogOpen } : undefined} />
           {pageCount > 1 && (
             <nav aria-label="Páginas del catálogo" className="flex items-center justify-center gap-3 py-3">
               <button type="button" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} className="px-3 py-2 rounded-lg border disabled:opacity-40">Anterior</button>
